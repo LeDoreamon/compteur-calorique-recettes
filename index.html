@@ -178,7 +178,7 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
       <!-- Inventory toggle -->
       <label style="display:flex;align-items:center;gap:10px;padding:10px;background:#0f0f11;border-radius:8px;cursor:pointer;margin-bottom:10px;">
         <input type="checkbox" id="free-use-inv" onchange="toggleFreeInv()" style="width:16px;height:16px;accent-color:#4ade80;cursor:pointer;">
-        <span style="font-size:13px;color:#9898a8;">Retirer des ingrédients du stock</span>
+        <span style="font-size:13px;color:#9898a8;">Autres ingrédients à déduire (non détectés)</span>
       </label>
 
       <!-- Inventory selector -->
@@ -1122,6 +1122,26 @@ if('serviceWorker' in navigator){
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveState();});
 
+
+// ─── MATCHING INGRÉDIENTS ↔ INVENTAIRE ───────────────────────────────────────
+function normalize(s){return s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,'');}
+function matchIngToInventory(ingName){
+  const ingN=normalize(ingName);
+  const ingWords=ingN.split(/\s+/).filter(w=>w.length>3);
+  const allItems=Object.values(S.inv).flat().filter(i=>i.qty!==null&&i.qty>0);
+  let best=null,bestScore=0;
+  for(const it of allItems){
+    const itN=normalize(it.name);
+    const itWords=itN.split(/\s+/).filter(w=>w.length>3);
+    let score=0;
+    if(itN.includes(ingN)||ingN.includes(itN))score+=3;
+    ingWords.forEach(w=>{if(itN.includes(w))score+=1;});
+    itWords.forEach(w=>{if(ingN.includes(w))score+=1;});
+    if(score>bestScore){bestScore=score;best=it;}
+  }
+  return bestScore>0?best:null;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 // ─── REPAS LIBRE (texte ou photo) ────────────────────────────────────────────
 let _freeIng=[];
 
@@ -1148,13 +1168,24 @@ function renderFreeIngredients(){
   const list=document.getElementById('free-ing-list');
   if(!list)return;
   if(!_freeIng.length){list.innerHTML='<div style="font-size:12px;color:#55556a;padding:8px 0;">Aucun ingrédient détecté.</div>';return;}
-  list.innerHTML=_freeIng.map((ing,idx)=>`
-    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(255,255,255,.06);">
-      <span style="flex:1;font-size:12px;color:#9898a8;">${ing.name}</span>
-      <input type="number" id="fing-${idx}" value="${ing.qty}" min="0" oninput="updateFreeTotals()" style="width:62px;padding:5px 7px;background:#161619;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:#f0f0f2;font-size:12px;outline:none;text-align:center;">
-      <span style="font-size:11px;color:#55556a;min-width:22px;">${ing.unit}</span>
-      <span style="font-size:11px;color:#fb923c;min-width:38px;text-align:right;" id="fing-k-${idx}">${ing.kcal}k</span>
-    </div>`).join('');
+  list.innerHTML=_freeIng.map((ing,idx)=>{
+    const hasMatch=ing.invMatch&&ing.invMatch.qty>0;
+    const deductQty=hasMatch?Math.min(ing.qty,ing.invMatch.qty):0;
+    return`<div style="border-top:0.5px solid rgba(255,255,255,.06);padding:5px 0;">
+      <div style="display:flex;align-items:center;gap:7px;">
+        <span style="flex:1;font-size:12px;color:#9898a8;">${ing.name}</span>
+        <input type="number" id="fing-${idx}" value="${ing.qty}" min="0" oninput="updateFreeTotals()" style="width:62px;padding:4px 6px;background:#161619;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:#f0f0f2;font-size:12px;outline:none;text-align:center;">
+        <span style="font-size:11px;color:#55556a;min-width:20px;">${ing.unit}</span>
+        <span style="font-size:11px;color:#fb923c;min-width:35px;text-align:right;" id="fing-k-${idx}">${ing.kcal}k</span>
+      </div>
+      ${hasMatch?`<div style="display:flex;align-items:center;gap:6px;margin-top:3px;padding-left:2px;">
+        <input type="checkbox" id="fdeduct-${idx}" checked style="accent-color:#4ade80;cursor:pointer;flex-shrink:0;">
+        <span style="font-size:11px;color:#4ade80;">Retirer du stock — ${ing.invMatch.name}</span>
+        <input type="number" id="fdeduct-qty-${idx}" value="${deductQty}" min="0" max="${ing.invMatch.qty}" style="width:52px;padding:3px 5px;background:#0f0f11;border:0.5px solid rgba(74,222,128,.3);border-radius:5px;color:#4ade80;font-size:11px;outline:none;text-align:center;">
+        <span style="font-size:10px;color:#55556a;">${ing.invMatch.unit} (${ing.invMatch.qty} dispo)</span>
+      </div>`:''}
+    </div>`;
+  }).join('');
 }
 
 function updateFreeTotals(){
@@ -1175,7 +1206,7 @@ function updateFreeTotals(){
 }
 
 function fillFreeReview(name,ingredients){
-  _freeIng=ingredients.map(i=>({...i}));
+  _freeIng=ingredients.map(i=>({...i,invMatch:matchIngToInventory(i.name)}));
   document.getElementById('free-name').value=name||'Repas';
   renderFreeIngredients();
   updateFreeTotals();
@@ -1249,6 +1280,22 @@ function confirmFreeEntry(){
   RCP.push({id,slots:[],name,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip,steps:[],used:[],extras:[]});
   if(!S.dayMeals[S.today])S.dayMeals[S.today]=[];
   S.dayMeals[S.today].push({rid:id,mult:1,dessert:null,customDessert:null});
+  // 1. Déductions auto-matchées par l'IA
+  _freeIng.forEach((ing,idx)=>{
+    if(!ing.invMatch)return;
+    const cb=document.getElementById('fdeduct-'+idx);
+    const qEl=document.getElementById('fdeduct-qty-'+idx);
+    if(cb&&cb.checked&&qEl){
+      const q=parseFloat(qEl.value)||0;
+      if(q>0){
+        Object.values(S.inv).forEach(arr=>{
+          const it=arr.find(i=>i.id===ing.invMatch.id);
+          if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-q);
+        });
+      }
+    }
+  });
+  // 2. Déductions manuelles supplémentaires
   if(document.getElementById('free-use-inv').checked){
     Object.values(S.inv).flat().forEach(it=>{
       const cb=document.getElementById('icb-'+it.id);
