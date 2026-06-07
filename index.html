@@ -346,7 +346,7 @@ function handlePhotoSelected(input){
       document.getElementById('photo-result').style.display='block';
     }catch(err){
       document.getElementById('photo-status').textContent=
-        err.message==='NO_KEY'?'⚠ Configure ta clé API (bouton ⚙)':'⚠ Erreur d'analyse — réessaie';
+        err.message==='NO_KEY'?'⚠ Configure ta clé API (bouton ⚙)':"⚠ Erreur d'analyse — réessaie";
     }
   };
   reader.readAsDataURL(file);
