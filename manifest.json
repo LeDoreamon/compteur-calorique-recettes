@@ -1,0 +1,30 @@
+{
+  "name": "Compteur calorique & recettes",
+  "short_name": "Macros",
+  "description": "Tracker de recettes et macros pour la sèche — Liam",
+  "start_url": "/compteur-calorique-recettes/",
+  "scope": "/compteur-calorique-recettes/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#0f0f11",
+  "theme_color": "#0f0f11",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": [
+    "health",
+    "food"
+  ],
+  "lang": "fr"
+}
