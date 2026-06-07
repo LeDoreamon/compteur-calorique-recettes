@@ -497,11 +497,57 @@ function getDlcStatus(dlc){
   if(d<15)return{label:d+'j',color:'var(--orange)',bg:'var(--orange-bg)'};
   return{label:d+'j',color:'var(--text3)',bg:'transparent'};
 }
+
+// ─── TABLE MACROS POUR 100g (confirm cook recalculation) ─────────────────────
+const MACROS100={
+  riz:{kcal:350,prot:7,gluc:78,lip:1},
+  poulet:{kcal:110,prot:22,gluc:0,lip:2.5},
+  oeufs:{kcal:155,prot:13,gluc:1,lip:11},
+  jambon_blanc:{kcal:107,prot:18,gluc:2,lip:3},
+  jambon_poulet:{kcal:100,prot:17,gluc:2,lip:3},
+  jambon_all:{kcal:105,prot:16,gluc:2,lip:4},
+  bacon:{kcal:400,prot:25,gluc:0,lip:34},
+  boeuf_hache:{kcal:147,prot:20,gluc:0,lip:7},
+  steaks:{kcal:147,prot:20,gluc:0,lip:7},
+  fromage_rape:{kcal:380,prot:25,gluc:1,lip:30},
+  creme_fraiche:{kcal:120,prot:2.5,gluc:4,lip:11},
+  creme_liq:{kcal:90,prot:2,gluc:4,lip:8},
+  pates_completes:{kcal:340,prot:14,gluc:62,lip:3},
+  pates_blanches:{kcal:350,prot:12,gluc:72,lip:1.5},
+  pates_proteinees:{kcal:340,prot:22,gluc:45,lip:5},
+  pates_pesto:{kcal:250,prot:10,gluc:35,lip:8},
+  pates_ricotta:{kcal:230,prot:11,gluc:30,lip:7},
+  tomates_cerises:{kcal:18,prot:0.9,gluc:3.5,lip:0.2},
+  fb_nature:{kcal:58,prot:8,gluc:4,lip:0.7},
+  fb_vanille:{kcal:50,prot:5,gluc:7,lip:0.5},
+  oignons:{kcal:40,prot:1.1,gluc:9,lip:0.1},
+  avocats:{kcal:160,prot:2,gluc:6,lip:15},
+  soja:{kcal:55,prot:5,gluc:7,lip:0},
+  lait_coco:{kcal:200,prot:2,gluc:3,lip:21},
+  frites:{kcal:150,prot:3,gluc:22,lip:5},
+  flocons:{kcal:390,prot:13,gluc:68,lip:7},
+  whey:{kcal:380,prot:80,gluc:7,lip:1},
+  wraps:{kcal:300,prot:8,gluc:48,lip:8},
+  thon:{kcal:110,prot:25,gluc:0,lip:0.8},
+  cabillaud:{kcal:190,prot:14,gluc:14,lip:8},
+  mozzarella:{kcal:280,prot:18,gluc:2,lip:22},
+  amandes:{kcal:580,prot:21,gluc:22,lip:50},
+  bouillon_poulet:{kcal:20,prot:1,gluc:3,lip:0.5},
+  vinaigre_riz:{kcal:45,prot:0,gluc:10,lip:0},
+  pommes:{kcal:52,prot:0.3,gluc:14,lip:0.2},
+  compotes:{kcal:50,prot:0,gluc:12,lip:0},
+  sauce_tomate:{kcal:35,prot:1.5,gluc:7,lip:0.3},
+  chili:{kcal:90,prot:5,gluc:12,lip:2},
+  st_moret:{kcal:155,prot:8,gluc:6,lip:11},
+  yaourts:{kcal:52,prot:3.5,gluc:9,lip:0},
+};
+function getM100(id){return MACROS100[id]||null;}
+// ─────────────────────────────────────────────────────────────────────────────
 // ─── CONFIRM COOK ────────────────────────
 let _cc={rid:null,mult:1,day:null,ings:[]};
 function openConfirmCook(rid,mult,day){
   const r=RCP.find(x=>x.id===rid);if(!r)return;
-  _cc={rid,mult,day,ings:(r.used||[]).map(u=>{const it=findItem(u.id);return{id:u.id,name:it?it.name:u.id,qty:u.qty*mult,unit:it?it.unit:'',m100:it&&it.macros100?it.macros100:null};})};
+  _cc={rid,mult,day,ings:(r.used||[]).map(u=>{const it=findItem(u.id);const m=getM100(u.id);return{id:u.id,name:it?it.name:u.id,qty:u.qty*mult,unit:it?it.unit:'',m100:m};})};
   document.getElementById('cc-title').textContent=(mult===2?'\u00d72 \u2014 ':'')+r.name;
   renderCCIngs();document.getElementById('cc-overlay').style.display='flex';
 }
@@ -566,8 +612,14 @@ function _applyState(d){
   if(!d)return;
   if(d.inv)S.inv=d.inv;
   if(d.dayMeals){
-    S.dayMeals={...MEALS_DEFAULT};
-    Object.keys(d.dayMeals).forEach(k=>{S.dayMeals[k]=d.dayMeals[k];});
+    // MEALS_DEFAULT = source de vérité pour les repas passés codés en dur
+    // Firebase ajoute uniquement les repas supplémentaires non présents dans les defaults
+    S.dayMeals=JSON.parse(JSON.stringify(MEALS_DEFAULT));
+    Object.keys(d.dayMeals).forEach(day=>{
+      const defRids=new Set((MEALS_DEFAULT[day]||[]).map(m=>m.rid));
+      const extra=(d.dayMeals[day]||[]).filter(m=>!defRids.has(m.rid));
+      if(extra.length) S.dayMeals[day]=[...(MEALS_DEFAULT[day]||[]),...extra];
+    });
   }
 }
 
@@ -577,6 +629,7 @@ async function saveState(){
   try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
   // 2. Firebase (sync cross-device)
   try{
+    // Try profile path first, then migrate from old shared path if empty
     const r=await fetch(`${FB}/${ACTIVE_PROFILE}/state.json`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
@@ -609,7 +662,7 @@ async function loadState(){
   }catch(e){}
   // Fallback localStorage si Firebase injoignable
   try{
-    const d=JSON.parse(localStorage.getItem('frigo_state')||'null');
+    const d=JSON.parse(localStorage.getItem(ACTIVE_PROFILE+'_st')||localStorage.getItem('frigo_state')||'null');
     _applyState(d);
   }catch(e){}
   _syncStatus='offline';
