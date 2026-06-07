@@ -393,7 +393,7 @@ function _applyState(d){
 }
 
 async function saveState(){
-  const payload=JSON.stringify({dayMeals:S.dayMeals,inv:S.inv});
+  const payload=JSON.stringify({dayMeals:S.dayMeals,inv:S.inv,groqKey:localStorage.getItem('anthropic_key')||''});
   // 1. localStorage immédiat (fallback offline)
   try{localStorage.setItem('frigo_state',payload);}catch(e){}
   // 2. Firebase (sync cross-device)
@@ -418,6 +418,10 @@ async function loadState(){
       const d=await r.json();
       if(d&&(d.inv||d.dayMeals)){
         _applyState(d);
+        // Restaurer la clé Groq sur ce nouvel appareil
+        if(d.groqKey&&!localStorage.getItem('anthropic_key')){
+          localStorage.setItem('anthropic_key',d.groqKey);
+        }
         try{localStorage.setItem('frigo_state',JSON.stringify(d));}catch(e){}
         _syncStatus='ok';
         return;
