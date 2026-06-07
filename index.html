@@ -55,9 +55,9 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
 <!-- Settings modal -->
 <div id="set-overlay" onclick="if(event.target===this)closeSettings()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:center;justify-content:center;padding:16px;">
   <div style="background:#161619;border:0.5px solid rgba(255,255,255,.1);border-radius:14px;padding:24px;width:100%;max-width:380px;">
-    <div style="font-size:16px;font-weight:600;color:#f0f0f2;margin-bottom:6px;">⚙ Clé API Anthropic</div>
-    <div style="font-size:12px;color:#9898a8;margin-bottom:16px;">Nécessaire pour les features IA. Crée une clé gratuite sur <a href="https://console.anthropic.com" target="_blank" style="color:#60a5fa;">console.anthropic.com</a></div>
-    <input type="password" id="api-key-input" placeholder="sk-ant-api03-..." style="width:100%;padding:10px 12px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#f0f0f2;font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
+    <div style="font-size:16px;font-weight:600;color:#f0f0f2;margin-bottom:6px;">⚙ Clé API Google Gemini</div>
+    <div style="font-size:12px;color:#9898a8;margin-bottom:16px;">Gratuit — 1 500 requêtes/jour sans carte bancaire. Crée ta clé sur <a href="https://aistudio.google.com/apikey" target="_blank" style="color:#60a5fa;">aistudio.google.com/apikey</a></div>
+    <input type="password" id="api-key-input" placeholder="AIzaSy..." style="width:100%;padding:10px 12px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#f0f0f2;font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
     <div style="display:flex;gap:8px;">
       <button onclick="saveApiKey()" style="flex:1;padding:10px;background:#4ade80;border:none;border-radius:8px;color:#0f0f11;font-size:13px;font-weight:600;cursor:pointer;">Enregistrer</button>
       <button onclick="closeSettings()" style="padding:10px 14px;background:transparent;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#9898a8;font-size:13px;cursor:pointer;">Annuler</button>
@@ -414,32 +414,39 @@ function clearApiKey(){
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── ANTHROPIC HELPER (avec clé utilisateur) ─────────────────────────────────
+// callAI — Google Gemini 2.0 Flash (gratuit, 1500 req/jour)
 async function callAI(messages,maxTokens=300,system=null){
   const key=getApiKey();
   if(!key){openSettings();throw new Error('NO_KEY');}
-  const body={model:'claude-haiku-4-5-20251001',max_tokens:maxTokens,messages};
-  if(system)body.system=system;
+  // Construire les parts Gemini depuis le dernier message (appels single-turn)
+  const lastMsg=messages[messages.length-1];
+  let parts=[];
+  if(typeof lastMsg.content==='string'){
+    parts=[{text:lastMsg.content}];
+  }else if(Array.isArray(lastMsg.content)){
+    parts=lastMsg.content.map(p=>{
+      if(p.type==='text')return{text:p.text};
+      if(p.type==='image')return{inlineData:{mimeType:p.source.media_type,data:p.source.data}};
+      return null;
+    }).filter(Boolean);
+  }
+  const body={
+    contents:[{parts}],
+    generationConfig:{maxOutputTokens:maxTokens,temperature:0.2}
+  };
+  if(system)body.systemInstruction={parts:[{text:system}]};
   let resp,data;
   try{
-    resp=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'x-api-key':key,
-        'anthropic-version':'2023-06-01',
-        'anthropic-dangerous-direct-browser-access':'true'
-      },
-      body:JSON.stringify(body)
-    });
+    resp=await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}
+    );
     data=await resp.json();
-  }catch(netErr){
-    throw new Error('NETWORK:'+netErr.message);
-  }
-  if(data.error){
-    const msg=data.error.message||JSON.stringify(data.error);
-    throw new Error('API:'+msg);
-  }
-  return data;
+  }catch(netErr){throw new Error('NETWORK:'+netErr.message);}
+  if(data.error)throw new Error('API:'+(data.error.message||JSON.stringify(data.error)));
+  // Retourner au format compatible avec le reste du code
+  const text=data.candidates?.[0]?.content?.parts?.[0]?.text||'';
+  return{content:[{type:'text',text}]};
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -679,7 +686,7 @@ function render(){
       <button data-action="main-tab" data-val="inventory" style="background:none;border:none;border-bottom:${S.mainTab==='inventory'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='inventory'?500:400};color:${S.mainTab==='inventory'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">≡ Inventaire</button>
     </div>
     ${S.mainTab==='recipes'?`
-      ${!getApiKey()?`<div style="background:rgba(251,146,60,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:#0f0f11;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
+      ${!getApiKey()?`<div style="background:rgba(251,146,60,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Gemini non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:#0f0f11;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
       ${renderNightModal()}
       <div class="meal-tabs">${tabBtns}</div>
