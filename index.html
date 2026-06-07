@@ -637,7 +637,48 @@ function _syncBadge(){
   return '<span style="font-size:10px;color:var(--text3);">💾 auto</span>';
 }
 // ─────────────────────────────────────────────────────────────────────────────
-// ─────────────────────────────────────────────────────────────────────────────
+
+async function saveState(){
+  const payload=JSON.stringify({
+    dayMeals:S.dayMeals,
+    inv:S.inv,
+    groqKey:localStorage.getItem('anthropic_key')||'',
+    _profile:ACTIVE_PROFILE
+  });
+  try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
+  try{
+    const r=await fetch(`${FB}/${ACTIVE_PROFILE}/state.json`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:payload
+    });
+    _syncStatus=r.ok?'ok':'offline';
+  }catch(e){_syncStatus='offline';}
+  const badge=document.getElementById('sync-badge');
+  if(badge)badge.innerHTML=_syncBadge();
+}
+
+async function loadState(){
+  try{
+    const r=await fetch(`${FB}/${ACTIVE_PROFILE}/state.json`);
+    if(r.ok){
+      const d=await r.json();
+      if(d&&(d.inv||d.dayMeals)){
+        _applyState(d);
+        try{localStorage.setItem(ACTIVE_PROFILE+'_st',JSON.stringify(d));}catch(e){}
+        _syncStatus='ok';
+        return;
+      }
+    }
+  }catch(e){}
+  try{
+    const d=JSON.parse(localStorage.getItem(ACTIVE_PROFILE+'_st')||localStorage.getItem('frigo_state')||'null');
+    _applyState(d);
+  }catch(e){}
+  _syncStatus='offline';
+}
+
+document.addEventListener('visibilitychange',()=>{if(document.hidden)saveState();});
 
 // ─── API KEY ──────────────────────────────────────────────────────────────────
 function getApiKey(){return localStorage.getItem('anthropic_key')||'';}
