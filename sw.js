@@ -1,40 +1,32 @@
-const CACHE = 'macros-v3';
-const ASSETS = ['./', './index.html', './manifest.json', './icon.svg'];
+// v4 — network-first pour forcer la mise à jour
+const CACHE = 'macros-v4';
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)));
-  self.skipWaiting(); // Active immédiatement sans attendre la fermeture de l'app
+  self.skipWaiting();
 });
 
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.matchAll({type: 'window', includeUncontrolled: true}))
-      .then(clients => {
-        // Force tous les onglets/fenêtres à recharger pour prendre la nouvelle version
-        clients.forEach(client => {
-          if (client.url && 'navigate' in client) client.navigate(client.url);
-        });
-      })
+      .then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.clients.matchAll({type:'window', includeUncontrolled:true}))
+      .then(clients => clients.forEach(c => c.navigate && c.navigate(c.url)))
   );
   self.clients.claim();
 });
 
 self.addEventListener('fetch', e => {
-  if (e.request.url.includes('api.groq.com')) return;
-  // Network-first pour index.html (toujours version fraîche)
-  if (e.request.mode === 'navigate' || e.request.url.includes('index.html')) {
-    e.respondWith(
-      fetch(e.request)
-        .then(r => {
-          const clone = r.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-          return r;
-        })
-        .catch(() => caches.match(e.request))
-    );
-    return;
-  }
-  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+  // Toujours réseau en priorité, cache uniquement si offline
+  if (e.request.url.includes('api.groq.com') ||
+      e.request.url.includes('api.anthropic.com') ||
+      e.request.url.includes('firebasedatabase.app')) return;
+  e.respondWith(
+    fetch(e.request)
+      .then(r => {
+        const clone = r.clone();
+        caches.open(CACHE).then(c => c.put(e.request, clone));
+        return r;
+      })
+      .catch(() => caches.match(e.request))
+  );
 });
