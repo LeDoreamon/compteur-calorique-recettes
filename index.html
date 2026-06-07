@@ -379,18 +379,65 @@ const S={
 };
 const ROOT=document.getElementById('root');
 
-// ─── LOCALSTORAGE ────────────────────────────────────────────────────────────
-function saveState(){
-  try{localStorage.setItem('frigo_state',JSON.stringify({dayMeals:S.dayMeals,inv:S.inv}));}catch(e){}
+// ─── SYNC FIREBASE + LOCALSTORAGE ───────────────────────────────────────────
+const FB = 'https://bouffe-frigo-default-rtdb.europe-west1.firebasedatabase.app';
+let _syncStatus = ''; // '' | 'ok' | 'offline'
+
+function _applyState(d){
+  if(!d)return;
+  if(d.inv)S.inv=d.inv;
+  if(d.dayMeals){
+    S.dayMeals={...MEALS_DEFAULT};
+    Object.keys(d.dayMeals).forEach(k=>{S.dayMeals[k]=d.dayMeals[k];});
+  }
 }
-function loadState(){
+
+async function saveState(){
+  const payload=JSON.stringify({dayMeals:S.dayMeals,inv:S.inv});
+  // 1. localStorage immédiat (fallback offline)
+  try{localStorage.setItem('frigo_state',payload);}catch(e){}
+  // 2. Firebase (sync cross-device)
+  try{
+    const r=await fetch(`${FB}/state.json`,{
+      method:'PUT',
+      headers:{'Content-Type':'application/json'},
+      body:payload
+    });
+    _syncStatus=r.ok?'ok':'offline';
+  }catch(e){_syncStatus='offline';}
+  // Mettre à jour le badge sans full render
+  const el=document.getElementById('sync-badge');
+  if(el)el.innerHTML=_syncBadge();
+}
+
+async function loadState(){
+  // Firebase en priorité (données les plus récentes, cross-device)
+  try{
+    const r=await fetch(`${FB}/state.json`);
+    if(r.ok){
+      const d=await r.json();
+      if(d&&(d.inv||d.dayMeals)){
+        _applyState(d);
+        try{localStorage.setItem('frigo_state',JSON.stringify(d));}catch(e){}
+        _syncStatus='ok';
+        return;
+      }
+    }
+  }catch(e){}
+  // Fallback localStorage si Firebase injoignable
   try{
     const d=JSON.parse(localStorage.getItem('frigo_state')||'null');
-    if(!d)return;
-    if(d.inv)S.inv=d.inv;
-    if(d.dayMeals){S.dayMeals={...MEALS_DEFAULT};Object.keys(d.dayMeals).forEach(k=>{S.dayMeals[k]=d.dayMeals[k];});}
+    _applyState(d);
   }catch(e){}
+  _syncStatus='offline';
 }
+
+function _syncBadge(){
+  if(_syncStatus==='ok') return '<span style="font-size:10px;color:var(--green);">☁ sync</span>';
+  if(_syncStatus==='offline') return '<span style="font-size:10px;color:var(--orange);">⚠ hors ligne</span>';
+  return '<span style="font-size:10px;color:var(--text3);">💾 auto</span>';
+}
+// ─────────────────────────────────────────────────────────────────────────────
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ─── API KEY ──────────────────────────────────────────────────────────────────
@@ -643,7 +690,7 @@ function renderMacros(){
     ${meals.length>0?`<div style="display:grid;grid-template-columns:65px 1fr 75px;align-items:center;gap:5px;row-gap:6px;">${macroBar('Calories',m.kcal,TARGETS.kcal,'kcal','--orange')}${macroBar('Protéines',m.prot,TARGETS.prot,'g','--green')}${macroBar('Glucides',m.gluc,TARGETS.gluc,'g','--blue')}${macroBar('Lipides',m.lip,TARGETS.lip,'g','--text2')}</div>`:'<div style="text-align:center;padding:12px 0;font-size:13px;color:var(--text3);">Aucun repas enregistré</div>'}
     ${list?`<div style="margin-top:8px;">${list}</div>`:''}
     ${rem}
-    <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;"><span style="font-size:10px;color:var(--text3);">💾 auto · J−7 à J+1</span></div>
+    <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:10px;color:var(--text3);">J−7 à J+1</span></div>
   </div>`;
 }
 
