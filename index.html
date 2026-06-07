@@ -610,72 +610,27 @@ let _syncStatus = ''; // '' | 'ok' | 'offline'
 
 function _applyState(d){
   if(!d)return;
-  // Sécurité profil : ignorer les données d'inventaire si le profil est Maureen
-  // et que l'inventaire chargé est celui de Liam (contient plus de 5 items)
+  // Si le tag profil existe et ne correspond pas → données de l'autre profil, ignorer
+  if(d._profile && d._profile!==ACTIVE_PROFILE)return;
+  // Inventaire
   if(d.inv){
-    if(ACTIVE_PROFILE==='maureen'&&Object.values(d.inv).flat().length>5){
-      // Firebase a des données de Liam sur le chemin Maureen — ignorer l'inventaire
-    } else {
-      S.inv=d.inv;
-    }
+    // Heuristique : si Maureen charge un inventaire avec >5 items sans tag profil, c'est celui de Liam
+    const n=Object.values(d.inv).flat().length;
+    if(ACTIVE_PROFILE==='maureen'&&n>5&&!d._profile){/* contamination Liam → garder INV_EMPTY */}
+    else S.inv=d.inv;
   }
+  // Repas : Firebase est source de vérité pour les jours qu'il contient
+  // Les jours absents de Firebase utilisent MEALS_DEFAULT (pour Liam) ou {} (pour Maureen)
   if(d.dayMeals){
-    // MEALS_DEFAULT = source de vérité pour les repas passés codés en dur
-    // Firebase ajoute uniquement les repas supplémentaires non présents dans les defaults
-    S.dayMeals=JSON.parse(JSON.stringify(MEALS_DEFAULT));
+    S.dayMeals=ACTIVE_PROFILE==='maureen'?{}:JSON.parse(JSON.stringify(MEALS_DEFAULT));
     Object.keys(d.dayMeals).forEach(day=>{
-      const defRids=new Set((MEALS_DEFAULT[day]||[]).map(m=>m.rid));
-      const extra=(d.dayMeals[day]||[]).filter(m=>!defRids.has(m.rid));
-      if(extra.length) S.dayMeals[day]=[...(MEALS_DEFAULT[day]||[]),...extra];
+      // Firebase remplace complètement le jour (permet suppression + ajout)
+      S.dayMeals[day]=d.dayMeals[day];
     });
   }
+  // Clé Groq
+  if(d.groqKey&&!localStorage.getItem('anthropic_key'))localStorage.setItem('anthropic_key',d.groqKey);
 }
-
-async function saveState(){
-  const payload=JSON.stringify({dayMeals:S.dayMeals,inv:S.inv,groqKey:localStorage.getItem('anthropic_key')||''});
-  // 1. localStorage immédiat (fallback offline)
-  try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
-  // 2. Firebase (sync cross-device)
-  try{
-    // Try profile path first, then migrate from old shared path if empty
-    const r=await fetch(`${FB}/${ACTIVE_PROFILE}/state.json`,{
-      method:'PUT',
-      headers:{'Content-Type':'application/json'},
-      body:payload
-    });
-    _syncStatus=r.ok?'ok':'offline';
-  }catch(e){_syncStatus='offline';}
-  // Mettre à jour le badge sans full render
-  const el=document.getElementById('sync-badge');
-  if(el)el.innerHTML=_syncBadge();
-}
-
-async function loadState(){
-  // Firebase en priorité (données les plus récentes, cross-device)
-  try{
-    const r=await fetch(`${FB}/state.json`);
-    if(r.ok){
-      const d=await r.json();
-      if(d&&(d.inv||d.dayMeals)){
-        _applyState(d);
-        // Restaurer la clé Groq sur ce nouvel appareil
-        if(d.groqKey&&!localStorage.getItem('anthropic_key')){
-          localStorage.setItem('anthropic_key',d.groqKey);
-        }
-        try{localStorage.setItem(ACTIVE_PROFILE+'_st',JSON.stringify(d));}catch(e){}
-        _syncStatus='ok';
-        return;
-      }
-    }
-  }catch(e){}
-  // Fallback localStorage si Firebase injoignable
-  try{
-    const d=JSON.parse(localStorage.getItem(ACTIVE_PROFILE+'_st')||localStorage.getItem('frigo_state')||'null');
-    _applyState(d);
-  }catch(e){}
-  _syncStatus='offline';
-}
-
 function _syncBadge(){
   if(_syncStatus==='ok') return '<span style="font-size:10px;color:var(--green);">☁ sync</span>';
   if(_syncStatus==='offline') return '<span style="font-size:10px;color:var(--orange);">⚠ hors ligne</span>';
