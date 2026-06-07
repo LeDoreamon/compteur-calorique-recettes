@@ -345,6 +345,87 @@ const RCP=[
           "Assembler : bouillon + ramen + poulet + oeuf + sésame."],
    used:[{id:'ramen',qty:1},{id:'poulet',qty:150},{id:'oeufs',qty:1},{id:'oignons',qty:50}],
    extras:[{n:'Sésame doré',q:'pincée',opt:true},{n:'Sauce soja',q:'quelques gouttes',opt:true}]},
+
+  // ── Nouvelles recettes ──────────────────────────────────────────────────
+  // PETIT-DEJ
+  {id:'pancakes_avoine',slots:['breakfast'],name:'Pancakes avoine & whey',urgent:0,ur:null,time:12,kcal:570,prot:43,gluc:61,lip:18,
+   steps:["Mixer 80g de flocons, 2 oeufs, 20g de whey et 100mL de lait jusqu'à obtenir une pâte épaisse.",
+          "Laisser reposer 3 min.",
+          "Cuire 3 min de chaque côté dans une poêle avec un peu d'huile.",
+          "Servir avec un filet de miel ou une compote (optionnel)."],
+   used:[{id:'flocons',qty:80},{id:'oeufs',qty:2},{id:'whey',qty:20}],
+   extras:[{n:'Lait',q:'100mL',opt:false},{n:'Miel',q:'',opt:true}]},
+
+  {id:'bowl_fb_vanille',slots:['breakfast','snack'],name:'Bowl fromage blanc vanille, compote & amandes',urgent:1,ur:'FB vanille',time:3,kcal:320,prot:18,gluc:36,lip:10,
+   steps:["Verser 2 pots de fromage blanc vanille dans un bol.",
+          "Ajouter 1 compote.",
+          "Parsemer 20g d'amandes."],
+   used:[{id:'fb_vanille',qty:2},{id:'compotes',qty:1},{id:'amandes',qty:20}],
+   extras:[]},
+
+  {id:'shaker_pomme',slots:['breakfast','snack'],name:'Shaker whey & pomme',urgent:0,ur:null,time:2,kcal:190,prot:24,gluc:20,lip:0,
+   steps:["Mettre 30g de whey dans un shaker avec 350mL d'eau froide. Agiter.",
+          "Déguster avec une pomme."],
+   used:[{id:'whey',qty:30},{id:'pommes',qty:1}],
+   extras:[]},
+
+  // LUNCH / SNACK
+  {id:'wrap_thon_avocat',slots:['lunch'],name:'Wrap thon & avocat',urgent:1,ur:'Avocats',time:8,kcal:490,prot:32,gluc:33,lip:27,
+   steps:["Égoutter le thon, écraser avec une fourchette.",
+          "Couper l'avocat en tranches.",
+          "Étaler thon + avocat + tomates cerises fraîches sur le wrap.",
+          "Assaisonner vinaigre de riz + sel + poivre. Rouler."],
+   used:[{id:'wraps',qty:1},{id:'thon',qty:1},{id:'avocats',qty:1},{id:'tomates_cerises',qty:60}],
+   extras:[{n:'Vinaigre de riz',q:'15mL',opt:true}]},
+
+  {id:'wrap_st_moret',slots:['lunch','snack'],name:'Wrap St Morêt, jambon & tomates',urgent:1,ur:'St Morêt',time:4,kcal:295,prot:26,gluc:28,lip:8,
+   steps:["Étaler 60g de St Morêt léger sur le wrap.",
+          "Ajouter 60g de jambon blanc en lamelles.",
+          "Tomates cerises fraîches coupées en deux. Rouler."],
+   used:[{id:'wraps',qty:1},{id:'st_moret',qty:60},{id:'jambon_blanc',qty:60},{id:'tomates_cerises',qty:60}],
+   extras:[]},
+
+  // LUNCH / DINNER
+  {id:'poulet_wok_soja',slots:['lunch','dinner'],name:'Poulet wok soja & sésame',urgent:0,ur:null,time:18,kcal:705,prot:54,gluc:86,lip:15,
+   steps:["Cuire 100g de riz sec.",
+          "Poêler 200g de poulet en lamelles à feu vif + 100g d'oignons dans 10mL d'huile.",
+          "Ajouter 40mL sauce soja + ail + gingembre en poudre. Sauter 2 min.",
+          "Servir sur le riz, parsemer de sésame doré."],
+   used:[{id:'poulet',qty:200},{id:'riz',qty:100},{id:'oignons',qty:100},{id:'soja',qty:40}],
+   extras:[{n:'Sésame doré',q:'pincée',opt:true},{n:"Huile d'olive",q:'10mL',opt:false}]},
+
+  {id:'pates_carbonara',slots:['lunch','dinner'],name:'Pâtes à la carbonara légère',urgent:0,ur:null,time:18,kcal:740,prot:42,gluc:58,lip:37,
+   steps:["Cuire 80g de pâtes blanches al dente. Garder 50mL d'eau de cuisson.",
+          "Faire revenir 60g de bacon à sec jusqu'à croustillant.",
+          "Battre 2 oeufs + 20g fromage râpé + poivre.",
+          "Hors feu : mélanger pâtes égouttées + oeuf + bacon + eau de cuisson en remuant vite."],
+   used:[{id:'pates_blanches',qty:80},{id:'bacon',qty:60},{id:'oeufs',qty:2},{id:'fromage_rape',qty:20}],
+   extras:[{n:'Poivre',q:'généreusement',opt:false}]},
+
+  {id:'pates_creme_saumon',slots:['dinner'],name:'Pâtes crème fraîche & saumon',urgent:1,ur:'Saumon frais',time:20,kcal:790,prot:46,gluc:67,lip:36,
+   steps:["Cuire 100g de pâtes complètes.",
+          "Poêler 140g de saumon 3-4 min de chaque côté. Émietter.",
+          "Dans la même poêle : 100g crème fraîche légère + épices italiennes + poivre.",
+          "Mélanger pâtes égouttées + sauce + saumon émietté + 20g fromage râpé."],
+   used:[{id:'saumon',qty:140},{id:'pates_completes',qty:100},{id:'creme_fraiche',qty:100},{id:'fromage_rape',qty:20}],
+   extras:[{n:'Épices italiennes',q:'',opt:false}]},
+
+  {id:'steaks_haches_riz',slots:['lunch','dinner'],name:'Steaks hachés poêlés & riz',urgent:0,ur:null,time:18,kcal:580,prot:47,gluc:80,lip:11,
+   steps:["Cuire 100g de riz sec.",
+          "Assaisonner 2 steaks hachés (200g) : sel, poivre, paprika.",
+          "Poêler 3-4 min de chaque côté à feu moyen-vif.",
+          "Servir sur le riz avec les oignons poêlés."],
+   used:[{id:'boeuf_hache',qty:200},{id:'riz',qty:100},{id:'oignons',qty:50}],
+   extras:[{n:'Paprika, sel, poivre',q:'',opt:false}]},
+
+  {id:'pates_prot_creme',slots:['lunch','dinner'],name:'Pâtes protéinées, crème & jambon de poulet',urgent:1,ur:'Jambon de poulet',time:14,kcal:550,prot:36,gluc:52,lip:17,
+   steps:["Cuire 100g de pâtes protéinées.",
+          "Chauffer 80g de crème fraîche légère + épices italiennes + poivre.",
+          "Couper 80g de jambon de poulet en lamelles.",
+          "Mélanger pâtes + sauce + jambon. Servir."],
+   used:[{id:'pates_proteinees',qty:100},{id:'creme_fraiche',qty:80},{id:'jambon_poulet',qty:80}],
+   extras:[{n:'Épices italiennes',q:'',opt:false}]},
+  // ────────────────────────────────────────────────────────────────────────
   // Repas masqués (slots:[])
   {id:'poke_bowl',slots:[],name:'Poké bowl poulet karaage',kcal:870,prot:39,gluc:115,lip:26,steps:[],used:[],extras:[]},
   {id:'_nuggets_04',slots:[],name:'Nuggets au four (400g)',kcal:860,prot:60,gluc:80,lip:36,steps:[],used:[],extras:[]},
