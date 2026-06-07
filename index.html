@@ -460,10 +460,14 @@ function handlePhotoSelected(input){
     try{
       const data=await callAI([{role:'user',content:[
         {type:'image',source:{type:'base64',media_type:mime,data:b64}},
-        {type:'text',text:'Analyse ce repas et estime les macros. Sois légèrement pessimiste (portions généreuses). Réponds UNIQUEMENT avec un JSON valide sans markdown: {"name": string (description courte en français, max 60 chars), "kcal": integer, "prot": integer, "gluc": integer, "lip": integer}'}
+        {type:'text',text:'Analyse cette image. Si ce n\'est PAS un aliment ou un repas (objet, meuble, animal, personne, paysage, etc.), réponds UNIQUEMENT: {"error":"non_alimentaire"}. Sinon, estime les macros (légèrement pessimiste) et réponds UNIQUEMENT avec un JSON sans markdown: {"name":string (description courte en français, max 60 chars),"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}'}
       ]}],500);
       const raw=data.content.map(i=>i.text||'').join('');
       const p=JSON.parse(raw.replace(/```json|```/g,'').trim());
+      if(p.error){
+        document.getElementById('photo-status').textContent='⚠ Ce n\u2019est pas un aliment — réessaie avec une photo de repas.';
+        return;
+      }
       document.getElementById('photo-name').value=p.name||'Repas photo';
       document.getElementById('photo-kcal').value=Math.round(p.kcal)||0;
       document.getElementById('photo-prot').value=Math.round(p.prot)||0;
@@ -936,9 +940,10 @@ async function analyzeFreeText(){
   if(!txt)return;
   showFreeStep('loading');
   try{
-    const sys="Tu es nutritionniste. Analyse ce repas décrit et estime les macros. Sois légèrement pessimiste (portions généreuses). Réponds UNIQUEMENT avec un JSON valide sans markdown: {\"name\":string (description courte en français, max 70 chars), \"kcal\":integer, \"prot\":integer, \"gluc\":integer, \"lip\":integer}";
+    const sys="Tu es nutritionniste. Analyse ce repas décrit et estime les macros. Sois légèrement pessimiste. Si le texte ne décrit pas un aliment ou un repas, réponds UNIQUEMENT: {\"error\":\"non_alimentaire\"}. Sinon réponds UNIQUEMENT avec un JSON sans markdown: {\"name\":string (max 70 chars, français),\"kcal\":integer,\"prot\":integer,\"gluc\":integer,\"lip\":integer}";
     const data=await callAI([{role:'user',content:txt}],350,sys);
     const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+    if(p.error){showFreeStep('input');alert("\u26a0\ufe0f Ce n'est pas un repas — décris un aliment.");return;}
     fillFreeReview(p.name,p.kcal,p.prot,p.gluc,p.lip);
     showFreeStep('review');
   }catch(e){
@@ -955,9 +960,10 @@ function handleFreePhoto(input){
     try{
       const data=await callAI([{role:'user',content:[
         {type:'image',source:{type:'base64',media_type:mime,data:b64}},
-        {type:'text',text:"Analyse ce repas. Sois légèrement pessimiste. Réponds UNIQUEMENT avec un JSON sans markdown: {\"name\":string (description courte en français, max 70 chars), \"kcal\":integer, \"prot\":integer, \"gluc\":integer, \"lip\":integer}"}
+        {type:'text',text:"Analyse cette image. Si ce n'est PAS un aliment ou repas (objet, meuble, animal, personne, etc.), réponds UNIQUEMENT: {\"error\":\"non_alimentaire\"}. Sinon, estime les macros (légèrement pessimiste) et réponds UNIQUEMENT avec un JSON sans markdown: {\"name\":string (max 70 chars, français),\"kcal\":integer,\"prot\":integer,\"gluc\":integer,\"lip\":integer}"}
       ]}],500);
       const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+      if(p.error){showFreeStep('input');alert("\u26a0\ufe0f Ce n'est pas un aliment — prends une photo de ton repas.");return;}
       fillFreeReview(p.name,p.kcal,p.prot,p.gluc,p.lip);
       showFreeStep('review');
     }catch(e){
