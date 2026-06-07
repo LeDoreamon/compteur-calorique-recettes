@@ -417,20 +417,28 @@ function clearApiKey(){
 async function callAI(messages,maxTokens=300,system=null){
   const key=getApiKey();
   if(!key){openSettings();throw new Error('NO_KEY');}
-  const body={model:'claude-sonnet-4-20250514',max_tokens:maxTokens,messages};
+  const body={model:'claude-haiku-4-5-20251001',max_tokens:maxTokens,messages};
   if(system)body.system=system;
-  const resp=await fetch('https://api.anthropic.com/v1/messages',{
-    method:'POST',
-    headers:{
-      'Content-Type':'application/json',
-      'x-api-key':key,
-      'anthropic-version':'2023-06-01',
-      'anthropic-dangerous-direct-browser-access':'true'
-    },
-    body:JSON.stringify(body)
-  });
-  const data=await resp.json();
-  if(data.error)throw new Error(data.error.message||'API error');
+  let resp,data;
+  try{
+    resp=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'x-api-key':key,
+        'anthropic-version':'2023-06-01',
+        'anthropic-dangerous-direct-browser-access':'true'
+      },
+      body:JSON.stringify(body)
+    });
+    data=await resp.json();
+  }catch(netErr){
+    throw new Error('NETWORK:'+netErr.message);
+  }
+  if(data.error){
+    const msg=data.error.message||JSON.stringify(data.error);
+    throw new Error('API:'+msg);
+  }
   return data;
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -948,7 +956,10 @@ async function analyzeFreeText(){
     showFreeStep('review');
   }catch(e){
     showFreeStep('input');
-    if(e.message!=='NO_KEY')alert("Erreur d'analyse — verifie ta connexion ou ta cle API");
+    if(e.message!=='NO_KEY'){
+      const detail=e.message.startsWith('API:')?e.message.slice(4):e.message.startsWith('NETWORK:')?'Erreur réseau — vérifie ta connexion':e.message;
+      alert('\u26a0\ufe0f Erreur : '+detail);
+    }
   }
 }
 function handleFreePhoto(input){
@@ -968,7 +979,13 @@ function handleFreePhoto(input){
       showFreeStep('review');
     }catch(e){
       showFreeStep('input');
-      if(e.message!=='NO_KEY')alert("Erreur d'analyse photo");
+      if(e.message!=='NO_KEY'){
+        const detail=e.message.startsWith('API:')?e.message.slice(4):e.message.startsWith('NETWORK:')?'Erreur réseau':e.message;
+        showFreeStep('input');
+        document.getElementById('free-text').value='';
+        document.getElementById('photo-status')||0;
+        alert('\u26a0\ufe0f '+detail);
+      }
     }
   };
   reader.readAsDataURL(file);
