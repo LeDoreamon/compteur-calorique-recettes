@@ -145,6 +145,61 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
     <input type="file" id="addmeal-photo-input" accept="image/*" style="display:none" onchange="handleAddMealPhoto(this)">
   </div>
 </div>
+
+<!-- Free meal entry modal -->
+<div id="free-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center;padding:12px;">
+  <div style="background:#161619;border:0.5px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;">
+    <div style="font-size:15px;font-weight:600;color:#f0f0f2;margin-bottom:14px;">➕ Ajouter un repas libre</div>
+
+    <!-- STEP: input -->
+    <div id="fs-input">
+      <textarea id="free-text" rows="4" placeholder="Décris ce que tu as mangé... ex: 200g de pâtes bolognaise maison avec du fromage râpé et une salade verte" style="width:100%;padding:10px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#f0f0f2;font-size:13px;font-family:inherit;outline:none;resize:none;box-sizing:border-box;"></textarea>
+      <div style="display:flex;gap:8px;margin-top:10px;">
+        <button onclick="analyzeFreeText()" style="flex:1;padding:10px;background:#60a5fa;border:none;border-radius:8px;color:#0f0f11;font-size:13px;font-weight:600;cursor:pointer;">✦ Analyser le texte</button>
+        <button onclick="document.getElementById('free-photo-input').click()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(255,255,255,.15);border-radius:8px;color:#9898a8;font-size:13px;cursor:pointer;">📷 Photo</button>
+        <button onclick="closeFreeOverlay()" style="padding:10px 12px;background:transparent;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#55556a;font-size:13px;cursor:pointer;">✕</button>
+      </div>
+    </div>
+
+    <!-- STEP: loading -->
+    <div id="fs-loading" style="display:none;padding:24px 0;text-align:center;">
+      <div style="font-size:14px;color:#9898a8;">🔍 Analyse en cours…</div>
+    </div>
+
+    <!-- STEP: review -->
+    <div id="fs-review" style="display:none;">
+      <div style="margin-bottom:10px;">
+        <label style="font-size:10px;color:#55556a;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Repas</label>
+        <input id="free-name" type="text" style="width:100%;padding:8px 10px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#f0f0f2;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Kcal</label><input id="free-kcal" type="number" style="width:100%;padding:7px 8px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#fb923c;font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Prot. g</label><input id="free-prot" type="number" style="width:100%;padding:7px 8px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#4ade80;font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Gluc. g</label><input id="free-gluc" type="number" style="width:100%;padding:7px 8px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#60a5fa;font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Lip. g</label><input id="free-lip" type="number" style="width:100%;padding:7px 8px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#9898a8;font-size:13px;outline:none;box-sizing:border-box;"></div>
+      </div>
+
+      <!-- Inventory toggle -->
+      <label style="display:flex;align-items:center;gap:10px;padding:10px;background:#0f0f11;border-radius:8px;cursor:pointer;margin-bottom:10px;">
+        <input type="checkbox" id="free-use-inv" onchange="toggleFreeInv()" style="width:16px;height:16px;accent-color:#4ade80;cursor:pointer;">
+        <span style="font-size:13px;color:#9898a8;">Retirer des ingrédients du stock</span>
+      </label>
+
+      <!-- Inventory selector -->
+      <div id="free-inv-box" style="display:none;margin-bottom:12px;">
+        <input type="text" id="free-inv-search" placeholder="Chercher un ingrédient…" oninput="renderFreeInv()" style="width:100%;padding:7px 10px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#f0f0f2;font-size:12px;font-family:inherit;outline:none;box-sizing:border-box;margin-bottom:6px;">
+        <div id="free-inv-list" style="max-height:180px;overflow-y:auto;border:0.5px solid rgba(255,255,255,.08);border-radius:8px;padding:4px 8px;"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;">
+        <button onclick="confirmFreeEntry()" style="flex:1;padding:10px;background:#4ade80;border:none;border-radius:8px;color:#0f0f11;font-size:13px;font-weight:600;cursor:pointer;">✓ Ajouter au tracker</button>
+        <button onclick="openFreeInput()" style="padding:10px 12px;background:transparent;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#9898a8;font-size:13px;cursor:pointer;">← Retour</button>
+        <button onclick="closeFreeOverlay()" style="padding:10px 12px;background:transparent;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#55556a;font-size:13px;cursor:pointer;">✕</button>
+      </div>
+    </div>
+  </div>
+</div>
+<input type="file" id="free-photo-input" accept="image/*" style="display:none" onchange="handleFreePhoto(this)">
 <div id="root" class="container"><div style="padding:2rem;text-align:center;color:var(--text3);">Chargement...</div></div>
 <script>
 const TARGETS={kcal:2400,prot:160,gluc:220,lip:75};
@@ -271,6 +326,29 @@ const RCP=[
   {id:'pdj_fb_compote',slots:['breakfast','snack'],name:'Fromage blanc, compote & amandes',urgent:0,ur:null,time:2,kcal:310,prot:21,gluc:21,lip:13,steps:["200 g FB 0% + compote + 25 g amandes."],used:[{id:'fb_nature',qty:200},{id:'compotes',qty:1},{id:'amandes',qty:25}],extras:[]},
   {id:'shaker_whey',slots:['breakfast','snack'],name:'Shaker clear whey post-training',urgent:0,ur:null,time:1,kcal:110,prot:24,gluc:2,lip:0,steps:["30 g whey + 400-500 mL eau froide. Agiter."],used:[{id:'whey',qty:30}],extras:[]},
   {id:'shaker_whey_compote',slots:['breakfast','snack'],name:'Shaker whey fruité & compote',urgent:0,ur:null,time:2,kcal:160,prot:24,gluc:14,lip:0,steps:["Compote + 30 g whey + 300 mL eau froide."],used:[{id:'whey',qty:30},{id:'compotes',qty:1}],extras:[]},
+  // Nouvelles recettes
+  {id:'thon_riz_soja',slots:['lunch','dinner'],name:'Bol thon, riz & sauce soja',urgent:0,ur:null,time:12,kcal:560,prot:33,gluc:82,lip:5,
+   steps:["Cuire 100 g de riz sec.",
+          "Égoutter 1 boîte de thon.",
+          "Mélanger : 25 mL sauce soja + vinaigre de riz + sésame.",
+          "Dresser : riz, thon émietté, tomates cerises fraîches.",
+          "Verser la sauce et saupoudrer de sésame."],
+   used:[{id:'thon',qty:1},{id:'riz',qty:100},{id:'soja',qty:25},{id:'tomates_cerises',qty:80}],
+   extras:[{n:'Vinaigre de riz',q:'15 mL',opt:true},{n:'Sésame doré',q:'pincée',opt:true}]},
+  {id:'galettes_avoine',slots:['breakfast'],name:'Galettes avoine & fromage blanc',urgent:0,ur:null,time:12,kcal:390,prot:24,gluc:50,lip:9,
+   steps:["Mélanger 80 g flocons + 2 oeufs + 100 g fromage blanc + pincée sel.",
+          "Laisser reposer 2 min.",
+          "Cuire 3 min de chaque côté dans 5 mL huile.",
+          "Servir avec compote ou miel (optionnel)."],
+   used:[{id:'flocons',qty:80},{id:'oeufs',qty:2},{id:'fb_nature',qty:100}],
+   extras:[{n:"Huile d'olive",q:'5 mL',opt:false},{n:'Miel ou compote',q:'',opt:true}]},
+  {id:'ramen_poulet',slots:['lunch','snack'],name:'Ramen poulet express maison',urgent:0,ur:null,time:15,kcal:650,prot:43,gluc:63,lip:18,
+   steps:["Cuire 1 pack de ramen selon indications.",
+          "Poêler 150 g de poulet en lamelles + oignons.",
+          "Pocher 1 oeuf dans l'eau de cuisson des ramen.",
+          "Assembler : bouillon + ramen + poulet + oeuf + sésame."],
+   used:[{id:'ramen',qty:1},{id:'poulet',qty:150},{id:'oeufs',qty:1},{id:'oignons',qty:50}],
+   extras:[{n:'Sésame doré',q:'pincée',opt:true},{n:'Sauce soja',q:'quelques gouttes',opt:true}]},
   // Repas masqués (slots:[])
   {id:'poke_bowl',slots:[],name:'Poké bowl poulet karaage',kcal:870,prot:39,gluc:115,lip:26,steps:[],used:[],extras:[]},
   {id:'_nuggets_04',slots:[],name:'Nuggets au four (400g)',kcal:860,prot:60,gluc:80,lip:36,steps:[],used:[],extras:[]},
@@ -581,6 +659,7 @@ function render(){
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
       <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">Compteur calorique</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Sèche · macros précises</div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
+      <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
     <div style="display:flex;border-bottom:0.5px solid var(--border);margin-bottom:16px;">
@@ -588,10 +667,16 @@ function render(){
       <button data-action="main-tab" data-val="inventory" style="background:none;border:none;border-bottom:${S.mainTab==='inventory'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='inventory'?500:400};color:${S.mainTab==='inventory'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">≡ Inventaire</button>
     </div>
     ${S.mainTab==='recipes'?`
+      ${!getApiKey()?`<div style="background:rgba(251,146,60,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:#0f0f11;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
       ${renderNightModal()}
       <div class="meal-tabs">${tabBtns}</div>
       ${shown.length?shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">Aucune recette disponible.</div>'}
+      <div style="margin-top:10px;">
+        <button onclick="openFreeOverlay()" style="width:100%;padding:12px;background:transparent;border:0.5px dashed rgba(255,255,255,.15);border-radius:10px;color:#55556a;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:color .2s;" onmouseover="this.style.color='#9898a8'" onmouseout="this.style.color='#55556a'">
+          <span style="font-size:18px;">➕</span><span>Ajouter un repas libre (texte ou photo)</span>
+        </button>
+      </div>
       <div style="margin:4px 0 20px;">
         <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding-top:12px;border-top:0.5px solid var(--border);">Ajouter un repas libre</div>
         <div style="display:flex;gap:8px;">
@@ -820,6 +905,114 @@ if('serviceWorker' in navigator){
   window.addEventListener('load',()=>navigator.serviceWorker.register('./sw.js').catch(()=>{}));
 }
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveState();});
+
+// ─── REPAS LIBRE (texte ou photo) ────────────────────────────────────────────
+function openFreeOverlay(){
+  document.getElementById('free-overlay').style.display='flex';
+  openFreeInput();
+}
+function openFreeInput(){
+  document.getElementById('fs-input').style.display='block';
+  document.getElementById('fs-loading').style.display='none';
+  document.getElementById('fs-review').style.display='none';
+  document.getElementById('free-use-inv').checked=false;
+  document.getElementById('free-inv-box').style.display='none';
+}
+function closeFreeOverlay(){document.getElementById('free-overlay').style.display='none';}
+function showFreeStep(s){
+  ['input','loading','review'].forEach(k=>{
+    document.getElementById('fs-'+k).style.display=k===s?'block':'none';
+  });
+}
+function fillFreeReview(name,kcal,prot,gluc,lip){
+  document.getElementById('free-name').value=name||'Repas';
+  document.getElementById('free-kcal').value=Math.round(kcal)||0;
+  document.getElementById('free-prot').value=Math.round(prot)||0;
+  document.getElementById('free-gluc').value=Math.round(gluc)||0;
+  document.getElementById('free-lip').value=Math.round(lip)||0;
+}
+async function analyzeFreeText(){
+  const txt=document.getElementById('free-text').value.trim();
+  if(!txt)return;
+  showFreeStep('loading');
+  try{
+    const sys="Tu es nutritionniste. Analyse ce repas décrit et estime les macros. Sois légèrement pessimiste (portions généreuses). Réponds UNIQUEMENT avec un JSON valide sans markdown: {\"name\":string (description courte en français, max 70 chars), \"kcal\":integer, \"prot\":integer, \"gluc\":integer, \"lip\":integer}";
+    const data=await callAI([{role:'user',content:txt}],350,sys);
+    const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+    fillFreeReview(p.name,p.kcal,p.prot,p.gluc,p.lip);
+    showFreeStep('review');
+  }catch(e){
+    showFreeStep('input');
+    if(e.message!=='NO_KEY')alert("Erreur d'analyse — verifie ta connexion ou ta cle API");
+  }
+}
+function handleFreePhoto(input){
+  const file=input.files[0];if(!file)return;
+  showFreeStep('loading');
+  const reader=new FileReader();
+  reader.onload=async(e)=>{
+    const b64=e.target.result.split(',')[1],mime=file.type||'image/jpeg';
+    try{
+      const data=await callAI([{role:'user',content:[
+        {type:'image',source:{type:'base64',media_type:mime,data:b64}},
+        {type:'text',text:"Analyse ce repas. Sois légèrement pessimiste. Réponds UNIQUEMENT avec un JSON sans markdown: {\"name\":string (description courte en français, max 70 chars), \"kcal\":integer, \"prot\":integer, \"gluc\":integer, \"lip\":integer}"}
+      ]}],500);
+      const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+      fillFreeReview(p.name,p.kcal,p.prot,p.gluc,p.lip);
+      showFreeStep('review');
+    }catch(e){
+      showFreeStep('input');
+      if(e.message!=='NO_KEY')alert("Erreur d'analyse photo");
+    }
+  };
+  reader.readAsDataURL(file);
+}
+function toggleFreeInv(){
+  const show=document.getElementById('free-use-inv').checked;
+  document.getElementById('free-inv-box').style.display=show?'block':'none';
+  if(show)renderFreeInv();
+}
+function renderFreeInv(){
+  const q=(document.getElementById('free-inv-search').value||'').toLowerCase();
+  const items=Object.values(S.inv).flat().filter(it=>it.qty!==null&&it.qty>0&&(!q||it.name.toLowerCase().includes(q)));
+  document.getElementById('free-inv-list').innerHTML=items.length?items.map(it=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid rgba(255,255,255,.06);">
+      <input type="checkbox" id="icb-${it.id}" onchange="toggleInvCb('${it.id}',this.checked)" style="accent-color:#4ade80;cursor:pointer;flex-shrink:0;">
+      <span style="flex:1;font-size:12px;color:#9898a8;">${it.name}</span>
+      <span style="font-size:11px;color:#55556a;">${it.qty}${it.unit}</span>
+      <input type="number" id="iqty-${it.id}" value="" placeholder="qté" min="0" max="${it.qty}" style="width:58px;padding:3px 6px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#f0f0f2;font-size:12px;outline:none;display:none;box-sizing:border-box;">
+    </div>`).join(''):'<div style="padding:12px;font-size:12px;color:#55556a;text-align:center;">Aucun résultat</div>';
+}
+function toggleInvCb(id,on){
+  const el=document.getElementById('iqty-'+id);
+  if(el)el.style.display=on?'block':'none';
+}
+function confirmFreeEntry(){
+  const name=document.getElementById('free-name').value.trim()||'Repas libre';
+  const kcal=parseInt(document.getElementById('free-kcal').value)||0;
+  const prot=parseInt(document.getElementById('free-prot').value)||0;
+  const gluc=parseInt(document.getElementById('free-gluc').value)||0;
+  const lip=parseInt(document.getElementById('free-lip').value)||0;
+  const id='_free_'+Date.now();
+  RCP.push({id,slots:[],name,kcal,prot,gluc,lip,steps:[],used:[],extras:[]});
+  if(!S.dayMeals[S.today])S.dayMeals[S.today]=[];
+  S.dayMeals[S.today].push({rid:id,mult:1,dessert:null,customDessert:null});
+  // Deduct inventory if requested
+  if(document.getElementById('free-use-inv').checked){
+    Object.values(S.inv).flat().forEach(it=>{
+      const cb=document.getElementById('icb-'+it.id);
+      const qEl=document.getElementById('iqty-'+it.id);
+      if(cb&&cb.checked&&qEl){
+        const q=parseFloat(qEl.value)||0;
+        if(q>0&&it.qty!==null)it.qty=Math.max(0,it.qty-q);
+      }
+    });
+  }
+  saveState();
+  closeFreeOverlay();
+  render();
+}
+// ─────────────────────────────────────────────────────────────────────────────
 </script>
 </body>
 </html>
