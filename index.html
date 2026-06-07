@@ -811,7 +811,33 @@ ROOT.addEventListener('click',e=>{
   }
   else if(action==='delete-meal'){
     const day=el.dataset.day,idx=parseInt(el.dataset.idx);
-    if(S.dayMeals[day]){S.dayMeals[day].splice(idx,1);saveState();}
+    if(S.dayMeals[day]){
+      const meal=S.dayMeals[day][idx];
+      if(meal){
+        const r=RCP.find(x=>x.id===meal.rid);
+        // Restaurer les ingrédients trackés (pas les épices qty:null)
+        if(r&&r.used&&r.used.length){
+          r.used.forEach(({id,qty})=>{
+            Object.values(S.inv).forEach(arr=>{
+              const it=arr.find(i=>i.id===id);
+              if(it&&it.qty!==null)it.qty+=qty;
+            });
+          });
+        }
+        // Restaurer l'ingrédient du dessert si applicable
+        if(meal.dessert&&meal.dessert!=='none'&&meal.dessert!=='autre'){
+          const d=DESSERTS.find(x=>x.id===meal.dessert);
+          if(d&&d.inv){
+            Object.values(S.inv).forEach(arr=>{
+              const it=arr.find(i=>i.id===d.inv);
+              if(it&&it.qty!==null)it.qty+=d.qty;
+            });
+          }
+        }
+      }
+      S.dayMeals[day].splice(idx,1);
+      saveState();
+    }
   }
   else if(action==='cook'){handleCook(val,parseInt(el.dataset.mult||'1'));return;}
   else if(action==='confirm-day'){confirmDay(el.dataset.day);return;}
