@@ -96,6 +96,55 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
 </div>
 
 <input type="file" id="photo-input" accept="image/*" style="display:none" onchange="handlePhotoSelected(this)">
+
+<!-- Add-meal modal (text + photo + inventory) -->
+<div id="addmeal-overlay" onclick="if(event.target===this)closeAddMeal()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:flex-end;justify-content:center;">
+  <div style="background:#161619;border-top:0.5px solid rgba(255,255,255,.1);border-radius:14px 14px 0 0;padding:20px 20px 32px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div id="addmeal-title" style="font-size:15px;font-weight:600;color:#f0f0f2;">Ajouter un repas</div>
+      <button onclick="closeAddMeal()" style="background:none;border:none;color:#9898a8;font-size:20px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <img id="addmeal-photo-preview" style="display:none;width:100%;border-radius:8px;margin-bottom:12px;max-height:200px;object-fit:cover;">
+    <!-- Input state -->
+    <div id="addmeal-input">
+      <label style="font-size:10px;color:#55556a;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">Décris ce que tu as mangé</label>
+      <textarea id="addmeal-textarea" placeholder="Ex: 200g de poulet grillé avec 100g de riz basmati, légumes sautés à l'huile d'olive..." style="width:100%;height:90px;padding:10px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#f0f0f2;font-size:13px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;margin-bottom:10px;"></textarea>
+      <button onclick="startAddMealAnalysis('text')" style="width:100%;padding:12px;background:#4ade80;border:none;border-radius:8px;color:#0f0f11;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">✦ Analyser par IA</button>
+      <div style="text-align:center;color:#55556a;font-size:12px;margin-bottom:10px;">— ou —</div>
+      <button onclick="startAddMealAnalysis('photo')" style="width:100%;padding:11px;background:transparent;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#9898a8;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">📷 Analyser une photo</button>
+    </div>
+    <!-- Analyzing state -->
+    <div id="addmeal-analyzing" style="display:none;text-align:center;padding:24px 0;">
+      <div style="font-size:28px;margin-bottom:10px;">🔍</div>
+      <div style="font-size:13px;color:#9898a8;">Analyse en cours…</div>
+    </div>
+    <!-- Confirm state -->
+    <div id="addmeal-confirm" style="display:none;">
+      <div style="margin-bottom:10px;">
+        <label style="font-size:10px;color:#55556a;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Repas</label>
+        <input id="addmeal-name" type="text" style="width:100%;padding:8px 10px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#f0f0f2;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
+        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Kcal</label><input id="addmeal-kcal" type="number" style="width:100%;padding:7px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#fb923c;font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Prot. g</label><input id="addmeal-prot" type="number" style="width:100%;padding:7px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#4ade80;font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Gluc. g</label><input id="addmeal-gluc" type="number" style="width:100%;padding:7px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#60a5fa;font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Lip. g</label><input id="addmeal-lip" type="number" style="width:100%;padding:7px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#9898a8;font-size:13px;outline:none;box-sizing:border-box;"></div>
+      </div>
+      <div style="margin-bottom:14px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+          <label style="font-size:11px;color:#55556a;text-transform:uppercase;letter-spacing:.07em;">Déduire de l'inventaire ?</label>
+          <div style="display:flex;gap:6px;" id="inv-toggle-btns">
+            <button id="inv-yes-btn" onclick="setInvMode(true)" style="padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;border:0.5px solid rgba(255,255,255,.12);color:#9898a8;">Oui</button>
+            <button id="inv-no-btn" onclick="setInvMode(false)" style="padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;background:#1e1e22;border:0.5px solid rgba(255,255,255,.2);color:#f0f0f2;">Non ✓</button>
+          </div>
+        </div>
+        <div id="inv-items-section" style="display:none;"></div>
+      </div>
+      <button onclick="confirmAddMealFinal()" style="width:100%;padding:12px;background:#4ade80;border:none;border-radius:8px;color:#0f0f11;font-size:13px;font-weight:600;cursor:pointer;">✓ Ajouter au tracker</button>
+    </div>
+    <input type="file" id="addmeal-photo-input" accept="image/*" style="display:none" onchange="handleAddMealPhoto(this)">
+  </div>
+</div>
 <div id="root" class="container"><div style="padding:2rem;text-align:center;color:var(--text3);">Chargement...</div></div>
 <script>
 const TARGETS={kcal:2400,prot:160,gluc:220,lip:75};
@@ -532,6 +581,7 @@ function render(){
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
       <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">Compteur calorique</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Sèche · macros précises</div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
+      <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
     <div style="display:flex;border-bottom:0.5px solid var(--border);margin-bottom:16px;">
       <button data-action="main-tab" data-val="recipes" style="background:none;border:none;border-bottom:${S.mainTab==='recipes'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='recipes'?500:400};color:${S.mainTab==='recipes'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">★ Recettes</button>
@@ -542,6 +592,13 @@ function render(){
       ${renderNightModal()}
       <div class="meal-tabs">${tabBtns}</div>
       ${shown.length?shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">Aucune recette disponible.</div>'}
+      <div style="margin:4px 0 20px;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding-top:12px;border-top:0.5px solid var(--border);">Ajouter un repas libre</div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="openAddMeal('text')" style="flex:1;padding:11px 8px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">✍ Description</button>
+          <button onclick="openAddMeal('photo')" style="flex:1;padding:11px 8px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">📷 Photo</button>
+        </div>
+      </div>
     `:renderInv()}
   </div>`;
 }
@@ -566,6 +623,195 @@ ROOT.addEventListener('click',e=>{
   render();
 });
 ROOT.addEventListener('input',e=>{const el=e.target.closest('[data-custom-input]');if(el)S.customInputs[el.dataset.customInput]=el.value;});
+
+
+// ─── ADD MEAL (texte + photo + déduction inventaire) ─────────────────────────
+let _addMealInvSuggestions = [];
+let _addMealInvMode = false;
+
+function openAddMeal(type) {
+  const ov = document.getElementById('addmeal-overlay');
+  ov.style.display = 'flex';
+  // Reset states
+  document.getElementById('addmeal-input').style.display = 'block';
+  document.getElementById('addmeal-analyzing').style.display = 'none';
+  document.getElementById('addmeal-confirm').style.display = 'none';
+  document.getElementById('addmeal-photo-preview').style.display = 'none';
+  document.getElementById('addmeal-textarea').value = '';
+  document.getElementById('addmeal-title').textContent = 'Ajouter un repas';
+  _addMealInvSuggestions = [];
+  _addMealInvMode = false;
+  if (type === 'photo') {
+    document.getElementById('addmeal-photo-input').value = '';
+    document.getElementById('addmeal-photo-input').click();
+  }
+}
+function closeAddMeal() { document.getElementById('addmeal-overlay').style.display = 'none'; }
+
+function setInvMode(yes) {
+  _addMealInvMode = yes;
+  const yBtn = document.getElementById('inv-yes-btn');
+  const nBtn = document.getElementById('inv-no-btn');
+  const activeStyle = 'padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;background:#1e1e22;border:0.5px solid rgba(255,255,255,.2);color:#f0f0f2;';
+  const inactiveStyle = 'padding:5px 12px;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;border:0.5px solid rgba(255,255,255,.12);color:#9898a8;';
+  if (yBtn) yBtn.style.cssText = yes ? activeStyle : inactiveStyle;
+  if (nBtn) nBtn.style.cssText = !yes ? activeStyle : inactiveStyle;
+  const sec = document.getElementById('inv-items-section');
+  if (sec) sec.style.display = yes ? 'block' : 'none';
+}
+
+function buildInvContext() {
+  return Object.values(S.inv).flatMap(arr =>
+    arr.filter(it => it.qty === null || it.qty > 0)
+       .map(it => `${it.id}|${it.name}|${it.qty??'illimité'}${it.unit}`)
+  ).join(', ');
+}
+
+function renderInvSuggestions(suggestions) {
+  const sec = document.getElementById('inv-items-section');
+  if (!sec) return;
+  let html = '';
+  if (suggestions.length === 0) {
+    html = '<div style="font-size:12px;color:#55556a;padding:4px 0 8px;">Aucun ingrédient identifié — ajoute-les manuellement si besoin.</div>';
+  } else {
+    html = suggestions.map((s, i) => {
+      const it = findItem(s.id);
+      if (!it) return '';
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(255,255,255,.05);">
+        <input type="checkbox" id="inv-cb-${i}" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        <span style="flex:1;font-size:13px;color:#f0f0f2;">${it.name}</span>
+        <input type="number" id="inv-qty-${i}" value="${s.qty}" min="0" style="width:62px;padding:4px 6px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#9898a8;font-size:12px;outline:none;text-align:right;">
+        <span style="font-size:11px;color:#55556a;min-width:22px;">${s.unit}</span>
+      </div>`;
+    }).filter(Boolean).join('');
+  }
+  html += `<div id="inv-custom-items"></div>
+  <button onclick="addCustomInvItem()" style="width:100%;padding:7px;margin-top:8px;background:transparent;border:0.5px dashed rgba(255,255,255,.1);border-radius:8px;color:#55556a;font-size:12px;cursor:pointer;">+ Ajouter manuellement</button>`;
+  sec.innerHTML = html;
+}
+
+function addCustomInvItem() {
+  const allItems = Object.values(S.inv).flatMap(arr => arr.filter(it => it.qty === null || it.qty > 0));
+  const opts = allItems.map(it => `<option value="${it.id}">${it.name}${it.qty!==null?' ('+it.qty+it.unit+')':''}</option>`).join('');
+  const idx = 'c' + Date.now();
+  const row = document.createElement('div');
+  row.id = `inv-row-${idx}`;
+  row.style.cssText = 'display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(255,255,255,.05);';
+  row.innerHTML = `<input type="checkbox" id="inv-cb-${idx}" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+    <select id="inv-sel-${idx}" style="flex:1;padding:5px 6px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#f0f0f2;font-size:12px;outline:none;">${opts}</select>
+    <input type="number" id="inv-qty-${idx}" placeholder="qté" style="width:62px;padding:4px 6px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#9898a8;font-size:12px;outline:none;text-align:right;">
+    <button onclick="this.closest('[id^=inv-row]').remove()" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button>`;
+  document.getElementById('inv-custom-items').appendChild(row);
+}
+
+async function startAddMealAnalysis(type) {
+  if (type === 'photo') {
+    document.getElementById('addmeal-photo-input').value = '';
+    document.getElementById('addmeal-photo-input').click();
+    return;
+  }
+  const text = document.getElementById('addmeal-textarea').value.trim();
+  if (!text) return;
+  document.getElementById('addmeal-input').style.display = 'none';
+  document.getElementById('addmeal-analyzing').style.display = 'block';
+  await runAddMealAI([{role:'user', content:text}]);
+}
+
+async function handleAddMealPhoto(input) {
+  const file = input.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async (e) => {
+    const dataUrl = e.target.result;
+    const b64 = dataUrl.split(',')[1];
+    const mime = file.type || 'image/jpeg';
+    const prev = document.getElementById('addmeal-photo-preview');
+    prev.src = dataUrl; prev.style.display = 'block';
+    document.getElementById('addmeal-input').style.display = 'none';
+    document.getElementById('addmeal-analyzing').style.display = 'block';
+    await runAddMealAI([{role:'user', content:[
+      {type:'image', source:{type:'base64', media_type:mime, data:b64}},
+      {type:'text', text:'Analyse ce repas.'}
+    ]}]);
+  };
+  reader.readAsDataURL(file);
+}
+
+async function runAddMealAI(msgs) {
+  const sys = `Tu analyses un repas et estimes ses macros.
+Inventaire disponible (format id|nom|quantité): ${buildInvContext()}
+Réponds UNIQUEMENT avec un JSON valide sans markdown:
+{"name":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"inv_suggestions":[{"id":string,"name":string,"qty":number,"unit":string}]}
+Pour inv_suggestions: inclus UNIQUEMENT les items de l'inventaire utilisés dans ce repas (par leur id exact). Laisse [] si aucun.
+Sois légèrement pessimiste sur les calories/quantités.`;
+  try {
+    const data = await callAI(msgs, 600, sys);
+    const raw = data.content.map(i=>i.text||'').join('');
+    const p = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    document.getElementById('addmeal-name').value = p.name || 'Repas';
+    document.getElementById('addmeal-kcal').value = Math.round(p.kcal)||0;
+    document.getElementById('addmeal-prot').value = Math.round(p.prot)||0;
+    document.getElementById('addmeal-gluc').value = Math.round(p.gluc)||0;
+    document.getElementById('addmeal-lip').value = Math.round(p.lip)||0;
+    _addMealInvSuggestions = p.inv_suggestions || [];
+    document.getElementById('addmeal-analyzing').style.display = 'none';
+    document.getElementById('addmeal-confirm').style.display = 'block';
+    renderInvSuggestions(_addMealInvSuggestions);
+    setInvMode(_addMealInvSuggestions.length > 0);
+  } catch(err) {
+    document.getElementById('addmeal-analyzing').style.display = 'none';
+    document.getElementById('addmeal-input').style.display = 'block';
+    const ta = document.getElementById('addmeal-textarea');
+    ta.placeholder = err.message === 'NO_KEY'
+      ? "⚠ Configure ta clé API d'abord (bouton ⚙)"
+      : "⚠ Erreur — réessaie";
+  }
+}
+
+function confirmAddMealFinal() {
+  const name = document.getElementById('addmeal-name').value.trim() || 'Repas libre';
+  const kcal = parseInt(document.getElementById('addmeal-kcal').value)||0;
+  const prot = parseInt(document.getElementById('addmeal-prot').value)||0;
+  const gluc = parseInt(document.getElementById('addmeal-gluc').value)||0;
+  const lip  = parseInt(document.getElementById('addmeal-lip').value)||0;
+
+  if (_addMealInvMode) {
+    // Deduct AI-suggested items
+    _addMealInvSuggestions.forEach((s, i) => {
+      const cb = document.getElementById(`inv-cb-${i}`);
+      const qi = document.getElementById(`inv-qty-${i}`);
+      if (cb?.checked && qi) {
+        const qty = parseFloat(qi.value)||0;
+        if (qty > 0) Object.values(S.inv).forEach(arr => {
+          const it = arr.find(x=>x.id===s.id);
+          if (it && it.qty!==null) it.qty = Math.max(0, it.qty - qty);
+        });
+      }
+    });
+    // Deduct custom items
+    document.querySelectorAll('#inv-custom-items [id^="inv-row-"]').forEach(row => {
+      const idx = row.id.replace('inv-row-','');
+      const cb  = document.getElementById(`inv-cb-${idx}`);
+      const sel = document.getElementById(`inv-sel-${idx}`);
+      const qi  = document.getElementById(`inv-qty-${idx}`);
+      if (cb?.checked && sel && qi) {
+        const qty = parseFloat(qi.value)||0;
+        if (qty > 0) Object.values(S.inv).forEach(arr => {
+          const it = arr.find(x=>x.id===sel.value);
+          if (it && it.qty!==null) it.qty = Math.max(0, it.qty - qty);
+        });
+      }
+    });
+  }
+
+  const id = '_free_' + Date.now();
+  RCP.push({id, slots:[], name, kcal, prot, gluc, lip, steps:[], used:[], extras:[]});
+  if (!S.dayMeals[S.today]) S.dayMeals[S.today] = [];
+  S.dayMeals[S.today].push({rid:id, mult:1, dessert:null, customDessert:null});
+  saveState();
+  closeAddMeal();
+  render();
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 loadState();
 render();
