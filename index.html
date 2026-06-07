@@ -195,10 +195,17 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
     </div>
   </div>
 </div>
+
+<div id="cc-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center;padding:12px;"><div style="background:#161619;border:0.5px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;"><div id="cc-title" style="font-size:15px;font-weight:600;color:#f0f0f2;margin-bottom:4px;"></div><div style="font-size:11px;color:#55556a;margin-bottom:14px;">Ajuste si tu as utilisé des quantités différentes</div><div id="cc-ings" style="margin-bottom:12px;"></div><div id="cc-totals" style="display:flex;justify-content:center;flex-wrap:wrap;gap:10px;padding:10px 12px;background:#0f0f11;border-radius:8px;margin-bottom:14px;font-size:12px;"></div><div style="display:flex;gap:8px;"><button onclick="executeCook()" style="flex:1;padding:10px;background:#4ade80;border:none;border-radius:8px;color:#0f0f11;font-size:13px;font-weight:600;cursor:pointer;">✓ Confirmer la cuisson</button><button onclick="closeConfirmCook()" style="padding:10px 14px;background:transparent;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#9898a8;font-size:13px;cursor:pointer;">✕</button></div></div></div>
+<div id="ai-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;align-items:center;justify-content:center;padding:12px;"><div style="background:#161619;border:0.5px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;width:100%;max-width:420px;max-height:92vh;overflow-y:auto;"><div style="font-size:15px;font-weight:600;color:#f0f0f2;margin-bottom:14px;">➕ Ajouter un item</div><div style="margin-bottom:10px;"><label style="font-size:10px;color:#55556a;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Nom</label><input id="ai-name" type="text" placeholder="Ex: Yaourt grec…" style="width:100%;padding:9px 12px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#f0f0f2;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><div><label style="font-size:10px;color:#55556a;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Quantité</label><input id="ai-qty" type="number" placeholder="200" min="0" style="width:100%;padding:9px 12px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#f0f0f2;font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:#55556a;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Unité</label><select id="ai-unit" style="width:100%;padding:9px 12px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#f0f0f2;font-size:13px;outline:none;box-sizing:border-box;"><option>g</option><option>kg</option><option>mL</option><option>L</option><option>pcs</option><option>pots</option><option>boîtes</option><option>tubes</option><option>packs</option></select></div></div><div style="margin-bottom:10px;"><label style="font-size:10px;color:#55556a;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Catégorie</label><div style="display:flex;gap:6px;flex-wrap:wrap;"><button onclick="setAICat('frigo')" id="aicat-frigo" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(255,255,255,.12);background:transparent;color:#9898a8;font-size:12px;cursor:pointer;">🌡️ Frigo</button><button onclick="setAICat('congelateur')" id="aicat-congelateur" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(255,255,255,.12);background:transparent;color:#9898a8;font-size:12px;cursor:pointer;">❄ Congélateur</button><button onclick="setAICat('placards')" id="aicat-placards" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(255,255,255,.12);background:transparent;color:#9898a8;font-size:12px;cursor:pointer;">▣ Placards</button><button onclick="setAICat('epices')" id="aicat-epices" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(255,255,255,.12);background:transparent;color:#9898a8;font-size:12px;cursor:pointer;">∿ Épices</button></div></div><div id="ai-mbox" style="display:none;margin-bottom:12px;padding:12px;background:#0f0f11;border-radius:8px;"><div style="font-size:11px;color:#55556a;margin-bottom:8px;">Macros pour 100g (modifiables)</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;"><div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:2px;">Kcal</label><input id="ai-m-kcal" type="number" style="width:100%;padding:5px;background:#161619;border:0.5px solid rgba(255,255,255,.1);border-radius:5px;color:#fb923c;font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:2px;">Prot.</label><input id="ai-m-prot" type="number" style="width:100%;padding:5px;background:#161619;border:0.5px solid rgba(255,255,255,.1);border-radius:5px;color:#4ade80;font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:2px;">Gluc.</label><input id="ai-m-gluc" type="number" style="width:100%;padding:5px;background:#161619;border:0.5px solid rgba(255,255,255,.1);border-radius:5px;color:#60a5fa;font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:2px;">Lip.</label><input id="ai-m-lip" type="number" style="width:100%;padding:5px;background:#161619;border:0.5px solid rgba(255,255,255,.1);border-radius:5px;color:#9898a8;font-size:12px;outline:none;box-sizing:border-box;"></div></div><div id="ai-mnote" style="font-size:10px;color:#55556a;margin-top:6px;font-style:italic;"></div></div><div style="display:flex;gap:8px;margin-bottom:8px;"><button onclick="aiLookupMacros()" style="flex:1;padding:10px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:13px;font-weight:500;cursor:pointer;">❆ Chercher les macros</button></div><div id="ai-status" style="font-size:12px;color:#9898a8;margin-bottom:10px;min-height:18px;"></div><div style="display:flex;gap:8px;"><button onclick="confirmAddItem()" style="flex:1;padding:10px;background:#4ade80;border:none;border-radius:8px;color:#0f0f11;font-size:13px;font-weight:600;cursor:pointer;">✓ Ajouter</button><button onclick="closeAddItem()" style="padding:10px 14px;background:transparent;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#55556a;font-size:13px;cursor:pointer;">✕</button></div></div></div>
 <input type="file" id="free-photo-input" accept="image/*" style="display:none" onchange="handleFreePhoto(this)">
+<div id="profile-screen" style="position:fixed;inset:0;background:#0f0f11;z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;"><div style="text-align:center;width:100%;max-width:400px;"><div style="font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:#55556a;margin-bottom:32px;">Qui est là ?</div><div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;"><button onclick="selectProfile('liam')" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:12px;" onmouseover="this.style.background='rgba(74,222,128,.1)'" onmouseout="this.style.background='none'"><div style="width:100px;height:100px;border-radius:10px;background:linear-gradient(135deg,#22c55e,#16a34a);font-size:46px;display:flex;align-items:center;justify-content:center;margin:0 auto;">🏋️</div><div style="margin-top:10px;font-size:15px;font-weight:500;color:#f0f0f2;">Liam</div><div style="font-size:11px;color:#55556a;margin-top:2px;">Sèche · 2600 kcal</div></button><button onclick="selectProfile('maureen')" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:12px;" onmouseover="this.style.background='rgba(244,114,182,.1)'" onmouseout="this.style.background='none'"><div style="width:100px;height:100px;border-radius:10px;background:linear-gradient(135deg,#ec4899,#be185d);font-size:46px;display:flex;align-items:center;justify-content:center;margin:0 auto;">🌸</div><div style="margin-top:10px;font-size:15px;font-weight:500;color:#f0f0f2;">Maureen</div><div style="font-size:11px;color:#55556a;margin-top:2px;">Prise de masse · 2700 kcal</div></button></div></div></div>
 <div id="root" class="container"><div style="padding:2rem;text-align:center;color:var(--text3);">Chargement...</div></div>
 <script>
-const TARGETS={kcal:2400,prot:160,gluc:220,lip:75};
+const LIAM_TARGETS={kcal:2600,prot:175,gluc:280,lip:80};
+const MAUREEN_TARGETS={kcal:2700,prot:145,gluc:305,lip:100};
+let TARGETS=LIAM_TARGETS;
+let ACTIVE_PROFILE='liam';
 // Pas de stockage persistant — checkpoint via sendPrompt
 
 const DESSERTS=[
@@ -211,7 +218,6 @@ const DESSERTS=[
 ];
 
 const INV_DEFAULT={frigo:[
-  {id:'saumon',name:'Saumon frais',qty:280,unit:'g',urgent:1},
   {id:'jambon_blanc',name:'Jambon blanc',qty:600,unit:'g',urgent:1},
   {id:'jambon_poulet',name:'Jambon de poulet',qty:180,unit:'g',urgent:1},
   {id:'bacon',name:'Allumettes de bacon',qty:900,unit:'g',urgent:1},
@@ -219,13 +225,13 @@ const INV_DEFAULT={frigo:[
   {id:'creme_liq',name:'Crème légère liquide',qty:600,unit:'mL',urgent:0},
   {id:'creme_semi',name:'Crème semi-épaisse',qty:800,unit:'g',urgent:0},
   {id:'cabillaud',name:'Panés de cabillaud',qty:2,unit:'pcs',urgent:1},
-  {id:'yaourts',name:'Yaourts 0% fruits',qty:19,unit:'pots',urgent:1},
+  {id:'yaourts',name:'Yaourts 0% fruits',qty:18,unit:'pots',urgent:1},
   {id:'fb_vanille',name:'Fromage blanc vanille 0%',qty:23,unit:'pots',urgent:1},
   {id:'tomates_cerises',name:'Tomates cerises',qty:200,unit:'g',urgent:1},
   {id:'fb_nature',name:'Fromage blanc 0% nature',qty:500,unit:'g',urgent:0},
   {id:'oeufs',name:'Oeufs',qty:42,unit:'pcs',urgent:0},
   {id:'avocats',name:'Avocats',qty:2,unit:'pcs',urgent:1},
-  {id:'fromage_rape',name:'Fromage râpé',qty:690,unit:'g',urgent:0},
+  {id:'fromage_rape',name:'Fromage râpé',qty:650,unit:'g',urgent:0},
   {id:'st_moret',name:'St Morêt léger',qty:1100,unit:'g',urgent:0},
   {id:'mozzarella',name:'Billes de mozzarella',qty:300,unit:'g',urgent:1},
   {id:'creme_fraiche',name:'Crème fraîche légère',qty:2500,unit:'g',urgent:0},
@@ -240,7 +246,7 @@ const INV_DEFAULT={frigo:[
   {id:'frites',name:'Frites au four',qty:500,unit:'g',urgent:0},
 ],placards:[
   {id:'the',name:'Thé vert / noir',qty:null,unit:'',urgent:0},
-  {id:'compotes',name:'Gourdes de compotes',qty:64,unit:'pcs',urgent:0},
+  {id:'compotes',name:'Gourdes de compotes',qty:63,unit:'pcs',urgent:0},
   {id:'ramen',name:'Ramen instantanés',qty:3,unit:'pcs',urgent:0},
   {id:'banania',name:'Banania',qty:500,unit:'g',urgent:0},
   {id:'ratatouille',name:'Ratatouille Casse-Grain',qty:2,unit:'boîtes',urgent:0},
@@ -252,7 +258,7 @@ const INV_DEFAULT={frigo:[
   {id:'bouillon_boeuf',name:'Bouillon boeuf',qty:20,unit:'cubes',urgent:0},
   {id:'bouillon_legumes',name:'Bouillon légumes',qty:22,unit:'cubes',urgent:0},
   {id:'riz',name:'Riz Oiseaux Célestes',qty:5140,unit:'g',urgent:0},
-  {id:'pates_completes',name:'Pâtes complètes',qty:1500,unit:'g',urgent:0},
+  {id:'pates_completes',name:'Pâtes complètes',qty:1300,unit:'g',urgent:0},
   {id:'pates_blanches',name:'Pâtes blanches',qty:1000,unit:'g',urgent:0},
   {id:'pates_proteinees',name:'Pâtes protéinées',qty:500,unit:'g',urgent:0},
   {id:'amandes',name:'Amandes',qty:300,unit:'g',urgent:0},
@@ -296,6 +302,10 @@ const MEALS_DEFAULT={
     {rid:'_framboises_07',mult:1,dessert:null,customDessert:null},
     // Midi : cantine Disneyland
     {rid:'_repas_cantine_07',mult:1,dessert:null,customDessert:null},
+    {rid:'_pates_creme_saumon_250',mult:1,dessert:'yaourt',customDessert:null},
+  ],
+  '2026-06-08':[
+    {rid:'_pates_creme_saumon_250',mult:1,dessert:'compote',customDessert:null},
   ],
 };
 
@@ -435,12 +445,14 @@ const RCP=[
   // 06/06 soir : pizza De la Mama entière + yaourt + miel + fromage râpé
   // 850 (pizza) + 78 (yaourt) + 46 (miel 15g) + 304 (fromage 80g) = 1278 kcal
   {id:'_diner_pizza_06',slots:[],name:'Dîner pizza — 1 Pizza De la Mama + yaourt 0% + miel + 80g fromage râpé',kcal:1278,prot:57,gluc:116,lip:54,steps:[],used:[],extras:[]},
+  {id:'_pates_creme_saumon_250',slots:[],name:'Pâtes crème fraîche & saumon (250g crème)',kcal:970,prot:49,gluc:72,lip:53,steps:[],used:[],extras:[]},
   // 07/06 : framboises ~80g au petit-déj
   {id:'_framboises_07',slots:[],name:'Framboises (~80g)',kcal:26,prot:1,gluc:4,lip:0,steps:[],used:[],extras:[]},
   // 07/06 midi : repas cantine — jambon cru + saumon gratiné pesto + tartlette chocolat
   {id:'_repas_cantine_07',slots:[],name:'Cantine — jambon cru, saumon gratiné pesto/fromage, tartlette chocolat',kcal:990,prot:61,gluc:33,lip:65,steps:[],used:[],extras:[]},
 ];
 
+const INV_EMPTY={frigo:[],congelateur:[],placards:[],epices:[]};
 const CINFO={frigo:{label:'Frigo',sym:'🌡'},congelateur:{label:'Congélateur',sym:'❄'},placards:{label:'Placards',sym:'▣'},epices:{label:'Épices',sym:'∿'}};
 const MEAL_TABS=[{k:'breakfast',l:'Petit-déj'},{k:'lunch',l:'Déjeuner'},{k:'snack',l:'Collation'},{k:'dinner',l:'Dîner'},{k:'urgent',l:'⚠ DLC'}];
 
@@ -452,7 +464,8 @@ const S={
   inv:JSON.parse(JSON.stringify(INV_DEFAULT)),
   recipeDesserts:{},customDesserts:{},customInputs:{},
   mainTab:'recipes',mealTab:'dinner',openRec:null,
-  openCat:{frigo:1,congelateur:0,placards:0,epices:0},
+  openCat:{frigo:1,congelateur:0,placards:0,epices:1},
+  editMode:false,
   today:TODAY,displayDate:TODAY,
   dayMeals:JSON.parse(JSON.stringify(MEALS_DEFAULT)),
   pendingCook:null,
@@ -460,6 +473,91 @@ const S={
 };
 const ROOT=document.getElementById('root');
 
+
+// ─── PROFILS ─────────────────────────────
+function selectProfile(n){
+  ACTIVE_PROFILE=n;TARGETS=n==='maureen'?MAUREEN_TARGETS:LIAM_TARGETS;
+  S.inv=JSON.parse(JSON.stringify(n==='maureen'?INV_EMPTY:INV_DEFAULT));
+  S.dayMeals=JSON.parse(JSON.stringify(n==='maureen'?{}:MEALS_DEFAULT));
+  S.displayDate=TODAY;S.editMode=false;
+  document.getElementById('profile-screen').style.display='none';
+  loadState().then(()=>render());
+}
+// ─── EDIT MODE ───────────────────────────
+function toggleEditMode(){S.editMode=!S.editMode;render();}
+function deleteInvItem(cat,id){S.inv[cat]=(S.inv[cat]||[]).filter(i=>i.id!==id);saveState();render();}
+function updateInvQty(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(it)it.qty=v===''?null:parseFloat(v)||0;}
+function updateInvDlc(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(it){it.dlc=v||null;it.dlcAuto=false;}}
+// ─── DLC ─────────────────────────────────
+function getDlcStatus(dlc){
+  if(!dlc)return null;
+  const d=Math.round((new Date(dlc)-new Date())/(864e5));
+  if(d<0)return{label:'Expir\u00e9',color:'var(--text3)',bg:'var(--bg3)'};
+  if(d<7)return{label:d+'j \u26a0',color:'var(--red)',bg:'var(--red-bg)'};
+  if(d<15)return{label:d+'j',color:'var(--orange)',bg:'var(--orange-bg)'};
+  return{label:d+'j',color:'var(--text3)',bg:'transparent'};
+}
+// ─── CONFIRM COOK ────────────────────────
+let _cc={rid:null,mult:1,day:null,ings:[]};
+function openConfirmCook(rid,mult,day){
+  const r=RCP.find(x=>x.id===rid);if(!r)return;
+  _cc={rid,mult,day,ings:(r.used||[]).map(u=>{const it=findItem(u.id);return{id:u.id,name:it?it.name:u.id,qty:u.qty*mult,unit:it?it.unit:'',m100:it&&it.macros100?it.macros100:null};})};
+  document.getElementById('cc-title').textContent=(mult===2?'\u00d72 \u2014 ':'')+r.name;
+  renderCCIngs();document.getElementById('cc-overlay').style.display='flex';
+}
+function closeConfirmCook(){document.getElementById('cc-overlay').style.display='none';}
+function renderCCIngs(){
+  const el=document.getElementById('cc-ings');if(!el)return;
+  el.innerHTML=_cc.ings.map((g,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid rgba(255,255,255,.06);"><span style="flex:1;font-size:13px;color:var(--text2);">${g.name}</span><input type="number" id="cc-${i}" value="${g.qty}" min="0" oninput="updateCCTotals()" style="width:68px;padding:5px 7px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:20px;">${g.unit}</span></div>`).join('');
+  updateCCTotals();
+}
+function updateCCTotals(){
+  const r=RCP.find(x=>x.id===_cc.rid);if(!r)return;
+  let t={kcal:r.kcal*_cc.mult,prot:r.prot*_cc.mult,gluc:r.gluc*_cc.mult,lip:r.lip*_cc.mult};
+  _cc.ings.forEach((g,i)=>{const el=document.getElementById('cc-'+i);const nq=el?parseFloat(el.value)||0:g.qty;if(g.m100&&g.qty>0){const d=nq-g.qty;t.kcal+=Math.round(g.m100.kcal*d/100);t.prot+=Math.round((g.m100.prot||0)*d/100);t.gluc+=Math.round((g.m100.gluc||0)*d/100);t.lip+=Math.round((g.m100.lip||0)*d/100);}});
+  const el=document.getElementById('cc-totals');
+  if(el)el.innerHTML=`<span style="color:var(--orange);">${Math.max(0,t.kcal)} kcal</span><span style="color:var(--green);">${Math.max(0,t.prot)}g prot.</span><span style="color:var(--blue);">${Math.max(0,t.gluc)}g gluc.</span><span style="color:var(--text2);">${Math.max(0,t.lip)}g lip.</span>`;
+  return t;
+}
+function executeCook(){
+  const{rid,mult,day}=_cc;const r=RCP.find(x=>x.id===rid);if(!r)return;
+  _cc.ings.forEach((g,i)=>{const el=document.getElementById('cc-'+i);const uq=el?parseFloat(el.value)||0:g.qty;Object.values(S.inv).forEach(arr=>{const it=arr.find(x=>x.id===g.id);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-uq);});});
+  const did=S.recipeDesserts[rid]||'none';const cd=did==='autre'?S.customDesserts[rid]:null;
+  if(did!=='none'&&did!=='autre'){const d=DESSERTS.find(x=>x.id===did);if(d&&d.inv){Object.values(S.inv).forEach(arr=>{const it=arr.find(x=>x.id===d.inv);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-d.qty);});}}
+  delete S.recipeDesserts[rid];delete S.customDesserts[rid];delete S.customInputs[rid];
+  if(!S.dayMeals[day])S.dayMeals[day]=[];
+  S.dayMeals[day].push({rid,mult:1,dessert:did!=='none'?did:null,customDessert:did==='autre'&&cd&&!cd.loading&&!cd.error?cd:null});
+  const sp=getSpicesUsedByRecipe(r);S.pendingSpiceCheck=sp.length?sp:null;
+  closeConfirmCook();render();saveState();
+}
+// ─── ADD ITEM ────────────────────────────
+let _aic='frigo';
+function openAddItem(cat){_aic=cat||'frigo';document.getElementById('ai-overlay').style.display='flex';document.getElementById('ai-name').value='';document.getElementById('ai-qty').value='';document.getElementById('ai-mbox').style.display='none';document.getElementById('ai-status').textContent='';setAICat(_aic);}
+function closeAddItem(){document.getElementById('ai-overlay').style.display='none';}
+function setAICat(c){_aic=c;['frigo','congelateur','placards','epices'].forEach(k=>{const el=document.getElementById('aicat-'+k);if(!el)return;el.style.background=k===c?'rgba(96,165,250,.15)':'transparent';el.style.borderColor=k===c?'var(--blue)':'rgba(255,255,255,.12)';el.style.color=k===c?'var(--blue)':'#9898a8';});}
+async function aiLookupMacros(){
+  const n=document.getElementById('ai-name').value.trim();if(!n){alert('Entre un nom.');return;}
+  document.getElementById('ai-status').textContent='\U0001f50d Recherche\u2026';
+  try{
+    const sys="Base de donn\u00e9es nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number,\"note\":string}. Si \u00e9pice: kcal:0 et note:'Epice'.";
+    const data=await callAI([{role:'user',content:'Macros 100g de: '+n}],200,sys);
+    const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+    ['kcal','prot','gluc','lip'].forEach(k=>{const el=document.getElementById('ai-m-'+k);if(el)el.value=p[k]||0;});
+    document.getElementById('ai-mnote').textContent=p.note||'';
+    document.getElementById('ai-mbox').style.display='block';
+    document.getElementById('ai-status').textContent='\u2713 V\u00e9rifie et ajuste si besoin.';
+  }catch(e){document.getElementById('ai-status').textContent='Erreur: '+e.message.slice(0,50);}
+}
+function confirmAddItem(){
+  const n=document.getElementById('ai-name').value.trim();if(!n)return;
+  const qty=parseFloat(document.getElementById('ai-qty').value)||null;
+  const unit=document.getElementById('ai-unit').value;
+  const cat=_aic,isEp=cat==='epices';
+  const id='cx_'+Date.now().toString(36);
+  const item={id,name:n,qty:isEp?null:qty,unit:isEp?'':unit,urgent:0,
+    macros100:{kcal:parseFloat(document.getElementById('ai-m-kcal').value)||0,prot:parseFloat(document.getElementById('ai-m-prot').value)||0,gluc:parseFloat(document.getElementById('ai-m-gluc').value)||0,lip:parseFloat(document.getElementById('ai-m-lip').value)||0}};
+  if(!S.inv[cat])S.inv[cat]=[];S.inv[cat].push(item);saveState();closeAddItem();render();
+}
 // ─── SYNC FIREBASE + LOCALSTORAGE ───────────────────────────────────────────
 const FB = 'https://bouffe-frigo-default-rtdb.europe-west1.firebasedatabase.app';
 let _syncStatus = ''; // '' | 'ok' | 'offline'
@@ -476,10 +574,10 @@ function _applyState(d){
 async function saveState(){
   const payload=JSON.stringify({dayMeals:S.dayMeals,inv:S.inv,groqKey:localStorage.getItem('anthropic_key')||''});
   // 1. localStorage immédiat (fallback offline)
-  try{localStorage.setItem('frigo_state',payload);}catch(e){}
+  try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
   // 2. Firebase (sync cross-device)
   try{
-    const r=await fetch(`${FB}/state.json`,{
+    const r=await fetch(`${FB}/${ACTIVE_PROFILE}/state.json`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body:payload
@@ -503,7 +601,7 @@ async function loadState(){
         if(d.groqKey&&!localStorage.getItem('anthropic_key')){
           localStorage.setItem('anthropic_key',d.groqKey);
         }
-        try{localStorage.setItem('frigo_state',JSON.stringify(d));}catch(e){}
+        try{localStorage.setItem(ACTIVE_PROFILE+'_st',JSON.stringify(d));}catch(e){}
         _syncStatus='ok';
         return;
       }
@@ -549,7 +647,7 @@ async function callAI(messages,maxTokens=300,system=null){
   if(!key){openSettings();throw new Error('NO_KEY');}
   // Détecte si la requête contient une image
   const hasImg=messages.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'));
-  const model=hasImg?'llama-3.2-11b-vision-preview':'llama-3.1-8b-instant';
+  const model=hasImg?'meta-llama/llama-4-scout-17b-16e-instruct':'llama-3.1-8b-instant';
   // Construire les messages au format OpenAI (compatible Groq)
   const msgs=[];
   if(system)msgs.push({role:'system',content:system});
@@ -593,11 +691,12 @@ function closePhoto(){document.getElementById('photo-overlay').style.display='no
 
 function handlePhotoSelected(input){
   const file=input.files[0];if(!file)return;
-  const reader=new FileReader();
-  reader.onload=async(e)=>{
-    const dataUrl=e.target.result;
-    const b64=dataUrl.split(',')[1];
-    const mime=file.type||'image/jpeg';
+  const img=new Image(),ou=URL.createObjectURL(file);
+  img.onload=async()=>{
+    const MAX=800,sc=Math.min(1,MAX/Math.max(img.width,img.height));
+    const cv=document.createElement('canvas');cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
+    cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);URL.revokeObjectURL(ou);
+    const dataUrl=cv.toDataURL('image/jpeg',0.85);const b64=dataUrl.split(',')[1];const mime='image/jpeg';
     const prev=document.getElementById('photo-preview');
     prev.src=dataUrl;prev.style.display='block';
     document.getElementById('photo-result').style.display='none';
@@ -705,8 +804,8 @@ function execCook(rid,mult,day){
   render();
   saveState();
 }
-function handleCook(rid,mult){const r=RCP.find(x=>x.id===rid);if(!r||!canCook(r,mult)||cookedToday(rid))return;const h=new Date().getHours();if(h<4){S.pendingCook={rid,mult};render();return;}execCook(rid,mult,S.today);}
-function confirmDay(day){if(!S.pendingCook)return;const{rid,mult}=S.pendingCook;S.pendingCook=null;execCook(rid,mult,day);}
+function handleCook(rid,mult){const r=RCP.find(x=>x.id===rid);if(!r||!canCook(r,mult)||cookedToday(rid))return;const h=new Date().getHours();if(h<4){S.pendingCook={rid,mult};render();return;}openConfirmCook(rid,mult,S.today);}
+function confirmDay(day){if(!S.pendingCook)return;const{rid,mult}=S.pendingCook;S.pendingCook=null;openConfirmCook(rid,mult,day);}
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────
 function chip(color,bg,html){return`<span class="chip" style="background:var(${bg});color:var(${color});">${html}</span>`;}
