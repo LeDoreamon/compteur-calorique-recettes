@@ -172,12 +172,8 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
         <label style="font-size:10px;color:#55556a;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Repas</label>
         <input id="free-name" type="text" style="width:100%;padding:8px 10px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#f0f0f2;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
       </div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Kcal</label><input id="free-kcal" type="number" style="width:100%;padding:7px 8px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#fb923c;font-size:13px;outline:none;box-sizing:border-box;"></div>
-        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Prot. g</label><input id="free-prot" type="number" style="width:100%;padding:7px 8px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#4ade80;font-size:13px;outline:none;box-sizing:border-box;"></div>
-        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Gluc. g</label><input id="free-gluc" type="number" style="width:100%;padding:7px 8px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#60a5fa;font-size:13px;outline:none;box-sizing:border-box;"></div>
-        <div><label style="font-size:10px;color:#55556a;display:block;margin-bottom:3px;">Lip. g</label><input id="free-lip" type="number" style="width:100%;padding:7px 8px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#9898a8;font-size:13px;outline:none;box-sizing:border-box;"></div>
-      </div>
+      <div id="free-ing-list" style="margin-bottom:6px;max-height:210px;overflow-y:auto;"></div>
+      <div id="free-totals" style="display:flex;justify-content:center;flex-wrap:wrap;gap:10px;padding:10px 12px;background:#0f0f11;border-radius:8px;margin-bottom:12px;min-height:38px;align-items:center;font-size:12px;color:#55556a;">—</div>
 
       <!-- Inventory toggle -->
       <label style="display:flex;align-items:center;gap:10px;padding:10px;background:#0f0f11;border-radius:8px;cursor:pointer;margin-bottom:10px;">
@@ -378,7 +374,8 @@ const S={
   openCat:{frigo:1,congelateur:0,placards:0,epices:0},
   today:TODAY,displayDate:TODAY,
   dayMeals:JSON.parse(JSON.stringify(MEALS_DEFAULT)),
-  pendingCook:null
+  pendingCook:null,
+  pendingSpiceCheck:null
 };
 const ROOT=document.getElementById('root');
 
@@ -532,6 +529,37 @@ async function analyzeCustomDessert(rid,text){
   render();
 }
 
+
+// ─── ÉPICES ──────────────────────────────────────────────────────────────────
+function getSpicesUsedByRecipe(r){
+  const present=(S.inv.epices||[]).filter(e=>e.qty===null);
+  if(!present.length)return[];
+  // Texte de recherche : nom recette + étapes + extras
+  const txt=[r.name,...(r.steps||[]),...(r.extras||[]).map(e=>e.n+' '+e.q)]
+    .join(' ').toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  return present.filter(sp=>{
+    const key=sp.id.replace('epices_','').replace('_','');
+    const word=sp.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(' ')[0];
+    return txt.includes(key)||txt.includes(word);
+  });
+}
+
+function renderSpiceCheck(){
+  if(!S.pendingSpiceCheck)return'';
+  const spices=S.pendingSpiceCheck.filter(s=>s.qty===null);
+  if(!spices.length){S.pendingSpiceCheck=null;return'';}
+  return`<div style="background:rgba(251,191,36,.1);border:0.5px solid var(--warn);border-radius:10px;padding:12px 14px;margin-bottom:14px;">
+    <div style="font-size:13px;font-weight:500;color:var(--warn);margin-bottom:10px;">🌶 Épices utilisées — il t'en reste ?</div>
+    ${spices.map(s=>`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-top:0.5px solid rgba(251,191,36,.2);">
+      <span style="flex:1;font-size:13px;color:var(--text);">${s.name}</span>
+      <button data-action="spice-ok" data-val="${s.id}" style="padding:5px 14px;border-radius:6px;border:0.5px solid var(--green);background:transparent;color:var(--green);font-size:12px;cursor:pointer;">✓ Encore</button>
+      <button data-action="spice-no" data-val="${s.id}" style="padding:5px 14px;border-radius:6px;border:0.5px solid var(--red);background:transparent;color:var(--red);font-size:12px;cursor:pointer;">✕ Plus</button>
+    </div>`).join('')}
+    <button data-action="spice-done" style="margin-top:10px;width:100%;padding:9px;border-radius:8px;border:0.5px solid var(--border);background:transparent;color:var(--text2);font-size:13px;cursor:pointer;">Confirmer</button>
+  </div>`;
+}
+// ─────────────────────────────────────────────────────────────────────────────
 function execCook(rid,mult,day){
   const r=RCP.find(x=>x.id===rid);if(!r)return;
   (r.used||[]).forEach(({id,qty})=>{Object.values(S.inv).forEach(arr=>{const it=arr.find(i=>i.id===id);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-qty*mult);});});
@@ -540,6 +568,8 @@ function execCook(rid,mult,day){
   delete S.recipeDesserts[rid];delete S.customDesserts[rid];delete S.customInputs[rid];
   if(!S.dayMeals[day])S.dayMeals[day]=[];
   S.dayMeals[day].push({rid,mult:1,dessert:dessertId!=='none'?dessertId:null,customDessert:dessertId==='autre'&&customD&&!customD.loading&&!customD.error?customD:null});
+  const spicesUsed=getSpicesUsedByRecipe(r);
+  S.pendingSpiceCheck=spicesUsed.length>0?spicesUsed:null;
   render();
   saveState();
 }
@@ -690,6 +720,7 @@ function render(){
       ${!getApiKey()?`<div style="background:rgba(251,146,60,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:#0f0f11;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
       ${renderNightModal()}
+      ${renderSpiceCheck()}
       <div class="meal-tabs">${tabBtns}</div>
       ${shown.length?shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">Aucune recette disponible.</div>'}
       <div style="margin-top:10px;">
@@ -719,6 +750,14 @@ ROOT.addEventListener('click',e=>{
   else if(action==='submit-custom-dessert'){const inp=document.querySelector(`[data-custom-input="${val}"]`);const txt=inp?inp.value.trim():S.customInputs[val]||'';if(txt)analyzeCustomDessert(val,txt);return;}
   else if(action==='prev-day'){const p=shiftDate(S.displayDate,-1);if(p>=shiftDate(S.today,-6))S.displayDate=p;}
   else if(action==='next-day'){const n=shiftDate(S.displayDate,1);if(n<=TOMORROW)S.displayDate=n;}
+  else if(action==='spice-ok'){/* spice still present — nothing to do */}
+  else if(action==='spice-no'){
+    const sp=(S.inv.epices||[]).find(e=>e.id===val);
+    if(sp)sp.qty=0;
+  }
+  else if(action==='spice-done'){
+    S.pendingSpiceCheck=null;saveState();
+  }
   else if(action==='delete-meal'){
     const day=el.dataset.day,idx=parseInt(el.dataset.idx);
     if(S.dayMeals[day]){S.dayMeals[day].splice(idx,1);saveState();}
@@ -927,6 +966,8 @@ if('serviceWorker' in navigator){
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveState();});
 
 // ─── REPAS LIBRE (texte ou photo) ────────────────────────────────────────────
+let _freeIng=[];
+
 function openFreeOverlay(){
   document.getElementById('free-overlay').style.display='flex';
   openFreeInput();
@@ -937,6 +978,7 @@ function openFreeInput(){
   document.getElementById('fs-review').style.display='none';
   document.getElementById('free-use-inv').checked=false;
   document.getElementById('free-inv-box').style.display='none';
+  _freeIng=[];
 }
 function closeFreeOverlay(){document.getElementById('free-overlay').style.display='none';}
 function showFreeStep(s){
@@ -944,29 +986,61 @@ function showFreeStep(s){
     document.getElementById('fs-'+k).style.display=k===s?'block':'none';
   });
 }
-function fillFreeReview(name,kcal,prot,gluc,lip){
-  document.getElementById('free-name').value=name||'Repas';
-  document.getElementById('free-kcal').value=Math.round(kcal)||0;
-  document.getElementById('free-prot').value=Math.round(prot)||0;
-  document.getElementById('free-gluc').value=Math.round(gluc)||0;
-  document.getElementById('free-lip').value=Math.round(lip)||0;
+
+function renderFreeIngredients(){
+  const list=document.getElementById('free-ing-list');
+  if(!list)return;
+  if(!_freeIng.length){list.innerHTML='<div style="font-size:12px;color:#55556a;padding:8px 0;">Aucun ingrédient détecté.</div>';return;}
+  list.innerHTML=_freeIng.map((ing,idx)=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(255,255,255,.06);">
+      <span style="flex:1;font-size:12px;color:#9898a8;">${ing.name}</span>
+      <input type="number" id="fing-${idx}" value="${ing.qty}" min="0" oninput="updateFreeTotals()" style="width:62px;padding:5px 7px;background:#161619;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:#f0f0f2;font-size:12px;outline:none;text-align:center;">
+      <span style="font-size:11px;color:#55556a;min-width:22px;">${ing.unit}</span>
+      <span style="font-size:11px;color:#fb923c;min-width:38px;text-align:right;" id="fing-k-${idx}">${ing.kcal}k</span>
+    </div>`).join('');
 }
+
+function updateFreeTotals(){
+  const t={kcal:0,prot:0,gluc:0,lip:0};
+  _freeIng.forEach((ing,idx)=>{
+    const el=document.getElementById('fing-'+idx);
+    const q=el?parseFloat(el.value)||0:ing.qty;
+    const r=ing.qty>0?q/ing.qty:0;
+    const k=Math.round(ing.kcal*r);
+    t.kcal+=k; t.prot+=Math.round(ing.prot*r);
+    t.gluc+=Math.round(ing.gluc*r); t.lip+=Math.round(ing.lip*r);
+    const kEl=document.getElementById('fing-k-'+idx);
+    if(kEl)kEl.textContent=k+'k';
+  });
+  const el=document.getElementById('free-totals');
+  if(el)el.innerHTML=`<span style="color:#fb923c;">${t.kcal} kcal</span><span style="color:#4ade80;">${t.prot}g prot.</span><span style="color:#60a5fa;">${t.gluc}g gluc.</span><span style="color:#9898a8;">${t.lip}g lip.</span>`;
+  return t;
+}
+
+function fillFreeReview(name,ingredients){
+  _freeIng=ingredients.map(i=>({...i}));
+  document.getElementById('free-name').value=name||'Repas';
+  renderFreeIngredients();
+  updateFreeTotals();
+  showFreeStep('review');
+}
+
+const FREE_SYS="Tu es nutritionniste. Analyse ce repas et retourne UNIQUEMENT un JSON sans markdown: {\"name\":string (max 60 chars, français), \"ingredients\":[{\"name\":string, \"qty\":number, \"unit\":string (g/mL/pcs), \"kcal\":integer, \"prot\":integer, \"gluc\":integer, \"lip\":integer}]}. Si ce n'est PAS un repas: {\"error\":\"non_alimentaire\"}. Sois légèrement pessimiste.";
+
 async function analyzeFreeText(){
   const txt=document.getElementById('free-text').value.trim();
   if(!txt)return;
   showFreeStep('loading');
   try{
-    const sys="Tu es nutritionniste. Analyse ce repas décrit et estime les macros. Sois légèrement pessimiste. Si le texte ne décrit pas un aliment ou un repas, réponds UNIQUEMENT: {\"error\":\"non_alimentaire\"}. Sinon réponds UNIQUEMENT avec un JSON sans markdown: {\"name\":string (max 70 chars, français),\"kcal\":integer,\"prot\":integer,\"gluc\":integer,\"lip\":integer}";
-    const data=await callAI([{role:'user',content:txt}],350,sys);
+    const data=await callAI([{role:'user',content:txt}],600,FREE_SYS);
     const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
-    if(p.error){showFreeStep('input');alert("\u26a0\ufe0f Ce n'est pas un repas — décris un aliment.");return;}
-    fillFreeReview(p.name,p.kcal,p.prot,p.gluc,p.lip);
-    showFreeStep('review');
+    if(p.error){showFreeStep('input');alert('\u26a0\ufe0f Ce n\'est pas un repas — décris un aliment.');return;}
+    fillFreeReview(p.name,p.ingredients||[]);
   }catch(e){
     showFreeStep('input');
     if(e.message!=='NO_KEY'){
-      const detail=e.message.startsWith('API:')?e.message.slice(4):e.message.startsWith('NETWORK:')?'Erreur réseau — vérifie ta connexion':e.message;
-      alert('\u26a0\ufe0f Erreur : '+detail);
+      const d=e.message.startsWith('API:')?e.message.slice(4):e.message.startsWith('NETWORK:')?'Erreur réseau':e.message;
+      alert('\u26a0\ufe0f '+d);
     }
   }
 }
@@ -979,21 +1053,14 @@ function handleFreePhoto(input){
     try{
       const data=await callAI([{role:'user',content:[
         {type:'image',source:{type:'base64',media_type:mime,data:b64}},
-        {type:'text',text:"Analyse cette image. Si ce n'est PAS un aliment ou repas (objet, meuble, animal, personne, etc.), réponds UNIQUEMENT: {\"error\":\"non_alimentaire\"}. Sinon, estime les macros (légèrement pessimiste) et réponds UNIQUEMENT avec un JSON sans markdown: {\"name\":string (max 70 chars, français),\"kcal\":integer,\"prot\":integer,\"gluc\":integer,\"lip\":integer}"}
-      ]}],500);
+        {type:'text',text:FREE_SYS.replace('Analyse ce repas','Analyse cette photo de repas')}
+      ]}],600);
       const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
-      if(p.error){showFreeStep('input');alert("\u26a0\ufe0f Ce n'est pas un aliment — prends une photo de ton repas.");return;}
-      fillFreeReview(p.name,p.kcal,p.prot,p.gluc,p.lip);
-      showFreeStep('review');
+      if(p.error){showFreeStep('input');alert('\u26a0\ufe0f Ce n\'est pas un aliment.');return;}
+      fillFreeReview(p.name,p.ingredients||[]);
     }catch(e){
       showFreeStep('input');
-      if(e.message!=='NO_KEY'){
-        const detail=e.message.startsWith('API:')?e.message.slice(4):e.message.startsWith('NETWORK:')?'Erreur réseau':e.message;
-        showFreeStep('input');
-        document.getElementById('free-text').value='';
-        document.getElementById('photo-status')||0;
-        alert('\u26a0\ufe0f '+detail);
-      }
+      if(e.message!=='NO_KEY')alert('\u26a0\ufe0f Erreur analyse photo');
     }
   };
   reader.readAsDataURL(file);
@@ -1020,30 +1087,22 @@ function toggleInvCb(id,on){
 }
 function confirmFreeEntry(){
   const name=document.getElementById('free-name').value.trim()||'Repas libre';
-  const kcal=parseInt(document.getElementById('free-kcal').value)||0;
-  const prot=parseInt(document.getElementById('free-prot').value)||0;
-  const gluc=parseInt(document.getElementById('free-gluc').value)||0;
-  const lip=parseInt(document.getElementById('free-lip').value)||0;
+  const t=updateFreeTotals();
   const id='_free_'+Date.now();
-  RCP.push({id,slots:[],name,kcal,prot,gluc,lip,steps:[],used:[],extras:[]});
+  RCP.push({id,slots:[],name,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip,steps:[],used:[],extras:[]});
   if(!S.dayMeals[S.today])S.dayMeals[S.today]=[];
   S.dayMeals[S.today].push({rid:id,mult:1,dessert:null,customDessert:null});
-  // Deduct inventory if requested
   if(document.getElementById('free-use-inv').checked){
     Object.values(S.inv).flat().forEach(it=>{
       const cb=document.getElementById('icb-'+it.id);
       const qEl=document.getElementById('iqty-'+it.id);
-      if(cb&&cb.checked&&qEl){
-        const q=parseFloat(qEl.value)||0;
-        if(q>0&&it.qty!==null)it.qty=Math.max(0,it.qty-q);
-      }
+      if(cb&&cb.checked&&qEl){const q=parseFloat(qEl.value)||0;if(q>0&&it.qty!==null)it.qty=Math.max(0,it.qty-q);}
     });
   }
-  saveState();
-  closeFreeOverlay();
-  render();
+  saveState();closeFreeOverlay();render();
 }
 // ─────────────────────────────────────────────────────────────────────────────
+
 </script>
 </body>
 </html>
