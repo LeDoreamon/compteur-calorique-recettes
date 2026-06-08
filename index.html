@@ -744,7 +744,7 @@ async function generateStockRecipes(){
 INGRÉDIENTS DISPONIBLES (utilise EXACTEMENT l'identifiant avant le "="):
 ${invList}
 
-Épices disponibles (UTILISE-LES pour relever les plats !): ${spiceList}
+Épices disponibles (à utiliser quand le plat s'y prête): ${spiceList}
 
 Retourne UNIQUEMENT un tableau JSON valide, rien d'autre:
 [{"name":"Bowl poulet curry","slots":["lunch","dinner"],"kcal":650,"prot":55,"gluc":70,"lip":12,"ingredients":[{"id":"poulet","name":"Poulet","qty":200,"unit":"g"},{"id":"riz","name":"Riz","qty":100,"unit":"g"}],"steps":["Cuire 100g de riz 12 min dans l'eau bouillante salée.","Couper le poulet en morceaux et le poêler 6-7 min à feu moyen.","Ajouter le curry et 50ml d'eau, laisser mijoter 3 min.","Servir le poulet sur le riz."]}]
@@ -756,7 +756,7 @@ RÈGLES ABSOLUES:
 - "qty" JAMAIS supérieur au stock disponible indiqué entre parenthèses.
 - "steps" = TABLEAU de 3 à 5 étapes SÉPARÉES. UNE seule action par étape. Ne JAMAIS tout mettre dans une seule étape.
 - macros calculées au plus juste pour 1 portion.
-- ASSAISONNE chaque plat avec les épices disponibles (curry, paprika, ail, etc.) pour des recettes savoureuses.
+- Assaisonne les plats SALÉS avec l'épice PERTINENTE (curry sur un curry, paprika sur une viande, ail dans un wok...), mais JAMAIS de la salade au hasard. Les plats SUCRÉS (bowls sucrés, shakes, compotes, fruits) ne reçoivent PAS d'épices salées.
 - recettes vari\u00e9es, savoureuses et COH\u00c9RENTES : de vrais plats \u00e9quilibr\u00e9s, pas de simples assemblages. Associe intelligemment prot\u00e9ines + f\u00e9culents + l\u00e9gumes/sauce.
 - privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : mieux vaut 6 excellentes recettes que 12 m\u00e9diocres.`;
   try{
