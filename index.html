@@ -469,7 +469,8 @@ const S={
   today:TODAY,displayDate:TODAY,
   dayMeals:JSON.parse(JSON.stringify(MEALS_DEFAULT)),
   pendingCook:null,
-  pendingSpiceCheck:null
+  pendingSpiceCheck:null,
+  aiRecipes:[]
 };
 const ROOT=document.getElementById('root');
 
@@ -583,11 +584,11 @@ function closeAddItem(){document.getElementById('ai-overlay').style.display='non
 function setAICat(c){_aic=c;['frigo','congelateur','placards','epices'].forEach(k=>{const el=document.getElementById('aicat-'+k);if(!el)return;el.style.background=k===c?'rgba(96,165,250,.15)':'transparent';el.style.borderColor=k===c?'var(--blue)':'rgba(255,255,255,.12)';el.style.color=k===c?'var(--blue)':'#9898a8';});}
 async function aiLookupMacros(){
   const n=document.getElementById('ai-name').value.trim();if(!n){alert('Entre un nom.');return;}
-  document.getElementById('ai-status').textContent='\U0001f50d Recherche\u2026';
+  document.getElementById('ai-status').textContent='🔍 Recherche\u2026';
   try{
     const sys="Base de donn\u00e9es nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number,\"note\":string}. Si \u00e9pice: kcal:0 et note:'Epice'.";
     const data=await callAI([{role:'user',content:'Macros 100g de: '+n}],200,sys);
-    const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+    const p=extractJSON(data.content.map(i=>i.text||'').join(''));
     ['kcal','prot','gluc','lip'].forEach(k=>{const el=document.getElementById('ai-m-'+k);if(el)el.value=p[k]||0;});
     document.getElementById('ai-mnote').textContent=p.note||'';
     document.getElementById('ai-mbox').style.display='block';
@@ -630,6 +631,8 @@ function _applyState(d){
   }
   // Clé Groq
   if(d.groqKey&&!localStorage.getItem('anthropic_key'))localStorage.setItem('anthropic_key',d.groqKey);
+  // Recettes IA → re-pousser dans RCP
+  if(d.aiRecipes&&Array.isArray(d.aiRecipes)){S.aiRecipes=d.aiRecipes;S.aiRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
 }
 function _syncBadge(){
   if(_syncStatus==='ok') return '<span style="font-size:10px;color:var(--green);">☁ sync</span>';
@@ -642,6 +645,7 @@ async function saveState(){
   const payload=JSON.stringify({
     dayMeals:S.dayMeals,
     inv:S.inv,
+    aiRecipes:S.aiRecipes||[],
     groqKey:localStorage.getItem('anthropic_key')||'',
     _profile:ACTIVE_PROFILE
   });
@@ -699,6 +703,87 @@ function clearApiKey(){
 
 // ─── ANTHROPIC HELPER (avec clé utilisateur) ─────────────────────────────────
 // callAI — Groq (gratuit, 14 400 req/jour, vision incluse)
+
+function extractJSON(text){
+  let t=text.replace(/```json/gi,'').replace(/```/g,'').trim();
+  const s=t.indexOf('{'),e=t.lastIndexOf('}');
+  if(s>=0&&e>s)t=t.slice(s,e+1);
+  return JSON.parse(t);
+}
+function extractJSONArray(text){
+  let t=text.replace(/```json/gi,'').replace(/```/g,'').trim();
+  const s=t.indexOf('['),e=t.lastIndexOf(']');
+  if(s>=0&&e>s)t=t.slice(s,e+1);
+  return JSON.parse(t);
+}
+
+// ─── GÉNÉRATION RECETTES IA SELON STOCK ──────────────────────────────────────
+async function generateStockRecipes(){
+  // Collecter les ingrédients disponibles (hors épices pour le comptage minimum)
+  const allItems=Object.values(S.inv).flat();
+  const foodItems=allItems.filter(i=>i.qty!==null&&i.qty>0);
+  const spices=allItems.filter(i=>i.qty===null).map(i=>i.name);
+  if(foodItems.length<5){
+    alert('Il faut au moins 5 ingrédients en stock pour générer des recettes cohérentes. Ajoute des aliments à ton inventaire d\'abord !');
+    return;
+  }
+  const btn=document.getElementById('gen-recipes-btn');
+  if(btn){btn.disabled=true;btn.textContent='✨ Génération en cours…';}
+  const invList=foodItems.map(i=>`${i.id}|${i.name} (${i.qty}${i.unit})`).join('\n');
+  const spiceList=spices.length?spices.join(', '):'aucune';
+  const diet=ACTIVE_PROFILE==='maureen'
+    ?'PRISE DE MASSE : repas caloriques et rassasiants, objectif 2700 kcal/jour avec 145g de protéines. Privilégie les portions généreuses et les sources de glucides et lipides sains.'
+    :'SÈCHE / RECOMPOSITION : repas riches en protéines, modérés en calories, objectif 2600 kcal/jour avec 175g de protéines. Privilégie les protéines maigres et limite les lipides superflus.';
+  const sys=`Tu es un chef nutritionniste. Génère 4 recettes RÉALISTES et COHÉRENTES en utilisant UNIQUEMENT les ingrédients disponibles ci-dessous (tu peux ne pas tous les utiliser). Régime visé: ${diet}
+
+Ingrédients disponibles (format id|nom (quantité)):
+${invList}
+
+Épices disponibles: ${spiceList}
+
+Retourne UNIQUEMENT un tableau JSON (aucun texte autour):
+[{"name":"Nom du plat","slots":["lunch"],"kcal":650,"prot":50,"gluc":60,"lip":15,"ingredients":[{"id":"poulet","qty":200,"unit":"g"}],"steps":["étape 1","étape 2"]}]
+
+Règles STRICTES:
+- slots parmi: "breakfast","lunch","snack","dinner" (mets les slots pertinents)
+- ingredients: utilise EXACTEMENT les id fournis ci-dessus
+- qty réalistes pour 1 portion
+- macros calculées au plus juste
+- 2 à 4 étapes courtes par recette
+- Recettes variées et adaptées au régime`;
+  try{
+    const data=await callAI([{role:'user',content:'Génère les 4 recettes maintenant.'}],2500,sys);
+    const recipes=extractJSONArray(data.content.map(i=>i.text||'').join(''));
+    // Convertir au format RCP
+    const newRecipes=recipes.map((r,idx)=>({
+      id:'ai_'+Date.now().toString(36)+'_'+idx,
+      slots:Array.isArray(r.slots)?r.slots:['lunch'],
+      name:r.name||'Recette IA',
+      ai:true,
+      urgent:0,ur:null,
+      time:15,
+      kcal:Math.round(r.kcal)||0,prot:Math.round(r.prot)||0,gluc:Math.round(r.gluc)||0,lip:Math.round(r.lip)||0,
+      steps:Array.isArray(r.steps)?r.steps:[],
+      used:(r.ingredients||[]).filter(g=>g.id&&findItem(g.id)).map(g=>({id:g.id,qty:parseFloat(g.qty)||0})),
+      extras:[]
+    })).filter(r=>r.used.length>0);
+    S.aiRecipes=newRecipes;
+    // Ajouter à RCP en mémoire (éviter doublons)
+    S.aiRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});
+    saveState();render();
+    if(newRecipes.length===0)alert('L\'IA n\'a pas réussi à générer de recettes valides. Réessaie.');
+  }catch(e){
+    alert('Erreur lors de la génération : '+e.message.slice(0,80));
+    if(btn){btn.disabled=false;btn.textContent='✨ Générer des recettes selon mon stock';}
+  }
+}
+function clearAIRecipes(){
+  S.aiRecipes.forEach(r=>{const i=RCP.findIndex(x=>x.id===r.id);if(i>=0)RCP.splice(i,1);});
+  S.aiRecipes=[];
+  saveState();render();
+}
+// ─────────────────────────────────────────────────────────────────────────────
+
 async function callAI(messages,maxTokens=300,system=null){
   const key=getApiKey();
   if(!key){openSettings();throw new Error('NO_KEY');}
@@ -957,7 +1042,7 @@ function renderCard(r){
   const wb=wc>0?`<span class="chip" style="background:var(--green-bg);color:var(--green);">↺ ×${wc}/sem.</span>`:'';
   return`<div class="rcard" style="border-color:${bc};"><div class="rhead" data-action="toggle-recipe" data-val="${r.id}">
     <div style="flex:1;min-width:0;">
-      <div style="font-weight:500;font-size:14px;color:var(--text);">${r.name}</div>
+      <div style="font-weight:500;font-size:14px;color:var(--text);">${r.ai?'✨ ':''}${r.name}</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;">${r.urgent?`<span class="chip" style="background:var(--red-bg);color:var(--red);">⚠ ${r.ur}</span>`:''}${wb}</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
         ${chip('--text2','--bg3','⏱ '+r.time+'m')}
@@ -999,7 +1084,7 @@ function renderInv(){
     const addBtn=S.editMode&&open?`<div style="padding:6px 15px;border-top:0.5px solid var(--border);"><button onclick="openAddItem('${cat}')" style="width:100%;padding:8px;background:transparent;border:0.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">\u2795 Ajouter dans ${info.label}</button></div>`:'';
     return`<div class="catcard"><div class="chead" data-action="toggle-cat" data-val="${cat}"><span style="font-size:15px;">${info.sym}</span><span style="flex:1;">${info.label}</span>${urg.length?`<span class="chip" style="background:var(--red-bg);color:var(--red);margin-right:6px;">\u26a0 ${urg.length}</span>`:''}<span style="font-size:14px;color:var(--text3);">${open?'\u25be':'\u25b8'}</span></div>${rows}${addBtn}</div>`;
   }).join('');
-  if(!Object.values(S.inv).flat().length)return`<div style="text-align:center;padding:2rem 1rem;"><div style="font-size:32px;margin-bottom:10px;">\U0001f33f</div><div style="font-size:14px;color:var(--text3);margin-bottom:12px;">Inventaire vide — ajoute tes aliments !</div><button onclick="openAddItem('frigo')" style="padding:9px 18px;background:linear-gradient(135deg,#ec4899,#be185d);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button></div>`;
+  if(!Object.values(S.inv).flat().length)return`<div style="text-align:center;padding:2rem 1rem;"><div style="font-size:32px;margin-bottom:10px;">🌿</div><div style="font-size:14px;color:var(--text3);margin-bottom:12px;">Inventaire vide — ajoute tes aliments !</div><button onclick="openAddItem('frigo')" style="padding:9px 18px;background:linear-gradient(135deg,#ec4899,#be185d);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button></div>`;
   return editBtn+cats;
 }
 function render(){
@@ -1017,7 +1102,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">Compteur calorique</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Sèche · macros précises</div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'}</div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -1031,6 +1116,10 @@ function render(){
       ${renderMacros()}
       ${renderNightModal()}
       ${renderSpiceCheck()}
+      <div style="margin-bottom:12px;">
+        <button id="gen-recipes-btn" onclick="generateStockRecipes()" style="width:100%;padding:10px;background:linear-gradient(135deg,#8b5cf6,#6366f1);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✨ Générer des recettes selon mon stock</button>
+        ${S.aiRecipes&&S.aiRecipes.length?`<button onclick="clearAIRecipes()" style="width:100%;padding:7px;margin-top:6px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">🗑 Effacer les ${S.aiRecipes.length} recettes IA</button>`:''}
+      </div>
       <div class="meal-tabs">${tabBtns}</div>
       ${shown.length?shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">Aucune recette disponible.</div>'}
       <div style="margin-top:10px;">
@@ -1399,7 +1488,7 @@ async function analyzeFreeText(){
   showFreeStep('loading');
   try{
     const data=await callAI([{role:'user',content:txt}],600,FREE_SYS);
-    const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+    const p=extractJSON(data.content.map(i=>i.text||'').join(''));
     if(p.error){showFreeStep('input');alert('\u26a0\ufe0f Ce n\'est pas un repas — décris un aliment.');return;}
     fillFreeReview(p.name,p.ingredients||[]);
   }catch(e){
@@ -1421,7 +1510,7 @@ function handleFreePhoto(input){
         {type:'image',source:{type:'base64',media_type:mime,data:b64}},
         {type:'text',text:FREE_SYS.replace('Analyse ce repas','Analyse cette photo de repas')}
       ]}],600);
-      const p=JSON.parse(data.content.map(i=>i.text||'').join('').replace(/```json|```/g,'').trim());
+      const p=extractJSON(data.content.map(i=>i.text||'').join(''));
       if(p.error){showFreeStep('input');alert('\u26a0\ufe0f Ce n\'est pas un aliment.');return;}
       fillFreeReview(p.name,p.ingredients||[]);
     }catch(e){
