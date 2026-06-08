@@ -731,8 +731,8 @@ async function generateStockRecipes(){
   const invList=foodItems.map(i=>`${i.id} = ${i.name} (${i.qty}${i.unit} dispo)`).join('\n');
   const spiceList=spices.length?spices.join(', '):'aucune';
   const diet=ACTIVE_PROFILE==='maureen'
-    ?'PRISE DE MASSE : repas caloriques et rassasiants, ~2700 kcal/jour, 145g protéines. Portions généreuses, glucides et lipides sains.'
-    :'SÈCHE / RECOMPOSITION : repas riches en protéines, modérés en calories, ~2600 kcal/jour, 175g protéines. Protéines maigres, lipides limités.';
+    ?'PRISE DE MASSE : repas caloriques et rassasiants, ~2700 kcal/jour, 145g prot\u00e9ines. Portions g\u00e9n\u00e9reuses, glucides et lipides sains.'
+    :'S\u00c8CHE / RECOMPOSITION : repas riches en prot\u00e9ines, mod\u00e9r\u00e9s en calories, ~2600 kcal/jour, 175g prot\u00e9ines. Prot\u00e9ines maigres, lipides limit\u00e9s. IMPORTANT: les tomates cerises se mangent UNIQUEMENT crues/fra\u00eeches, JAMAIS cuites, po\u00eal\u00e9es ou r\u00f4ties.';
   const sys=`Tu es un chef nutritionniste. Génère un MAXIMUM de recettes RÉALISTES et VARIÉES (jusqu'à 4 par type de repas) en utilisant UNIQUEMENT les ingrédients ci-dessous. Régime: ${diet}
 
 INGRÉDIENTS DISPONIBLES (utilise EXACTEMENT l'identifiant avant le "="):
@@ -750,9 +750,10 @@ RÈGLES ABSOLUES:
 - "qty" JAMAIS supérieur au stock disponible indiqué entre parenthèses.
 - "steps" = TABLEAU de 3 à 5 étapes SÉPARÉES. UNE seule action par étape. Ne JAMAIS tout mettre dans une seule étape.
 - macros calculées au plus juste pour 1 portion.
-- recettes variées et cohérentes (pas juste des pâtes nature).`;
+- recettes vari\u00e9es, savoureuses et COH\u00c9RENTES : de vrais plats \u00e9quilibr\u00e9s, pas de simples assemblages. Associe intelligemment prot\u00e9ines + f\u00e9culents + l\u00e9gumes/sauce.
+- privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : mieux vaut 6 excellentes recettes que 12 m\u00e9diocres.`;
   try{
-    const data=await callAI([{role:'user',content:'Génère le maximum de recettes variées maintenant, en JSON.'}],4000,sys,'llama-3.3-70b-versatile');
+    const data=await callAI([{role:'user',content:'Génère le maximum de recettes variées et cohérentes maintenant, en JSON. Prends le temps de bien faire.'}],6000,sys,'llama-3.3-70b-versatile');
     const raw=data.content.map(i=>i.text||'').join('');
     let recipes;
     try{recipes=extractJSONArray(raw);}catch(pe){throw new Error('Réponse IA illisible. Réessaie.');}
@@ -1078,7 +1079,7 @@ function renderInv(){
   const editBtn=`<button onclick="toggleEditMode()" style="padding:6px 14px;background:${S.editMode?'rgba(96,165,250,.2)':'transparent'};border:0.5px solid ${S.editMode?'var(--blue)':'var(--border)'};border-radius:8px;color:${S.editMode?'var(--blue)':'var(--text2)'};font-size:13px;cursor:pointer;margin-bottom:14px;display:block;width:100%;">${S.editMode?'\u2713 Terminer l\'édition':'\u270f\ufe0f Éditer l\'inventaire'}</button>`;
   const cats=Object.entries(S.inv).map(([cat,items])=>{
     const visible=S.editMode?items:items.filter(i=>i.qty===null||i.qty>0);
-    const info=CINFO[cat],urg=visible.filter(i=>i.urgent&&(i.qty===null||i.qty>0)),open=S.openCat[cat];
+    const info=CINFO[cat],urg=visible.filter(i=>i.urgent&&(i.qty===null||i.qty>0)),open=S.editMode?true:S.openCat[cat];
     const rows=open?visible.map(it=>{
       const isUrg=it.urgent&&(it.qty===null||it.qty>0);
       const isEp=cat==='epices'||it.qty===null;
