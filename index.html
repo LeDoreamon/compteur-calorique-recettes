@@ -620,6 +620,12 @@ function _applyState(d){
     if(ACTIVE_PROFILE==='maureen'&&n>5&&!d._profile){/* contamination Liam → garder INV_EMPTY */}
     else S.inv=d.inv;
   }
+  // Restaurer les épices par défaut de Liam (staples toujours présents, ne disparaissent jamais)
+  if(ACTIVE_PROFILE==='liam'){
+    if(!S.inv.epices)S.inv.epices=[];
+    const have=new Set(S.inv.epices.map(s=>s.id));
+    INV_DEFAULT.epices.forEach(sp=>{if(!have.has(sp.id))S.inv.epices.push(JSON.parse(JSON.stringify(sp)));});
+  }
   // Repas : Firebase est source de vérité pour les jours qu'il contient
   // Les jours absents de Firebase utilisent MEALS_DEFAULT (pour Liam) ou {} (pour Maureen)
   if(d.dayMeals){
@@ -738,7 +744,7 @@ async function generateStockRecipes(){
 INGRÉDIENTS DISPONIBLES (utilise EXACTEMENT l'identifiant avant le "="):
 ${invList}
 
-Épices: ${spiceList}
+Épices disponibles (UTILISE-LES pour relever les plats !): ${spiceList}
 
 Retourne UNIQUEMENT un tableau JSON valide, rien d'autre:
 [{"name":"Bowl poulet curry","slots":["lunch","dinner"],"kcal":650,"prot":55,"gluc":70,"lip":12,"ingredients":[{"id":"poulet","name":"Poulet","qty":200,"unit":"g"},{"id":"riz","name":"Riz","qty":100,"unit":"g"}],"steps":["Cuire 100g de riz 12 min dans l'eau bouillante salée.","Couper le poulet en morceaux et le poêler 6-7 min à feu moyen.","Ajouter le curry et 50ml d'eau, laisser mijoter 3 min.","Servir le poulet sur le riz."]}]
@@ -750,6 +756,7 @@ RÈGLES ABSOLUES:
 - "qty" JAMAIS supérieur au stock disponible indiqué entre parenthèses.
 - "steps" = TABLEAU de 3 à 5 étapes SÉPARÉES. UNE seule action par étape. Ne JAMAIS tout mettre dans une seule étape.
 - macros calculées au plus juste pour 1 portion.
+- ASSAISONNE chaque plat avec les épices disponibles (curry, paprika, ail, etc.) pour des recettes savoureuses.
 - recettes vari\u00e9es, savoureuses et COH\u00c9RENTES : de vrais plats \u00e9quilibr\u00e9s, pas de simples assemblages. Associe intelligemment prot\u00e9ines + f\u00e9culents + l\u00e9gumes/sauce.
 - privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : mieux vaut 6 excellentes recettes que 12 m\u00e9diocres.`;
   try{
