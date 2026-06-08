@@ -727,50 +727,64 @@ async function generateStockRecipes(){
     return;
   }
   const btn=document.getElementById('gen-recipes-btn');
-  if(btn){btn.disabled=true;btn.textContent='✨ Génération en cours… (10-20s)';}
+  if(btn){btn.disabled=true;btn.textContent='✨ Génération en cours… (15-30s)';}
   const invList=foodItems.map(i=>`${i.id} = ${i.name} (${i.qty}${i.unit} dispo)`).join('\n');
   const spiceList=spices.length?spices.join(', '):'aucune';
   const diet=ACTIVE_PROFILE==='maureen'
-    ?'PRISE DE MASSE : repas caloriques et rassasiants, objectif 2700 kcal/jour avec 145g de protéines. Portions généreuses, glucides et lipides sains.'
-    :'SÈCHE / RECOMPOSITION : repas riches en protéines, modérés en calories, objectif 2600 kcal/jour avec 175g de protéines. Protéines maigres, lipides limités.';
-  const sys=`Tu es un chef nutritionniste. Génère 4 recettes RÉALISTES en utilisant UNIQUEMENT les ingrédients de la liste ci-dessous. Régime: ${diet}
+    ?'PRISE DE MASSE : repas caloriques et rassasiants, ~2700 kcal/jour, 145g protéines. Portions généreuses, glucides et lipides sains.'
+    :'SÈCHE / RECOMPOSITION : repas riches en protéines, modérés en calories, ~2600 kcal/jour, 175g protéines. Protéines maigres, lipides limités.';
+  const sys=`Tu es un chef nutritionniste. Génère un MAXIMUM de recettes RÉALISTES et VARIÉES (jusqu'à 4 par type de repas) en utilisant UNIQUEMENT les ingrédients ci-dessous. Régime: ${diet}
 
-INGRÉDIENTS DISPONIBLES (utilise EXACTEMENT l'identifiant à gauche du "="):
+INGRÉDIENTS DISPONIBLES (utilise EXACTEMENT l'identifiant avant le "="):
 ${invList}
 
 Épices: ${spiceList}
 
-Retourne UNIQUEMENT un tableau JSON, rien d'autre:
-[{"name":"Nom","slots":["lunch"],"kcal":650,"prot":50,"gluc":60,"lip":15,"ingredients":[{"id":"IDENTIFIANT_EXACT","name":"nom lisible","qty":200,"unit":"g"}],"steps":["étape 1","étape 2"]}]
+Retourne UNIQUEMENT un tableau JSON valide, rien d'autre:
+[{"name":"Bowl poulet curry","slots":["lunch","dinner"],"kcal":650,"prot":55,"gluc":70,"lip":12,"ingredients":[{"id":"poulet","name":"Poulet","qty":200,"unit":"g"},{"id":"riz","name":"Riz","qty":100,"unit":"g"}],"steps":["Cuire 100g de riz 12 min dans l'eau bouillante salée.","Couper le poulet en morceaux et le poêler 6-7 min à feu moyen.","Ajouter le curry et 50ml d'eau, laisser mijoter 3 min.","Servir le poulet sur le riz."]}]
 
-RÈGLES:
-- slots parmi: breakfast, lunch, snack, dinner
-- "id" DOIT être un identifiant EXACT de la liste ci-dessus (la partie avant le "=")
-- qty réaliste pour 1 portion, jamais plus que le stock dispo
-- 2-4 étapes courtes
-- recettes variées adaptées au régime`;
+RÈGLES ABSOLUES:
+- Génère jusqu'à 4 recettes par type de repas pertinent (breakfast, lunch, snack, dinner). Vise 8 à 12 recettes au total.
+- Une recette peut convenir à plusieurs repas → mets plusieurs valeurs dans "slots".
+- "id" = identifiant EXACT de la liste (partie avant le "=").
+- "qty" JAMAIS supérieur au stock disponible indiqué entre parenthèses.
+- "steps" = TABLEAU de 3 à 5 étapes SÉPARÉES. UNE seule action par étape. Ne JAMAIS tout mettre dans une seule étape.
+- macros calculées au plus juste pour 1 portion.
+- recettes variées et cohérentes (pas juste des pâtes nature).`;
   try{
-    const data=await callAI([{role:'user',content:'Génère les 4 recettes maintenant en JSON.'}],2500,sys);
+    const data=await callAI([{role:'user',content:'Génère le maximum de recettes variées maintenant, en JSON.'}],4000,sys,'llama-3.3-70b-versatile');
     const raw=data.content.map(i=>i.text||'').join('');
     let recipes;
     try{recipes=extractJSONArray(raw);}catch(pe){throw new Error('Réponse IA illisible. Réessaie.');}
     if(!Array.isArray(recipes)||!recipes.length)throw new Error('Aucune recette générée. Réessaie.');
-    // Résolveur d'ID : exact puis matching flou
     const resolveId=(g)=>{
       if(g.id&&findItem(g.id))return g.id;
       const m=matchIngToInventory(g.name||g.id||'');
       return m?m.id:null;
     };
     const newRecipes=recipes.map((r,idx)=>{
-      const used=(r.ingredients||[]).map(g=>{const id=resolveId(g);return id?{id,qty:parseFloat(g.qty)||50}:null;}).filter(Boolean);
+      const used=(r.ingredients||[]).map(g=>{
+        const id=resolveId(g);
+        if(!id)return null;
+        const it=findItem(id);
+        let qty=parseFloat(g.qty)||50;
+        // Clamp la quantité au stock dispo pour que canCook passe
+        if(it&&it.qty!==null&&qty>it.qty)qty=it.qty;
+        return{id,qty};
+      }).filter(Boolean);
+      let steps=Array.isArray(r.steps)?r.steps.filter(s=>s&&s.trim()):[];
+      // Si une seule étape avec des séparateurs, la découper
+      if(steps.length===1&&/[.;]\s+\S/.test(steps[0])){
+        steps=steps[0].split(/(?<=[.;])\s+/).map(s=>s.trim()).filter(Boolean);
+      }
       return{
         id:'ai_'+Date.now().toString(36)+'_'+idx,
-        slots:Array.isArray(r.slots)&&r.slots.length?r.slots:['lunch'],
+        slots:Array.isArray(r.slots)&&r.slots.length?r.slots.filter(s=>['breakfast','lunch','snack','dinner'].includes(s)):['lunch'],
         name:r.name||'Recette IA',ai:true,urgent:0,ur:null,time:15,
         kcal:Math.round(r.kcal)||0,prot:Math.round(r.prot)||0,gluc:Math.round(r.gluc)||0,lip:Math.round(r.lip)||0,
-        steps:Array.isArray(r.steps)?r.steps:[],used,extras:[]
+        steps,used,extras:[]
       };
-    }).filter(r=>r.used.length>0);
+    }).filter(r=>r.used.length>0&&r.slots.length>0);
     if(newRecipes.length===0)throw new Error('Les recettes générées ne correspondent pas à ton inventaire. Réessaie.');
     S.aiRecipes=newRecipes;
     S.aiRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});
@@ -788,12 +802,12 @@ function clearAIRecipes(){
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function callAI(messages,maxTokens=300,system=null){
+async function callAI(messages,maxTokens=300,system=null,modelOverride=null){
   const key=getApiKey();
   if(!key){openSettings();throw new Error('NO_KEY');}
   // Détecte si la requête contient une image
   const hasImg=messages.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'));
-  const model=hasImg?'meta-llama/llama-4-scout-17b-16e-instruct':'llama-3.1-8b-instant';
+  const model=modelOverride||(hasImg?'meta-llama/llama-4-scout-17b-16e-instruct':'llama-3.1-8b-instant');
   // Construire les messages au format OpenAI (compatible Groq)
   const msgs=[];
   if(system)msgs.push({role:'system',content:system});
