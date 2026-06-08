@@ -719,7 +719,6 @@ function extractJSONArray(text){
 
 // ─── GÉNÉRATION RECETTES IA SELON STOCK ──────────────────────────────────────
 async function generateStockRecipes(){
-  // Collecter les ingrédients disponibles (hors épices pour le comptage minimum)
   const allItems=Object.values(S.inv).flat();
   const foodItems=allItems.filter(i=>i.qty!==null&&i.qty>0);
   const spices=allItems.filter(i=>i.qty===null).map(i=>i.name);
@@ -728,55 +727,60 @@ async function generateStockRecipes(){
     return;
   }
   const btn=document.getElementById('gen-recipes-btn');
-  if(btn){btn.disabled=true;btn.textContent='✨ Génération en cours…';}
-  const invList=foodItems.map(i=>`${i.id}|${i.name} (${i.qty}${i.unit})`).join('\n');
+  if(btn){btn.disabled=true;btn.textContent='✨ Génération en cours… (10-20s)';}
+  const invList=foodItems.map(i=>`${i.id} = ${i.name} (${i.qty}${i.unit} dispo)`).join('\n');
   const spiceList=spices.length?spices.join(', '):'aucune';
   const diet=ACTIVE_PROFILE==='maureen'
-    ?'PRISE DE MASSE : repas caloriques et rassasiants, objectif 2700 kcal/jour avec 145g de protéines. Privilégie les portions généreuses et les sources de glucides et lipides sains.'
-    :'SÈCHE / RECOMPOSITION : repas riches en protéines, modérés en calories, objectif 2600 kcal/jour avec 175g de protéines. Privilégie les protéines maigres et limite les lipides superflus.';
-  const sys=`Tu es un chef nutritionniste. Génère 4 recettes RÉALISTES et COHÉRENTES en utilisant UNIQUEMENT les ingrédients disponibles ci-dessous (tu peux ne pas tous les utiliser). Régime visé: ${diet}
+    ?'PRISE DE MASSE : repas caloriques et rassasiants, objectif 2700 kcal/jour avec 145g de protéines. Portions généreuses, glucides et lipides sains.'
+    :'SÈCHE / RECOMPOSITION : repas riches en protéines, modérés en calories, objectif 2600 kcal/jour avec 175g de protéines. Protéines maigres, lipides limités.';
+  const sys=`Tu es un chef nutritionniste. Génère 4 recettes RÉALISTES en utilisant UNIQUEMENT les ingrédients de la liste ci-dessous. Régime: ${diet}
 
-Ingrédients disponibles (format id|nom (quantité)):
+INGRÉDIENTS DISPONIBLES (utilise EXACTEMENT l'identifiant à gauche du "="):
 ${invList}
 
-Épices disponibles: ${spiceList}
+Épices: ${spiceList}
 
-Retourne UNIQUEMENT un tableau JSON (aucun texte autour):
-[{"name":"Nom du plat","slots":["lunch"],"kcal":650,"prot":50,"gluc":60,"lip":15,"ingredients":[{"id":"poulet","qty":200,"unit":"g"}],"steps":["étape 1","étape 2"]}]
+Retourne UNIQUEMENT un tableau JSON, rien d'autre:
+[{"name":"Nom","slots":["lunch"],"kcal":650,"prot":50,"gluc":60,"lip":15,"ingredients":[{"id":"IDENTIFIANT_EXACT","name":"nom lisible","qty":200,"unit":"g"}],"steps":["étape 1","étape 2"]}]
 
-Règles STRICTES:
-- slots parmi: "breakfast","lunch","snack","dinner" (mets les slots pertinents)
-- ingredients: utilise EXACTEMENT les id fournis ci-dessus
-- qty réalistes pour 1 portion
-- macros calculées au plus juste
-- 2 à 4 étapes courtes par recette
-- Recettes variées et adaptées au régime`;
+RÈGLES:
+- slots parmi: breakfast, lunch, snack, dinner
+- "id" DOIT être un identifiant EXACT de la liste ci-dessus (la partie avant le "=")
+- qty réaliste pour 1 portion, jamais plus que le stock dispo
+- 2-4 étapes courtes
+- recettes variées adaptées au régime`;
   try{
-    const data=await callAI([{role:'user',content:'Génère les 4 recettes maintenant.'}],2500,sys);
-    const recipes=extractJSONArray(data.content.map(i=>i.text||'').join(''));
-    // Convertir au format RCP
-    const newRecipes=recipes.map((r,idx)=>({
-      id:'ai_'+Date.now().toString(36)+'_'+idx,
-      slots:Array.isArray(r.slots)?r.slots:['lunch'],
-      name:r.name||'Recette IA',
-      ai:true,
-      urgent:0,ur:null,
-      time:15,
-      kcal:Math.round(r.kcal)||0,prot:Math.round(r.prot)||0,gluc:Math.round(r.gluc)||0,lip:Math.round(r.lip)||0,
-      steps:Array.isArray(r.steps)?r.steps:[],
-      used:(r.ingredients||[]).filter(g=>g.id&&findItem(g.id)).map(g=>({id:g.id,qty:parseFloat(g.qty)||0})),
-      extras:[]
-    })).filter(r=>r.used.length>0);
+    const data=await callAI([{role:'user',content:'Génère les 4 recettes maintenant en JSON.'}],2500,sys);
+    const raw=data.content.map(i=>i.text||'').join('');
+    let recipes;
+    try{recipes=extractJSONArray(raw);}catch(pe){throw new Error('Réponse IA illisible. Réessaie.');}
+    if(!Array.isArray(recipes)||!recipes.length)throw new Error('Aucune recette générée. Réessaie.');
+    // Résolveur d'ID : exact puis matching flou
+    const resolveId=(g)=>{
+      if(g.id&&findItem(g.id))return g.id;
+      const m=matchIngToInventory(g.name||g.id||'');
+      return m?m.id:null;
+    };
+    const newRecipes=recipes.map((r,idx)=>{
+      const used=(r.ingredients||[]).map(g=>{const id=resolveId(g);return id?{id,qty:parseFloat(g.qty)||50}:null;}).filter(Boolean);
+      return{
+        id:'ai_'+Date.now().toString(36)+'_'+idx,
+        slots:Array.isArray(r.slots)&&r.slots.length?r.slots:['lunch'],
+        name:r.name||'Recette IA',ai:true,urgent:0,ur:null,time:15,
+        kcal:Math.round(r.kcal)||0,prot:Math.round(r.prot)||0,gluc:Math.round(r.gluc)||0,lip:Math.round(r.lip)||0,
+        steps:Array.isArray(r.steps)?r.steps:[],used,extras:[]
+      };
+    }).filter(r=>r.used.length>0);
+    if(newRecipes.length===0)throw new Error('Les recettes générées ne correspondent pas à ton inventaire. Réessaie.');
     S.aiRecipes=newRecipes;
-    // Ajouter à RCP en mémoire (éviter doublons)
     S.aiRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});
     saveState();render();
-    if(newRecipes.length===0)alert('L\'IA n\'a pas réussi à générer de recettes valides. Réessaie.');
   }catch(e){
-    alert('Erreur lors de la génération : '+e.message.slice(0,80));
     if(btn){btn.disabled=false;btn.textContent='✨ Générer des recettes selon mon stock';}
+    alert('⚠ '+e.message);
   }
 }
+
 function clearAIRecipes(){
   S.aiRecipes.forEach(r=>{const i=RCP.findIndex(x=>x.id===r.id);if(i>=0)RCP.splice(i,1);});
   S.aiRecipes=[];
