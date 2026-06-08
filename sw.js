@@ -1,5 +1,5 @@
-// v5 — network-first, force update
-const CACHE = 'macros-v5';
+// build 2026-06-08 05h18 — network-first, force update
+const CACHE = 'macros-2026-06-08-0518';
 self.addEventListener('install', e => { self.skipWaiting(); });
 self.addEventListener('activate', e => {
   e.waitUntil(
