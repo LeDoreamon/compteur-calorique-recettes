@@ -788,6 +788,8 @@ async function generateStockRecipes(){
   if(btn){btn.disabled=true;btn.textContent='✨ Génération en cours… (15-30s)';}
   const invList=foodItems.map(i=>`${i.id} = ${i.name} (${i.qty}${i.unit} dispo)`).join('\n');
   const spiceList=spices.length?spices.join(', '):'aucune';
+  const existingNames=RCP.filter(r=>Array.isArray(r.slots)&&r.slots.length).map(r=>r.name).concat((S.aiRecipes||[]).map(r=>r.name));
+  const existingList=existingNames.length?existingNames.join(' · '):'aucune';
   const diet=ACTIVE_PROFILE==='maureen'
     ?'PRISE DE MASSE : repas caloriques et rassasiants, ~2700 kcal/jour, 145g prot\u00e9ines. Portions g\u00e9n\u00e9reuses, glucides et lipides sains.'
     :'S\u00c8CHE / RECOMPOSITION : repas riches en prot\u00e9ines, mod\u00e9r\u00e9s en calories, ~2600 kcal/jour, 175g prot\u00e9ines. Prot\u00e9ines maigres, lipides limit\u00e9s. IMPORTANT: les tomates cerises se mangent UNIQUEMENT crues/fra\u00eeches, JAMAIS cuites, po\u00eal\u00e9es ou r\u00f4ties.';
@@ -798,11 +800,15 @@ ${invList}
 
 Épices disponibles (à utiliser quand le plat s'y prête): ${spiceList}
 
+RECETTES DÉJÀ EXISTANTES dans l'app — NE PAS les reproposer, ni en faire des variantes quasi-identiques. Propose du NOUVEAU et du varié :
+${existingList}
+
 Retourne UNIQUEMENT un tableau JSON valide, rien d'autre:
 [{"name":"Bowl poulet curry","slots":["lunch","dinner"],"kcal":650,"prot":55,"gluc":70,"lip":12,"ingredients":[{"id":"poulet","name":"Poulet","qty":200,"unit":"g"},{"id":"riz","name":"Riz","qty":100,"unit":"g"}],"steps":["Cuire 100g de riz 12 min dans l'eau bouillante salée.","Couper le poulet en morceaux et le poêler 6-7 min à feu moyen.","Ajouter le curry et 50ml d'eau, laisser mijoter 3 min.","Servir le poulet sur le riz."]}]
 
 RÈGLES ABSOLUES:
 - Génère jusqu'à 4 recettes par type de repas pertinent (breakfast, lunch, snack, dinner). Vise 8 à 12 recettes au total.
+- INTERDICTION de proposer une recette déjà listée dans "RECETTES DÉJÀ EXISTANTES", ni une variante trop proche (même ingrédient principal + même format). Sois créatif, propose autre chose.
 - Une recette peut convenir à plusieurs repas → mets plusieurs valeurs dans "slots".
 - "id" = identifiant EXACT de la liste (partie avant le "=").
 - "qty" JAMAIS supérieur au stock disponible indiqué entre parenthèses.
@@ -1193,7 +1199,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-09 05h21</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-09 10h53</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
