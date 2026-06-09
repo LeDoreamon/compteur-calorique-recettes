@@ -306,6 +306,8 @@ const MEALS_DEFAULT={
   ],
   '2026-06-08':[
     {rid:'_pates_creme_saumon_250',mult:1,dessert:'compote',customDessert:null},
+    {rid:'omelette',mult:1,dessert:'yaourt',customDessert:null},
+    {rid:'_galette_sarrasin_08',mult:1,dessert:null,customDessert:null},
   ],
 };
 
@@ -446,6 +448,7 @@ const RCP=[
   // 850 (pizza) + 78 (yaourt) + 46 (miel 15g) + 304 (fromage 80g) = 1278 kcal
   {id:'_diner_pizza_06',slots:[],name:'Dîner pizza — 1 Pizza De la Mama + yaourt 0% + miel + 80g fromage râpé',kcal:1278,prot:57,gluc:116,lip:54,steps:[],used:[],extras:[]},
   {id:'_pates_creme_saumon_250',slots:[],name:'Pâtes crème fraîche & saumon (250g crème)',kcal:970,prot:49,gluc:72,lip:53,steps:[],used:[],extras:[]},
+  {id:'_galette_sarrasin_08',slots:[],name:'Galette sarrasin lardons, reblochon, oignons confits, salade + gâteau breton',kcal:1200,prot:60,gluc:110,lip:58,steps:[],used:[],extras:[]},
   // 07/06 : framboises ~80g au petit-déj
   {id:'_framboises_07',slots:[],name:'Framboises (~80g)',kcal:26,prot:1,gluc:4,lip:0,steps:[],used:[],extras:[]},
   // 07/06 midi : repas cantine — jambon cru + saumon gratiné pesto + tartlette chocolat
@@ -471,7 +474,8 @@ const S={
   pendingCook:null,
   pendingSpiceCheck:null,
   aiRecipes:[],
-  customRecipes:[]
+  customRecipes:[],
+  deletedItems:[]
 };
 const ROOT=document.getElementById('root');
 
@@ -487,7 +491,25 @@ function selectProfile(n){
 }
 // ─── EDIT MODE ───────────────────────────
 function toggleEditMode(){S.editMode=!S.editMode;render();}
-function deleteInvItem(cat,id){S.inv[cat]=(S.inv[cat]||[]).filter(i=>i.id!==id);saveState();render();}
+function deleteInvItem(cat,id){
+  const item=(S.inv[cat]||[]).find(i=>i.id===id);
+  if(item){if(!S.deletedItems)S.deletedItems=[];S.deletedItems.push({item:JSON.parse(JSON.stringify(item)),cat,deletedAt:Date.now()});}
+  S.inv[cat]=(S.inv[cat]||[]).filter(i=>i.id!==id);
+  saveState();render();
+}
+function getDeletedItems(){
+  const now=Date.now();
+  S.deletedItems=(S.deletedItems||[]).filter(d=>now-d.deletedAt<86400000);
+  return S.deletedItems;
+}
+function restoreDeletedItem(idx){
+  const d=(S.deletedItems||[])[idx];
+  if(!d)return;
+  if(!S.inv[d.cat])S.inv[d.cat]=[];
+  if(!S.inv[d.cat].find(i=>i.id===d.item.id))S.inv[d.cat].push(d.item);
+  S.deletedItems.splice(idx,1);
+  saveState();render();
+}
 function updateInvQty(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(it)it.qty=v===''?null:parseFloat(v)||0;}
 function updateInvDlc(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(it){it.dlc=v||null;it.dlcAuto=false;}}
 // ─── DLC ─────────────────────────────────
@@ -653,6 +675,8 @@ function _applyState(d){
   if(d.aiRecipes&&Array.isArray(d.aiRecipes)){S.aiRecipes=d.aiRecipes;S.aiRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
   // Recettes custom (repas texte/photo) → re-pousser dans RCP
   if(d.customRecipes&&Array.isArray(d.customRecipes)){S.customRecipes=d.customRecipes;S.customRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
+  // Historique suppressions
+  if(d.deletedItems&&Array.isArray(d.deletedItems))S.deletedItems=d.deletedItems;
 }
 function _syncBadge(){
   if(_syncStatus==='ok') return '<span style="font-size:10px;color:var(--green);">☁ sync</span>';
@@ -667,6 +691,7 @@ async function saveState(){
     inv:S.inv,
     aiRecipes:S.aiRecipes||[],
     customRecipes:S.customRecipes||[],
+    deletedItems:S.deletedItems||[],
     groqKey:localStorage.getItem('anthropic_key')||'',
     _profile:ACTIVE_PROFILE
   });
@@ -1135,8 +1160,10 @@ function renderInv(){
     return`<div class="catcard"><div class="chead" data-action="toggle-cat" data-val="${cat}"><span style="font-size:15px;">${info.sym}</span><span style="flex:1;">${info.label}</span>${urg.length?`<span class="chip" style="background:var(--red-bg);color:var(--red);margin-right:6px;">\u26a0 ${urg.length}</span>`:''}<span style="font-size:14px;color:var(--text3);">${open?'\u25be':'\u25b8'}</span></div>${rows}${addBtn}</div>`;
   }).join('');
   if(!Object.values(S.inv).flat().length&&!S.editMode)return`<div style="text-align:center;padding:2rem 1rem;"><div style="font-size:32px;margin-bottom:10px;">🌿</div><div style="font-size:14px;color:var(--text3);margin-bottom:12px;">Inventaire vide — clique pour ajouter tes aliments dans les catégories !</div><button onclick="toggleEditMode()" style="padding:9px 18px;background:linear-gradient(135deg,#ec4899,#be185d);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button></div>`;
-  const bottomAdd=S.editMode?`<button onclick="openAddItem('frigo')" style="width:100%;padding:11px;margin-top:14px;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:10px;color:#0f0f11;font-size:14px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button>`:'';
-  return editBtn+cats+bottomAdd;
+  const _del=getDeletedItems();
+  const histSection=S.editMode&&_del.length?`<div style="margin-top:16px;padding:12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🗑 Récemment supprimés · reviennent 24h</div>${_del.map((d,i)=>{const hh=Math.floor((Date.now()-d.deletedAt)/3600000);const left=Math.max(1,24-hh);const ci=CINFO[d.cat];return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--border);"><span style="flex:1;font-size:12px;color:var(--text2);">${d.item.name} <span style="color:var(--text3);font-size:10px;">· ${ci?ci.label:d.cat} · ${left}h restantes</span></span><button onclick="restoreDeletedItem(${i})" style="padding:4px 10px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;flex-shrink:0;">↩ Restaurer</button></div>`;}).join('')}</div>`:'';
+  const bottomAdd=S.editMode?`<button onclick="openAddItem('frigo') style="width:100%;padding:11px;margin-top:14px;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:10px;color:#0f0f11;font-size:14px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button>`:'';
+  return editBtn+cats+bottomAdd+histSection;
 }
 function render(){
   const urgTotal=Object.values(S.inv).flat().filter(i=>i.urgent&&(i.qty===null||i.qty>0)).length;
@@ -1153,7 +1180,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-08 17h59</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-09 04h26</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
