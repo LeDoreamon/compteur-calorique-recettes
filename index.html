@@ -976,17 +976,18 @@ async function analyzeCustomDessert(rid,text){
 function getSpicesUsedByRecipe(r){
   const present=(S.inv.epices||[]).filter(e=>e.qty===null);
   if(!present.length)return[];
-  // Texte de recherche : nom recette + étapes + extras
-  const txt=[r.name,...(r.steps||[]),...(r.extras||[]).map(e=>e.n+' '+e.q)]
-    .join(' ').toLowerCase()
-    .normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  const norm=s=>(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+  // Ensemble des MOTS ENTIERS du texte de la recette
+  const txt=[r.name,...(r.steps||[]),...(r.extras||[]).map(e=>(e.n||'')+' '+(e.q||''))].join(' ');
+  const words=new Set(norm(txt).split(/[^a-z]+/).filter(Boolean));
+  // Mots génériques/connecteurs à ne PAS utiliser pour le matching
+  const stop=new Set(['de','en','et','la','le','les','aux','au','noix','poudre','dore','doree','moulu','moulue','epices']);
   return present.filter(sp=>{
-    const key=sp.id.replace('epices_','').replace('_','');
-    const word=sp.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(' ')[0];
-    return txt.includes(key)||txt.includes(word);
+    const spWords=norm(sp.name).split(/[^a-z]+/).filter(w=>w.length>=3&&!stop.has(w));
+    // Détectée seulement si un mot DISTINCTIF de l'épice apparaît comme MOT ENTIER
+    return spWords.some(w=>words.has(w));
   });
 }
-
 function renderSpiceCheck(){
   if(!S.pendingSpiceCheck)return'';
   const spices=S.pendingSpiceCheck.filter(s=>s.qty===null);
@@ -1180,7 +1181,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-09 04h26</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-09 05h03</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
