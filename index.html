@@ -48,9 +48,11 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
 .meal-tabs { display: flex; overflow-x: auto; border-bottom: 0.5px solid var(--border); margin-bottom: 14px; scrollbar-width: none; gap: 0; }
 .meal-tabs::-webkit-scrollbar { display: none; }
 .chip { display: inline-flex; align-items: center; gap: 3px; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
-@keyframes unfold{from{opacity:0;max-height:0;transform:translateY(-6px);}to{opacity:1;max-height:1600px;transform:translateY(0);}}
-.unfold{animation:unfold .42s cubic-bezier(.22,.61,.36,1);overflow:hidden;}
-.chev{display:inline-block;transition:transform .38s cubic-bezier(.22,.61,.36,1);}
+@keyframes unfold{from{opacity:0;max-height:0;transform:translateY(-7px);}to{opacity:1;max-height:1600px;transform:translateY(0);}}
+@keyframes refold{from{opacity:1;max-height:1600px;transform:translateY(0);}to{opacity:0;max-height:0;transform:translateY(-7px);}}
+.unfold{animation:unfold .5s cubic-bezier(.22,.61,.36,1);overflow:hidden;}
+.refold{animation:refold .5s cubic-bezier(.22,.61,.36,1) forwards;overflow:hidden;}
+.chev{display:inline-block;transition:transform .5s cubic-bezier(.22,.61,.36,1);}
 </style>
 </head>
 <body>
@@ -471,7 +473,7 @@ const S={
   inv:JSON.parse(JSON.stringify(INV_DEFAULT)),
   recipeDesserts:{},customDesserts:{},customInputs:{},
   mainTab:'recipes',mealTab:'breakfast',openRec:null,
-  openCat:{frigo:1,congelateur:0,placards:0,epices:1},
+  openCat:{frigo:1,congelateur:1,placards:1,epices:1},
   editMode:false,
   today:TODAY,displayDate:TODAY,
   dayMeals:JSON.parse(JSON.stringify(MEALS_DEFAULT)),
@@ -1150,7 +1152,7 @@ function renderCard(r){
       </div>
     </div>
     <span class="chev" style="font-size:14px;color:var(--text3);flex-shrink:0;margin-top:2px;transform:rotate(${open?'90deg':'0deg'});">▸</span>
-  </div>${open?`<div class="rbody${S._anim==='r:'+r.id?' unfold':''}" style="padding:0 15px 14px;border-top:0.5px solid var(--border);">${renderIngredients(r)}<div style="padding-top:12px;">${(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${s}</span></div>`).join('')}</div>${renderCardBottom(r)}</div>`:''}</div>`;
+  </div>${open?`<div class="rbody${S._anim==='r:'+r.id?' unfold':''}" data-rec="${r.id}" style="padding:0 15px 14px;border-top:0.5px solid var(--border);">${renderIngredients(r)}<div style="padding-top:12px;">${(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${s}</span></div>`).join('')}</div>${renderCardBottom(r)}</div>`:''}</div>`;
 }
 
 function renderInv(){
@@ -1179,7 +1181,7 @@ function renderInv(){
       </div>`;
     }).join(''):'';
     const addBtn=S.editMode&&open?`<div style="padding:6px 15px;border-top:0.5px solid var(--border);"><button onclick="openAddItem('${cat}')" style="width:100%;padding:8px;background:transparent;border:0.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">\u2795 Ajouter dans ${info.label}</button></div>`:'';
-    return`<div class="catcard"><div class="chead" data-action="toggle-cat" data-val="${cat}"><span style="font-size:15px;">${info.sym}</span><span style="flex:1;">${info.label}</span>${urg.length?`<span class="chip" style="background:var(--red-bg);color:var(--red);margin-right:6px;">\u26a0 ${urg.length}</span>`:''}<span class="chev" style="font-size:14px;color:var(--text3);transform:rotate(${open?'90deg':'0deg'});">▸</span></div><div class="cwrap${!S.editMode&&S._anim==='c:'+cat?' unfold':''}">${rows}${addBtn}</div></div>`;
+    return`<div class="catcard"><div class="chead" data-action="toggle-cat" data-val="${cat}"><span style="font-size:15px;">${info.sym}</span><span style="flex:1;">${info.label}</span>${urg.length?`<span class="chip" style="background:var(--red-bg);color:var(--red);margin-right:6px;">\u26a0 ${urg.length}</span>`:''}<span class="chev" style="font-size:14px;color:var(--text3);transform:rotate(${open?'90deg':'0deg'});">▸</span></div><div class="cwrap${!S.editMode&&S._anim==='c:'+cat?' unfold':''}" data-cat="${cat}">${rows}${addBtn}</div></div>`;
   }).join('');
   if(!Object.values(S.inv).flat().length&&!S.editMode)return`<div style="text-align:center;padding:2rem 1rem;"><div style="font-size:32px;margin-bottom:10px;">🌿</div><div style="font-size:14px;color:var(--text3);margin-bottom:12px;">Inventaire vide — clique pour ajouter tes aliments dans les catégories !</div><button onclick="toggleEditMode()" style="padding:9px 18px;background:linear-gradient(135deg,#ec4899,#be185d);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button></div>`;
   const _del=getDeletedItems();
@@ -1202,7 +1204,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-09 14h04</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-09 16h13</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -1243,8 +1245,16 @@ ROOT.addEventListener('click',e=>{
   const{action,val}=el.dataset;
   if(action==='main-tab')S.mainTab=val;
   else if(action==='meal-tab')S.mealTab=val;
-  else if(action==='toggle-recipe'){const wo=S.openRec===val;S.openRec=wo?null:val;S._anim=wo?null:'r:'+val;}
-  else if(action==='toggle-cat'){const wo=S.openCat[val];S.openCat[val]=wo?0:1;S._anim=wo?null:'c:'+val;}
+  else if(action==='toggle-recipe'){
+    const wo=S.openRec===val;
+    if(wo){const el=document.querySelector('.rbody[data-rec="'+val+'"]');if(el){el.classList.add('refold');const cv=el.closest('.rcard');if(cv){const ch=cv.querySelector('.chev');if(ch)ch.style.transform='rotate(0deg)';}setTimeout(()=>{if(S.openRec===val){S.openRec=null;render();}},500);return;}S.openRec=null;}
+    else{S.openRec=val;S._anim='r:'+val;}
+  }
+  else if(action==='toggle-cat'){
+    const wo=S.openCat[val];
+    if(wo&&!S.editMode){const el=document.querySelector('.cwrap[data-cat="'+val+'"]');if(el){el.classList.add('refold');const cv=el.closest('.catcard');if(cv){const ch=cv.querySelector('.chev');if(ch)ch.style.transform='rotate(0deg)';}setTimeout(()=>{if(S.openCat[val]){S.openCat[val]=0;render();}},500);return;}S.openCat[val]=0;}
+    else{S.openCat[val]=wo?0:1;S._anim=wo?null:'c:'+val;}
+  }
   else if(action==='select-dessert'){S.recipeDesserts[val]=el.dataset.dessert;if(el.dataset.dessert!=='autre'){delete S.customDesserts[val];delete S.customInputs[val];}}
   else if(action==='submit-custom-dessert'){const inp=document.querySelector(`[data-custom-input="${val}"]`);const txt=inp?inp.value.trim():S.customInputs[val]||'';if(txt)analyzeCustomDessert(val,txt);return;}
   else if(action==='prev-day'){const p=shiftDate(S.displayDate,-1);if(p>=shiftDate(S.today,-6))S.displayDate=p;}
