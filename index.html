@@ -503,7 +503,8 @@ const S={
   customRecipes:[],
   deletedItems:[],
   fbBootstrap:false,
-  mzPresent:false
+  mzPresent:false,
+  removedSpices:[]
 };
 const ROOT=document.getElementById('root');
 
@@ -522,6 +523,7 @@ function toggleEditMode(){S.editMode=!S.editMode;render();}
 function deleteInvItem(cat,id){
   const item=(S.inv[cat]||[]).find(i=>i.id===id);
   if(item){if(!S.deletedItems)S.deletedItems=[];S.deletedItems.push({item:JSON.parse(JSON.stringify(item)),cat,deletedAt:Date.now()});}
+  if(cat==='epices'){if(!S.removedSpices)S.removedSpices=[];if(!S.removedSpices.includes(id))S.removedSpices.push(id);}
   S.inv[cat]=(S.inv[cat]||[]).filter(i=>i.id!==id);
   saveState();render();
 }
@@ -535,6 +537,7 @@ function restoreDeletedItem(idx){
   if(!d)return;
   if(!S.inv[d.cat])S.inv[d.cat]=[];
   if(!S.inv[d.cat].find(i=>i.id===d.item.id))S.inv[d.cat].push(d.item);
+  if(d.cat==='epices'&&S.removedSpices)S.removedSpices=S.removedSpices.filter(x=>x!==d.item.id);
   S.deletedItems.splice(idx,1);
   saveState();render();
 }
@@ -699,8 +702,8 @@ function _applyState(d){
   // Restaurer les épices par défaut de Liam (staples toujours présents, ne disparaissent jamais)
   if(ACTIVE_PROFILE==='liam'){
     if(!S.inv.epices)S.inv.epices=[];
-    const byId={};S.inv.epices.forEach(s=>{byId[s.id]=s;});
-    INV_DEFAULT.epices.forEach(sp=>{
+    if(d.removedSpices&&Array.isArray(d.removedSpices))S.removedSpices=d.removedSpices;const rm=new Set(S.removedSpices||[]);const byId={};S.inv.epices.forEach(s=>{byId[s.id]=s;});
+    INV_DEFAULT.epices.forEach(sp=>{if(rm.has(sp.id)){if(byId[sp.id])S.inv.epices=S.inv.epices.filter(x=>x.id!==sp.id);return;}
       if(byId[sp.id]){byId[sp.id].qty=null;} // staple → forcer présent (même si check l'avait mis à 0)
       else{S.inv.epices.push(JSON.parse(JSON.stringify(sp)));}
     });
@@ -747,6 +750,7 @@ async function saveState(){
     deletedItems:S.deletedItems||[],
     fbBootstrap:S.fbBootstrap||false,
     mzPresent:S.mzPresent||false,
+    removedSpices:S.removedSpices||[],
     groqKey:localStorage.getItem('anthropic_key')||'',
     _profile:ACTIVE_PROFILE
   });
@@ -1245,7 +1249,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-10 09h10</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-10 14h06</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
