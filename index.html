@@ -1076,7 +1076,6 @@ function renderSpiceCheck(){
       <button data-action="spice-ok" data-val="${s.id}" style="padding:5px 14px;border-radius:6px;border:0.5px solid var(--green);background:transparent;color:var(--green);font-size:12px;cursor:pointer;">✓ Encore</button>
       <button data-action="spice-no" data-val="${s.id}" style="padding:5px 14px;border-radius:6px;border:0.5px solid var(--red);background:transparent;color:var(--red);font-size:12px;cursor:pointer;">✕ Plus</button>
     </div>`).join('')}
-    <button data-action="spice-done" style="margin-top:10px;width:100%;padding:9px;border-radius:8px;border:0.5px solid var(--border);background:transparent;color:var(--text2);font-size:13px;cursor:pointer;">Confirmer</button>
   </div>`;
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1259,7 +1258,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-11 04h15</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-11 04h47</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -1314,13 +1313,21 @@ ROOT.addEventListener('click',e=>{
   else if(action==='submit-custom-dessert'){const inp=document.querySelector(`[data-custom-input="${val}"]`);const txt=inp?inp.value.trim():S.customInputs[val]||'';if(txt)analyzeCustomDessert(val,txt);return;}
   else if(action==='prev-day'){const p=shiftDate(S.displayDate,-1);if(p>=shiftDate(S.today,-6))S.displayDate=p;}
   else if(action==='next-day'){const n=shiftDate(S.displayDate,1);if(n<=TOMORROW)S.displayDate=n;}
-  else if(action==='spice-ok'||action==='spice-no'){
-    // Dans les 2 cas l'épice reste en stock (staple). On marque juste la ligne comme traitée.
+  else if(action==='spice-ok'){
+    // Encore en stock : on enlève juste la ligne.
     S.pendingSpiceCheck=(S.pendingSpiceCheck||[]).filter(s=>s.id!==val);
-    if(!S.pendingSpiceCheck.length){S.pendingSpiceCheck=null;saveState();}
+    if(!S.pendingSpiceCheck.length)S.pendingSpiceCheck=null;
+    saveState();
   }
-  else if(action==='spice-done'){
-    S.pendingSpiceCheck=null;saveState();
+  else if(action==='spice-no'){
+    // Plus de cette épice : retrait réel de l'inventaire + pierre tombale (ne revient pas).
+    const _sp=(S.inv.epices||[]).find(i=>i.id===val);
+    if(_sp){if(!S.deletedItems)S.deletedItems=[];S.deletedItems.push({item:JSON.parse(JSON.stringify(_sp)),cat:'epices',deletedAt:Date.now()});}
+    if(!S.removedSpices)S.removedSpices=[];if(!S.removedSpices.includes(val))S.removedSpices.push(val);
+    S.inv.epices=(S.inv.epices||[]).filter(i=>i.id!==val);
+    S.pendingSpiceCheck=(S.pendingSpiceCheck||[]).filter(s=>s.id!==val);
+    if(!S.pendingSpiceCheck.length)S.pendingSpiceCheck=null;
+    saveState();
   }
   else if(action==='delete-meal'){
     const day=el.dataset.day,idx=parseInt(el.dataset.idx);
