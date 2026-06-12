@@ -1278,7 +1278,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-12 19h01</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-12 23h38</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -1391,6 +1391,7 @@ ROOT.addEventListener('input',e=>{const el=e.target.closest('[data-custom-input]
 let _addMealInvSuggestions = [];
 let _addMealInvMode = false;
 
+let _addMealBase=null;
 function openAddMeal(type) {
   const ov = document.getElementById('addmeal-overlay');
   ov.style.display = 'flex';
@@ -1402,6 +1403,7 @@ function openAddMeal(type) {
   document.getElementById('addmeal-textarea').value = '';
   document.getElementById('addmeal-title').textContent = 'Ajouter un repas';
   _addMealInvSuggestions = [];
+  _addMealBase = null;
   _addMealInvMode = false;
   if (type === 'photo') {
     document.getElementById('addmeal-photo-input').value = '';
@@ -1409,6 +1411,21 @@ function openAddMeal(type) {
   }
 }
 function closeAddMeal() { document.getElementById('addmeal-overlay').style.display = 'none'; }
+
+function recalcAddMealMacros(){
+  if(!_addMealBase)return;
+  const t={kcal:_addMealBase.kcal,prot:_addMealBase.prot,gluc:_addMealBase.gluc,lip:_addMealBase.lip};
+  (_addMealInvSuggestions||[]).forEach((s,i)=>{
+    const cb=document.getElementById('inv-cb-'+i);if(cb&&!cb.checked)return;
+    const qi=document.getElementById('inv-qty-'+i);const q=qi?parseFloat(qi.value)||0:s.baseQty;
+    const r=s.baseQty>0?q/s.baseQty:1;
+    const m=s.m||{kcal:0,prot:0,gluc:0,lip:0};
+    t.kcal+=m.kcal*r;t.prot+=m.prot*r;t.gluc+=m.gluc*r;t.lip+=m.lip*r;
+    const ke=document.getElementById('inv-k-'+i);if(ke)ke.textContent=Math.round(m.kcal*r)+'k';
+  });
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=Math.max(0,Math.round(v));};
+  set('addmeal-kcal',t.kcal);set('addmeal-prot',t.prot);set('addmeal-gluc',t.gluc);set('addmeal-lip',t.lip);
+}
 
 function setInvMode(yes) {
   _addMealInvMode = yes;
@@ -1444,12 +1461,14 @@ function renderInvSuggestions(suggestions) {
         <span style="flex:1;font-size:13px;color:#f0f0f2;">${it.name}</span>
         <input type="number" id="inv-qty-${i}" value="${s.qty}" min="0" style="width:62px;padding:4px 6px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#9898a8;font-size:12px;outline:none;text-align:right;">
         <span style="font-size:11px;color:#55556a;min-width:22px;">${s.unit}</span>
+        <span id="inv-k-${i}" style="font-size:11px;color:#fb923c;min-width:34px;text-align:right;">${s.m?s.m.kcal:0}k</span>
       </div>`;
     }).filter(Boolean).join('');
   }
   html += `<div id="inv-custom-items"></div>
   <button onclick="addCustomInvItem()" style="width:100%;padding:7px;margin-top:8px;background:transparent;border:0.5px dashed rgba(255,255,255,.1);border-radius:8px;color:#55556a;font-size:12px;cursor:pointer;">+ Ajouter manuellement</button>`;
   sec.innerHTML = html;
+  if(!sec.dataset.boundMacros){sec.dataset.boundMacros='1';['input','change'].forEach(ev=>sec.addEventListener(ev,e=>{if(e.target&&e.target.id&&(e.target.id.indexOf('inv-qty-')===0||e.target.id.indexOf('inv-cb-')===0))recalcAddMealMacros();}));}
 }
 
 function addCustomInvItem() {
@@ -1502,8 +1521,8 @@ async function runAddMealAI(msgs) {
   const sys = `Tu analyses un repas et estimes ses macros.
 Inventaire disponible (format id|nom|quantité): ${buildInvContext()}
 Réponds UNIQUEMENT avec un JSON valide sans markdown:
-{"name":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"inv_suggestions":[{"id":string,"name":string,"qty":number,"unit":string}]}
-Pour inv_suggestions: inclus UNIQUEMENT les items de l'inventaire utilisés dans ce repas (par leur id exact). Laisse [] si aucun.
+{"name":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"inv_suggestions":[{"id":string,"name":string,"qty":number,"unit":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}]}
+Pour inv_suggestions: inclus UNIQUEMENT les items de l'inventaire utilisés (par leur id exact), AVEC leurs macros (kcal/prot/gluc/lip) pour la quantité indiquée. Laisse [] si aucun.
 Sois légèrement pessimiste sur les calories/quantités.`;
   try {
     const data = await callAI(msgs, 600, sys);
@@ -1514,11 +1533,14 @@ Sois légèrement pessimiste sur les calories/quantités.`;
     document.getElementById('addmeal-prot').value = Math.round(p.prot)||0;
     document.getElementById('addmeal-gluc').value = Math.round(p.gluc)||0;
     document.getElementById('addmeal-lip').value = Math.round(p.lip)||0;
-    _addMealInvSuggestions = p.inv_suggestions || [];
+    _addMealInvSuggestions = (p.inv_suggestions||[]).map(s=>({id:s.id,name:s.name,qty:s.qty,unit:s.unit,baseQty:parseFloat(s.qty)||0,m:{kcal:Math.round(s.kcal)||0,prot:Math.round(s.prot)||0,gluc:Math.round(s.gluc)||0,lip:Math.round(s.lip)||0}}));
+    _addMealBase={kcal:Math.round(p.kcal)||0,prot:Math.round(p.prot)||0,gluc:Math.round(p.gluc)||0,lip:Math.round(p.lip)||0};
+    _addMealInvSuggestions.forEach(s=>{_addMealBase.kcal-=s.m.kcal;_addMealBase.prot-=s.m.prot;_addMealBase.gluc-=s.m.gluc;_addMealBase.lip-=s.m.lip;});
     document.getElementById('addmeal-analyzing').style.display = 'none';
     document.getElementById('addmeal-confirm').style.display = 'block';
     renderInvSuggestions(_addMealInvSuggestions);
     setInvMode(_addMealInvSuggestions.length > 0);
+    recalcAddMealMacros();
   } catch(err) {
     document.getElementById('addmeal-analyzing').style.display = 'none';
     document.getElementById('addmeal-input').style.display = 'block';
