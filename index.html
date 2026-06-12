@@ -610,6 +610,38 @@ const MACROS100={
   st_moret:{kcal:155,prot:8,gluc:6,lip:11},
   yaourts:{kcal:52,prot:3.5,gluc:9,lip:0},
 };
+
+const MACROS_BY_NAME={
+  'ail':{kcal:149,prot:6,gluc:33,lip:0.5},
+  'champignons':{kcal:22,prot:3,gluc:3,lip:0.3},
+  'gingembre':{kcal:80,prot:1.8,gluc:18,lip:0.8},
+  'jeunes pousses d epinards':{kcal:23,prot:2.9,gluc:3.6,lip:0.4},
+  'mayonnaise':{kcal:680,prot:1,gluc:1.5,lip:75},
+  'moutarde':{kcal:66,prot:4,gluc:5,lip:4},
+  'oeufs':{kcal:155,prot:13,gluc:1,lip:11},
+  'philadelphia':{kcal:250,prot:6,gluc:4,lip:24},
+  'sauce pesto':{kcal:450,prot:5,gluc:6,lip:45},
+  'sauce soja':{kcal:60,prot:6,gluc:8,lip:0},
+  'sauce tomate':{kcal:35,prot:1.5,gluc:6,lip:0.5},
+  'saucisses a hot dog':{kcal:270,prot:11,gluc:3,lip:24},
+  'tomates cerises':{kcal:18,prot:0.9,gluc:3.5,lip:0.2},
+  'vinaigrette moutarde et miel':{kcal:400,prot:1,gluc:15,lip:38},
+  'yaourt a la myrtille':{kcal:90,prot:3.5,gluc:14,lip:2.5},
+  'dumplings':{kcal:200,prot:7,gluc:25,lip:8},
+  'haricots verts':{kcal:31,prot:1.8,gluc:7,lip:0.1},
+  'petits pois':{kcal:81,prot:5,gluc:14,lip:0.4},
+  'bagels':{kcal:270,prot:10,gluc:53,lip:1.5},
+  'beurre de cacahuete':{kcal:600,prot:25,gluc:20,lip:50},
+  'bouillon cube de volaille':{kcal:20,prot:1,gluc:3,lip:0.5},
+  'fusilli':{kcal:350,prot:12,gluc:72,lip:1.5},
+  'huile d olive':{kcal:900,prot:0,gluc:0,lip:100},
+  'nouilles de ble':{kcal:350,prot:12,gluc:71,lip:1.5},
+  'riz basmati':{kcal:350,prot:7,gluc:78,lip:1},
+  'spaghettis':{kcal:350,prot:12,gluc:72,lip:1.5},
+  'thon':{kcal:110,prot:25,gluc:0,lip:0.8},
+  'curry':{kcal:325,prot:14,gluc:58,lip:14}
+};
+function normMac(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();}
 function getM100(id){return MACROS100[id]||null;}
 // ─────────────────────────────────────────────────────────────────────────────
 // ─── CONFIRM COOK ────────────────────────
@@ -713,6 +745,8 @@ function _applyState(d){
   }
   // Firebase supprime les null : un item "présent" revient en qty:-1 (notre sentinel) ou sans qty (undefined). On rétablit qty=null.
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it){if(it.qty===undefined){it.qty=null;_mzJustFixed=true;}else if(it.qty===-1){it.qty=null;}}}));
+  // Macros/100g : compléter mac100 manquant (id pour Liam, nom pour Maureen)
+  Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it&&!it.mac100){const _mm=MACROS100[it.id]||MACROS_BY_NAME[normMac(it.name)];if(_mm)it.mac100={kcal:_mm.kcal,prot:_mm.prot,gluc:_mm.gluc,lip:_mm.lip};}}));
   // Maureen : conversion UNIQUE de son inventaire ACTUEL en "pr\u00e9sent" (tout item sans quantit\u00e9 positive). N'affecte PAS ses ajouts futurs.
   if(ACTIVE_PROFILE==='maureen'){
     const _has=Object.values(S.inv).some(a=>(a||[]).length>0);
@@ -1278,7 +1312,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-12 23h38</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-13 00h01</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
