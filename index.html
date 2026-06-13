@@ -511,7 +511,11 @@ const S={
   deletedItems:[],
   fbBootstrap:false,
   mzPresent:false,
-  removedSpices:[]
+  removedSpices:[],
+  shop:{list:[],graveyard:[]},
+  waiting:[],
+  shopSeeded:false,
+  coursesGrave:false
 };
 const ROOT=document.getElementById('root');
 
@@ -669,6 +673,33 @@ const MACROS_BY_NAME={
   'curry':{kcal:325,prot:14,gluc:58,lip:14}
 };
 function normMac(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,' ').trim();}
+const SHOP_CATS=[
+ {k:'menager',label:'Articles ménagers',t:false},
+ {k:'conserve',label:'Aliments en conserve et soupes',t:true},
+ {k:'patisserie',label:'Articles en pâtisserie',t:true},
+ {k:'boissons',label:'Boissons',t:true},
+ {k:'collations',label:'Collations et confiseries',t:true},
+ {k:'cuisine',label:'Article de cuisine',t:false},
+ {k:'epices',label:'Épices et assaisonnements',t:true},
+ {k:'fruitsleg',label:'Fruits et légumes',t:true},
+ {k:'huiles',label:'Huiles et vinaigrettes',t:true},
+ {k:'medic',label:'Médicaments',t:false},
+ {k:'pates',label:'Pâtes, riz et haricots',t:true},
+ {k:'poissons',label:'Poissons et fruits de mer',t:true},
+ {k:'laitiers',label:'Produits laitiers, oeufs et fromages',t:true},
+ {k:'sauces',label:'Sauces et condiments',t:true},
+ {k:'soins',label:'Soins personnels et santé',t:false},
+ {k:'surgeles',label:'Surgelés',t:true},
+ {k:'viande',label:'Viande',t:true},
+ {k:'pains',label:'Pains et céréales',t:true},
+ {k:'divers',label:'Divers',t:true}
+];
+const SHOP_TO_INV={conserve:'placards',patisserie:'placards',boissons:'placards',collations:'placards',epices:'epices',fruitsleg:'frigo',huiles:'placards',pates:'placards',poissons:'placards',laitiers:'frigo',sauces:'placards',surgeles:'congelateur',viande:'congelateur',pains:'placards',divers:'placards'};
+function shopTransfer(rayon){const c=SHOP_CATS.find(x=>x.k===rayon);return c?c.t:true;}
+function seedShopList(){
+  const map={jambon_blanc:'viande',jambon_poulet:'viande',bacon:'viande',jambon_all:'viande',creme_liq:'laitiers',creme_semi:'laitiers',creme_fraiche:'laitiers',cabillaud:'poissons',yaourts:'laitiers',fb_vanille:'laitiers',fb_nature:'laitiers',tomates_cerises:'fruitsleg',avocats:'fruitsleg',oeufs:'laitiers',fromage_rape:'laitiers',st_moret:'laitiers',mozzarella:'laitiers',pates_pesto:'pates',pates_ricotta:'pates',poulet:'viande',pizzas:'surgeles',steaks:'viande',boeuf_hache:'viande',oignons:'surgeles',framboises:'surgeles',frites:'surgeles',the:'boissons',compotes:'collations',ramen:'pates',banania:'boissons',ratatouille:'conserve',chili:'conserve',thon:'poissons',sauce_tomate:'sauces',miel:'divers',bouillon_poulet:'conserve',bouillon_boeuf:'conserve',bouillon_legumes:'conserve',riz:'pates',pates_completes:'pates',pates_blanches:'pates',pates_proteinees:'pates',amandes:'collations',lait:'laitiers',flocons:'pains',cereales:'pains',huile_olive:'huiles',sauce_chili:'sauces',vinaigre_riz:'huiles',soja:'sauces',lait_coco:'conserve',huile_tournesol:'huiles',bananes:'fruitsleg',pommes:'fruitsleg',wraps:'pains',whey:'divers',curry:'epices',curcuma:'epices',gingembre:'epices',ail:'epices',poivre:'epices',sel:'epices',epices_it:'epices',sesame:'epices',paprika:'epices',muscade:'epices'};
+  const out=[];Object.values(INV_DEFAULT).forEach(arr=>arr.forEach(it=>{out.push({id:'sh_'+it.id,name:it.name,rayon:map[it.id]||'divers',checked:false});}));return out;
+}
 function getM100(id){return MACROS100[id]||null;}
 // ─────────────────────────────────────────────────────────────────────────────
 // ─── CONFIRM COOK ────────────────────────
@@ -824,6 +855,11 @@ function _applyState(d){
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it){if(it.unit==='kg'){if(typeof it.qty==='number')it.qty=Math.round(it.qty*1000);it.unit='g';}else if(it.unit==='L'){if(typeof it.qty==='number')it.qty=Math.round(it.qty*1000);it.unit='ml';}}}));
   // Macros/100g : compléter mac100 manquant (id pour Liam, nom pour Maureen)
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it&&!it.mac100){const _mm=MACROS100[it.id]||MACROS_BY_NAME[normMac(it.name)];if(_mm)it.mac100={kcal:_mm.kcal,prot:_mm.prot,gluc:_mm.gluc,lip:_mm.lip};}}));
+  // Courses + salle d'attente
+  S.shop=(d.shop&&Array.isArray(d.shop.list))?{list:d.shop.list,graveyard:Array.isArray(d.shop.graveyard)?d.shop.graveyard:[]}:{list:[],graveyard:[]};
+  S.waiting=Array.isArray(d.waiting)?d.waiting:[];
+  S.shopSeeded=d.shopSeeded||false;
+  if(!S.shopSeeded&&ACTIVE_PROFILE==='liam'){S.shop.list=seedShopList();S.shopSeeded=true;_mzJustFixed=true;}
   // Maureen : conversion UNIQUE de son inventaire ACTUEL en "pr\u00e9sent" (tout item sans quantit\u00e9 positive). N'affecte PAS ses ajouts futurs.
   if(ACTIVE_PROFILE==='maureen'){
     const _has=Object.values(S.inv).some(a=>(a||[]).length>0);
@@ -888,6 +924,9 @@ async function saveState(){
     mzFix4:S.mzFix4||false,
     mzFix5:S.mzFix5||false,
     removedSpices:S.removedSpices||[],
+    shop:S.shop||{list:[],graveyard:[]},
+    waiting:S.waiting||[],
+    shopSeeded:S.shopSeeded||false,
     groqKey:localStorage.getItem('anthropic_key')||'',
     _profile:ACTIVE_PROFILE
   });
@@ -1373,6 +1412,34 @@ function renderInv(){
   const bottomAdd=S.editMode?`<button onclick="openAddItem('frigo')" style="width:100%;padding:11px;margin-top:14px;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:10px;color:#0f0f11;font-size:14px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button>`:'';
   return editBtn+cats+bottomAdd+histSection;
 }
+function renderCoursesHTML(){
+  const byR={};SHOP_CATS.forEach(c=>byR[c.k]=[]);
+  (S.shop.list||[]).forEach(it=>{(byR[it.rayon]||byR['divers']).push(it);});
+  const checkedN=(S.shop.list||[]).filter(i=>i.checked).length;
+  const waitN=(S.waiting||[]).length;const graveN=(S.shop.graveyard||[]).length;
+  let html='<div style="margin-bottom:14px;">';
+  html+='<div style="display:flex;gap:6px;margin-bottom:14px;"><input id="shop-add-name" placeholder="Ajouter un article\u2026" style="flex:1;min-width:0;padding:9px 11px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#f0f0f2;font-size:13px;outline:none;box-sizing:border-box;"><select id="shop-add-rayon" style="padding:9px;background:#0f0f11;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#f0f0f2;font-size:11px;max-width:120px;">'+SHOP_CATS.map(c=>`<option value="${c.k}">${c.label}</option>`).join('')+'</select><button onclick="addShopItem()" style="padding:9px 13px;background:#7c6df2;border:0;border-radius:8px;color:#fff;font-size:15px;cursor:pointer;">+</button></div>';
+  if(waitN)html+=`<div style="background:rgba(251,146,60,.08);border:0.5px solid rgba(251,146,60,.25);border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12px;color:#fb923c;">\u23f3 ${waitN} article(s) en salle d'attente (onglet Inventaire) \u00e0 placer.</div>`;
+  SHOP_CATS.forEach(c=>{
+    const items=byR[c.k];if(!items.length)return;
+    html+=`<div style="margin-bottom:14px;"><div style="font-size:11px;color:#7c6df2;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px;font-weight:600;">${c.label}${c.t?'':' <span style=\"color:#55556a;text-transform:none;\">\u00b7 non transf\u00e9r\u00e9</span>'}</div>`;
+    items.forEach(it=>{
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid rgba(255,255,255,.05);"><div onclick="toggleShopItem('${it.id}')" style="width:20px;height:20px;border-radius:5px;border:1.5px solid ${it.checked?'#4ade80':'rgba(255,255,255,.25)'};background:${it.checked?'#4ade80':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">${it.checked?'<span style=\"color:#0f0f11;font-size:13px;\">\u2713</span>':''}</div><span onclick="openShopItem('${it.id}')" style="flex:1;font-size:13px;color:${it.checked?'#55556a':'#f0f0f2'};text-decoration:${it.checked?'line-through':'none'};cursor:pointer;">${it.name}</span></div>`;
+    });
+    html+='</div>';
+  });
+  if(!(S.shop.list||[]).length)html+='<div style="color:#55556a;font-size:13px;text-align:center;padding:24px;">Liste vide. Ajoute des articles ci-dessus.</div>';
+  html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:#4ade80;border:0;border-radius:8px;color:#0f0f11;font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">\u2713 Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
+  html+=`<button onclick="S.coursesGrave=!S.coursesGrave;render();" style="width:100%;padding:10px;background:transparent;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#9898a8;font-size:12px;cursor:pointer;margin-top:8px;">Cimeti\u00e8re des articles (${graveN})</button>`;
+  if(S.coursesGrave)html+=renderGraveyardHTML();
+  html+='</div>';
+  return html;
+}
+function renderGraveyardHTML(){return '<div style="margin-top:10px;color:#55556a;font-size:12px;">Le cimeti\u00e8re sera activable au prochain build.</div>';}
+function toggleShopItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(it){it.checked=!it.checked;saveState();render();}}
+function addShopItem(){const nm=document.getElementById('shop-add-name');const ry=document.getElementById('shop-add-rayon');if(!nm||!nm.value.trim())return;S.shop.list.push({id:'sh_'+Date.now().toString(36),name:nm.value.trim(),rayon:ry?ry.value:'divers',checked:false});saveState();render();}
+function validateCourses(){alert('Validation des courses \u2014 salle d\'attente + cimeti\u00e8re au prochain build.');}
+function openShopItem(id){toggleShopItem(id);}
 function render(){
   const urgTotal=Object.values(S.inv).flat().filter(i=>i.urgent&&(i.qty===null||i.qty>0)).length;
   const urgCount=RCP.filter(r=>(!r.profile||r.profile===ACTIVE_PROFILE)&&r.urgent===1&&r.slots&&r.slots.length>0&&canCook(r,1)).length;
@@ -1389,7 +1456,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-13 10h05</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-13 10h11</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -1397,7 +1464,9 @@ function render(){
     <div style="display:flex;border-bottom:0.5px solid var(--border);margin-bottom:16px;">
       <button data-action="main-tab" data-val="recipes" style="background:none;border:none;border-bottom:${S.mainTab==='recipes'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='recipes'?500:400};color:${S.mainTab==='recipes'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">★ Recettes</button>
       <button data-action="main-tab" data-val="inventory" style="background:none;border:none;border-bottom:${S.mainTab==='inventory'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='inventory'?500:400};color:${S.mainTab==='inventory'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">≡ Inventaire</button>
+      <button data-action="main-tab" data-val="courses" style="background:none;border:none;border-bottom:${S.mainTab==='courses'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='courses'?500:400};color:${S.mainTab==='courses'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">🛒 Courses</button>
     </div>
+    ${S.mainTab==='courses'?renderCoursesHTML():''}
     ${S.mainTab==='recipes'?`
       ${!getApiKey()?`<div style="background:rgba(251,146,60,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:#0f0f11;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
