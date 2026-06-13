@@ -840,8 +840,9 @@ async function aiLookupItemMacros(){
   const it=(S.inv[_itemDetailRef.cat]||[]).find(i=>i.id===_itemDetailRef.id);if(!it)return;
   const btn=document.getElementById('item-ai-btn');if(btn){btn.textContent='⏳ Recherche…';btn.disabled=true;}
   try{
-    const sys="Base de données nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g/100ml: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number}. Si épice/sel: kcal proche de 0.";
-    const data=await callAI([{role:'user',content:'Macros pour 100g de: '+it.name}],200,sys);
+    const _pp=_itemMacMode==='piece';
+    const sys=_pp?"Base de données nutritionnelles. Retourne UNIQUEMENT un JSON pour 1 pièce/unité moyenne de l'aliment: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number}.":"Base de données nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g/100ml: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number}. Si épice/sel: kcal proche de 0.";
+    const data=await callAI([{role:'user',content:(_pp?'Macros pour 1 pièce/unité moyenne de: ':'Macros pour 100g de: ')+it.name}],200,sys);
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
     const sv=(eid,v)=>{document.getElementById(eid).value=(v===undefined||v===null)?'':v;};
     sv('item-kcal',Math.round(p.kcal)||0);sv('item-prot',p.prot||0);sv('item-gluc',p.gluc||0);sv('item-lip',p.lip||0);
@@ -1600,7 +1601,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-13 22h33</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-13 22h35</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
