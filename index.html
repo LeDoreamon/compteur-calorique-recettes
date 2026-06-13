@@ -1468,7 +1468,7 @@ function renderInv(){
   const _del=getDeletedItems();
   const histSection=S.editMode&&_del.length?`<div style="margin-top:16px;padding:12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🗑 Récemment supprimés · récupérables 24h, sinon définitif</div>${_del.map((d,i)=>{const hh=Math.floor((Date.now()-d.deletedAt)/3600000);const left=Math.max(1,24-hh);const ci=CINFO[d.cat];return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--border);"><span style="flex:1;font-size:12px;color:var(--text2);">${d.item.name} <span style="color:var(--text3);font-size:10px;">· ${ci?ci.label:d.cat} · encore ${left}h pour récupérer</span></span><button onclick="restoreDeletedItem(${i})" style="padding:4px 10px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;flex-shrink:0;">↩ Restaurer</button></div>`;}).join('')}</div>`:'';
   const bottomAdd=S.editMode?`<button onclick="openAddItem('frigo')" style="width:100%;padding:11px;margin-top:14px;background:linear-gradient(135deg,#4ade80,#22c55e);border:none;border-radius:10px;color:#0f0f11;font-size:14px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button>`:'';
-  const waitSection=(S.waiting&&S.waiting.length)?`<div style="background:rgba(124,109,242,.07);border:0.5px solid rgba(124,109,242,.25);border-radius:12px;padding:12px;margin-bottom:14px;"><div style="font-size:12px;color:#a99bff;font-weight:600;margin-bottom:2px;">\ud83d\uded2 Salle d'attente · ${S.waiting.length}</div><div style="font-size:11px;color:#55556a;margin-bottom:10px;">Articles achetés à ranger. Tape pour placer (où, quantité, macros, DLC).</div>${S.waiting.map(w=>`<div onclick="openWaitingItem('${w.id}')" style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#0f0f11;border-radius:8px;margin-bottom:6px;cursor:pointer;"><span style="flex:1;font-size:13px;color:#f0f0f2;">${w.name}</span><span style="font-size:15px;color:#7c6df2;">\u2192</span></div>`).join('')}</div>`:'';
+  const waitSection=(S.waiting&&S.waiting.length)?`<div style="background:rgba(124,109,242,.07);border:0.5px solid rgba(124,109,242,.25);border-radius:12px;padding:12px;margin-bottom:14px;"><div style="font-size:12px;color:#a99bff;font-weight:600;margin-bottom:2px;">\ud83d\uded2 Salle d'attente \u00b7 ${S.waiting.length}</div><div style="font-size:11px;color:#55556a;margin-bottom:10px;">Articles achet\u00e9s \u00e0 ranger. Tape un article pour le placer ; \u2715 pour le retirer.</div>${S.waiting.map(w=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:#0f0f11;border-radius:8px;margin-bottom:6px;"><span onclick="openWaitingItem('${w.id}')" style="flex:1;font-size:13px;color:#f0f0f2;cursor:pointer;">${w.name}</span><span onclick="openWaitingItem('${w.id}')" style="font-size:15px;color:#7c6df2;cursor:pointer;">\u2192</span><button onclick="deleteWaiting('${w.id}')" style="background:none;border:0;color:#f87171;font-size:15px;line-height:1;cursor:pointer;padding:2px 6px;">\u2715</button></div>`).join('')}</div>`:'';
   return editBtn+waitSection+cats+bottomAdd+histSection;
 }
 function renderCoursesHTML(){
@@ -1506,10 +1506,17 @@ function renderGraveyardHTML(){
 }
 function regraveAdd(id){
   const it=(S.shop.graveyard||[]).find(g=>g.id===id);if(!it)return;
+  const nm=it.name.toLowerCase(),ry=it.rayon;
   S.shop.list=S.shop.list||[];
-  if(!S.shop.list.some(x=>x.name.toLowerCase()===it.name.toLowerCase()&&x.rayon===it.rayon)){
+  if(!S.shop.list.some(x=>x.name.toLowerCase()===nm&&x.rayon===ry)){
     S.shop.list.push({id:'sh_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:it.name,rayon:it.rayon,checked:false});
   }
+  S.shop.graveyard=(S.shop.graveyard||[]).filter(g=>g.id!==id);
+  S.waiting=(S.waiting||[]).filter(w=>!(w.name.toLowerCase()===nm&&w.rayon===ry));
+  saveState();render();
+}
+function deleteWaiting(id){
+  S.waiting=(S.waiting||[]).filter(w=>w.id!==id);
   saveState();render();
 }
 function graveDelete(id){
@@ -1572,7 +1579,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-13 15h28</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-13 20h23</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
