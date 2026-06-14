@@ -1656,7 +1656,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-14 05h15</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-14 11h18</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -1943,7 +1943,7 @@ async function runAddMealAI(msgs) {
 Inventaire disponible (format id|nom|quantité): ${buildInvContext()}
 Réponds UNIQUEMENT avec un JSON valide sans markdown:
 {"name":string,"inv_suggestions":[{"id":string,"name":string,"qty":number,"unit":string,"g":number}]}
-inv_suggestions: UNIQUEMENT les items de l'inventaire utilisés (par leur id exact). qty = quantité dans l'unité de l'item (pour la déduction), g = équivalent en GRAMMES ou ml (pour le calcul nutritionnel). Laisse [] si aucun item de l'inventaire n'est utilisé.
+inv_suggestions: UNIQUEMENT les items utilisés (id exact). qty = quantité CONSOMMÉE dans CE repas, dans l'unité de l'item (ex. 100 pour 100g, 2 pour 2 pièces) — JAMAIS le stock disponible affiché. g = cette même quantité convertie en grammes/ml. Laisse [] si aucun item utilisé.
 Sois légèrement pessimiste sur les quantités.`;
   } else {
     sys = `Tu analyses un repas (l'inventaire n'est PAS utilisé). Le repas est décrit en texte (parfois avec des FAUTES de frappe ou d'orthographe à corriger) ou montré en photo.
@@ -1961,9 +1961,20 @@ Réponds UNIQUEMENT en JSON sans markdown:
     if(_addMealUseStock){
       document.getElementById('addmeal-name').value = p.name || 'Repas';
       _addMealInvSuggestions = (p.inv_suggestions||[]).map(s=>{
-        const it=findItem(s.id);const mac=(it&&it.mac100)||{kcal:0,prot:0,gluc:0,lip:0};
-        const g=parseFloat(s.g)||0;const f=g/100;
-        return {id:s.id,name:s.name||(it&&it.name)||'?',qty:s.qty,unit:s.unit||(it&&it.unit)||'g',baseQty:parseFloat(s.qty)||0,m:{kcal:Math.round(mac.kcal*f),prot:Math.round(mac.prot*f),gluc:Math.round(mac.gluc*f),lip:Math.round(mac.lip*f)}};
+        const it=findItem(s.id);
+        const unit=s.unit||(it&&it.unit)||'g';
+        const qty=parseFloat(s.qty)||0;
+        let m;
+        if(it&&it.macPiece){
+          const mp=it.macPiece;
+          m={kcal:Math.round(mp.kcal*qty),prot:Math.round(mp.prot*qty),gluc:Math.round(mp.gluc*qty),lip:Math.round(mp.lip*qty)};
+        } else {
+          const mac=(it&&it.mac100)||{kcal:0,prot:0,gluc:0,lip:0};
+          const grams=(unit==='g'||unit==='ml')?qty:(parseFloat(s.g)||qty);
+          const f=grams/100;
+          m={kcal:Math.round(mac.kcal*f),prot:Math.round(mac.prot*f),gluc:Math.round(mac.gluc*f),lip:Math.round(mac.lip*f)};
+        }
+        return {id:s.id,name:s.name||(it&&it.name)||'?',qty:s.qty,unit:unit,baseQty:qty,m:m};
       });
       _addMealBase={kcal:0,prot:0,gluc:0,lip:0};
       document.getElementById('addmeal-analyzing').style.display = 'none';
