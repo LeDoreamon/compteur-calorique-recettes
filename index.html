@@ -1139,7 +1139,7 @@ async function generateStockRecipes(){
   }
   const btn=document.getElementById('gen-recipes-btn');
   if(btn){btn.disabled=true;btn.textContent='✨ Génération en cours… (15-30s)';}
-  const invList=foodItems.map(i=>{const m=i.mac100?`, pour 100${i.unit==='ml'?'ml':'g'}: ${i.mac100.kcal}kcal ${i.mac100.prot}P ${i.mac100.gluc}G ${i.mac100.lip}L`:'';return `${i.id} = ${i.name} (${i.qty}${i.unit} dispo${m})`;}).join('\n');
+  const invList=foodItems.map(i=>{let m='';if(i.macPiece){m=`, PAR PIÈCE: ${i.macPiece.kcal}kcal ${i.macPiece.prot}P ${i.macPiece.gluc}G ${i.macPiece.lip}L (pièces ENTIÈRES)`;}else if(i.mac100){m=`, pour 100${i.unit==='ml'?'ml':'g'}: ${i.mac100.kcal}kcal ${i.mac100.prot}P ${i.mac100.gluc}G ${i.mac100.lip}L`;}if(i.pkg&&i.pkg.size>0){m+=`, EMBALLAGE ${i.pkg.size}${i.unit} (multiples de ${i.pkg.size}${i.unit})`;}return `${i.id} = ${i.name} (${i.qty}${i.unit} dispo${m})`;}).join('\n');
   const spiceList=spices.length?spices.join(', '):'aucune';
   const _soon=[];Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{const e=effDlc(it);if(!e)return;const dd=Math.round((new Date(e)-new Date())/864e5);if(dd>=0&&dd<14&&(it.qty===null||it.qty>0))_soon.push(it.name+' ('+dd+'j)');}));
   const soonList=_soon.length?_soon.join(', '):null;
@@ -1167,6 +1167,8 @@ RÈGLES ABSOLUES:
 - Une recette peut convenir à plusieurs repas → mets plusieurs valeurs dans "slots".
 - "id" = identifiant EXACT de la liste (partie avant le "=").
 - "qty" JAMAIS supérieur au stock disponible indiqué entre parenthèses.
+- Si un ingrédient indique un EMBALLAGE, sa "qty" doit être un MULTIPLE de la taille d'emballage (ex. emballage de 100g → 100, 200… JAMAIS 120), pour ne pas forcer l'ouverture d'un emballage pour quelques grammes.
+- Si un ingrédient est PAR PIÈCE, sa "qty" est un nombre ENTIER de pièces (ex. 2 œufs, jamais 1.5) avec "unit":"pcs".
 - "steps" = TABLEAU de 3 à 5 étapes SÉPARÉES. UNE seule action par étape. Ne JAMAIS tout mettre dans une seule étape.
 - macros calculées \u00e0 partir des valeurs « pour 100g/ml » de CHAQUE ingr\u00e9dient indiqu\u00e9es ci-dessus, multipli\u00e9es par la quantit\u00e9 utilis\u00e9e, puis additionn\u00e9es pour 1 portion. Ne devine pas au hasard si les valeurs sont fournies.
 - Assaisonne les plats SALÉS avec l'épice PERTINENTE (curry sur un curry, paprika sur une viande, ail dans un wok...), mais JAMAIS de la salade au hasard. Les plats SUCRÉS (bowls sucrés, shakes, compotes, fruits) ne reçoivent PAS d'épices salées.
@@ -1653,7 +1655,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-14 04h54</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-14 04h57</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
