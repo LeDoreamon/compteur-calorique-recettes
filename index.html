@@ -812,7 +812,7 @@ async function aiWaitMacros(){
   const btn=document.getElementById('wait-ai-btn');if(btn){btn.textContent='\u23f3 Recherche…';btn.disabled=true;}
   try{
     const sys="Base de données nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g/100ml: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number}. Si épice/sel: kcal proche de 0.";
-    const data=await callAI([{role:'user',content:'Macros 100g de: '+nm}],200,sys);
+    const data=await callAI([{role:'user',content:'Macros 100g de: '+nm}],200,sys,null,0,7);
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
     ['kcal','prot','gluc','lip'].forEach(k=>{const el=document.getElementById('wait-'+k);if(el)el.value=p[k]||0;});
   }catch(e){alert('Erreur IA: '+(e.message||'').slice(0,50));}
@@ -899,11 +899,14 @@ async function aiLookupItemMacros(){
   const btn=document.getElementById('item-ai-btn');if(btn){btn.textContent='⏳ Recherche…';btn.disabled=true;}
   try{
     const _pp=_itemMacMode==='piece';
-    const sys=_pp?"Base de données nutritionnelles. Retourne UNIQUEMENT un JSON pour 1 pièce/unité moyenne de l'aliment: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number}.":"Base de données nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g/100ml: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number}. Si épice/sel: kcal proche de 0.";
-    const data=await callAI([{role:'user',content:(_pp?'Macros pour 1 pièce/unité moyenne de: ':'Macros pour 100g de: ')+it.name}],200,sys);
+    const sys=_pp
+      ? `Base de données nutritionnelles fiable. Estime d'abord le poids moyen RÉALISTE d'UNE pièce de cet aliment (ex. 1 pané de poisson ≈ 70g, 1 œuf ≈ 55g, 1 gourde de compote ≈ 90g), puis donne les macros pour CETTE pièce. Retourne UNIQUEMENT un JSON: {"g":number,"kcal":integer,"prot":number,"gluc":number,"lip":number} où g = le poids d'une pièce en grammes. Reste cohérent et précis.`
+      : `Base de données nutritionnelles fiable. Retourne UNIQUEMENT un JSON pour 100g/100ml: {"kcal":integer,"prot":number,"gluc":number,"lip":number}. Si épice/sel: kcal proche de 0. Reste cohérent et précis.`;
+    const data=await callAI([{role:'user',content:(_pp?'Macros pour 1 pièce de: ':'Macros pour 100g de: ')+it.name}],200,sys,null,0,7);
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
-    const sv=(eid,v)=>{document.getElementById(eid).value=(v===undefined||v===null)?'':v;};
+    const sv=(eid,v)=>{const e=document.getElementById(eid);if(e)e.value=(v===undefined||v===null)?'':v;};
     sv('item-kcal',Math.round(p.kcal)||0);sv('item-prot',p.prot||0);sv('item-gluc',p.gluc||0);sv('item-lip',p.lip||0);
+    if(_pp&&p.g>0){const pg=document.getElementById('item-pieceg');if(pg)pg.value=Math.round(p.g);}
     if(btn)btn.textContent='✓ Vérifie puis Enregistre';
   }catch(e){if(btn)btn.textContent='Erreur — réessaie';}
   if(btn)btn.disabled=false;
@@ -1257,7 +1260,7 @@ function clearAIRecipes(){
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function callAI(messages,maxTokens=300,system=null,modelOverride=null){
+async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temperature=0.2,seed=null){
   const key=getApiKey();
   if(!key){openSettings();throw new Error('NO_KEY');}
   // Détecte si la requête contient une image
@@ -1279,11 +1282,13 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null){
     }
   });
   let resp,data;
+  const _body={model,messages:msgs,max_tokens:maxTokens,temperature};
+  if(seed!=null)_body.seed=seed;
   try{
     resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-      body:JSON.stringify({model,messages:msgs,max_tokens:maxTokens,temperature:0.2})
+      body:JSON.stringify(_body)
     });
     data=await resp.json();
   }catch(netErr){throw new Error('NETWORK:'+netErr.message);}
@@ -1687,7 +1692,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-14 16h46</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-14 16h52</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
