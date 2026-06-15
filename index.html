@@ -1497,6 +1497,7 @@ function macroBar(label,val,target,unit,color){
 
 function renderDessert(r){
   const sel=S.recipeDesserts[r.id]||'none';const cd=S.customDesserts[r.id];const saved=S.customInputs[r.id]||'';
+  const rm=recipeMacros(r);
   const btns=DESSERTS.map(d=>{
     const ok=canTakeDessert(d),isSel=sel===d.id,isAI=d.id==='autre';
     const bc=isSel?'var(--text)':(d.urgent&&ok)?'var(--warn)':isAI?'var(--blue)':'var(--text3)';
@@ -1514,10 +1515,10 @@ function renderDessert(r){
   let total='';
   if(sel&&sel!=='none'){
     if(sel==='autre'&&cd&&!cd.loading&&!cd.error){
-      total=`<div style="margin-top:6px;font-size:11px;color:var(--text2);">Avec <strong>${cd.name}</strong> → <strong>${r.kcal+cd.kcal} kcal · ${r.prot+cd.prot}g prot.</strong></div>`;
+      total=`<div style="margin-top:6px;font-size:11px;color:var(--text2);">Avec <strong>${cd.name}</strong> → <strong>${rm.kcal+cd.kcal} kcal · ${rm.prot+cd.prot}g prot.</strong></div>`;
     }else if(sel!=='autre'){
       const sd=DESSERTS.find(x=>x.id===sel);
-      if(sd)total=`<div style="margin-top:6px;font-size:11px;color:var(--text2);">Avec ${sd.name} : <strong>${r.kcal+sd.kcal} kcal · ${r.prot+sd.prot}g prot.</strong></div>`;
+      if(sd)total=`<div style="margin-top:6px;font-size:11px;color:var(--text2);">Avec ${sd.name} : <strong>${rm.kcal+sd.kcal} kcal · ${rm.prot+sd.prot}g prot.</strong></div>`;
     }
   }
   return`<div style="padding-top:12px;margin-top:4px;border-top:0.5px solid var(--border);"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Dessert</div><div style="display:flex;flex-wrap:wrap;gap:5px;">${btns}</div>${inp}${total}</div>`;
@@ -1577,8 +1578,22 @@ function renderIngredients(r){
   return tr||ex?`<div style="padding:10px 0 12px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Ce qu'il faut</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${tr}${ex}</div></div><div style="border-top:0.5px solid var(--border);"></div>`:'<div style="border-top:0.5px solid var(--border);"></div>';
 }
 
+function recipeMacros(r){
+  if(!r)return {kcal:0,prot:0,gluc:0,lip:0};
+  if(!r.used||!r.used.length)return {kcal:r.kcal||0,prot:r.prot||0,gluc:r.gluc||0,lip:r.lip||0};
+  let t={kcal:0,prot:0,gluc:0,lip:0};
+  r.used.forEach(u=>{
+    const it=findItem(u.id);const nq=u.qty;
+    let m;
+    if(it)m=itemMealMacros(it,nq);
+    else{const m100=getM100(u.id);if(m100){const f=nq/100;m={kcal:(m100.kcal||0)*f,prot:(m100.prot||0)*f,gluc:(m100.gluc||0)*f,lip:(m100.lip||0)*f};}else m={kcal:0,prot:0,gluc:0,lip:0};}
+    t.kcal+=m.kcal;t.prot+=m.prot;t.gluc+=m.gluc;t.lip+=m.lip;
+  });
+  return {kcal:Math.round(t.kcal),prot:Math.round(t.prot),gluc:Math.round(t.gluc),lip:Math.round(t.lip)};
+}
 function renderCard(r){
   const open=S.openRec===r.id,wc=weekCount(r.id),done=cookedToday(r.id);
+  const rm=recipeMacros(r);
   const bc=done?'var(--green)':'var(--border)';
   const wb=wc>0?`<span class="chip" style="background:var(--green-bg);color:var(--green);">↺ ×${wc}/sem.</span>`:'';
   return`<div class="rcard" style="border-color:${bc};"><div class="rhead" data-action="toggle-recipe" data-val="${r.id}">
@@ -1587,10 +1602,10 @@ function renderCard(r){
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;">${r.urgent?`<span class="chip" style="background:var(--red-bg);color:var(--red);">⚠ ${r.ur}</span>`:''}${wb}</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
         ${chip('--text2','--bg3','⏱ '+r.time+'m')}
-        ${chip('--orange','--orange-bg',r.kcal+' kcal')}
-        ${chip('--green','--green-bg',r.prot+'g prot.')}
-        ${chip('--blue','--blue-bg',r.gluc+'g gluc.')}
-        ${chip('--text3','--bg3',r.lip+'g lip.')}
+        ${chip('--orange','--orange-bg',rm.kcal+' kcal')}
+        ${chip('--green','--green-bg',rm.prot+'g prot.')}
+        ${chip('--blue','--blue-bg',rm.gluc+'g gluc.')}
+        ${chip('--text3','--bg3',rm.lip+'g lip.')}
       </div>
     </div>
     <span class="chev" style="font-size:14px;color:var(--text3);flex-shrink:0;margin-top:2px;transform:rotate(${open?'90deg':'0deg'});">▸</span>
@@ -1746,7 +1761,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-15 06h36</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-15 13h50</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
