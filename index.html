@@ -325,6 +325,10 @@ const MEALS_DEFAULT={
 };
 
 const RCP=[
+  // -- Recettes Liam ajoutees (anti-gaspi creme fraiche / dessert DLC) --
+  {id:'liam_poulet_creme_riz',profile:'liam',slots:['lunch','dinner'],name:'Poulet à la crème fraîche & riz',urgent:0,time:22,kcal:640,prot:53,gluc:71,lip:17,steps:["Cuire le riz.","Saisir le poulet émincé avec les oignons.","Ajouter la crème fraîche, sel et poivre, mijoter 5 min.","Servir sur le riz."],used:[{id:'poulet',qty:200},{id:'oignons',qty:50},{id:'creme_fraiche',qty:100},{id:'riz',qty:80}],extras:[]},
+  {id:'liam_gratin_boeuf_creme',profile:'liam',slots:['dinner'],name:'Gratin de pâtes, bœuf & crème fraîche',urgent:0,time:28,kcal:674,prot:43,gluc:68,lip:25,steps:["Cuire les pâtes complètes.","Saisir le bœuf haché.","Mélanger pâtes + bœuf + crème fraîche, verser dans un plat.","Parsemer de St Morêt, gratiner 10 min au four."],used:[{id:'pates_completes',qty:100},{id:'boeuf_hache',qty:120},{id:'creme_fraiche',qty:80},{id:'st_moret',qty:40}],extras:[]},
+  {id:'liam_fb_vanille_framboises',profile:'liam',slots:['dessert'],name:'Fromage blanc vanille & framboises',urgent:0,time:3,kcal:81,prot:6,gluc:14,lip:1,steps:["1 fromage blanc vanille.","Framboises surgelées décongelées par-dessus, mélanger."],used:[{id:'fb_vanille',qty:1},{id:'framboises',qty:60}],extras:[]},
   // ── Desserts (partagés Liam & Maureen) ──
   {id:'dess_yaourt_miel',slots:['dessert'],name:'Yaourt 0% & miel',urgent:0,time:2,kcal:100,prot:4,gluc:22,lip:0,steps:["1 yaourt 0%, ajouter 15 g de miel."],used:[{id:'yaourts',qty:1}],extras:[{n:'Miel',q:'15 g',opt:false}]},
   {id:'dess_fb_compote',slots:['dessert'],name:'Fromage blanc & compote',urgent:0,time:2,kcal:140,prot:12,gluc:18,lip:1,steps:["150 g de fromage blanc 0%, une compote par-dessus."],used:[{id:'fb_nature',qty:150},{id:'compotes',qty:1}],extras:[]},
@@ -731,16 +735,17 @@ function addCCExtra(){
   document.getElementById('cc-extras').appendChild(row);
 }
 function ccRecipeMacros(){
-  let t={kcal:0,prot:0,gluc:0,lip:0};
+  let t={kcal:0,prot:0,gluc:0,lip:0},incomplete=false;
   _cc.ings.forEach((g,i)=>{
     const el=document.getElementById('cc-'+i);const nq=el?parseFloat(el.value)||0:g.qty;
     const it=findItem(g.id);
     let m;
-    if(it)m=itemMealMacros(it,nq);
+    if(it){m=itemMealMacros(it,nq);if(nq>0&&m.kcal===0&&it.mac100&&it.mac100.kcal>0)incomplete=true;}
     else if(g.m100){const f=nq/100;m={kcal:(g.m100.kcal||0)*f,prot:(g.m100.prot||0)*f,gluc:(g.m100.gluc||0)*f,lip:(g.m100.lip||0)*f};}
-    else m={kcal:0,prot:0,gluc:0,lip:0};
+    else {m={kcal:0,prot:0,gluc:0,lip:0};if(nq>0)incomplete=true;}
     t.kcal+=m.kcal;t.prot+=m.prot;t.gluc+=m.gluc;t.lip+=m.lip;
   });
+  if(incomplete){const r=RCP.find(x=>x.id===_cc.rid);const mlt=_cc.mult||1;if(r&&(r.kcal||r.prot||r.gluc||r.lip))return {kcal:(r.kcal||0)*mlt,prot:(r.prot||0)*mlt,gluc:(r.gluc||0)*mlt,lip:(r.lip||0)*mlt};}
   return t;
 }
 function updateCCTotals(){
@@ -1582,15 +1587,17 @@ function renderIngredients(r){
 
 function recipeMacros(r){
   if(!r)return {kcal:0,prot:0,gluc:0,lip:0};
-  if(!r.used||!r.used.length)return {kcal:r.kcal||0,prot:r.prot||0,gluc:r.gluc||0,lip:r.lip||0};
-  let t={kcal:0,prot:0,gluc:0,lip:0};
+  const stored={kcal:r.kcal||0,prot:r.prot||0,gluc:r.gluc||0,lip:r.lip||0};
+  if(!r.used||!r.used.length)return stored;
+  let t={kcal:0,prot:0,gluc:0,lip:0},incomplete=false;
   r.used.forEach(u=>{
-    const it=findItem(u.id);const nq=u.qty;
+    const it=findItem(u.id);const nq=parseFloat(u.qty)||0;
     let m;
-    if(it)m=itemMealMacros(it,nq);
-    else{const m100=getM100(u.id);if(m100){const f=nq/100;m={kcal:(m100.kcal||0)*f,prot:(m100.prot||0)*f,gluc:(m100.gluc||0)*f,lip:(m100.lip||0)*f};}else m={kcal:0,prot:0,gluc:0,lip:0};}
+    if(it){m=itemMealMacros(it,nq);if(nq>0&&m.kcal===0&&it.mac100&&it.mac100.kcal>0)incomplete=true;}
+    else{const m100=getM100(u.id);if(m100){const f=nq/100;m={kcal:(m100.kcal||0)*f,prot:(m100.prot||0)*f,gluc:(m100.gluc||0)*f,lip:(m100.lip||0)*f};}else{m={kcal:0,prot:0,gluc:0,lip:0};if(nq>0)incomplete=true;}}
     t.kcal+=m.kcal;t.prot+=m.prot;t.gluc+=m.gluc;t.lip+=m.lip;
   });
+  if(incomplete&&(stored.kcal||stored.prot||stored.gluc||stored.lip))return stored;
   return {kcal:Math.round(t.kcal),prot:Math.round(t.prot),gluc:Math.round(t.gluc),lip:Math.round(t.lip)};
 }
 function renderCard(r){
@@ -1763,7 +1770,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-15 18h13</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-15 19h33</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
