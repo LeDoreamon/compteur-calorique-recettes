@@ -1788,7 +1788,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-19 08h56</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-19 09h10</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -1952,11 +1952,11 @@ function recalcAddMealMacros(){
   const t={kcal:_addMealBase.kcal,prot:_addMealBase.prot,gluc:_addMealBase.gluc,lip:_addMealBase.lip};
   (_addMealInvSuggestions||[]).forEach((s,i)=>{
     const cb=document.getElementById('inv-cb-'+i);if(cb&&!cb.checked)return;
-    const qi=document.getElementById('inv-qty-'+i);const q=qi?parseFloat(qi.value)||0:s.baseQty;
-    const r=s.baseQty>0?q/s.baseQty:1;
-    const m=s.m||{kcal:0,prot:0,gluc:0,lip:0};
-    t.kcal+=m.kcal*r;t.prot+=m.prot*r;t.gluc+=m.gluc*r;t.lip+=m.lip*r;
-    const ke=document.getElementById('inv-k-'+i);if(ke)ke.textContent=Math.round(m.kcal*r)+'k';
+    const qi=document.getElementById('inv-qty-'+i);const q=qi?parseFloat(qi.value)||0:(s.baseQty||0);
+    const it=findItem(s.id);const m100=(it&&it.mac100)||null;const f=q/100;
+    const mk=m100?m100.kcal*f:0,mp=m100?m100.prot*f:0,mg=m100?m100.gluc*f:0,ml=m100?m100.lip*f:0;
+    t.kcal+=mk;t.prot+=mp;t.gluc+=mg;t.lip+=ml;
+    const ke=document.getElementById('inv-k-'+i);if(ke)ke.textContent=Math.round(mk)+'k';
   });
   document.querySelectorAll('#inv-custom-items [id^="inv-row-"]').forEach(row=>{
     const idx=row.id.replace('inv-row-','');
@@ -2118,10 +2118,10 @@ Réponds UNIQUEMENT en JSON sans markdown:
       document.getElementById('addmeal-name').value = p.name || 'Repas';
       _addMealInvSuggestions = (p.inv_suggestions||[]).map(s=>{
         const it=findItem(s.id);
-        const unit=s.unit||(it&&it.unit)||'g';
-        const qty=parseFloat(s.qty)||0;
-        const mm=itemMealMacros(it,qty,parseFloat(s.g)||0);
-        return {id:s.id,name:s.name||(it&&it.name)||'?',qty:s.qty,unit:unit,baseQty:qty,m:{kcal:Math.round(mm.kcal),prot:Math.round(mm.prot),gluc:Math.round(mm.gluc),lip:Math.round(mm.lip)}};
+        const g=Math.round(parseFloat(s.g)||parseFloat(s.qty)||0);
+        const m100=(it&&it.mac100)||null;const f=g/100;
+        const m=m100?{kcal:Math.round(m100.kcal*f),prot:Math.round(m100.prot*f),gluc:Math.round(m100.gluc*f),lip:Math.round(m100.lip*f)}:{kcal:0,prot:0,gluc:0,lip:0};
+        return {id:s.id,name:s.name||(it&&it.name)||'?',qty:g,unit:'g',baseQty:g,m};
       });
       _addMealBase={kcal:0,prot:0,gluc:0,lip:0};
       document.getElementById('addmeal-analyzing').style.display = 'none';
@@ -2165,7 +2165,7 @@ function confirmAddMealFinal() {
         const qty = parseFloat(qi.value)||0;
         if (qty > 0) Object.values(S.inv).forEach(arr => {
           const it = arr.find(x=>x.id===s.id);
-          if (it && it.qty!==null) it.qty = Math.max(0, it.qty - qty);
+          if (it && it.qty!==null && (it.unit==='g'||it.unit==='ml')) it.qty = Math.max(0, it.qty - qty);
         });
       }
     });
