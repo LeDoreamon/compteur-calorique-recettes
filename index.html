@@ -1062,6 +1062,7 @@ function toggleInvPresent(cat,id){
 // ─── SYNC FIREBASE + LOCALSTORAGE ───────────────────────────────────────────
 const FB = 'https://bouffe-frigo-default-rtdb.europe-west1.firebasedatabase.app';
 let _syncStatus = ''; // '' | 'ok' | 'offline'
+let _lastSyncErr='';
 
 function _applyState(d){
   if(!d)return;
@@ -1134,9 +1135,10 @@ function _applyState(d){
   // Historique suppressions
   if(d.deletedItems&&Array.isArray(d.deletedItems))S.deletedItems=d.deletedItems;
 }
+function showSyncErr(){alert(_lastSyncErr||'Aucun detail enregistre pour le moment. Declenche une sauvegarde (ajoute un repas) puis retape.');}
 function _syncBadge(){
   if(_syncStatus==='ok') return '<span style="font-size:10px;color:var(--green);">☁ sync</span>';
-  if(_syncStatus==='offline') return '<span style="font-size:10px;color:var(--orange);">⚠ hors ligne</span>';
+  if(_syncStatus==='offline') return '<span onclick="showSyncErr()" style="font-size:10px;color:var(--orange);cursor:pointer;">⚠ hors ligne ⓘ</span>';
   return '<span style="font-size:10px;color:var(--text3);">💾 auto</span>';
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1174,7 +1176,8 @@ async function saveState(){
     });
     clearTimeout(_stid);
     _syncStatus=r.ok?'ok':'offline';
-  }catch(e){_syncStatus='offline';}
+    _lastSyncErr=r.ok?'':('Ecriture refusee — HTTP '+r.status+' '+r.statusText);
+  }catch(e){_syncStatus='offline';_lastSyncErr='Ecriture — '+e.name+': '+e.message;}
   const badge=document.getElementById('sync-badge');
   if(badge)badge.innerHTML=_syncBadge();
 }
@@ -1195,7 +1198,7 @@ async function loadState(){
         return;
       }
     }
-  }catch(e){}
+  }catch(e){_lastSyncErr='Lecture — '+e.name+': '+e.message;}
   try{
     const d=JSON.parse(localStorage.getItem(ACTIVE_PROFILE+'_st')||localStorage.getItem('frigo_state')||'null');
     _applyState(d);
@@ -1789,7 +1792,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-19 08h18</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-19 08h50</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
