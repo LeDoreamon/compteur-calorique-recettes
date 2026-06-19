@@ -1165,11 +1165,14 @@ async function saveState(){
   });
   try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
   try{
+    const _sc=new AbortController();const _stid=setTimeout(()=>_sc.abort(),8000);
     const r=await fetch(`${FB}/${ACTIVE_PROFILE}/state.json`,{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
-      body:payload
+      body:payload,
+      signal:_sc.signal
     });
+    clearTimeout(_stid);
     _syncStatus=r.ok?'ok':'offline';
   }catch(e){_syncStatus='offline';}
   const badge=document.getElementById('sync-badge');
@@ -1203,6 +1206,8 @@ async function loadState(){
 }
 
 document.addEventListener('visibilitychange',()=>{if(document.hidden)saveState();});
+window.addEventListener('online',()=>{if(_loaded)saveState();});
+window.addEventListener('offline',()=>{_syncStatus='offline';const _b=document.getElementById('sync-badge');if(_b)_b.innerHTML=_syncBadge();});
 
 // ─── API KEY ──────────────────────────────────────────────────────────────────
 function getApiKey(){return localStorage.getItem('anthropic_key')||'';}
@@ -1358,14 +1363,15 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   let resp,data;
   const _body={model,messages:msgs,max_tokens:maxTokens,temperature};
   if(seed!=null)_body.seed=seed;
+  const _ctrl=new AbortController();const _tid=setTimeout(()=>_ctrl.abort(),25000);
   try{
     resp=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${key}`},
-      body:JSON.stringify(_body)
+      body:JSON.stringify(_body),signal:_ctrl.signal
     });
     data=await resp.json();
-  }catch(netErr){throw new Error('NETWORK:'+netErr.message);}
+  }catch(netErr){throw new Error(netErr.name==='AbortError'?'NETWORK:timeout':'NETWORK:'+netErr.message);}finally{clearTimeout(_tid);}
   if(data.error)throw new Error('API:'+(data.error.message||JSON.stringify(data.error)));
   const text=data.choices?.[0]?.message?.content||'';
   return{content:[{type:'text',text}]};
@@ -1783,7 +1789,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-18 07h58</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-19 08h18</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
