@@ -398,13 +398,13 @@ const RCP=[
 
   // ── Nouvelles recettes ──────────────────────────────────────────────────
   // PETIT-DEJ
-  {id:'pancakes_avoine',slots:['breakfast'],name:'Pancakes avoine & whey',urgent:0,ur:null,time:12,kcal:570,prot:43,gluc:61,lip:18,
-   steps:["Mixer 80g de flocons, 2 oeufs, 20g de whey et 100mL de lait jusqu'à obtenir une pâte épaisse.",
+  {id:'pancakes_avoine',slots:['breakfast'],name:'Pancakes avoine & fromage blanc',urgent:0,ur:null,time:12,kcal:580,prot:35,gluc:72,lip:17,
+   steps:["Mixer 80g de flocons, 2 oeufs, 2 pots de fromage blanc vanille et 50mL de lait jusqu'à obtenir une pâte épaisse.",
           "Laisser reposer 3 min.",
           "Cuire 3 min de chaque côté dans une poêle avec un peu d'huile.",
           "Servir avec un filet de miel ou une compote (optionnel)."],
-   used:[{id:'flocons',qty:80},{id:'oeufs',qty:2},{id:'whey',qty:20}],
-   extras:[{n:'Lait',q:'100mL',opt:false},{n:'Miel',q:'',opt:true}]},
+   used:[{id:'flocons',qty:80},{id:'oeufs',qty:2},{id:'fb_vanille',qty:2}],
+   extras:[{n:'Lait',q:'50mL',opt:false},{n:'Miel',q:'',opt:true}]},
 
   {id:'bowl_fb_vanille',slots:['breakfast','snack','dessert'],name:'Bowl fromage blanc vanille, compote & amandes',urgent:1,ur:'FB vanille',time:3,kcal:320,prot:18,gluc:36,lip:10,
    steps:["Verser 2 pots de fromage blanc vanille dans un bol.",
@@ -1788,7 +1788,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-20 11h14</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-20 11h41</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
