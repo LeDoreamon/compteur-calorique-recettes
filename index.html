@@ -228,7 +228,7 @@ const DESSERTS=[
   {id:'autre',name:'Autre…',inv:null,qty:0,kcal:0,prot:0,gluc:0,lip:0,urgent:false},
 ];
 
-const MACROS_PIECE={oeufs:{kcal:72,prot:6.3,gluc:0.4,lip:4.8,g:55},avocats:{kcal:240,prot:3,gluc:12,lip:22,g:150},bananes:{kcal:105,prot:1.3,gluc:27,lip:0.4,g:120},pommes:{kcal:95,prot:0.5,gluc:25,lip:0.3,g:180}};
+const MACROS_PIECE={oeufs:{kcal:72,prot:6.3,gluc:0.4,lip:4.8,g:55},avocats:{kcal:240,prot:3,gluc:12,lip:22,g:150},bananes:{kcal:105,prot:1.3,gluc:27,lip:0.4,g:120},pommes:{kcal:95,prot:0.5,gluc:25,lip:0.3,g:180},fb_vanille:{kcal:50,prot:5,gluc:7,lip:0.5,g:100}};
 const INV_DEFAULT={frigo:[
   {id:'jambon_blanc',name:'Jambon blanc',qty:600,unit:'g',urgent:1},
   {id:'jambon_poulet',name:'Jambon de poulet',qty:180,unit:'g',urgent:1},
@@ -403,8 +403,8 @@ const RCP=[
           "Laisser reposer 3 min.",
           "Cuire 3 min de chaque côté dans une poêle avec un peu d'huile.",
           "Servir avec un filet de miel ou une compote (optionnel)."],
-   used:[{id:'flocons',qty:80},{id:'oeufs',qty:2},{id:'fb_vanille',qty:2}],
-   extras:[{n:'Lait',q:'50mL',opt:false},{n:'Miel',q:'',opt:true}]},
+   used:[{id:'flocons',qty:80},{id:'oeufs',qty:2},{id:'fb_vanille',qty:2},{id:'lait',qty:50}],
+   extras:[{n:'Miel',q:'',opt:true}]},
 
   {id:'bowl_fb_vanille',slots:['breakfast','snack','dessert'],name:'Bowl fromage blanc vanille, compote & amandes',urgent:1,ur:'FB vanille',time:3,kcal:320,prot:18,gluc:36,lip:10,
    steps:["Verser 2 pots de fromage blanc vanille dans un bol.",
@@ -1788,7 +1788,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-20 11h41</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-20 11h59</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
