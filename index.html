@@ -1561,6 +1561,17 @@ function renderCardBottom(r){
   return`${renderDessert(r)}<div style="display:flex;gap:8px;margin-top:12px;">${btn(r.id,1,c1,'1 portion','user')}${btn(r.id,2,c2,'Préparer pour 2','users')}</div>${missHtml}`;
 }
 
+function copyDayTo(target){
+  if(!target){alert('Choisis une date.');return;}
+  const src=S.dayMeals[S.displayDate]||[];
+  if(!src.length){alert('Aucun repas à copier ce jour-là.');return;}
+  if(target===S.displayDate){alert('La date cible est le jour affiché. Choisis une autre date.');return;}
+  const existing=(S.dayMeals[target]||[]).length;
+  if(existing&&!confirm('Le '+target+' a déjà '+existing+' repas. Ajouter les '+src.length+' repas du jour affiché par-dessus ?'))return;
+  S.dayMeals[target]=(S.dayMeals[target]||[]).concat(JSON.parse(JSON.stringify(src)));
+  S.displayDate=target;
+  saveState();render();
+}
 function renderMacros(){
   const dd=S.displayDate;const m=getDayMacros(dd);const meals=S.dayMeals[dd]||[];
   const isToday=dd===S.today,isTomorrow=dd===TOMORROW;
@@ -1577,6 +1588,7 @@ function renderMacros(){
     ${meals.length>0?`<div style="display:grid;grid-template-columns:65px 1fr 75px;align-items:center;gap:5px;row-gap:6px;">${macroBar('Calories',m.kcal,TARGETS.kcal,'kcal','--orange')}${macroBar('Protéines',m.prot,TARGETS.prot,'g','--green')}${macroBar('Glucides',m.gluc,TARGETS.gluc,'g','--blue')}${macroBar('Lipides',m.lip,TARGETS.lip,'g','--text2')}</div>`:'<div style="text-align:center;padding:12px 0;font-size:13px;color:var(--text3);">Aucun repas enregistré</div>'}
     ${list?`<div style="margin-top:8px;">${list}</div>`:''}
     ${rem}
+    ${meals.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:10px;color:var(--text3);">Copier ce jour vers</span><input type="date" id="copy-day-target" value="${shiftDate(dd,1)}" style="font-size:11px;padding:2px 5px;background:var(--bg);border:0.5px solid var(--border);border-radius:5px;color:var(--text2);"><button onclick="copyDayTo(document.getElementById('copy-day-target').value)" style="font-size:10px;padding:3px 10px;background:var(--blue);color:#fff;border:0;border-radius:5px;cursor:pointer;font-weight:500;">⧉ Copier</button></div>`:''}
     <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:10px;color:var(--text3);">J−7 à J+1</span></div>
   </div>`;
 }
@@ -1788,7 +1800,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-20 20h49</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-22 00h56</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
