@@ -1229,13 +1229,13 @@ function clearApiKey(){
 // callAI — Groq (gratuit, 14 400 req/jour, vision incluse)
 
 function extractJSON(text){
-  let t=text.replace(/```json/gi,'').replace(/```/g,'').trim();
+  let t=text.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json/gi,'').replace(/```/g,'').trim();
   const s=t.indexOf('{'),e=t.lastIndexOf('}');
   if(s>=0&&e>s)t=t.slice(s,e+1);
   return JSON.parse(t);
 }
 function extractJSONArray(text){
-  let t=text.replace(/```json/gi,'').replace(/```/g,'').trim();
+  let t=text.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json/gi,'').replace(/```/g,'').trim();
   const s=t.indexOf('['),e=t.lastIndexOf(']');
   if(s>=0&&e>s)t=t.slice(s,e+1);
   return JSON.parse(t);
@@ -1343,7 +1343,7 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   if(!key){openSettings();throw new Error('NO_KEY');}
   // Détecte si la requête contient une image
   const hasImg=messages.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'));
-  const model=modelOverride||(hasImg?'meta-llama/llama-4-scout-17b-16e-instruct':'llama-3.1-8b-instant');
+  const model=modelOverride||(hasImg?'qwen/qwen3.6-27b':'llama-3.1-8b-instant');
   // Construire les messages au format OpenAI (compatible Groq)
   const msgs=[];
   if(system)msgs.push({role:'system',content:system});
@@ -1361,6 +1361,7 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   });
   let resp,data;
   const _body={model,messages:msgs,max_tokens:maxTokens,temperature};
+  if(model.indexOf('qwen3.6')>=0)_body.reasoning_effort='none';
   if(seed!=null)_body.seed=seed;
   const _ctrl=new AbortController();const _tid=setTimeout(()=>_ctrl.abort(),25000);
   try{
@@ -1809,7 +1810,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-22 11h04</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-23 23h44</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
