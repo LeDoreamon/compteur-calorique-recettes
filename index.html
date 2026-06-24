@@ -520,6 +520,7 @@ const S={
   today:TODAY,displayDate:TODAY,
   dayMeals:JSON.parse(JSON.stringify(MEALS_DEFAULT)),
   pendingCook:null,
+  pendingFreeMeal:null,
   pendingSpiceCheck:null,
   aiRecipes:[],
   customRecipes:[],
@@ -1509,6 +1510,7 @@ function execCook(rid,mult,day){
 }
 function handleCook(rid,mult){const r=RCP.find(x=>x.id===rid);if(!r||!canCook(r,mult)||cookedToday(rid))return;const h=new Date().getHours();if(h<4){S.pendingCook={rid,mult};render();return;}openConfirmCook(rid,mult,S.today);}
 function confirmDay(day){if(!S.pendingCook)return;const{rid,mult}=S.pendingCook;S.pendingCook=null;openConfirmCook(rid,mult,day);}
+  function confirmFreeMealDay(day){if(!S.pendingFreeMeal)return;const meal=S.pendingFreeMeal;S.pendingFreeMeal=null;if(!S.dayMeals[day])S.dayMeals[day]=[];S.dayMeals[day].push(meal);saveState();render();}
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────
 function chip(color,bg,html){return`<span class="chip" style="background:var(${bg});color:var(${color});">${html}</span>`;}
@@ -1603,6 +1605,16 @@ function renderMacros(){
   </div>`;
 }
 
+function renderFreeMealNightModal(){
+  if(!S.pendingFreeMeal)return'';
+  const r=RCP.find(x=>x.id===S.pendingFreeMeal.rid);const nm=r?r.name:'Repas libre';
+  const now=new Date();const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
+  const yd=shiftDate(S.today,-1);
+  return`<div style="background:var(--warn-bg);border:0.5px solid var(--warn);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;"><div style="font-size:13px;font-weight:500;color:var(--warn);margin-bottom:8px;">⏱ ${hh}h${mm} — "${nm}" c'est pour…</div><div style="display:flex;gap:8px;">
+    <button data-action="free-meal-day" data-day="${yd}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--warn);background:transparent;color:var(--warn);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Hier<br><span style="font-size:10px;opacity:0.8;">${new Date(yd+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
+    <button data-action="free-meal-day" data-day="${S.today}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Aujourd'hui<br><span style="font-size:10px;opacity:0.6;">${new Date(S.today+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
+  </div></div>`;
+}
 function renderNightModal(){
   if(!S.pendingCook)return'';const r=RCP.find(x=>x.id===S.pendingCook.rid);if(!r)return'';
   const now=new Date();const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
@@ -1810,7 +1822,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-25 01h14</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-25 01h24</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -1824,7 +1836,7 @@ function render(){
     ${S.mainTab==='recipes'?`
       ${!getApiKey()?`<div style="background:rgba(251,146,60,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:#0f0f11;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
-      ${renderNightModal()}
+      ${renderNightModal()}${renderFreeMealNightModal()}
       ${renderSpiceCheck()}
       <div style="margin-bottom:12px;">
         <button id="gen-recipes-btn" onclick="generateStockRecipes()" style="width:100%;padding:10px;background:linear-gradient(135deg,#8b5cf6,#6366f1);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✨ Générer des recettes selon mon stock</button>
@@ -1915,6 +1927,7 @@ ROOT.addEventListener('click',e=>{
   }
   else if(action==='cook'){handleCook(val,parseInt(el.dataset.mult||'1'));return;}
   else if(action==='confirm-day'){confirmDay(el.dataset.day);return;}
+  else if(action==='free-meal-day'){confirmFreeMealDay(el.dataset.day);return;}
   render();
   S._anim=null;
 });
@@ -2218,10 +2231,11 @@ function confirmAddMealFinal() {
   if(!S.customRecipes)S.customRecipes=[];
   S.customRecipes.push(freeRecipe);
   const _meal={rid:id, mult:1, dessert:null, customDessert:null};
-  let _day=S.today;const _hr=new Date().getHours();
-  if(_hr<4){const _yd=shiftDate(S.today,-1);const _ydL=new Date(_yd+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'});if(confirm('Il est tard ('+_hr+'h). Ce repas est pour HIER, le '+_ydL+' ?\n\nOK = hier  ·  Annuler = aujourd’hui'))_day=_yd;}
-  if (!S.dayMeals[_day]) S.dayMeals[_day] = [];
-  S.dayMeals[_day].push(_meal);
+  if(new Date().getHours()<4){
+    S.pendingFreeMeal=_meal;saveState();closeAddMeal();render();return;
+  }
+  if (!S.dayMeals[S.today]) S.dayMeals[S.today] = [];
+  S.dayMeals[S.today].push(_meal);
   saveState();
   closeAddMeal();
   render();
