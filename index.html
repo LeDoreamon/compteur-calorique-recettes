@@ -1289,7 +1289,7 @@ RÈGLES ABSOLUES:
 - recettes vari\u00e9es, savoureuses et COH\u00c9RENTES : de vrais plats \u00e9quilibr\u00e9s, pas de simples assemblages. Associe intelligemment prot\u00e9ines + f\u00e9culents + l\u00e9gumes/sauce.
 - privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : mieux vaut 6 excellentes recettes que 12 m\u00e9diocres.`;
   try{
-    const data=await callAI([{role:'user',content:'Génère le maximum de recettes variées et cohérentes maintenant, en JSON. Prends le temps de bien faire.'}],6000,sys,'openai/gpt-oss-120b');
+    const data=await callAI([{role:'user',content:'Génère le maximum de recettes variées et cohérentes maintenant, en JSON. Prends le temps de bien faire.'}],4000,sys,'openai/gpt-oss-20b');
     const raw=data.content.map(i=>i.text||'').join('');
     let recipes;
     try{recipes=extractJSONArray(raw);}catch(pe){throw new Error('Réponse IA illisible. Réessaie.');}
@@ -1825,7 +1825,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-26 13h06</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-26 23h28</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
