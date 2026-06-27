@@ -1826,7 +1826,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-27 02h42</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-27 18h22</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -2159,8 +2159,8 @@ Réponds UNIQUEMENT en JSON sans markdown:
       _addMealInvSuggestions = (p.inv_suggestions||[]).map(s=>{
         const it=findItem(s.id);
         if(it&&it.macPiece){
-          const pc=Math.max(1,Math.round(parseFloat(s.qty)||((parseFloat(s.g)||0)/(it.pieceG||100))||1));const mp=it.macPiece;
-          return {id:s.id,name:s.name||it.name||'?',qty:pc,unit:it.unit||'pc',baseQty:pc,m:{kcal:Math.round(mp.kcal*pc),prot:Math.round(mp.prot*pc),gluc:Math.round(mp.gluc*pc),lip:Math.round(mp.lip*pc)}};
+          const pc=Math.max(1,Math.round((parseFloat(s.g)>0?parseFloat(s.g)/(it.pieceG||100):0)||parseFloat(s.qty)||1));const mp=it.macPiece;
+          return {id:s.id,name:s.name||it.name||'?',qty:pc,unit:(it.unit&&['g','ml','kg','l','cl'].indexOf(it.unit)>=0)?'pc':(it.unit||'pc'),baseQty:pc,m:{kcal:Math.round(mp.kcal*pc),prot:Math.round(mp.prot*pc),gluc:Math.round(mp.gluc*pc),lip:Math.round(mp.lip*pc)}};
         }
         const g=Math.round(parseFloat(s.g)||parseFloat(s.qty)||0);
         const m100=(it&&it.mac100)||null;const f=g/100;
