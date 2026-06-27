@@ -326,21 +326,35 @@ const MEALS_DEFAULT={
 };
 
 const RCP=[
-{id:'liam_oeufs_brouilles',profile:'liam',slots:['breakfast'],name:'Œufs brouillés crémeux & bacon',urgent:0,time:12,kcal:412,prot:39,gluc:5,lip:26,steps:["Faire revenir les allumettes de bacon.","Ajouter 4 œufs battus et brouiller à feu doux avec la crème fraîche.","Servir avec des tomates cerises crues à côté."],used:[{id:'oeufs',qty:4},{id:'bacon',qty:60},{id:'creme_fraiche',qty:30},{id:'tomates_cerises',qty:50}],extras:[]},{id:'liam_porridge',profile:'liam',slots:['breakfast'],name:'Porridge flocons, lait & whey',urgent:0,time:8,kcal:409,prot:28,gluc:54,lip:8,steps:["Chauffer les flocons d'avoine avec le lait sans lactose jusqu'à épaississement.","Hors du feu, incorporer la clear whey."],used:[{id:'flocons',qty:60},{id:'lait',qty:250},{id:'whey',qty:15}],extras:[]},{id:'liam_poulet_creme_curry',profile:'liam',slots:['lunch','dinner'],name:'Poulet crème-curry & riz',urgent:0,time:20,kcal:700,prot:54,gluc:73,lip:22,steps:["Faire revenir le poulet avec les oignons.","Ajouter la crème fraîche et le curry, laisser épaissir 5 min.","Servir avec le riz cuit."],used:[{id:'poulet',qty:200},{id:'oignons',qty:50},{id:'creme_fraiche',qty:150},{id:'riz',qty:80}],extras:[]},{id:'liam_pates_creme_boeuf',profile:'liam',slots:['dinner'],name:'Pâtes crémeuses au bœuf & crème fraîche',urgent:0,time:25,kcal:723,prot:44,gluc:72,lip:28,steps:["Cuire les pâtes complètes.","Faire revenir le bœuf haché avec les oignons.","Hors du feu, ajouter la crème fraîche et le St Morêt : ils fondent en sauce crémeuse (le St Morêt enrichit la sauce, il ne gratine pas).","Mélanger avec les pâtes."],used:[{id:'pates_completes',qty:100},{id:'boeuf_hache',qty:120},{id:'oignons',qty:40},{id:'creme_fraiche',qty:120},{id:'st_moret',qty:30}],extras:[]},{id:'liam_carbo_prot',profile:'liam',slots:['lunch','dinner'],name:'Pâtes protéinées façon carbonara',urgent:0,time:18,kcal:574,prot:41,gluc:49,lip:21,steps:["Cuire les pâtes protéinées.","Faire revenir le bacon.","Hors du feu, mélanger crème fraîche et 1 œuf, puis lier les pâtes avec (sans cuire l'œuf trop fort)."],used:[{id:'pates_proteinees',qty:100},{id:'bacon',qty:50},{id:'creme_fraiche',qty:80},{id:'oeufs',qty:1}],extras:[]},{id:'liam_yaourt_amandes',profile:'liam',slots:['snack','dessert'],name:'Yaourt 0%, miel & amandes',urgent:0,time:3,kcal:151,prot:9,gluc:8,lip:8,steps:["Verser le yaourt 0% dans un bol.","Ajouter un filet de miel et les amandes concassées."],used:[{id:'yaourts',qty:1},{id:'amandes',qty:15}],extras:[{n:'Miel',q:'1 trait',opt:true}]},{id:'liam_fbvanille_framb',profile:'liam',slots:['dessert'],name:'Fromage blanc vanille & framboises',urgent:0,time:3,kcal:131,prot:11,gluc:23,lip:1,steps:["Verser 2 fromages blancs vanille dans un bol.","Ajouter les framboises surgelées (décongelées ou non) et un filet de miel."],used:[],extras:[{n:'Fromage blanc vanille',q:'2 pots',opt:false},{n:'Framboises surgelées',q:'60 g',opt:false},{n:'Miel',q:'1 trait',opt:true}]},
-  // ── Desserts (partagés Liam & Maureen) ──
-  {id:'dess_yaourt_miel',slots:['dessert'],name:'Yaourt 0% & miel',urgent:0,time:2,kcal:100,prot:4,gluc:22,lip:0,steps:["1 yaourt 0%, ajouter 15 g de miel."],used:[{id:'yaourts',qty:1}],extras:[{n:'Miel',q:'15 g',opt:false}]},
-  {id:'dess_fb_compote',slots:['dessert'],name:'Fromage blanc & compote',urgent:0,time:2,kcal:140,prot:12,gluc:18,lip:1,steps:["150 g de fromage blanc 0%, une compote par-dessus."],used:[{id:'fb_nature',qty:150},{id:'compotes',qty:1}],extras:[]},
-  {id:'dess_fb_pomme',slots:['dessert'],name:'Fromage blanc vanille & pomme',urgent:0,time:4,kcal:105,prot:5,gluc:21,lip:1,steps:["1 fromage blanc vanille avec une pomme coup\u00e9e en d\u00e9s."],used:[{id:'fb_vanille',qty:1},{id:'pommes',qty:1}],extras:[]},
-  {id:'dess_compote_amandes',slots:['dessert'],name:'Compote & amandes grill\u00e9es',urgent:0,time:3,kcal:135,prot:3,gluc:15,lip:8,steps:["Une compote, 15 g d'amandes concass\u00e9es par-dessus."],used:[{id:'compotes',qty:1},{id:'amandes',qty:15}],extras:[]},
-  // ── Nouvelles recettes Liam — anti-gaspi DLC courtes (frigo) ──
-  {id:'omelette_jp_stmoret',slots:['breakfast','lunch'],name:'Omelette jambon de poulet & St Morêt',urgent:1,ur:'Jambon de poulet',time:10,kcal:390,prot:37,gluc:5,lip:23,steps:["Battre 3 \u0153ufs, poivre.","Cuire \u00e0 la po\u00eale, ajouter 80 g jambon de poulet \u00e9minc\u00e9.","Parsemer 30 g St Mor\u00eat, plier, servir."],used:[{id:'oeufs',qty:3},{id:'jambon_poulet',qty:80},{id:'st_moret',qty:30}],extras:[]},
-  {id:'pates_comp_stmoret_jp',slots:['lunch','dinner'],name:'P\u00e2tes compl\u00e8tes, St Mor\u00eat & jambon de poulet',urgent:1,ur:'Jambon de poulet',time:14,kcal:535,prot:36,gluc:68,lip:13,steps:["Cuire 100 g p\u00e2tes compl\u00e8tes.","Hors feu, m\u00e9langer 60 g St Mor\u00eat pour la sauce cr\u00e9meuse.","Ajouter 100 g jambon de poulet, poivre, \u00e9pices italiennes."],used:[{id:'pates_completes',qty:100},{id:'st_moret',qty:60},{id:'jambon_poulet',qty:100}],extras:[]},
-  {id:'cabillaud_paprika_riz',slots:['dinner'],name:'Cabillaud au paprika, riz & tomates cerises fra\u00eeches',urgent:1,ur:'Cabillaud',time:20,kcal:590,prot:33,gluc:71,lip:17,steps:["Cuire 60 g de riz.","Po\u00ealer 2 portions de cabillaud avec paprika.","Servir avec 100 g tomates cerises fra\u00eeches et crues \u00e0 c\u00f4t\u00e9."],used:[{id:'cabillaud',qty:2},{id:'riz',qty:60},{id:'tomates_cerises',qty:100}],extras:[]},
-  {id:'salade_poulet_avocat',slots:['lunch'],name:'Salade poulet, avocat & tomates cerises',urgent:0,time:12,kcal:435,prot:37,gluc:13,lip:27,steps:["Po\u00ealer 150 g de poulet en d\u00e9s (curry ou paprika).","M\u00e9langer avec 1 avocat, 100 g tomates cerises crues, 30 g oignons.","Assaisonner : poivre, sel."],used:[{id:'poulet',qty:150},{id:'avocats',qty:1},{id:'tomates_cerises',qty:100},{id:'oignons',qty:30}],extras:[]},
-  {id:'gratin_pates_jambon',slots:['dinner'],name:'Gratin de p\u00e2tes, jambon blanc & cr\u00e8me',urgent:0,time:25,kcal:690,prot:43,gluc:78,lip:23,steps:["Cuire 100 g p\u00e2tes blanches.","M\u00e9langer avec 120 g jambon blanc et 80 g cr\u00e8me fra\u00eeche, muscade.","Parsemer 30 g fromage r\u00e2p\u00e9, gratiner 10 min au four."],used:[{id:'pates_blanches',qty:100},{id:'jambon_blanc',qty:120},{id:'creme_fraiche',qty:80},{id:'fromage_rape',qty:30}],extras:[]},
-  {id:'wrap_jb_mozza',slots:['lunch','snack'],name:'Wrap jambon blanc, mozzarella & tomates fra\u00eeches',urgent:0,time:8,kcal:450,prot:30,gluc:33,lip:20,steps:["Garnir 1 wrap de 80 g jambon blanc et 60 g mozzarella.","Toaster 2-3 min \u00e0 la po\u00eale.","Ajouter 80 g tomates cerises crues coup\u00e9es en deux apr\u00e8s cuisson."],used:[{id:'wraps',qty:1},{id:'jambon_blanc',qty:80},{id:'mozzarella',qty:60},{id:'tomates_cerises',qty:80}],extras:[]},
-  {id:'bowl_fb_miel',slots:['breakfast','snack','dessert'],name:'Bowl fromage blanc, miel & amandes',urgent:0,time:3,kcal:310,prot:24,gluc:26,lip:12,steps:["Verser 250 g de fromage blanc 0%.","Ajouter 15 g de miel et 20 g d'amandes concass\u00e9es."],used:[{id:'fb_nature',qty:250},{id:'amandes',qty:20}],extras:[{n:'Miel',q:'15 g',opt:false}]},
-  // ── Recettes Maureen — basées sur son inventaire réel (prise de masse) ──
+  // ═══ Catalogue Liam — reconstruit sur le stock actuel ═══
+  {id:'liam_porridge_v2',profile:'liam',slots:['breakfast'],name:'Porridge flocons, lait & whey',urgent:0,time:8,kcal:492,prot:35,gluc:61,lip:10,steps:["Chauffer 80 g de flocons d'avoine avec 250 mL de lait sans lactose jusqu'à épaississement.","Hors du feu, incorporer 20 g de clear whey."],used:[{id:'flocons',qty:80},{id:'lait',qty:250},{id:'whey',qty:20}],extras:[]},
+  {id:'liam_avoine_bowl',profile:'liam',slots:['breakfast'],name:'Bowl avoine, compote & whey',urgent:0,time:5,kcal:527,prot:39,gluc:68,lip:8,steps:["80 g flocons + 150 mL lait, 2 min au micro-ondes.","Mélanger 30 g de clear whey et une gourde de compote."],used:[{id:'flocons',qty:80},{id:'whey',qty:30},{id:'compotes',qty:1},{id:'lait',qty:150}],extras:[]},
+  {id:'liam_oeufs_bacon',profile:'liam',slots:['breakfast'],name:'Œufs brouillés, bacon & tomates fraîches',urgent:0,time:12,kcal:340,prot:33,gluc:6,lip:20,steps:["Faire revenir 60 g d'allumettes de bacon à sec.","Ajouter 3 œufs battus + 30 mL de crème, brouiller à feu doux.","Servir avec 100 g de tomates cerises crues à côté."],used:[{id:'oeufs',qty:3},{id:'cx_mqwkk2as',qty:60},{id:'creme_liq',qty:30},{id:'cx_mqwkk8bz',qty:100}],extras:[]},
+  {id:'liam_galettes_flocons',profile:'liam',slots:['breakfast'],name:'Galettes flocons & œuf',urgent:0,time:12,kcal:405,prot:26,gluc:42,lip:14,steps:["Mixer 60 g de flocons avec 2 œufs et 80 mL de lait.","Cuire en galettes à la poêle, 2-3 min par face."],used:[{id:'flocons',qty:60},{id:'oeufs',qty:2},{id:'lait',qty:80}],extras:[]},
+  {id:'liam_aiguillettes_riz',profile:'liam',slots:['lunch','dinner'],name:'Aiguillettes de poulet, riz & oignons',urgent:0,time:18,kcal:618,prot:54,gluc:82,lip:6,steps:["Cuire 100 g de riz sec.","Poêler 150 g d'aiguillettes avec les oignons, curry ou paprika.","Tomates cerises crues à côté si tu veux."],used:[{id:'cx_mqwkfekl',qty:150},{id:'riz',qty:100},{id:'oignons',qty:50}],extras:[]},
+  {id:'liam_aiguillettes_coco',profile:'liam',slots:['lunch','dinner'],name:'Aiguillettes curry-coco & riz',urgent:0,time:22,kcal:818,prot:56,gluc:85,lip:27,steps:["Cuire 100 g de riz.","Poêler 150 g d'aiguillettes avec les oignons.","Ajouter 100 mL de lait de coco + curry, curcuma, gingembre, mijoter 8 min."],used:[{id:'cx_mqwkfekl',qty:150},{id:'lait_coco',qty:100},{id:'riz',qty:100},{id:'oignons',qty:50}],extras:[]},
+  {id:'liam_karaage_riz',profile:'liam',slots:['lunch','dinner'],name:'Poulet Karaage, riz & sauce soja',urgent:0,time:20,kcal:736,prot:37,gluc:86,lip:23,steps:["Réchauffer 150 g de Poulet Karaage au four (200 °C, 12-15 min).","Cuire 100 g de riz.","Filet de sauce soja + sésame doré."],used:[{id:'cx_mqwkh0op',qty:150},{id:'riz',qty:100},{id:'soja',qty:20}],extras:[]},
+  {id:'liam_pates_boeuf_stmoret',profile:'liam',slots:['lunch','dinner'],name:'Pâtes complètes crémeuses au bœuf',urgent:0,time:22,kcal:568,prot:42,gluc:69,lip:13,steps:["Cuire 100 g de pâtes complètes.","Poêler 120 g de bœuf haché avec les oignons.","Hors du feu, ajouter 40 g de St Morêt : il fond en sauce crémeuse."],used:[{id:'pates_completes',qty:100},{id:'boeuf_hache',qty:120},{id:'st_moret',qty:40},{id:'oignons',qty:40}],extras:[]},
+  {id:'liam_carbo_prot_v2',profile:'liam',slots:['lunch','dinner'],name:'Pâtes protéinées façon carbonara',urgent:0,time:18,kcal:532,prot:40,gluc:48,lip:17,steps:["Cuire 100 g de pâtes protéinées.","Faire revenir 50 g d'allumettes de bacon.","Hors du feu, lier avec 60 mL de crème + 1 œuf, sans trop cuire l'œuf."],used:[{id:'pates_proteinees',qty:100},{id:'cx_mqwkk2as',qty:50},{id:'creme_liq',qty:60},{id:'oeufs',qty:1}],extras:[]},
+  {id:'liam_bolognaise',profile:'liam',slots:['lunch','dinner'],name:'Bolognaise bœuf & pâtes complètes',urgent:0,time:35,kcal:590,prot:46,gluc:74,lip:11,steps:["Poêler 150 g de bœuf haché avec les oignons.","Ajouter la sauce tomate + épices italiennes, mijoter 15 min.","Cuire 100 g de pâtes complètes, mélanger."],used:[{id:'boeuf_hache',qty:150},{id:'pates_completes',qty:100},{id:'sauce_tomate',qty:1},{id:'oignons',qty:80}],extras:[]},
+  {id:'liam_chili_riz',profile:'liam',slots:['lunch','dinner'],name:'Chili mexicain & riz',urgent:0,time:10,kcal:710,prot:27,gluc:126,lip:9,steps:["Cuire 100 g de riz.","Réchauffer une boîte de chili mexicain + paprika. Servir."],used:[{id:'chili',qty:1},{id:'riz',qty:100}],extras:[]},
+  {id:'liam_ratatouille_steak',profile:'liam',slots:['lunch','dinner'],name:'Steak haché & ratatouille',urgent:0,time:18,kcal:636,prot:33,gluc:88,lip:16,steps:["Cuire 80 g de riz.","Poêler 1 steak 3-4 min par face.","Réchauffer une boîte de ratatouille."],used:[{id:'steaks',qty:1},{id:'ratatouille',qty:1},{id:'riz',qty:80}],extras:[]},
+  {id:'liam_steak_frites',profile:'liam',slots:['dinner'],name:'Steak 5% MG & frites au four',urgent:0,time:30,kcal:675,prot:52,gluc:55,lip:25,steps:["Frites au four 200 °C, 20 min.","Poêler 2 steaks 3-4 min par face, assaisonnés."],used:[{id:'steaks',qty:2},{id:'frites',qty:250}],extras:[]},
+  {id:'liam_saumon_riz_v2',profile:'liam',slots:['lunch','dinner'],name:'Saumon poêlé, riz & tomates fraîches',urgent:1,ur:'Saumon',time:18,kcal:580,prot:28,gluc:83,lip:11,steps:["Cuire 100 g de riz.","Assaisonner 140 g de saumon : sel, poivre, paprika + un filet d'huile.","Poêler 3-4 min par face. Tomates cerises crues à côté."],used:[{id:'cx_mqwkttut',qty:140},{id:'riz',qty:100},{id:'cx_mqwkk8bz',qty:150}],extras:[{n:"Huile d'olive",q:'10 mL',opt:false}]},
+  {id:'liam_thon_riz',profile:'liam',slots:['lunch','dinner'],name:'Bol thon, riz & sauce soja',urgent:0,time:12,kcal:617,prot:36,gluc:80,lip:13,steps:["Cuire 100 g de riz.","Égoutter une boîte de thon, mélanger au riz avec les oignons.","Filet de sauce soja."],used:[{id:'thon',qty:1},{id:'riz',qty:100},{id:'oignons',qty:40},{id:'soja',qty:20}],extras:[]},
+  {id:'liam_pates_mozza_tomates',profile:'liam',slots:['lunch','dinner'],name:'Pâtes, mozzarella & tomates fraîches',urgent:0,time:14,kcal:777,prot:35,gluc:79,lip:35,steps:["Cuire 100 g de pâtes blanches.","Égoutter, laisser tiédir 1-2 min.","Ajouter 125 g de billes de mozzarella, 150 g de tomates cerises crues, huile + épices italiennes."],used:[{id:'pates_blanches',qty:100},{id:'cx_mqwkli92',qty:125},{id:'cx_mqwkk8bz',qty:150},{id:'huile_olive',qty:10}],extras:[]},
+  {id:'liam_gratin_jambon',profile:'liam',slots:['dinner'],name:'Gratin de pâtes, jambon & crème',urgent:0,time:30,kcal:729,prot:38,gluc:79,lip:30,steps:["Cuire 100 g de pâtes blanches.","Mélanger avec 80 g d'allumettes de jambon et 80 g de crème semi-épaisse, muscade.","Parsemer 30 g de fromage râpé, gratiner 12 min au four."],used:[{id:'pates_blanches',qty:100},{id:'cx_mqwksmzw',qty:80},{id:'creme_semi',qty:80},{id:'cx_mqwkdso8',qty:30}],extras:[]},
+  {id:'liam_ramen_poulet',profile:'liam',slots:['lunch','dinner'],name:'Ramen poulet maison',urgent:0,time:15,kcal:396,prot:43,gluc:47,lip:9,steps:["Cuire un sachet de ramen.","Poêler 100 g d'aiguillettes + oignons.","Ajouter un œuf mollet et un filet de soja."],used:[{id:'ramen',qty:1},{id:'cx_mqwkfekl',qty:100},{id:'oeufs',qty:1},{id:'oignons',qty:40}],extras:[]},
+  {id:'liam_cabillaud_riz',profile:'liam',slots:['dinner'],name:'Cabillaud pané, riz & tomates fraîches',urgent:1,ur:'Cabillaud',time:20,kcal:498,prot:17,gluc:86,lip:11,steps:["Four 200 °C, panés de cabillaud 15-18 min.","Cuire 80 g de riz.","Tomates cerises crues à côté."],used:[{id:'cx_mqwkzgkq',qty:100},{id:'riz',qty:80},{id:'cx_mqwkk8bz',qty:100}],extras:[]},
+  {id:'liam_pizza',profile:'liam',slots:['dinner'],name:'Pizza De la Mama',urgent:0,time:13,kcal:768,prot:32,gluc:90,lip:29,steps:["Four 220 °C, pizza 11-13 min.","Tomates cerises crues à côté si tu veux."],used:[{id:'pizzas',qty:1}],extras:[]},
+  {id:'liam_yaourt_compote',profile:'liam',slots:['snack','dessert'],name:'Yaourt 0%, compote & miel',urgent:0,time:2,kcal:153,prot:6,gluc:32,lip:1,steps:["1 yaourt 0% + une gourde de compote.","Filet de miel par-dessus."],used:[{id:'cx_mqwka3qf',qty:125},{id:'compotes',qty:1}],extras:[{n:'Miel',q:'15 g',opt:true}]},
+  {id:'liam_carottes_stmoret',profile:'liam',slots:['snack'],name:'Bâtonnets de carottes & St Morêt',urgent:0,time:3,kcal:88,prot:3,gluc:11,lip:4,steps:["Tremper 100 g de bâtonnets de carottes dans 30 g de St Morêt assaisonné (poivre, épices)."],used:[{id:'cx_mqwkns4q',qty:100},{id:'st_moret',qty:30}],extras:[]},
+  {id:'liam_dess_yaourt_miel',profile:'liam',slots:['dessert'],name:'Yaourt 0% & miel',urgent:0,time:2,kcal:108,prot:6,gluc:20,lip:1,steps:["1 yaourt 0%, ajouter 15 g de miel."],used:[{id:'cx_mqwka3qf',qty:125}],extras:[{n:'Miel',q:'15 g',opt:false}]},
+  {id:'liam_dess_compote',profile:'liam',slots:['dessert'],name:'Compote nature',urgent:0,time:1,kcal:45,prot:0,gluc:11,lip:0,steps:["Une gourde de compote."],used:[{id:'compotes',qty:1}],extras:[]},
+  // ── Shaker protéines (gardé en p'tit-déj & collation) ──
+  {id:'shaker_whey',slots:['breakfast','snack'],name:'Shaker clear whey post-training',urgent:0,ur:null,time:1,kcal:110,prot:24,gluc:2,lip:0,steps:["30 g whey + 400-500 mL eau froide. Agiter."],used:[{id:'whey',qty:30}],extras:[]},
+  {id:'shaker_whey_compote',slots:['breakfast','snack'],name:'Shaker whey fruité & compote',urgent:0,ur:null,time:2,kcal:160,prot:24,gluc:14,lip:0,steps:["Compote + 30 g whey + 300 mL eau froide."],used:[{id:'whey',qty:30},{id:'compotes',qty:1}],extras:[]},
+  // ── Recettes Maureen (profil maureen) ──
   {id:'mz_bagel_oeufs',profile:'maureen',slots:['breakfast'],name:'Bagels œufs brouillés & Philadelphia',urgent:0,time:10,kcal:765,prot:38,gluc:88,lip:29,steps:["Brouiller 3 œufs.","Toaster 2 bagels, tartiner de Philadelphia.","Garnir avec les œufs brouillés."],used:[{id:'cx_mq65g9hj',qty:160},{id:'cx_mq65geen',qty:150},{id:'cx_mq659tdp',qty:40}],extras:[]},
   {id:'mz_bagel_pb',profile:'maureen',slots:['breakfast','snack'],name:'Bagel au beurre de cacahuète',urgent:0,time:4,kcal:396,prot:16,gluc:48,lip:16,steps:["Toaster 1 bagel.","Tartiner généreusement de beurre de cacahuète."],used:[{id:'cx_mq65g9hj',qty:80},{id:'cx_mq8c0h6b',qty:30}],extras:[]},
   {id:'mz_omelette_champi',profile:'maureen',slots:['breakfast','lunch'],name:'Omelette champignons & épinards',urgent:0,time:12,kcal:351,prot:23,gluc:6,lip:27,steps:["Faire revenir les champignons émincés et les jeunes pousses d'épinards à l'huile d'olive.","Ajouter 3 œufs battus et cuire l'omelette."],used:[{id:'cx_mq65geen',qty:150},{id:'cx_mq65syug',qty:100},{id:'cx_mq6591wo',qty:30},{id:'cx_mq65ojhq',qty:10}],extras:[]},
@@ -351,157 +365,24 @@ const RCP=[
   {id:'mz_dumplings',profile:'maureen',slots:['snack','lunch'],name:'Dumplings poêlés',urgent:0,time:12,kcal:445,prot:14,gluc:50,lip:21,steps:["Poêler les dumplings à l'huile jusqu'à ce qu'ils dorent.","Servir avec de la sauce soja."],used:[{id:'cx_mq8c6mhu',qty:200},{id:'cx_mq65ojhq',qty:5}],extras:[{n:'Sauce soja',q:'',opt:false}]},
   {id:'mz_hotdogs',profile:'maureen',slots:['lunch','dinner'],name:'Hot dogs maison',urgent:0,time:10,kcal:702,prot:27,gluc:88,lip:26,steps:["Réchauffer 2 saucisses à hot dog.","Glisser dans 2 bagels ouverts.","Garnir de moutarde et mayonnaise."],used:[{id:'cx_mq65enh5',qty:100},{id:'cx_mq65g9hj',qty:160}],extras:[{n:'Moutarde',q:'',opt:false},{n:'Mayonnaise',q:'',opt:true}]},
   {id:'mz_yaourt_pb',profile:'maureen',slots:['snack','dessert'],name:'Yaourt myrtille & beurre de cacahuète',urgent:0,time:2,kcal:233,prot:9,gluc:22,lip:13,steps:["1 yaourt à la myrtille, ajouter une cuillère de beurre de cacahuète."],used:[{id:'cx_mq659kyd',qty:125},{id:'cx_mq8c0h6b',qty:20}],extras:[]},
-  {id:'saumon_riz',slots:['lunch','dinner'],name:'Saumon poêlé, riz & tomates cerises',urgent:1,ur:'Saumon frais',time:15,kcal:770,prot:37,gluc:83,lip:29,steps:["Cuire 100 g de riz sec.","Assaisonner 140 g de saumon : sel, poivre, paprika + 10 mL huile d'olive.","Poêler 3-4 min de chaque côté.","Tomates cerises fraîches à côté."],used:[{id:'saumon',qty:140},{id:'riz',qty:100},{id:'tomates_cerises',qty:200}],extras:[{n:"Huile d'olive",q:'10 mL',opt:false}]},
-  {id:'pates_ricotta',slots:['lunch','dinner'],name:'Pâtes ricotta-épinards & sauce tomate',urgent:1,ur:'Pâtes fraîches',time:12,kcal:620,prot:27,gluc:78,lip:22,steps:["Cuire les pâtes fourrées 4-5 min.","Chauffer sauce tomate + épices.","Mélanger et parsemer fromage râpé."],used:[{id:'pates_ricotta',qty:250},{id:'sauce_tomate',qty:1},{id:'fromage_rape',qty:20}],extras:[]},
-  {id:'pates_pesto_bacon',slots:['lunch','dinner'],name:'Pâtes pesto basilic & bacon',urgent:1,ur:'Pâtes fraîches',time:12,kcal:790,prot:38,gluc:69,lip:38,steps:["Cuire les pâtes fourrées 4-5 min.","Faire revenir 80 g de bacon à sec.","Mélanger et poivrer."],used:[{id:'pates_pesto',qty:250},{id:'bacon',qty:80}],extras:[]},
-  {id:'pates_prosciutto_mozza',slots:['lunch','dinner'],name:'Pâtes prosciutto, mozza & tomates',urgent:0,ur:null,time:12,kcal:900,prot:42,gluc:76,lip:45,steps:["Cuire les pâtes fourrées 4-5 min.","Égoutter, laisser tiédir 1-2 min.","Tomates cerises + mozzarella + huile d'olive + épices."],used:[{id:'pates_prosciutto',qty:250},{id:'tomates_cerises',qty:150},{id:'mozzarella',qty:100}],extras:[{n:"Huile d'olive",q:'10 mL',opt:false}]},
-  {id:'salade_thon',slots:['lunch'],name:'Salade thon & avocat',urgent:1,ur:'Avocats',time:10,kcal:440,prot:38,gluc:13,lip:24,steps:["Égoutter thon, couper avocat.","Mélanger avec tomates cerises.","Vinaigre de riz + sésame."],used:[{id:'thon',qty:1},{id:'avocats',qty:1},{id:'tomates_cerises',qty:120},{id:'vinaigre_riz',qty:30}],extras:[]},
-  {id:'cabillaud_four',slots:['dinner'],name:'Cabillaud pané au four & tomates fraîches',urgent:1,ur:'Cabillaud',time:20,kcal:440,prot:27,gluc:32,lip:21,steps:["Four à 200 °C, 15-18 min.","Tomates cerises fraîches à côté."],used:[{id:'cabillaud',qty:2},{id:'tomates_cerises',qty:150}],extras:[{n:"Huile d'olive",q:'10 mL',opt:false},{n:'Riz sec',q:'80 g (+290 kcal)',opt:true}]},
-  {id:'wrap_jambon',slots:['lunch','snack'],name:'Wrap jambon, fromage blanc & tomates',urgent:0,ur:null,time:5,kcal:310,prot:30,gluc:28,lip:8,steps:["FB 0% + jambon + tomates cerises fraîches dans un wrap."],used:[{id:'wraps',qty:1},{id:'jambon_blanc',qty:60},{id:'fb_nature',qty:80},{id:'tomates_cerises',qty:60}],extras:[]},
-  {id:'poulet_curry',slots:['lunch','dinner'],name:'Bowl poulet curry & riz',urgent:0,ur:null,time:20,kcal:810,prot:70,gluc:83,lip:18,steps:["Cuire 100 g riz sec.","Poêler 200 g poulet + oignons.","Curry + curcuma + gingembre + bouillon."],used:[{id:'poulet',qty:200},{id:'riz',qty:100},{id:'oignons',qty:80},{id:'bouillon_poulet',qty:1}],extras:[{n:"Huile d'olive",q:'10 mL',opt:false}]},
-  {id:'omelette',slots:['breakfast','lunch','dinner'],name:'Omelette jambon blanc & fromage',urgent:0,ur:null,time:10,kcal:520,prot:38,gluc:1,lip:39,steps:["Battre 3 oeufs.","Jambon + fromage râpé.","Poêler dans 10 mL huile."],used:[{id:'oeufs',qty:3},{id:'jambon_blanc',qty:60},{id:'fromage_rape',qty:25}],extras:[{n:"Huile d'olive",q:'10 mL',opt:false}]},
-  {id:'boeuf_soja',slots:['lunch','dinner'],name:'Bol boeuf haché, riz & sauce soja',urgent:0,ur:null,time:20,kcal:750,prot:39,gluc:97,lip:20,steps:["Cuire 100 g riz sec.","Poêler boeuf + oignons.","Soja + ail + gingembre."],used:[{id:'boeuf_hache',qty:150},{id:'riz',qty:100},{id:'oignons',qty:80},{id:'soja',qty:30}],extras:[]},
-  {id:'chili_express',slots:['lunch','dinner'],name:'Chili Casse-Grain express & riz',urgent:0,ur:null,time:10,kcal:850,prot:39,gluc:141,lip:15,steps:["Cuire 100 g riz sec.","Chauffer chili + paprika. Servir."],used:[{id:'chili',qty:1},{id:'riz',qty:100}],extras:[]},
-  {id:'poulet_coco',slots:['dinner'],name:'Poulet coco-curry & riz',urgent:0,ur:null,time:25,kcal:1060,prot:73,gluc:92,lip:42,steps:["Cuire riz.","Poêler poulet + oignons.","150 mL lait de coco + épices, mijoter 10 min."],used:[{id:'poulet',qty:200},{id:'riz',qty:100},{id:'oignons',qty:80},{id:'lait_coco',qty:150}],extras:[]},
-  {id:'gratin_gnocchis',slots:['dinner'],name:'Gratin gnocchis, jambon & béchamel',urgent:1,ur:'Gnocchis frais',time:40,kcal:1070,prot:50,gluc:136,lip:29,steps:["Four 200 °C. Gnocchis 3 min al dente.","Plat : gnocchis + jambon + béchamel + fromage.","25 min au four."],used:[{id:'gnocchis',qty:320},{id:'jambon_blanc',qty:120},{id:'bechamel',qty:375},{id:'fromage_rape',qty:30}],extras:[]},
-  {id:'bolognaise',slots:['lunch','dinner'],name:'Bolognaise boeuf haché & pâtes complètes',urgent:0,ur:null,time:45,kcal:720,prot:47,gluc:79,lip:22,steps:["Boeuf + oignons + sauce tomate, mijoter 20 min.","Cuire 100 g pâtes sèches. Servir."],used:[{id:'boeuf_hache',qty:150},{id:'pates_completes',qty:100},{id:'sauce_tomate',qty:1},{id:'oignons',qty:80}],extras:[{n:"Huile d'olive",q:'10 mL',opt:false}]},
-  {id:'poulet_four_soja',slots:['dinner'],name:'Poulet rôti soja-miel & riz',urgent:0,ur:null,time:50,kcal:920,prot:85,gluc:116,lip:9,steps:["Mariner poulet dans soja + miel + ail.","Four 200 °C, 25-30 min. Servir avec riz."],used:[{id:'poulet',qty:250},{id:'soja',qty:50},{id:'riz',qty:100}],extras:[{n:'Miel',q:'20 g',opt:false}]},
-  {id:'steak_frites',slots:['dinner'],name:'Steak 5% MG & frites au four',urgent:0,ur:null,time:40,kcal:940,prot:71,gluc:88,lip:29,steps:["Frites 200 °C, 20 min.","Steaks assaisonnés, 3-4 min de chaque côté."],used:[{id:'steaks',qty:2},{id:'frites',qty:250}],extras:[]},
-  {id:'pdj_avoine',slots:['breakfast'],name:'Bowl avoine protéiné',urgent:0,ur:null,time:5,kcal:620,prot:30,gluc:82,lip:20,steps:["80 g flocons + 200 mL lait, 2 min micro-ondes.","Mélanger FB 0% + 80 g framboises décongelées + 20 g amandes."],used:[{id:'flocons',qty:80},{id:'fb_nature',qty:100},{id:'framboises',qty:80},{id:'amandes',qty:20}],extras:[{n:'Lait',q:'200 mL',opt:false}]},
-  {id:'pdj_oeufs',slots:['breakfast'],name:'Oeufs brouillés & jambon blanc',urgent:0,ur:null,time:8,kcal:430,prot:32,gluc:1,lip:32,steps:["Battre 3 oeufs.","Cuire à feu doux dans 10 mL huile.","Jambon en fin de cuisson."],used:[{id:'oeufs',qty:3},{id:'jambon_blanc',qty:60}],extras:[{n:"Huile d'olive",q:'10 mL',opt:false}]},
-  {id:'pdj_wrap',slots:['breakfast'],name:'Wrap fromage blanc & banane',urgent:1,ur:'Bananes',time:3,kcal:340,prot:23,gluc:47,lip:5,steps:["FB 0% + banane dans un wrap. Rouler."],used:[{id:'wraps',qty:1},{id:'fb_nature',qty:100},{id:'bananes',qty:1}],extras:[]},
-  {id:'pdj_fb_compote',slots:['breakfast','snack','dessert'],name:'Fromage blanc, compote & amandes',urgent:0,ur:null,time:2,kcal:310,prot:21,gluc:21,lip:13,steps:["200 g FB 0% + compote + 25 g amandes."],used:[{id:'fb_nature',qty:200},{id:'compotes',qty:1},{id:'amandes',qty:25}],extras:[]},
-  {id:'shaker_whey',slots:['breakfast','snack'],name:'Shaker clear whey post-training',urgent:0,ur:null,time:1,kcal:110,prot:24,gluc:2,lip:0,steps:["30 g whey + 400-500 mL eau froide. Agiter."],used:[{id:'whey',qty:30}],extras:[]},
-  {id:'shaker_whey_compote',slots:['breakfast','snack'],name:'Shaker whey fruité & compote',urgent:0,ur:null,time:2,kcal:160,prot:24,gluc:14,lip:0,steps:["Compote + 30 g whey + 300 mL eau froide."],used:[{id:'whey',qty:30},{id:'compotes',qty:1}],extras:[]},
-  // Nouvelles recettes
-  {id:'thon_riz_soja',slots:['lunch','dinner'],name:'Bol thon, riz & sauce soja',urgent:0,ur:null,time:12,kcal:560,prot:33,gluc:82,lip:5,
-   steps:["Cuire 100 g de riz sec.",
-          "Égoutter 1 boîte de thon.",
-          "Mélanger : 25 mL sauce soja + vinaigre de riz + sésame.",
-          "Dresser : riz, thon émietté, tomates cerises fraîches.",
-          "Verser la sauce et saupoudrer de sésame."],
-   used:[{id:'thon',qty:1},{id:'riz',qty:100},{id:'soja',qty:25},{id:'tomates_cerises',qty:80}],
-   extras:[{n:'Vinaigre de riz',q:'15 mL',opt:true},{n:'Sésame doré',q:'pincée',opt:true}]},
-  {id:'galettes_avoine',slots:['breakfast'],name:'Galettes avoine & fromage blanc',urgent:0,ur:null,time:12,kcal:390,prot:24,gluc:50,lip:9,
-   steps:["Mélanger 80 g flocons + 2 oeufs + 100 g fromage blanc + pincée sel.",
-          "Laisser reposer 2 min.",
-          "Cuire 3 min de chaque côté dans 5 mL huile.",
-          "Servir avec compote ou miel (optionnel)."],
-   used:[{id:'flocons',qty:80},{id:'oeufs',qty:2},{id:'fb_nature',qty:100}],
-   extras:[{n:"Huile d'olive",q:'5 mL',opt:false},{n:'Miel ou compote',q:'',opt:true}]},
-  {id:'ramen_poulet',slots:['lunch','snack'],name:'Ramen poulet express maison',urgent:0,ur:null,time:15,kcal:650,prot:43,gluc:63,lip:18,
-   steps:["Cuire 1 pack de ramen selon indications.",
-          "Poêler 150 g de poulet en lamelles + oignons.",
-          "Pocher 1 oeuf dans l'eau de cuisson des ramen.",
-          "Assembler : bouillon + ramen + poulet + oeuf + sésame."],
-   used:[{id:'ramen',qty:1},{id:'poulet',qty:150},{id:'oeufs',qty:1},{id:'oignons',qty:50}],
-   extras:[{n:'Sésame doré',q:'pincée',opt:true},{n:'Sauce soja',q:'quelques gouttes',opt:true}]},
-
-  // ── Nouvelles recettes ──────────────────────────────────────────────────
-  // PETIT-DEJ
-  {id:'pancakes_avoine',slots:['breakfast'],name:'Pancakes avoine & fromage blanc',urgent:0,ur:null,time:12,kcal:580,prot:35,gluc:72,lip:17,
-   steps:["Mixer 80g de flocons, 2 oeufs, 2 pots de fromage blanc vanille et 50mL de lait jusqu'à obtenir une pâte épaisse.",
-          "Laisser reposer 3 min.",
-          "Cuire 3 min de chaque côté dans une poêle avec un peu d'huile.",
-          "Servir avec un filet de miel ou une compote (optionnel)."],
-   used:[{id:'flocons',qty:80},{id:'oeufs',qty:2},{id:'fb_vanille',qty:2},{id:'lait',qty:50}],
-   extras:[{n:'Miel',q:'',opt:true}]},
-
-  {id:'bowl_fb_vanille',slots:['breakfast','snack','dessert'],name:'Bowl fromage blanc vanille, compote & amandes',urgent:1,ur:'FB vanille',time:3,kcal:320,prot:18,gluc:36,lip:10,
-   steps:["Verser 2 pots de fromage blanc vanille dans un bol.",
-          "Ajouter 1 compote.",
-          "Parsemer 20g d'amandes."],
-   used:[{id:'fb_vanille',qty:2},{id:'compotes',qty:1},{id:'amandes',qty:20}],
-   extras:[]},
-
-  {id:'shaker_pomme',slots:['breakfast','snack'],name:'Shaker whey & pomme',urgent:0,ur:null,time:2,kcal:190,prot:24,gluc:20,lip:0,
-   steps:["Mettre 30g de whey dans un shaker avec 350mL d'eau froide. Agiter.",
-          "Déguster avec une pomme."],
-   used:[{id:'whey',qty:30},{id:'pommes',qty:1}],
-   extras:[]},
-
-  // LUNCH / SNACK
-  {id:'wrap_thon_avocat',slots:['lunch'],name:'Wrap thon & avocat',urgent:1,ur:'Avocats',time:8,kcal:490,prot:32,gluc:33,lip:27,
-   steps:["Égoutter le thon, écraser avec une fourchette.",
-          "Couper l'avocat en tranches.",
-          "Étaler thon + avocat + tomates cerises fraîches sur le wrap.",
-          "Assaisonner vinaigre de riz + sel + poivre. Rouler."],
-   used:[{id:'wraps',qty:1},{id:'thon',qty:1},{id:'avocats',qty:1},{id:'tomates_cerises',qty:60}],
-   extras:[{n:'Vinaigre de riz',q:'15mL',opt:true}]},
-
-  {id:'wrap_st_moret',slots:['lunch','snack'],name:'Wrap St Morêt, jambon & tomates',urgent:1,ur:'St Morêt',time:4,kcal:295,prot:26,gluc:28,lip:8,
-   steps:["Étaler 60g de St Morêt léger sur le wrap.",
-          "Ajouter 60g de jambon blanc en lamelles.",
-          "Tomates cerises fraîches coupées en deux. Rouler."],
-   used:[{id:'wraps',qty:1},{id:'st_moret',qty:60},{id:'jambon_blanc',qty:60},{id:'tomates_cerises',qty:60}],
-   extras:[]},
-
-  // LUNCH / DINNER
-  {id:'poulet_wok_soja',slots:['lunch','dinner'],name:'Poulet wok soja & sésame',urgent:0,ur:null,time:18,kcal:705,prot:54,gluc:86,lip:15,
-   steps:["Cuire 100g de riz sec.",
-          "Poêler 200g de poulet en lamelles à feu vif + 100g d'oignons dans 10mL d'huile.",
-          "Ajouter 40mL sauce soja + ail + gingembre en poudre. Sauter 2 min.",
-          "Servir sur le riz, parsemer de sésame doré."],
-   used:[{id:'poulet',qty:200},{id:'riz',qty:100},{id:'oignons',qty:100},{id:'soja',qty:40}],
-   extras:[{n:'Sésame doré',q:'pincée',opt:true},{n:"Huile d'olive",q:'10mL',opt:false}]},
-
-  {id:'pates_carbonara',slots:['lunch','dinner'],name:'Pâtes à la carbonara légère',urgent:0,ur:null,time:18,kcal:740,prot:42,gluc:58,lip:37,
-   steps:["Cuire 80g de pâtes blanches al dente. Garder 50mL d'eau de cuisson.",
-          "Faire revenir 60g de bacon à sec jusqu'à croustillant.",
-          "Battre 2 oeufs + 20g fromage râpé + poivre.",
-          "Hors feu : mélanger pâtes égouttées + oeuf + bacon + eau de cuisson en remuant vite."],
-   used:[{id:'pates_blanches',qty:80},{id:'bacon',qty:60},{id:'oeufs',qty:2},{id:'fromage_rape',qty:20}],
-   extras:[{n:'Poivre',q:'généreusement',opt:false}]},
-
-  {id:'pates_creme_saumon',slots:['dinner'],name:'Pâtes crème fraîche & saumon',urgent:1,ur:'Saumon frais',time:20,kcal:790,prot:46,gluc:67,lip:36,
-   steps:["Cuire 100g de pâtes complètes.",
-          "Poêler 140g de saumon 3-4 min de chaque côté. Émietter.",
-          "Dans la même poêle : 100g crème fraîche légère + épices italiennes + poivre.",
-          "Mélanger pâtes égouttées + sauce + saumon émietté + 20g fromage râpé."],
-   used:[{id:'saumon',qty:140},{id:'pates_completes',qty:100},{id:'creme_fraiche',qty:100},{id:'fromage_rape',qty:20}],
-   extras:[{n:'Épices italiennes',q:'',opt:false}]},
-
-  {id:'steaks_haches_riz',slots:['lunch','dinner'],name:'Steaks hachés poêlés & riz',urgent:0,ur:null,time:18,kcal:580,prot:47,gluc:80,lip:11,
-   steps:["Cuire 100g de riz sec.",
-          "Assaisonner 2 steaks hachés (200g) : sel, poivre, paprika.",
-          "Poêler 3-4 min de chaque côté à feu moyen-vif.",
-          "Servir sur le riz avec les oignons poêlés."],
-   used:[{id:'boeuf_hache',qty:200},{id:'riz',qty:100},{id:'oignons',qty:50}],
-   extras:[{n:'Paprika, sel, poivre',q:'',opt:false}]},
-
-  {id:'pates_prot_creme',slots:['lunch','dinner'],name:'Pâtes protéinées, crème & jambon de poulet',urgent:1,ur:'Jambon de poulet',time:14,kcal:550,prot:36,gluc:52,lip:17,
-   steps:["Cuire 100g de pâtes protéinées.",
-          "Chauffer 80g de crème fraîche légère + épices italiennes + poivre.",
-          "Couper 80g de jambon de poulet en lamelles.",
-          "Mélanger pâtes + sauce + jambon. Servir."],
-   used:[{id:'pates_proteinees',qty:100},{id:'creme_fraiche',qty:80},{id:'jambon_poulet',qty:80}],
-   extras:[{n:'Épices italiennes',q:'',opt:false}]},
-  // ────────────────────────────────────────────────────────────────────────
-  // Repas masqués (slots:[])
+  // ── Repas masqués / références d'historique (slots:[]) ──
   {id:'poke_bowl',slots:[],name:'Poké bowl poulet karaage',kcal:870,prot:39,gluc:115,lip:26,steps:[],used:[],extras:[]},
   {id:'_nuggets_04',slots:[],name:'Nuggets au four (400g)',kcal:860,prot:60,gluc:80,lip:36,steps:[],used:[],extras:[]},
   {id:'_poulet_pane_04',slots:[],name:'Poulet pané au four (500g)',kcal:1050,prot:90,gluc:62,lip:42,steps:[],used:[],extras:[]},
   {id:'_karaage_05',slots:[],name:'Poulet Karaage (150g)',kcal:345,prot:23,gluc:21,lip:18,steps:[],used:[],extras:[]},
   {id:'_poulet_pane_05',slots:[],name:'Poulet pané au four (500g)',kcal:1050,prot:90,gluc:62,lip:42,steps:[],used:[],extras:[]},
-  // 06/06 soir : pizza De la Mama entière + yaourt + miel + fromage râpé
-  // 850 (pizza) + 78 (yaourt) + 46 (miel 15g) + 304 (fromage 80g) = 1278 kcal
   {id:'_diner_pizza_06',slots:[],name:'Dîner pizza — 1 Pizza De la Mama + yaourt 0% + miel + 80g fromage râpé',kcal:1278,prot:57,gluc:116,lip:54,steps:[],used:[],extras:[]},
   {id:'_pates_creme_saumon_250',slots:[],name:'Pâtes crème fraîche & saumon (250g crème)',kcal:970,prot:49,gluc:72,lip:53,steps:[],used:[],extras:[]},
   {id:'_galette_sarrasin_08',slots:[],name:'Galette sarrasin lardons, reblochon, oignons confits, salade + gâteau breton',kcal:1200,prot:60,gluc:110,lip:58,steps:[],used:[],extras:[]},
-  // 07/06 : framboises ~80g au petit-déj
   {id:'_framboises_07',slots:[],name:'Framboises (~80g)',kcal:26,prot:1,gluc:4,lip:0,steps:[],used:[],extras:[]},
-  // 07/06 midi : repas cantine — jambon cru + saumon gratiné pesto + tartlette chocolat
   {id:'_repas_cantine_07',slots:[],name:'Cantine — jambon cru, saumon gratiné pesto/fromage, tartlette chocolat',kcal:990,prot:61,gluc:33,lip:65,steps:[],used:[],extras:[]},
-  // -- Recettes Liam v2 (anti-gaspi DLC, stock-aware) --
-  
-  
-  
-  
-  
-  
-  
-  
-  
+  {id:'pdj_avoine',slots:[],name:'Bowl avoine protéiné',kcal:620,prot:30,gluc:82,lip:20},
+  {id:'gratin_gnocchis',slots:[],name:'Gratin gnocchis, jambon & béchamel',kcal:1070,prot:50,gluc:136,lip:29},
+  {id:'saumon_riz',slots:[],name:'Saumon poêlé, riz & tomates cerises',kcal:770,prot:37,gluc:83,lip:29},
+  {id:'pates_prosciutto_mozza',slots:[],name:'Pâtes prosciutto, mozza & tomates',kcal:900,prot:42,gluc:76,lip:45},
+  {id:'omelette',slots:[],name:'Omelette jambon blanc & fromage',kcal:520,prot:38,gluc:1,lip:39},
+  {id:'poulet_curry',slots:[],name:'Bowl poulet curry & riz',kcal:810,prot:70,gluc:83,lip:18},
+  {id:'dess_yaourt_miel',slots:[],name:'Yaourt 0% & miel',kcal:100,prot:4,gluc:22,lip:0},
 ];
 
 const INV_EMPTY={frigo:[],congelateur:[],placards:[],epices:[]};
@@ -1966,7 +1847,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-27 20h18</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-28 01h25</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
