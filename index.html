@@ -1062,6 +1062,51 @@ const FB = 'https://bouffe-frigo-default-rtdb.europe-west1.firebasedatabase.app'
 let _syncStatus = ''; // '' | 'ok' | 'offline'
 let _lastSyncErr='';
 
+function _mergeDuplicates(){
+  var merged=0;
+  var norm=function(s){return (s||'').toLowerCase().replace(/\s+/g,' ').trim();};
+  for(var cat in S.inv){
+    var arr=S.inv[cat]; if(!Array.isArray(arr))continue;
+    var groups={};
+    arr.forEach(function(it){if(!it||!it.name)return;var k=norm(it.name);(groups[k]=groups[k]||[]).push(it);});
+    for(var k in groups){
+      var g=groups[k]; if(g.length<2)continue;
+      var keeper=g.find(function(it){return it.id&&it.id.indexOf('cx_')!==0;})||g[0];
+      var others=g.filter(function(it){return it!==keeper;});
+      var mm=(keeper.macSource==='manual'&&keeper.mac100)?keeper.mac100:(keeper.macManual||null);
+      if(!mm){for(var oi=0;oi<others.length;oi++){var o2=others[oi];var c2=(o2.macSource==='manual'&&o2.mac100)?o2.mac100:(o2.macManual||null);if(c2){mm=c2;break;}}}
+      if(mm){
+        keeper.mac100={kcal:mm.kcal,prot:mm.prot,gluc:mm.gluc,lip:mm.lip};
+        keeper.macManual={kcal:mm.kcal,prot:mm.prot,gluc:mm.gluc,lip:mm.lip};
+        keeper.macSource='manual';
+        if(keeper.macPiece){var pg=keeper.pieceG||100;keeper.macPiece={kcal:+(mm.kcal*pg/100).toFixed(1),prot:+(mm.prot*pg/100).toFixed(1),gluc:+(mm.gluc*pg/100).toFixed(1),lip:+(mm.lip*pg/100).toFixed(1)};}
+      }
+      var kPiece=(keeper.unit==='pcs'||keeper.unit==='pc');
+      var illim=(keeper.qty===null||keeper.qty===undefined||keeper.qty<0);
+      var tot=illim?0:keeper.qty;
+      others.forEach(function(o){
+        if(o.qty===null||o.qty===undefined||o.qty<0){illim=true;return;}
+        var q=o.qty;
+        if(o.unit!==keeper.unit){
+          var oPiece=(o.unit==='pcs'||o.unit==='pc');
+          var oGPU=(o.pkg&&o.pkg.size)||o.pieceG||0;
+          var kGPU=keeper.pieceG||(keeper.pkg&&keeper.pkg.size)||0;
+          if(kPiece&&!oPiece&&oGPU){q=q/oGPU;}
+          else if(!kPiece&&oPiece&&(o.pieceG||kGPU)){q=q*(o.pieceG||kGPU);}
+        }
+        tot+=q;
+      });
+      keeper.qty=illim?null:Math.round(tot);
+      others.forEach(function(o){
+        if(!S.deletedItems)S.deletedItems=[];
+        S.deletedItems.push({item:JSON.parse(JSON.stringify(o)),cat:cat,deletedAt:Date.now()});
+        var idx2=S.inv[cat].indexOf(o); if(idx2>=0)S.inv[cat].splice(idx2,1);
+        merged++;
+      });
+    }
+  }
+  return merged>0;
+}
 function _applyState(d){
   if(!d)return;
   // Si le tag profil existe et ne correspond pas → données de l'autre profil, ignorer
@@ -1132,6 +1177,8 @@ function _applyState(d){
   if(d.customRecipes&&Array.isArray(d.customRecipes)){S.customRecipes=d.customRecipes;S.customRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
   // Historique suppressions
   if(d.deletedItems&&Array.isArray(d.deletedItems))S.deletedItems=d.deletedItems;
+  // Fusion one-shot des doublons d'inventaire (Liam) : macros manuelles, somme des quantites, retires au cimetiere
+  if(ACTIVE_PROFILE==='liam'){if(!d.dupMerged){if(_mergeDuplicates())_mzJustFixed=true;S.dupMerged=true;}else{S.dupMerged=true;}}
 }
 function showSyncErr(){alert(_lastSyncErr||'Aucun detail enregistre pour le moment. Declenche une sauvegarde (ajoute un repas) puis retape.');}
 function _syncBadge(){
@@ -1156,6 +1203,7 @@ async function saveState(){
     mzFix3:S.mzFix3||false,
     mzFix4:S.mzFix4||false,
     mzFix5:S.mzFix5||false,
+    dupMerged:S.dupMerged||false,
     removedSpices:S.removedSpices||[],
     shop:S.shop||{list:[],graveyard:[]},
     waiting:S.waiting||[],
@@ -1827,7 +1875,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-27 18h34</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-27 18h53</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
