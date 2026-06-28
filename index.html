@@ -233,10 +233,10 @@ let ACTIVE_PROFILE='liam';
 // Pas de stockage persistant — checkpoint via sendPrompt
 
 const DESSERTS=[
-  {id:'yaourt',name:'Yaourt 0% fruits',inv:'yaourts',qty:1,kcal:78,prot:5,gluc:13,lip:0,urgent:true},
-  {id:'fb_van',name:'FB vanille 0%',inv:'fb_vanille',qty:1,kcal:75,prot:7,gluc:11,lip:0,urgent:true},
-  {id:'compote',name:'Compote',inv:'compotes',qty:1,kcal:50,prot:0,gluc:12,lip:0,urgent:false},
-  {id:'pomme',name:'Pomme',inv:'pommes',qty:1,kcal:78,prot:0,gluc:18,lip:0,urgent:false},
+  {id:'yaourt',name:'Yaourt 0% fruits',inv:'yaourts',n:'Yaourts 0% fruits',qty:1,kcal:78,prot:5,gluc:13,lip:0,urgent:true},
+  {id:'fb_van',name:'FB vanille 0%',inv:'fb_vanille',n:'Fromage blanc vanille 0%',qty:1,kcal:75,prot:7,gluc:11,lip:0,urgent:true},
+  {id:'compote',name:'Compote',inv:'compotes',n:'Gourdes de compotes',qty:1,kcal:50,prot:0,gluc:12,lip:0,urgent:false},
+  {id:'pomme',name:'Pomme',inv:'pommes',n:'Pommes',qty:1,kcal:78,prot:0,gluc:18,lip:0,urgent:false},
   {id:'none',name:'Aucun',inv:null,qty:0,kcal:0,prot:0,gluc:0,lip:0,urgent:false},
   {id:'autre',name:'Autre…',inv:null,qty:0,kcal:0,prot:0,gluc:0,lip:0,urgent:false},
 ];
@@ -738,7 +738,7 @@ function executeCook(){
     Object.values(S.inv).forEach(arr=>{const x=arr.find(i=>i.id===it.id);if(x&&x.qty!==null)x.qty=Math.max(0,x.qty-q);});
   });
   const did=S.recipeDesserts[rid]||'none';const cd=did==='autre'?S.customDesserts[rid]:null;
-  if(did!=='none'&&did!=='autre'){const d=DESSERTS.find(x=>x.id===did);if(d&&d.inv){Object.values(S.inv).forEach(arr=>{const it=arr.find(x=>x.id===d.inv);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-d.qty);});}}
+  if(did!=='none'&&did!=='autre'){const d=DESSERTS.find(x=>x.id===did);if(d&&d.inv){const it=resolveInv(d.inv,d.n);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-dessertDeductQty(it,d));}}
   delete S.recipeDesserts[rid];delete S.customDesserts[rid];delete S.customInputs[rid];
   if(!S.dayMeals[day])S.dayMeals[day]=[];
   const _entry={rid,mult:1,dessert:did!=='none'?did:null,customDessert:did==='autre'&&cd&&!cd.loading&&!cd.error?cd:null,name:r.name};_entry.macros=_per;if(ccExtras.length)_entry.extras=ccExtras;
@@ -1545,7 +1545,8 @@ function findItem(id){for(const arr of Object.values(S.inv)){const it=arr.find(i
 function findItemByName(name){if(!name)return null;const k=normMac(name);for(const arr of Object.values(S.inv)){const it=arr.find(i=>normMac(i.name)===k);if(it)return it;}return null;}
 function resolveInv(id,name){return findItem(id)||findItemByName(name);}
 function canCook(r,m=1){return(r.used||[]).every(({id,qty,n})=>{const it=resolveInv(id,n);return it&&(it.qty===null||it.qty>=qty*m);});}
-function canTakeDessert(d){if(d.id==='none'||d.id==='autre')return true;const it=d.inv?findItem(d.inv):null;return!d.inv||(it&&it.qty>=d.qty);}
+function dessertDeductQty(it,d){if(!it)return 0;if(it.unit==='g'||it.unit==='ml'){var per=(it.pkg&&it.pkg.size)||it.pieceG||0;return per?d.qty*per:d.qty;}return d.qty;}
+function canTakeDessert(d){if(d.id==='none'||d.id==='autre')return true;if(!d.inv)return true;var it=resolveInv(d.inv,d.n);if(!it)return false;if(it.qty===null)return true;return it.qty>=dessertDeductQty(it,d);}
 function weekCount(rid){let n=0;for(let i=0;i<=6;i++){const day=shiftDate(S.today,-i);n+=(S.dayMeals[day]||[]).filter(m=>m.rid===rid).length;}return n;}
 function cookedToday(rid){return(S.dayMeals[S.today]||[]).some(m=>m.rid===rid);}
 function getDessertMacros(dessert,cd){if(!dessert||dessert==='none')return{kcal:0,prot:0,gluc:0,lip:0};if(dessert==='autre'){if(cd&&!cd.error&&!cd.loading)return{kcal:cd.kcal||0,prot:cd.prot||0,gluc:cd.gluc||0,lip:cd.lip||0};return{kcal:0,prot:0,gluc:0,lip:0};}const d=DESSERTS.find(x=>x.id===dessert);return d?{kcal:d.kcal,prot:d.prot,gluc:d.gluc,lip:d.lip}:{kcal:0,prot:0,gluc:0,lip:0};}
@@ -1600,7 +1601,7 @@ function execCook(rid,mult,day){
   const r=RCP.find(x=>x.id===rid);if(!r)return;
   (r.used||[]).forEach(({id,qty})=>{Object.values(S.inv).forEach(arr=>{const it=arr.find(i=>i.id===id);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-qty*mult);});});
   const dessertId=S.recipeDesserts[rid]||'none';const customD=dessertId==='autre'?S.customDesserts[rid]:null;
-  if(dessertId!=='none'&&dessertId!=='autre'){const d=DESSERTS.find(x=>x.id===dessertId);if(d&&d.inv){Object.values(S.inv).forEach(arr=>{const it=arr.find(i=>i.id===d.inv);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-d.qty);});}}
+  if(dessertId!=='none'&&dessertId!=='autre'){const d=DESSERTS.find(x=>x.id===dessertId);if(d&&d.inv){const it=resolveInv(d.inv,d.n);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-dessertDeductQty(it,d));}}
   delete S.recipeDesserts[rid];delete S.customDesserts[rid];delete S.customInputs[rid];
   if(!S.dayMeals[day])S.dayMeals[day]=[];
   S.dayMeals[day].push({rid,mult:1,dessert:dessertId!=='none'?dessertId:null,customDessert:dessertId==='autre'&&customD&&!customD.loading&&!customD.error?customD:null,macros:{kcal:r.kcal,prot:r.prot,gluc:r.gluc,lip:r.lip},name:r.name});
@@ -1928,7 +1929,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-28 13h22</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-28 18h13</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
