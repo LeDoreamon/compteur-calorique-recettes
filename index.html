@@ -409,7 +409,7 @@ const TODAY=getToday();const TOMORROW=shiftDate(TODAY,1);
 const S={
   inv:JSON.parse(JSON.stringify(INV_DEFAULT)),
   recipeDesserts:{},customDesserts:{},customInputs:{},
-  mainTab:'recipes',mealTab:'breakfast',openRec:null,
+  mainTab:'recipes',mealTab:'breakfast',weights:[],openRec:null,
   openCat:{frigo:1,congelateur:1,placards:1,epices:1},
   editMode:false,
   today:TODAY,displayDate:TODAY,
@@ -1182,7 +1182,7 @@ function _applyState(d){
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it&&MACROS_PIECE[it.id]&&!it.macPiece){const _p=MACROS_PIECE[it.id];it.macPiece={kcal:_p.kcal,prot:_p.prot,gluc:_p.gluc,lip:_p.lip};it.pieceG=_p.g;it.mac100={kcal:+(_p.kcal*100/_p.g).toFixed(1),prot:+(_p.prot*100/_p.g).toFixed(1),gluc:+(_p.gluc*100/_p.g).toFixed(1),lip:+(_p.lip*100/_p.g).toFixed(1)};}}));
   // Courses + salle d'attente
   S.shop=(d.shop&&Array.isArray(d.shop.list))?{list:d.shop.list,graveyard:Array.isArray(d.shop.graveyard)?d.shop.graveyard:[],graveRayons:Array.isArray(d.shop.graveRayons)?d.shop.graveRayons:[]}:{list:[],graveyard:[],graveRayons:[]};
-  S.waiting=Array.isArray(d.waiting)?d.waiting:[];
+  S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];
   S.shopSeeded=d.shopSeeded||false;
   if(!S.shopSeeded&&ACTIVE_PROFILE==='liam'){S.shop.list=seedShopList();S.shopSeeded=true;_mzJustFixed=true;}
   // Maureen : conversion UNIQUE de son inventaire ACTUEL en "pr\u00e9sent" (tout item sans quantit\u00e9 positive). N'affecte PAS ses ajouts futurs.
@@ -1257,6 +1257,7 @@ async function saveState(){
     removedSpices:S.removedSpices||[],
     shop:S.shop||{list:[],graveyard:[]},
     waiting:S.waiting||[],
+    weights:S.weights||[],
     shopSeeded:S.shopSeeded||false,
     groqKey:localStorage.getItem('anthropic_key')||'',
     _profile:ACTIVE_PROFILE
@@ -1913,6 +1914,70 @@ function deleteShopItem(){
   S.shop.list=(S.shop.list||[]).filter(i=>i.id!==_shopItemRef);
   saveState();closeShopItem();render();
 }
+
+// ─── SUIVI DU POIDS ─────────────────────────────────────────────────────────
+function _wMA(arr,idx,days){var endT=new Date(arr[idx].d).getTime();var startT=endT-(days-1)*864e5;var s=0,n=0;for(var j=0;j<=idx;j++){var t=new Date(arr[j].d).getTime();if(t>=startT&&t<=endT){s+=arr[j].w;n++;}}return n?s/n:arr[idx].w;}
+function _wAgo(arr,days){if(!arr.length)return null;var tgt=new Date(arr[arr.length-1].d).getTime()-days*864e5;var best=null,bd=1e18;arr.forEach(function(x){var dd=Math.abs(new Date(x.d).getTime()-tgt);if(dd<bd){bd=dd;best=x;}});return{x:best,off:Math.round(bd/864e5)};}
+function _fmtKg(v){return (v>0?'+':'')+v.toFixed(1)+' kg';}
+function _wDateLabel(d){var p=(d||'').split('-');return p.length===3?p[2]+'/'+p[1]:d;}
+function addWeight(){var el=document.getElementById('weight-input');if(!el)return;var w=parseFloat((el.value||'').replace(',','.'));if(!w||w<30||w>400){el.style.borderColor='var(--red)';el.focus();return;}S.weights=S.weights||[];var i=S.weights.findIndex(function(x){return x.d===S.today;});if(i>=0)S.weights[i].w=w;else S.weights.push({d:S.today,w:w});S.weights.sort(function(a,b){return a.d<b.d?-1:1;});saveState();render();}
+function delWeight(d){if(!confirm('Supprimer cette pesée ?'))return;S.weights=(S.weights||[]).filter(function(x){return x.d!==d;});saveState();render();}
+function weightChartSVG(arr){
+  if(arr.length<2)return '<div style="text-align:center;color:var(--text3);font-size:12px;padding:18px 0;">Ajoute au moins 2 pesées pour voir la courbe.</div>';
+  var W=320,H=170,mL=34,mR=10,mT=12,mB=22;var pW=W-mL-mR,pH=H-mT-mB;
+  var ws=arr.map(function(x){return x.w;});
+  var wmin=Math.min.apply(null,ws),wmax=Math.max.apply(null,ws);
+  if(wmax-wmin<1){wmax+=0.5;wmin-=0.5;}
+  var pad=(wmax-wmin)*0.12;var lo=wmin-pad,hi=wmax+pad;
+  var t0=new Date(arr[0].d).getTime(),t1=new Date(arr[arr.length-1].d).getTime();var span=t1-t0||1;
+  function X(d){return mL+(new Date(d).getTime()-t0)/span*pW;}
+  function Y(w){return mT+(1-(w-lo)/(hi-lo))*pH;}
+  var rawPts=arr.map(function(x){return X(x.d).toFixed(1)+','+Y(x.w).toFixed(1);});
+  var maPts=arr.map(function(x,i){return X(x.d).toFixed(1)+','+Y(_wMA(arr,i,7)).toFixed(1);});
+  var dots=arr.map(function(x){return '<circle cx="'+X(x.d).toFixed(1)+'" cy="'+Y(x.w).toFixed(1)+'" r="2.3" fill="rgba(140,151,171,.7)"/>';}).join('');
+  var yLabels='<text x="'+(mL-5)+'" y="'+(Y(wmax)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="#586577">'+wmax.toFixed(1)+'</text>'+
+              '<text x="'+(mL-5)+'" y="'+(Y(wmin)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="#586577">'+wmin.toFixed(1)+'</text>';
+  var xLabels='<text x="'+mL+'" y="'+(H-6)+'" text-anchor="start" font-size="9" fill="#586577">'+_wDateLabel(arr[0].d)+'</text>'+
+              '<text x="'+(W-mR)+'" y="'+(H-6)+'" text-anchor="end" font-size="9" fill="#586577">'+_wDateLabel(arr[arr.length-1].d)+'</text>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block;">'+
+    '<line x1="'+mL+'" y1="'+Y(wmax).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+Y(wmax).toFixed(1)+'" stroke="rgba(255,255,255,.05)" stroke-width="1"/>'+
+    '<line x1="'+mL+'" y1="'+Y(wmin).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+Y(wmin).toFixed(1)+'" stroke="rgba(255,255,255,.05)" stroke-width="1"/>'+
+    '<polyline points="'+rawPts.join(' ')+'" fill="none" stroke="rgba(140,151,171,.35)" stroke-width="1"/>'+
+    '<polyline points="'+maPts.join(' ')+'" fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+
+    dots+yLabels+xLabels+'</svg>';
+}
+function renderWeightHTML(){
+  var arr=(S.weights||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
+  var todayW='';var ti=arr.findIndex(function(x){return x.d===S.today;});if(ti>=0)todayW=arr[ti].w;
+  var last=arr.length?arr[arr.length-1]:null;var cur=last?last.w:null;
+  var dPrev=(arr.length>=2)?last.w-arr[arr.length-2].w:null;
+  var a7=_wAgo(arr,7);var d7=(a7&&a7.off<=4&&a7.x.d!==last.d)?last.w-a7.x.w:null;
+  var a30=_wAgo(arr,30);var d30=(a30&&a30.off<=10&&a30.x.d!==last.d)?last.w-a30.x.w:null;
+  function chip(lbl,v){if(v===null)return '';var col=v<-0.05?'#4ade80':(v>0.05?'#fb923c':'#8c97ab');return '<div style="flex:1;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">'+lbl+'</div><div style="font-size:15px;font-weight:600;color:'+col+';margin-top:3px;">'+_fmtKg(v)+'</div></div>';}
+  var html='<div style="margin-bottom:20px;">';
+  html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;">'+
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">⚖ Poids du jour</div>'+
+        '<div style="display:flex;gap:8px;">'+
+        '<input id="weight-input" type="number" step="0.1" inputmode="decimal" placeholder="ex : 104.5" value="'+(todayW!==''?todayW:'')+'" style="flex:1;padding:11px 13px;background:var(--bg);border:0.5px solid var(--border);border-radius:9px;color:var(--text);font-size:15px;outline:none;box-sizing:border-box;">'+
+        '<button onclick="addWeight()" style="padding:11px 18px;background:#4ade80;border:none;border-radius:9px;color:#08110a;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;">'+(todayW!==''?'Modifier':'Enregistrer')+'</button>'+
+        '</div></div>';
+  if(!arr.length){html+='<div style="text-align:center;color:var(--text3);font-size:13px;padding:8px 0 4px;">Pèse-toi pour démarrer le suivi 📈</div></div>';return html;}
+  html+='<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;">'+
+        '<span style="font-size:32px;font-weight:700;color:var(--text);">'+cur.toFixed(1)+'</span>'+
+        '<span style="font-size:14px;color:var(--text3);">kg</span><span style="flex:1;"></span>'+
+        '<span style="font-size:11px;color:var(--text3);">le '+_wDateLabel(last.d)+'</span></div>';
+  var chips=[chip('Depuis dernière',dPrev),chip('7 jours',d7),chip('30 jours',d30)].filter(Boolean).join('');
+  if(chips)html+='<div style="display:flex;gap:8px;margin-bottom:14px;">'+chips+'</div>';
+  html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:12px 10px 6px;margin-bottom:14px;">'+
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:0 0 4px 6px;">Tendance — moyenne 7 j en vert</div>'+
+        weightChartSVG(arr)+'</div>';
+  var recent=arr.slice(-12).reverse();
+  html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Historique</div>';
+  recent.forEach(function(x){html+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:9px;margin-bottom:6px;"><span style="flex:1;font-size:13px;color:var(--text2);">'+_wDateLabel(x.d)+'</span><span style="font-size:14px;font-weight:600;color:var(--text);">'+x.w.toFixed(1)+' kg</span><button onclick="delWeight(\''+x.d+'\')" style="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:0 2px;">🗑</button></div>';});
+  html+='</div>';
+  return html;
+}
+
 function render(){
   const urgTotal=Object.values(S.inv).flat().filter(i=>i.urgent&&(i.qty===null||i.qty>0)).length;
   const urgCount=RCP.filter(r=>(!r.profile||r.profile===ACTIVE_PROFILE)&&r.urgent===1&&r.slots&&r.slots.length>0&&canCook(r,1)).length;
@@ -1929,7 +1994,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-28 18h13</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-28 18h20</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -1937,9 +2002,10 @@ function render(){
     <div style="display:flex;border-bottom:0.5px solid var(--border);margin-bottom:16px;">
       <button data-action="main-tab" data-val="recipes" style="background:none;border:none;border-bottom:${S.mainTab==='recipes'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='recipes'?500:400};color:${S.mainTab==='recipes'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">★ Recettes</button>
       <button data-action="main-tab" data-val="inventory" style="background:none;border:none;border-bottom:${S.mainTab==='inventory'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='inventory'?500:400};color:${S.mainTab==='inventory'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">≡ Inventaire</button>
-      <button data-action="main-tab" data-val="courses" style="background:none;border:none;border-bottom:${S.mainTab==='courses'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='courses'?500:400};color:${S.mainTab==='courses'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">🛒 Courses</button>
+      <button data-action="main-tab" data-val="courses" style="background:none;border:none;border-bottom:${S.mainTab==='courses'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='courses'?500:400};color:${S.mainTab==='courses'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">🛒 Courses</button><button data-action="main-tab" data-val="weight" style="background:none;border:none;border-bottom:${S.mainTab==='weight'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='weight'?500:400};color:${S.mainTab==='weight'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">⚖ Poids</button>
     </div>
     ${S.mainTab==='courses'?renderCoursesHTML():''}
+    ${S.mainTab==='weight'?renderWeightHTML():''}
     ${S.mainTab==='recipes'?`
       ${!getApiKey()?`<div style="background:rgba(251,146,60,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:#0b0e15;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
@@ -1963,7 +2029,7 @@ function render(){
           <button onclick="openAddMeal('photo')" style="flex:1;padding:11px 8px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">📷 Photo</button>
         </div>
       </div>
-    `:renderInv()}
+    `:(S.mainTab==='inventory'?renderInv():'')}
   </div>`;
 }
 
