@@ -1071,6 +1071,7 @@ function toggleAIPkg(){
   const qr=document.getElementById('ai-qtyrow');if(qr)qr.style.gridTemplateColumns=on?'1fr':'1fr 1fr';
   const qc=document.getElementById('ai-qtycol');if(qc)qc.style.display=on?'none':'';
   const uw=document.getElementById('ai-unitwrap');if(uw)uw.style.display=on?'none':'';
+  var _pgr=document.getElementById('ai-pieceg-row');if(on){if(_pgr)_pgr.style.display='none';}else if(typeof onAIUnit==='function'){onAIUnit();}
   if(on){const pr=document.getElementById('ai-present');if(pr&&pr.checked){pr.checked=false;toggleAIPresent();}}
 }
 function confirmAddItem(){
@@ -1097,7 +1098,7 @@ function confirmAddItem(){
   if(_mk.kcal||_mk.prot||_mk.gluc||_mk.lip)item.mac100=_mk; // sinon la migration remplit depuis la table
   item.macSource=_macSrc.aim;
   if(_macSrc.aim==='manual'){if(_mk.kcal||_mk.prot||_mk.gluc||_mk.lip)item.macManual=_mk;}else if(_macManual.aim){item.macManual={kcal:+_macManual.aim.kcal||0,prot:+_macManual.aim.prot||0,gluc:+_macManual.aim.gluc||0,lip:+_macManual.aim.lip||0};}
-  var _pgEl=document.getElementById('ai-pieceg');var _pg=_pgEl?parseFloat(_pgEl.value):0;var _countable=['pcs','pots','boîtes','tubes','packs'].indexOf(unit)>=0;if(_countable&&_pg>=1&&(_mk.kcal||_mk.prot||_mk.gluc||_mk.lip)){var _f=_pg/100;item.pieceG=_pg;item.macPiece={kcal:Math.round(_mk.kcal*_f),prot:+(_mk.prot*_f).toFixed(1),gluc:+(_mk.gluc*_f).toFixed(1),lip:+(_mk.lip*_f).toFixed(1)};}
+  var _pgEl=document.getElementById('ai-pieceg');var _pg=_pgEl?parseFloat(_pgEl.value):0;var _countable=['pcs','pots','boîtes','tubes','packs'].indexOf(unit)>=0;if(!pkgOn&&_countable&&_pg>=1&&(_mk.kcal||_mk.prot||_mk.gluc||_mk.lip)){var _f=_pg/100;item.pieceG=_pg;item.macPiece={kcal:Math.round(_mk.kcal*_f),prot:+(_mk.prot*_f).toFixed(1),gluc:+(_mk.gluc*_f).toFixed(1),lip:+(_mk.lip*_f).toFixed(1)};}
 var _dup=findItemByName(n);if(_dup){var _curr=_dup.qty===null?'stock illimité':(_dup.qty+' '+(_dup.unit||''));if(confirm('« '+_dup.name+' » est déjà en stock ('+_curr+'). OK = recharger ce stock, Annuler = créer un article à part.')){if(present){_dup.qty=null;}else if(_dup.qty!==null){_dup.qty=(+_dup.qty||0)+qty;if(unit&&!_dup.unit)_dup.unit=unit;}if(_pkgSize>0)_dup.pkg={size:_pkgSize};if(item.pieceG){_dup.pieceG=item.pieceG;_dup.macPiece=item.macPiece;if(item.mac100)_dup.mac100=item.mac100;}saveState();closeAddItem();render();return;}}
 if(!S.inv[cat])S.inv[cat]=[];S.inv[cat].push(item);saveState();closeAddItem();render();
 }
@@ -2279,7 +2280,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-29 13h07</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-29 18h14</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
