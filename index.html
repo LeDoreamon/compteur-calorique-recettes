@@ -1045,6 +1045,8 @@ function applyScannedProduct(name,macros,qtyStr){
   const note=document.getElementById('ai-mnote');if(note)note.textContent='Importé via OpenFoodFacts (pour 100 g/ml)'+(qtyStr?' — emballage : '+qtyStr:'');
   _macSrc.aim='manual';_macManual.aim={kcal:macros.kcal,prot:macros.prot,gluc:macros.gluc,lip:macros.lip};renderMacSrc('aim');
   const stt=document.getElementById('ai-status');if(stt)stt.textContent='✓ Macros importées. Choisis la catégorie + la quantité, puis Ajouter.';
+  var _pq=_parseQty(qtyStr);var _pkg=document.getElementById('ai-pkg-on');
+  if(_pq&&_pkg){_pkg.checked=true;var _ps=document.getElementById('ai-pkg-size');if(_ps)_ps.value=_pq.size;var _pc=document.getElementById('ai-pkg-count');if(_pc)_pc.value=_pq.count;var _pu=document.getElementById('ai-pkg-unit');if(_pu)_pu.value=_pq.unit;toggleAIPkg();}
 }
 
 function setAICat(c){_aic=c;['frigo','congelateur','placards','epices'].forEach(k=>{const el=document.getElementById('aicat-'+k);if(!el)return;el.style.background=k===c?'rgba(96,165,250,.15)':'transparent';el.style.borderColor=k===c?'var(--blue)':'rgba(255,255,255,.12)';el.style.color=k===c?'var(--blue)':'#8c97ab';});const ep=(c==='epices');const qr=document.getElementById('ai-qtyrow'),pr=document.getElementById('ai-present-row');if(qr)qr.style.display=ep?'none':'grid';if(pr)pr.style.display=ep?'none':'flex';}
@@ -2195,6 +2197,72 @@ function renderGoalBlock(){
   return html;
 }
 
+
+// ─── #5a : parse la quantité OpenFoodFacts → taille d'emballage ──────────────
+function _parseQty(s){
+  if(!s)return null;
+  s=(''+s).toLowerCase().replace(',','.').trim();
+  var count=1,num,unitRaw;
+  var mult=s.match(/(\d+)\s*[x×]\s*(\d+(?:\.\d+)?)\s*(cl|ml|l|g|kg)/);
+  if(mult){count=parseInt(mult[1],10);num=parseFloat(mult[2]);unitRaw=mult[3];}
+  else{
+    var m=s.match(/(\d+(?:\.\d+)?)\s*(cl|ml|l|g|kg)/);
+    if(!m)return null;
+    num=parseFloat(m[1]);unitRaw=m[2];
+  }
+  if(!(num>0))return null;
+  var size,unit;
+  if(unitRaw==='cl'){size=num*10;unit='ml';}
+  else if(unitRaw==='ml'){size=num;unit='ml';}
+  else if(unitRaw==='l'){size=num*1000;unit='ml';}
+  else if(unitRaw==='kg'){size=num*1000;unit='g';}
+  else{size=num;unit='g';}
+  return {size:Math.round(size),unit:unit,count:count};
+}
+
+// ─── #5b : export des données ───────────────────────────────────────────────
+async function _exportFile(filename,mime,content){
+  try{
+    var file=new File([content],filename,{type:mime});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:filename});return;}
+  }catch(e){if(e&&e.name==='AbortError')return;}
+  try{
+    var blob=new Blob([content],{type:mime});var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();
+    setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);return;
+  }catch(e2){}
+  try{prompt('Copie tes données ('+filename+') :',content);}catch(e3){alert('Export impossible sur cet appareil.');}
+}
+
+async function exportBackup(){
+  try{await saveState();}catch(e){}
+  var raw=localStorage.getItem(ACTIVE_PROFILE+'_st')||'{}';
+  var obj;try{obj=JSON.parse(raw);}catch(e){obj={};}
+  delete obj.groqKey;
+  obj._exportedAt=new Date().toISOString();
+  obj._profile=ACTIVE_PROFILE;
+  _exportFile('sauvegarde-bouffe-'+ACTIVE_PROFILE+'-'+getToday()+'.json','application/json',JSON.stringify(obj,null,2));
+}
+
+function exportWeightCSV(){
+  var w=(S.weights||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
+  if(!w.length){alert('Aucune pesée à exporter pour le moment.');return;}
+  var lines=['date,poids_kg,moyenne_7j'];
+  w.forEach(function(p,i){lines.push(p.d+','+p.w+','+_wMA(w,i,7).toFixed(2));});
+  _exportFile('poids-'+getToday()+'.csv','text/csv',lines.join('\n'));
+}
+
+function renderDataExport(){
+  return '<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-top:6px;margin-bottom:18px;">'+
+    '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">💾 Sauvegarde de tes données</div>'+
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
+    '<button onclick="exportBackup()" style="flex:1;min-width:140px;padding:10px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">⬇ Sauvegarde complète (.json)</button>'+
+    '<button onclick="exportWeightCSV()" style="flex:1;min-width:140px;padding:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;">📊 Poids (.csv)</button>'+
+    '</div>'+
+    '<div style="font-size:10px;color:var(--text3);margin-top:8px;font-style:italic;line-height:1.4;">Le .json contient tout (repas, inventaire, recettes, poids), sauf ta clé API. La feuille de partage iOS te laisse l\'enregistrer dans Fichiers, Notes ou l\'envoyer par mail.</div>'+
+    '</div>';
+}
+
 function render(){
   const urgTotal=Object.values(S.inv).flat().filter(i=>i.urgent&&(i.qty===null||i.qty>0)).length;
   const urgCount=RCP.filter(r=>(!r.profile||r.profile===ACTIVE_PROFILE)&&r.urgent===1&&r.slots&&r.slots.length>0&&canCook(r,1)).length;
@@ -2211,7 +2279,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-29 12h50</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-29 13h04</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -2222,7 +2290,7 @@ function render(){
       <button data-action="main-tab" data-val="courses" style="background:none;border:none;border-bottom:${S.mainTab==='courses'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='courses'?500:400};color:${S.mainTab==='courses'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">🛒 Courses</button><button data-action="main-tab" data-val="weight" style="background:none;border:none;border-bottom:${S.mainTab==='weight'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='weight'?500:400};color:${S.mainTab==='weight'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">📊 Bilan</button>
     </div>
     ${S.mainTab==='courses'?renderCoursesHTML():''}
-    ${S.mainTab==='weight'?renderCockpit()+renderGoalBlock()+renderWeightHTML():''}
+    ${S.mainTab==='weight'?renderCockpit()+renderGoalBlock()+renderWeightHTML()+renderDataExport():''}
     ${S.mainTab==='recipes'?`
       ${!getApiKey()?`<div style="background:rgba(251,146,60,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:#0b0e15;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
