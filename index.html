@@ -2158,7 +2158,6 @@ function clearWeightGoal(){S.weightGoal=null;saveState();render();}
 
 function renderGoalBlock(){
   var w=(S.weights||[]);
-  if(!w.length)return '';
   var box='background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;';
   if(S.weightGoal==null){
     return '<div style="'+box+'">'+
@@ -2170,6 +2169,7 @@ function renderGoalBlock(){
       '</div></div>';
   }
   var goal=S.weightGoal;
+  if(!w.length){return '<div style="'+box+'"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">🎯 Objectif : '+goal.toFixed(1)+' kg</span><button onclick="clearWeightGoal()" style="background:none;border:0;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;">modifier</button></div><div style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.5;">Ajoute des pesées pour voir ta progression et la date estimée.</div></div>';}
   var sorted=w.slice().sort(function(a,b){return a.d<b.d?-1:1;});
   var tr=weightTrendPerWeek();
   var current=tr?tr.current:sorted[sorted.length-1].w;
@@ -2279,7 +2279,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-29 13h04</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-29 13h07</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
