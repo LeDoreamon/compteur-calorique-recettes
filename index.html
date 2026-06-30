@@ -2139,12 +2139,12 @@ function weightTrendPerWeek(){
   var w=(S.weights||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
   if(w.length<2)return null;
   var endIdx=w.length-1;
-  if(_cDays(w[endIdx].d,w[0].d)<4)return null;
-  var span=Math.min(28,_cDays(w[endIdx].d,w[0].d));
+  if(_wDays(w[endIdx].d,w[0].d)<4)return null;
+  var span=Math.min(28,_wDays(w[endIdx].d,w[0].d));
   var startTarget=shiftDate(w[endIdx].d,-span);
   var startIdx=0,bd=1e18;
-  for(var j=0;j<w.length;j++){var dd=Math.abs(_cDays(w[j].d,startTarget));if(dd<bd){bd=dd;startIdx=j;}}
-  var realSpan=_cDays(w[endIdx].d,w[startIdx].d);
+  for(var j=0;j<w.length;j++){var dd=Math.abs(_wDays(w[j].d,startTarget));if(dd<bd){bd=dd;startIdx=j;}}
+  var realSpan=_wDays(w[endIdx].d,w[startIdx].d);
   if(realSpan<3)return null;
   return {perWeek:(_wMA(w,endIdx,7)-_wMA(w,startIdx,7))/realSpan*7,current:_wMA(w,endIdx,7)};
 }
@@ -2280,7 +2280,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-29 18h14</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-06-30 06h52</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
