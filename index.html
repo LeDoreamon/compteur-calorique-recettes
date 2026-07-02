@@ -2330,6 +2330,82 @@ function renderFavSection(){
   return title+rows;
 }
 
+// ─── 📈 Tendance kcal/protéines (14 j) + série protéines ───────────────────
+function macroHistory(n){
+  n=n||14;var out=[];
+  for(var i=n-1;i>=0;i--){
+    var d=shiftDate(S.today,-i);
+    var m=getDayMacros(d);
+    out.push({d:d,kcal:Math.round(m.kcal||0),prot:Math.round(m.prot||0)});
+  }
+  return out;
+}
+function protStreak(){
+  var t=TARGETS.prot,cur=0,best=0,run=0;
+  for(var i=364;i>=0;i--){
+    var p=getDayMacros(shiftDate(S.today,-i)).prot||0;
+    if(p>=t){run++;if(run>best)best=run;}else run=0;
+  }
+  var j=(getDayMacros(S.today).prot||0)>=t?0:1;
+  for(;j<365;j++){
+    if((getDayMacros(shiftDate(S.today,-j)).prot||0)>=t)cur++;else break;
+  }
+  return {cur:cur,best:best};
+}
+function _kcalColor(v){var t=TARGETS.kcal;if(v>t*1.1)return '#fb923c';if(v<t*0.9)return 'rgba(140,151,171,.55)';return '#4ade80';}
+function _protColor(v){return v>=TARGETS.prot?'#4ade80':'rgba(140,151,171,.55)';}
+function _mtChart(hist,key,target,unit,colorFn){
+  var W=320,H=86,padL=2,padR=34,top=6,bottom=14;
+  var chartW=W-padL-padR,chartH=H-top-bottom;
+  var n=hist.length,slot=chartW/n,bw=Math.max(4,Math.floor(slot*0.62));
+  var maxV=target*1.15;
+  for(var i=0;i<n;i++)if(hist[i][key]>maxV)maxV=hist[i][key];
+  maxV=maxV*1.05;
+  var ty=top+chartH-(target/maxV*chartH);
+  var s='<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block;">';
+  for(var i=0;i<n;i++){
+    var v=hist[i][key];
+    var x=padL+i*slot+(slot-bw)/2;
+    if(v<=0){s+='<rect x="'+x.toFixed(1)+'" y="'+(top+chartH-2)+'" width="'+bw+'" height="2" rx="1" fill="rgba(148,163,184,.25)"/>';}
+    else{
+      var bh=Math.max(2,v/maxV*chartH);
+      var y=top+chartH-bh;
+      s+='<rect x="'+x.toFixed(1)+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+bh.toFixed(1)+'" rx="2" fill="'+colorFn(v)+'"/>';
+    }
+    if((n-1-i)%2===0){
+      s+='<text x="'+(padL+i*slot+slot/2).toFixed(1)+'" y="'+(H-3)+'" font-size="7" fill="#8c97ab" text-anchor="middle">'+hist[i].d.slice(8)+'</text>';
+    }
+  }
+  s+='<line x1="'+padL+'" y1="'+ty.toFixed(1)+'" x2="'+(padL+chartW)+'" y2="'+ty.toFixed(1)+'" stroke="#94a3b8" stroke-width="1" stroke-dasharray="4 3" opacity=".65"/>';
+  s+='<text x="'+(W-2)+'" y="'+(ty+3).toFixed(1)+'" font-size="8" fill="#94a3b8" text-anchor="end">'+target+unit+'</text>';
+  s+='</svg>';
+  return s;
+}
+function renderMacroTrend(){
+  var box='background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;';
+  var hist=macroHistory(14);
+  var hasData=hist.some(function(x){return x.kcal>0||x.prot>0;});
+  var st=protStreak();
+  var html='<div style="'+box+'">';
+  html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📈 Tendance 14 jours</div>';
+  if(st.cur>0){
+    html+='<div style="font-size:13px;color:var(--text);margin-bottom:12px;">🔥 <strong>'+st.cur+' jour'+(st.cur>1?'s':'')+'</strong> d\'affilée avec tes protéines (≥ '+TARGETS.prot+' g)'+(st.best>st.cur?' · record : '+st.best+' j':(st.best===st.cur&&st.cur>1?' · record en cours !':''))+'</div>';
+  } else {
+    html+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">🔥 Atteins '+TARGETS.prot+' g de protéines aujourd\'hui pour lancer une série'+(st.best>0?' (record : '+st.best+' j)':'')+'.</div>';
+  }
+  if(!hasData){
+    html+='<div style="font-size:12px;color:var(--text3);line-height:1.5;">Les courbes apparaîtront dès que tu enregistres des repas.</div></div>';
+    return html;
+  }
+  html+='<div style="font-size:11px;color:var(--text2);margin-bottom:2px;">Calories <span style="color:var(--text3);">· cible '+TARGETS.kcal+'</span></div>';
+  html+=_mtChart(hist,'kcal',TARGETS.kcal,'',_kcalColor);
+  html+='<div style="font-size:11px;color:var(--text2);margin:10px 0 2px;">Protéines <span style="color:var(--text3);">· cible '+TARGETS.prot+' g</span></div>';
+  html+=_mtChart(hist,'prot',TARGETS.prot,'g',_protColor);
+  html+='<div style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5;">Vert = dans la cible (±10 % kcal, ≥ cible prot) · orange = au-dessus · gris = en dessous / jour non loggé.</div>';
+  html+='</div>';
+  return html;
+}
+
 function render(){
   const urgTotal=Object.values(S.inv).flat().filter(i=>i.urgent&&(i.qty===null||i.qty>0)).length;
   const urgCount=RCP.filter(r=>(!r.profile||r.profile===ACTIVE_PROFILE)&&r.urgent===1&&r.slots&&r.slots.length>0&&canCook(r,1)).length;
@@ -2346,7 +2422,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-02 08h40</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-02 18h19</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -2357,7 +2433,7 @@ function render(){
       <button data-action="main-tab" data-val="courses" style="background:none;border:none;border-bottom:${S.mainTab==='courses'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='courses'?500:400};color:${S.mainTab==='courses'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">🛒 Courses</button><button data-action="main-tab" data-val="weight" style="background:none;border:none;border-bottom:${S.mainTab==='weight'?'2px solid var(--text)':'2px solid transparent'};padding:10px 14px;font-size:14px;font-weight:${S.mainTab==='weight'?500:400};color:${S.mainTab==='weight'?'var(--text)':'var(--text3)'};cursor:pointer;display:flex;align-items:center;gap:5px;">📊 Bilan</button>
     </div>
     ${S.mainTab==='courses'?renderCoursesHTML():''}
-    ${S.mainTab==='weight'?renderCockpit()+renderGoalBlock()+renderWeightHTML()+renderDataExport():''}
+    ${S.mainTab==='weight'?renderCockpit()+renderMacroTrend()+renderGoalBlock()+renderWeightHTML()+renderDataExport():''}
     ${S.mainTab==='recipes'?`
       ${!getApiKey()?`<div style="background:rgba(251,146,60,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:#0b0e15;font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
