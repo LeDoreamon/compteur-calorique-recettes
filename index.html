@@ -410,7 +410,7 @@ const TODAY=getToday();const TOMORROW=shiftDate(TODAY,1);
 const S={
   inv:JSON.parse(JSON.stringify(INV_DEFAULT)),
   recipeDesserts:{},customDesserts:{},customInputs:{},
-  mainTab:'recipes',mealTab:'breakfast',weights:[],weightGoal:null,favs:[],openRec:null,
+  mainTab:'recipes',mealTab:'breakfast',weights:[],weightGoal:null,favs:[],invDlcSort:false,openRec:null,
   openCat:{frigo:1,congelateur:1,placards:1,epices:1},
   editMode:false,
   today:TODAY,displayDate:TODAY,
@@ -524,7 +524,7 @@ function updateInvDlc(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(
 function effDlc(it){
   if(!it||!it.dlc)return null;
   // Œufs, yaourts, fromages blancs : tiennent généralement ~2 semaines après la date → +14j de marge
-  const long=/oeuf|yaourt|fromage\s*blanc|fb[_\s]|skyr|petit\s*suisse/i.test((it.id||'')+' '+(it.name||''));
+  const long=/oeuf|œuf|yaourt|fromage\s*blanc|fb[_\s]|skyr|petit\s*suisse/i.test((it.id||'')+' '+(it.name||''));
   if(!long)return it.dlc;
   const d=new Date(it.dlc);d.setDate(d.getDate()+14);
   return d.toISOString().slice(0,10);
@@ -1094,7 +1094,7 @@ function confirmAddItem(){
   }
   const id='cx_'+Date.now().toString(36);
   const _mk={kcal:parseFloat(document.getElementById('ai-m-kcal').value)||0,prot:parseFloat(document.getElementById('ai-m-prot').value)||0,gluc:parseFloat(document.getElementById('ai-m-gluc').value)||0,lip:parseFloat(document.getElementById('ai-m-lip').value)||0};
-  const item={id,name:n,qty,unit,urgent:0};
+  const item={id,name:n,qty,unit,urgent:0,added:getToday()};
   if(_pkgSize>0)item.pkg={size:_pkgSize};
   if(_mk.kcal||_mk.prot||_mk.gluc||_mk.lip)item.mac100=_mk; // sinon la migration remplit depuis la table
   item.macSource=_macSrc.aim;
@@ -1789,7 +1789,8 @@ function qtyLabel(it){
   return s;
 }
 function renderInv(){
-  const editBtn=`<button onclick="toggleEditMode()" style="padding:6px 14px;background:${S.editMode?'rgba(96,165,250,.2)':'transparent'};border:0.5px solid ${S.editMode?'var(--blue)':'var(--border)'};border-radius:8px;color:${S.editMode?'var(--blue)':'var(--text2)'};font-size:13px;cursor:pointer;margin-bottom:14px;display:block;width:100%;">${S.editMode?'\u2713 Terminer l\'édition':'\u270f\ufe0f Éditer l\'inventaire'}</button>`;
+  if(S.invDlcSort)return _invDlcBar()+renderDlcSortedInventory();
+  const editBtn=_invDlcBar()+`<button onclick="toggleEditMode()" style="padding:6px 14px;background:${S.editMode?'rgba(96,165,250,.2)':'transparent'};border:0.5px solid ${S.editMode?'var(--blue)':'var(--border)'};border-radius:8px;color:${S.editMode?'var(--blue)':'var(--text2)'};font-size:13px;cursor:pointer;margin-bottom:14px;display:block;width:100%;">${S.editMode?'\u2713 Terminer l\'édition':'\u270f\ufe0f Éditer l\'inventaire'}</button>`;
   const cats=Object.entries(S.inv).map(([cat,items])=>{
     const visible=(S.editMode?items.slice():items.filter(i=>i.qty===null||i.qty>0)).sort((a,b)=>(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'}));
     const info=CINFO[cat],urg=visible.filter(i=>i.urgent&&(i.qty===null||i.qty>0)),open=S.editMode?true:S.openCat[cat];
@@ -2413,6 +2414,58 @@ function renderMacroTrend(){
   return html;
 }
 
+// ─── 📅 Tri inventaire par DLC (réelle ou estimée pour le frais) ────────────
+var FRESH_LIFE=[
+ [/banane/i,5],[/avocat/i,4],[/salade|laitue|batavia|mâche|roquette/i,5],
+ [/tomate/i,7],[/fraise|framboise|myrtille/i,3],[/pêche|nectarine|abricot|prune/i,5],
+ [/poire/i,7],[/pomme(?!\s*de\s*terre)/i,21],[/raisin/i,6],[/kiwi/i,10],
+ [/citron|orange|clémentine|mandarine|pamplemousse/i,14],[/melon|pastèque/i,5],
+ [/courgette|aubergine|poivron/i,8],[/concombre/i,7],[/brocoli|chou[\s-]?fleur/i,6],
+ [/champignon/i,4],[/carotte/i,21],[/oignon|échalote/i,30],
+ [/pain(?!.*mie)|baguette/i,3],[/persil|coriandre|basilic|menthe/i,4],
+ [/hach(é|e|ée)/i,2],[/saumon frais|poisson frais|cabillaud|filet de/i,2],
+ [/jambon|lardon|charcuterie/i,7]
+];
+function estFreshDlc(it,cat){
+  if(!it||it.dlc)return null;
+  if(cat==='congelateur'||cat==='epices')return null;
+  var s=(it.name||'')+' '+(it.id||'');
+  for(var i=0;i<FRESH_LIFE.length;i++){
+    if(FRESH_LIFE[i][0].test(s))return shiftDate(it.added||S.today,FRESH_LIFE[i][1]);
+  }
+  return null;
+}
+function toggleInvDlcSort(){S.invDlcSort=!S.invDlcSort;render();}
+function _invDlcBar(){
+  return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;">'
+   +'<span style="font-size:12px;color:var(--text2);">📅 Trier par DLC <span style="color:var(--text3);font-size:10px;">(~ = estimée pour le frais)</span></span>'
+   +'<span onclick="toggleInvDlcSort()" style="cursor:pointer;flex-shrink:0;display:inline-block;width:42px;height:24px;border-radius:12px;background:'+(S.invDlcSort?'#4ade80':'var(--bg3)')+';border:0.5px solid var(--border);position:relative;transition:background .15s;">'
+   +'<span style="position:absolute;top:2px;left:'+(S.invDlcSort?'19px':'2px')+';width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 2px rgba(0,0,0,.4);"></span></span></div>';
+}
+function renderDlcSortedInventory(){
+  var CATL={frigo:'Frigo',congelateur:'Congél.',placards:'Placards',epices:'Épices'};
+  var rows=[];
+  Object.keys(S.inv||{}).forEach(function(cat){
+    (S.inv[cat]||[]).forEach(function(it){
+      if(!(it.qty===null||it.qty>0))return;
+      var d=effDlc(it),est=false;
+      if(!d){d=estFreshDlc(it,cat);est=!!d;}
+      if(!d)return;
+      rows.push({it:it,cat:cat,d:d,est:est});
+    });
+  });
+  if(!rows.length)return '<div style="font-size:12px;color:var(--text3);padding:6px 2px;line-height:1.5;">Aucun article en stock avec une DLC (réelle ou estimée).</div>';
+  rows.sort(function(a,b){return a.d<b.d?-1:1;});
+  return rows.map(function(o){
+    var st=getDlcStatus(o.d)||{label:'?',color:'var(--text3)',bg:'var(--bg3)'};
+    var lbl=(o.est?'~':'')+st.label;
+    var qty=o.it.qty===null?'présent':(o.it.qty+' '+(o.it.unit||''));
+    return '<div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:6px;">'
+     +'<span style="flex:1;min-width:0;font-size:13px;color:var(--text);">'+o.it.name+' <span style="color:var(--text3);font-size:11px;">· '+(CATL[o.cat]||o.cat)+' · '+qty+'</span></span>'
+     +'<span style="font-size:10px;padding:2px 7px;border-radius:6px;white-space:nowrap;color:'+st.color+';background:'+st.bg+';">'+lbl+'</span></div>';
+  }).join('');
+}
+
 function render(){
   const urgTotal=Object.values(S.inv).flat().filter(i=>i.urgent&&(i.qty===null||i.qty>0)).length;
   const urgCount=RCP.filter(r=>(!r.profile||r.profile===ACTIVE_PROFILE)&&r.urgent===1&&r.slots&&r.slots.length>0&&canCook(r,1)).length;
@@ -2429,7 +2482,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-02 18h22</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-03 12h59</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -2756,7 +2809,9 @@ Réponds UNIQUEMENT en JSON sans markdown:
 {"corrected":string,"ok":boolean,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}
 - "corrected" = le nom du repas corrigé, propre et lisible.
 - "ok" = true si tu reconnais un/des aliment(s) réel(s) et peux estimer; false seulement si c'est vraiment incompréhensible.
-- Si ok=true, donne des macros RÉALISTES pour la portion décrite (JAMAIS 0 pour un vrai aliment). Sois légèrement pessimiste.`;
+- Si ok=true, donne des macros RÉALISTES pour la portion décrite (JAMAIS 0 pour un vrai aliment).
+- Si la taille ou le poids n'est pas précisé, suppose la portion STANDARD du commerce, jamais la version mini : 1 cookie au chocolat ≈ 30-35 g ≈ 160 kcal ; 1 croissant ≈ 55 g ≈ 230 kcal ; 1 banane ≈ 120 g ≈ 105 kcal ; 1 part de pizza ≈ 1/6 d'une pizza entière.
+- En cas de doute, arrondis les kcal vers le HAUT (légère surestimation), jamais vers le bas.`;
   }
   try {
     const data = await callAI(msgs, 600, sys, 'openai/gpt-oss-120b');
