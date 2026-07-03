@@ -401,7 +401,7 @@ const RCP=[
 
 const INV_EMPTY={frigo:[],congelateur:[],placards:[],epices:[]};
 const CINFO={frigo:{label:'Frigo',sym:'🌡'},congelateur:{label:'Congélateur',sym:'❄'},placards:{label:'Placards',sym:'▣'},epices:{label:'Épices',sym:'∿'}};
-const MEAL_TABS=[{k:'breakfast',l:'Petit-déj'},{k:'lunch',l:'Déjeuner'},{k:'snack',l:'Collation'},{k:'dinner',l:'Dîner'},{k:'dessert',l:'🍰 Desserts'},{k:'urgent',l:'⚠ DLC'}];
+const MEAL_TABS=[{k:'breakfast',l:'Petit-déj'},{k:'lunch',l:'Déjeuner'},{k:'snack',l:'Collation'},{k:'dinner',l:'Dîner'},{k:'dessert',l:'🍰 Desserts'},{k:'urgent',l:'⚠ DLC'},{k:'favs',l:'⭐ Favoris'}];
 
 function getToday(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
 function shiftDate(d,days){const dt=new Date(d+'T00:00:00');dt.setDate(dt.getDate()+days);return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
@@ -2482,7 +2482,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-03 12h59</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-03 13h19</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -2505,8 +2505,8 @@ function render(){
         ${S.aiRecipes&&S.aiRecipes.length?`<button onclick="clearAIRecipes()" style="width:100%;padding:7px;margin-top:6px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">🗑 Effacer les ${S.aiRecipes.length} recettes IA</button>`:''}
       </div>
       <div class="meal-tabs">${tabBtns}</div>
-      ${S.mealTab==='urgent'?renderDLCSection()+renderFavSection():''}
-      ${shown.length?shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">Aucune recette disponible.</div>'}
+      ${S.mealTab==='urgent'?renderDLCSection():''}${S.mealTab==='favs'?renderFavSection():''}
+      ${S.mealTab==='favs'?'':shown.length?shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">Aucune recette disponible.</div>'}
       <div style="margin-top:10px;">
         <button onclick="openAddMeal('text')" style="width:100%;padding:12px;background:transparent;border:0.5px dashed rgba(255,255,255,.15);border-radius:10px;color:#586577;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:color .2s;" onmouseover="this.style.color='#8c97ab'" onmouseout="this.style.color='#586577'">
           <span style="font-size:18px;">➕</span><span>Ajouter un repas libre (texte ou photo)</span>
