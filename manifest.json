@@ -1,7 +1,7 @@
 {
-  "name": "Compteur calorique & recettes",
-  "short_name": "Macros",
-  "description": "Tracker de recettes et macros pour la sèche — Liam",
+  "name": "Dorayaki",
+  "short_name": "Dorayaki",
+  "description": "Dorayaki — recettes, macros et anti-gaspi (Liam & Maureen)",
   "start_url": "/compteur-calorique-recettes/",
   "scope": "/compteur-calorique-recettes/",
   "display": "standalone",
