@@ -2431,6 +2431,7 @@ function estFreshDlc(it,cat){
   if(!it||it.dlc)return null;
   if(cat==='congelateur'||cat==='epices')return null;
   var s=(it.name||'')+' '+(it.id||'');
+  if(/sauce|coulis|concentr|conserve|bocal|bocaux|boîte|tube|brique|poudre|séch|sèch|sirop|jus\b|compote|confiture|soupe|velouté|pesto|ketchup|purée|pulpe|passata|pizza|grillé|biscotte|chips|surgel|congel/i.test(s))return null;
   for(var i=0;i<FRESH_LIFE.length;i++){
     if(FRESH_LIFE[i][0].test(s))return shiftDate(it.added||S.today,FRESH_LIFE[i][1]);
   }
@@ -2468,7 +2469,7 @@ function renderDlcSortedInventory(){
   return rows.map(function(o){
     var st=getDlcStatus(o.d)||{label:'?',color:'var(--text3)',bg:'var(--bg3)'};
     var lbl=(o.est?'~':'')+st.label;
-    var qty=o.it.qty===null?'présent':(o.it.qty+' '+(o.it.unit||''));
+    var qty=qtyLabel(o.it);
     return '<div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:6px;">'
      +'<span style="flex:1;min-width:0;font-size:13px;color:var(--text);">'+o.it.name+' <span style="color:var(--text3);font-size:11px;">· '+(CATL[o.cat]||o.cat)+' · '+qty+'</span></span>'
      +'<span style="font-size:10px;padding:2px 7px;border-radius:6px;white-space:nowrap;color:'+st.color+';background:'+st.bg+';">'+lbl+'</span></div>';
@@ -2491,7 +2492,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-04 11h11</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-04 20h24</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
