@@ -213,20 +213,37 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
 <div id="ai-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;align-items:center;justify-content:center;padding:12px;"><div style="background:#141925;border:0.5px solid rgba(255,255,255,.1);border-radius:14px;padding:20px;width:100%;max-width:420px;max-height:92vh;overflow-y:auto;"><div style="font-size:15px;font-weight:600;color:#eceff5;margin-bottom:14px;">➕ Ajouter un item</div><button onclick="openScanner()" style="width:100%;padding:11px;margin-bottom:14px;background:rgba(124,109,242,.14);border:0.5px solid rgba(124,109,242,.45);border-radius:9px;color:#a99bff;font-size:13px;font-weight:600;cursor:pointer;">📷 Scanner un code-barres</button><div style="margin-bottom:10px;"><label style="font-size:10px;color:#586577;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Nom</label><input id="ai-name" oninput="onAIName()" type="text" placeholder="Ex: Yaourt grec…" style="width:100%;padding:9px 12px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#eceff5;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;"></div><div id="ai-qtyrow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><div id="ai-qtycol"><label style="font-size:10px;color:#586577;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Quantité</label><input id="ai-qty" type="number" placeholder="vide = présent" min="0" style="width:100%;padding:9px 12px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#eceff5;font-size:13px;outline:none;box-sizing:border-box;"></div><div><div id="ai-pkg-wrap" style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:7px;font-size:12px;color:#8c97ab;cursor:pointer;margin-bottom:8px;padding:8px 10px;background:rgba(124,109,242,.06);border:0.5px solid rgba(124,109,242,.25);border-radius:8px;"><input type="checkbox" id="ai-pkg-on" onchange="toggleAIPkg()" style="width:16px;height:16px;accent-color:#7c6df2;"> Emballage (paquet, boîte, pot…)</label><div id="ai-pkg-fields" style="display:none;grid-template-columns:1fr 1fr auto;gap:6px;"><div><label style="font-size:9px;color:#586577;display:block;margin-bottom:3px;">Taille/emballage</label><input id="ai-pkg-size" type="number" placeholder="100" min="1" style="width:100%;padding:8px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:7px;color:#eceff5;font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:#586577;display:block;margin-bottom:3px;">Nombre</label><input id="ai-pkg-count" type="number" placeholder="3" min="1" style="width:100%;padding:8px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:7px;color:#eceff5;font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:#586577;display:block;margin-bottom:3px;">Unité</label><select id="ai-pkg-unit" style="padding:8px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:7px;color:#eceff5;font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select></div></div></div><div id="ai-unitwrap"><label style="font-size:10px;color:#586577;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Unité</label><select id="ai-unit" onchange="onAIUnit()" style="width:100%;padding:9px 12px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#eceff5;font-size:13px;outline:none;box-sizing:border-box;"><option>g</option><option>ml</option><option>pcs</option><option>pots</option><option>boîtes</option><option>tubes</option><option>packs</option></select></div></div></div><div id="ai-pieceg-row" style="display:none;margin-bottom:10px;"><label style="font-size:10px;color:#586577;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Poids moyen par pièce (g)</label><input id="ai-pieceg" type="number" placeholder="ex : 55 pour un œuf" min="1" style="width:100%;padding:9px 12px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:#eceff5;font-size:13px;outline:none;box-sizing:border-box;"><div style="font-size:10px;color:#586577;margin-top:4px;font-style:italic;">Calcule les macros par unité à partir des macros pour 100 g.</div></div><div id="ai-present-row" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(124,109,242,.06);border:0.5px solid rgba(124,109,242,.25);border-radius:8px;"><input type="checkbox" id="ai-present" onchange="toggleAIPresent()" style="width:16px;height:16px;accent-color:#7c6df2;cursor:pointer;flex:0 0 auto;"><label for="ai-present" style="font-size:12px;color:#a99bff;cursor:pointer;line-height:1.3;">Présent — stock illimité (pas besoin de quantité)</label></div><div style="margin-bottom:10px;"><label style="font-size:10px;color:#586577;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Catégorie</label><div style="display:flex;gap:6px;flex-wrap:wrap;"><button onclick="setAICat('frigo')" id="aicat-frigo" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(255,255,255,.12);background:transparent;color:#8c97ab;font-size:12px;cursor:pointer;">🌡️ Frigo</button><button onclick="setAICat('congelateur')" id="aicat-congelateur" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(255,255,255,.12);background:transparent;color:#8c97ab;font-size:12px;cursor:pointer;">❄ Congélateur</button><button onclick="setAICat('placards')" id="aicat-placards" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(255,255,255,.12);background:transparent;color:#8c97ab;font-size:12px;cursor:pointer;">▣ Placards</button><button onclick="setAICat('epices')" id="aicat-epices" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(255,255,255,.12);background:transparent;color:#8c97ab;font-size:12px;cursor:pointer;">∿ Épices</button></div></div><div id="ai-mbox" style="display:none;margin-bottom:12px;padding:12px;background:#0b0e15;border-radius:8px;"><div style="font-size:11px;color:#586577;margin-bottom:8px;">Macros pour 100g/ml (modifiables)</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;"><div><label style="font-size:10px;color:#586577;display:block;margin-bottom:2px;">Kcal</label><input id="ai-m-kcal" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:#141925;border:0.5px solid rgba(255,255,255,.1);border-radius:5px;color:#fb923c;font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:#586577;display:block;margin-bottom:2px;">Prot.</label><input id="ai-m-prot" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:#141925;border:0.5px solid rgba(255,255,255,.1);border-radius:5px;color:#4ade80;font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:#586577;display:block;margin-bottom:2px;">Gluc.</label><input id="ai-m-gluc" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:#141925;border:0.5px solid rgba(255,255,255,.1);border-radius:5px;color:#60a5fa;font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:#586577;display:block;margin-bottom:2px;">Lip.</label><input id="ai-m-lip" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:#141925;border:0.5px solid rgba(255,255,255,.1);border-radius:5px;color:#8c97ab;font-size:12px;outline:none;box-sizing:border-box;"></div></div><div id="ai-mnote" style="font-size:10px;color:#586577;margin-top:6px;font-style:italic;"></div></div><div id="aim-macsrc" style="display:flex;gap:6px;margin-bottom:8px;align-items:center;"></div><button id="aim-ai-btn" onclick="aiLookupMacros()" style="width:100%;padding:10px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;">❆ Chercher les macros</button><div id="ai-status" style="font-size:12px;color:#8c97ab;margin-bottom:10px;min-height:18px;"></div><div style="display:flex;gap:8px;"><button onclick="confirmAddItem()" style="flex:1;padding:10px;background:#4ade80;border:none;border-radius:8px;color:#0b0e15;font-size:13px;font-weight:600;cursor:pointer;">✓ Ajouter</button><button onclick="closeAddItem()" style="padding:10px 14px;background:transparent;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#586577;font-size:13px;cursor:pointer;">✕</button></div></div></div>
 <input type="file" id="free-photo-input" accept="image/*" style="display:none" onchange="handleFreePhoto(this)">
 <div id="editmeal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:260;align-items:center;justify-content:center;padding:20px;">
-  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;padding:18px;width:100%;max-width:420px;">
+  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
       <div style="font-size:16px;font-weight:600;color:var(--text);">Modifier le repas</div>
       <button onclick="closeEditMeal()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;line-height:1;">✕</button>
     </div>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">Repas</div>
     <input id="em-name" type="text" style="width:100%;box-sizing:border-box;padding:9px 10px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:12px;">
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
-      <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Kcal</div><input id="em-kcal" type="number" min="0" style="width:100%;box-sizing:border-box;padding:8px 4px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--orange);font-size:14px;outline:none;text-align:center;"></div>
-      <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Prot. g</div><input id="em-prot" type="number" min="0" style="width:100%;box-sizing:border-box;padding:8px 4px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--green);font-size:14px;outline:none;text-align:center;"></div>
-      <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Gluc. g</div><input id="em-gluc" type="number" min="0" style="width:100%;box-sizing:border-box;padding:8px 4px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--blue);font-size:14px;outline:none;text-align:center;"></div>
-      <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Lip. g</div><input id="em-lip" type="number" min="0" style="width:100%;box-sizing:border-box;padding:8px 4px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text2);font-size:14px;outline:none;text-align:center;"></div>
+    <div style="display:flex;gap:6px;margin-bottom:12px;">
+      <button id="em-tab-ings" onclick="setEditMealMode('ings')">🧺 Ingrédients</button>
+      <button id="em-tab-macros" onclick="setEditMealMode('macros')">🔢 Macros</button>
     </div>
-    <div id="em-note" style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:10px;"></div>
+    <div id="em-pane-ings" style="display:none;">
+      <div id="em-ings-list"></div>
+      <div id="em-ing-picker" style="display:none;align-items:center;gap:8px;padding:8px 0;">
+        <select id="em-ing-sel" style="flex:1;min-width:0;padding:6px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#eceff5;font-size:12px;outline:none;"></select>
+        <input id="em-ing-newqty" type="number" placeholder="qté" style="width:62px;padding:5px 6px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:var(--text);font-size:12px;outline:none;text-align:center;">
+        <button onclick="emConfirmAdd()" style="padding:6px 12px;background:#4ade80;border:none;border-radius:6px;color:#0b0e15;font-size:12px;font-weight:700;cursor:pointer;">OK</button>
+      </div>
+      <button onclick="emAddIngredient()" style="width:100%;margin-top:8px;padding:9px;background:transparent;border:0.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">+ Ajouter un ingrédient</button>
+      <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:8px;">Les macros se recalculent en direct. À l'enregistrement, le stock de l'inventaire est ajusté de la différence.</div>
+    </div>
+    <div id="em-pane-macros" style="display:none;">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Kcal</div><input id="em-kcal" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--orange);font-size:14px;outline:none;text-align:center;"></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Prot. g</div><input id="em-prot" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--green);font-size:14px;outline:none;text-align:center;"></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Gluc. g</div><input id="em-gluc" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--blue);font-size:14px;outline:none;text-align:center;"></div>
+        <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Lip. g</div><input id="em-lip" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text2);font-size:14px;outline:none;text-align:center;"></div>
+      </div>
+      <div id="em-note" style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:10px;"></div>
+    </div>
+    <div id="em-total" style="font-size:12px;color:var(--text2);margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);"></div>
     <button onclick="saveEditMeal()" style="width:100%;margin-top:14px;padding:12px;background:#4ade80;border:none;border-radius:10px;color:#0b0e15;font-size:14px;font-weight:700;cursor:pointer;">✓ Enregistrer</button>
   </div>
 </div>
@@ -762,10 +779,11 @@ function executeCook(){
   if(did!=='none'&&did!=='autre'){const d=DESSERTS.find(x=>x.id===did);if(d&&d.inv){const it=resolveInv(d.inv,d.n);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-dessertDeductQty(it,d));}}
   delete S.recipeDesserts[rid];delete S.customDesserts[rid];delete S.customInputs[rid];
   if(!S.dayMeals[day])S.dayMeals[day]=[];
-  const _entry={rid,mult:1,dessert:did!=='none'?did:null,customDessert:did==='autre'&&cd&&!cd.loading&&!cd.error?cd:null,name:r.name};_entry.macros=_per;if(ccExtras.length)_entry.extras=ccExtras;
+  const _pings=_cc.ings.map((g,i)=>{const el=document.getElementById('cc-'+i);const uq=el?parseFloat(el.value)||0:g.qty;if(uq<=0)return null;const it=findItem(g.id);let mm={kcal:0,prot:0,gluc:0,lip:0};if(it&&(it.mac100||it.macPiece)){mm=itemMealMacros(it,uq);}else if(g.m100){const f=uq/100;mm={kcal:(g.m100.kcal||0)*f,prot:(g.m100.prot||0)*f,gluc:(g.m100.gluc||0)*f,lip:(g.m100.lip||0)*f};}return{id:g.id,n:g.n,name:g.name,qty:Math.round(uq/mult*10)/10,unit:g.unit||'',kcal:Math.round(mm.kcal/mult),prot:Math.round(mm.prot/mult*10)/10,gluc:Math.round(mm.gluc/mult*10)/10,lip:Math.round(mm.lip/mult*10)/10};}).filter(Boolean);
+  const _entry={rid,mult:1,dessert:did!=='none'?did:null,customDessert:did==='autre'&&cd&&!cd.loading&&!cd.error?cd:null,name:r.name};_entry.macros=_per;if(_pings.length)_entry.ings=_pings;if(ccExtras.length)_entry.extras=ccExtras;
   S.dayMeals[day].push(_entry);
   // \u00d72 : la 2e portion part automatiquement sur le lendemain (meal prep)
-  if(mult>=2){const nd=shiftDate(day,1);if(!S.dayMeals[nd])S.dayMeals[nd]=[];const _e2={rid,mult:1,dessert:null,customDessert:null,macros:_per,name:r.name};if(ccExtras.length)_e2.extras=JSON.parse(JSON.stringify(ccExtras));S.dayMeals[nd].push(_e2);}
+  if(mult>=2){const nd=shiftDate(day,1);if(!S.dayMeals[nd])S.dayMeals[nd]=[];const _e2={rid,mult:1,dessert:null,customDessert:null,macros:_per,name:r.name};if(_pings.length)_e2.ings=JSON.parse(JSON.stringify(_pings));if(ccExtras.length)_e2.extras=JSON.parse(JSON.stringify(ccExtras));S.dayMeals[nd].push(_e2);}
   const sp=getSpicesUsedByRecipe(r);S.pendingSpiceCheck=sp.length?sp.map(s=>({id:s.id,name:s.name})):null;
   closeConfirmCook();render();saveState();
 }
@@ -2496,18 +2514,36 @@ function renderDlcSortedInventory(){
 }
 
 // ─── ✏️ Modification d'un repas tracké ──────────────────────────────────────
-var _editMeal=null;
+var _editMeal=null;var _emMode='macros';var _emRows=[];var _emOrig=[];var _emBase=null;
 function _mealTotals(m){
   var r=findRecipe(m.rid);var base=m.macros||r||{kcal:0,prot:0,gluc:0,lip:0};
   var dm=getDessertMacros(m.dessert,m.customDessert);
   var ex=(m.extras||[]).reduce(function(a,e){return{kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0),gluc:a.gluc+(e.gluc||0),lip:a.lip+(e.lip||0)};},{kcal:0,prot:0,gluc:0,lip:0});
   return{kcal:Math.round((base.kcal||0)+dm.kcal+ex.kcal),prot:Math.round((base.prot||0)+dm.prot+ex.prot),gluc:Math.round((base.gluc||0)+dm.gluc+ex.gluc),lip:Math.round((base.lip||0)+dm.lip+ex.lip)};
 }
+function _emRowMacros(row,qty){
+  var it=findItem(row.id)||resolveInv(row.id,row.n||row.name);
+  if(it&&(it.mac100||it.macPiece))return itemMealMacros(it,qty);
+  if(row._pu)return{kcal:row._pu.kcal*qty,prot:row._pu.prot*qty,gluc:row._pu.gluc*qty,lip:row._pu.lip*qty};
+  return{kcal:0,prot:0,gluc:0,lip:0,unknown:true};
+}
+function _emMkRow(g){
+  var q=g.qty||0;
+  var pu=q>0&&(g.kcal||g.prot||g.gluc||g.lip)?{kcal:(g.kcal||0)/q,prot:(g.prot||0)/q,gluc:(g.gluc||0)/q,lip:(g.lip||0)/q}:null;
+  return{id:g.id,n:g.n,name:g.name||g.n||g.id,qty:q,unit:g.unit||'',_pu:pu};
+}
 function openEditMeal(day,idx){
   var list=S.dayMeals[day];if(!list||!list[idx])return;
   var m=list[idx];var r=findRecipe(m.rid);
   var t=_mealTotals(m);
-  _editMeal={day:day,idx:idx,orig:t};
+  var detailed=!!(m.ings&&m.ings.length);
+  _emRows=[];
+  if(detailed)(m.ings||[]).forEach(function(g){_emRows.push(_emMkRow(g));});
+  (m.extras||[]).forEach(function(g){_emRows.push(_emMkRow(g));});
+  if(detailed)_emBase={kcal:0,prot:0,gluc:0,lip:0};
+  else{var b=m.macros||r||{};_emBase={kcal:Math.round(b.kcal||0),prot:Math.round(b.prot||0),gluc:Math.round(b.gluc||0),lip:Math.round(b.lip||0)};}
+  _emOrig=_emRows.map(function(x){return{id:x.id,oq:x.qty};});
+  _editMeal={day:day,idx:idx,orig:t,detailed:detailed,dess:getDessertMacros(m.dessert,m.customDessert)};
   document.getElementById('em-name').value=m.name||(r&&r.name)||'Repas';
   document.getElementById('em-kcal').value=t.kcal;
   document.getElementById('em-prot').value=t.prot;
@@ -2515,23 +2551,114 @@ function openEditMeal(day,idx){
   document.getElementById('em-lip').value=t.lip;
   var bits=[];
   if(m.dessert&&m.dessert!=='none')bits.push('le dessert');
-  if(m.extras&&m.extras.length)bits.push((m.extras.length>1?'les extras':'l\'extra')+' ('+m.extras.map(function(e){return e.name;}).join(', ')+')');
-  document.getElementById('em-note').textContent=bits.length?'Ces valeurs incluent '+bits.join(' et ')+'. Si tu modifies les macros, le total saisi remplace le tout.':'';
+  if(m.extras&&m.extras.length)bits.push('les extras');
+  document.getElementById('em-note').textContent=(bits.length?'Ces valeurs incluent '+bits.join(' et ')+'. ':'')+'Le total saisi ici remplace tout le détail du repas.';
+  document.getElementById('em-ing-picker').style.display='none';
+  setEditMealMode((_emRows.length||detailed)?'ings':'macros');
   document.getElementById('editmeal-overlay').style.display='flex';
 }
-function closeEditMeal(){document.getElementById('editmeal-overlay').style.display='none';_editMeal=null;}
+function setEditMealMode(mode){
+  _emMode=mode;
+  var pi=document.getElementById('em-pane-ings'),pm=document.getElementById('em-pane-macros');
+  var ti=document.getElementById('em-tab-ings'),tm=document.getElementById('em-tab-macros');
+  var on='flex:1;padding:8px;border-radius:8px;border:0.5px solid var(--text);background:var(--bg3);color:var(--text);font-size:12px;font-weight:600;cursor:pointer;';
+  var off='flex:1;padding:8px;border-radius:8px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:12px;cursor:pointer;';
+  if(pi)pi.style.display=mode==='ings'?'block':'none';
+  if(pm)pm.style.display=mode==='macros'?'block':'none';
+  if(ti)ti.style.cssText=mode==='ings'?on:off;
+  if(tm)tm.style.cssText=mode==='macros'?on:off;
+  if(mode==='ings')renderEmIngs();
+  updateEmTotals();
+}
+function syncEmRows(){_emRows.forEach(function(r,i){var el=document.getElementById('em-ing-'+i);if(el&&el.value!=='')r.qty=parseFloat(el.value)||0;});}
+function renderEmIngs(){
+  var el=document.getElementById('em-ings-list');if(!el)return;
+  var html='';
+  if(_emBase&&(_emBase.kcal||_emBase.prot)){
+    html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid rgba(255,255,255,.06);"><span style="flex:1;font-size:12px;color:var(--text3);">Base du repas (non détaillée)</span><span style="font-size:11px;color:var(--text3);white-space:nowrap;">'+_emBase.kcal+'k · '+_emBase.prot+'g P</span></div>';
+  }
+  html+=_emRows.map(function(g,i){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(255,255,255,.06);"><span style="flex:1;min-width:0;font-size:13px;color:var(--text2);">'+g.name+'</span><input type="number" id="em-ing-'+i+'" value="'+g.qty+'" min="0" oninput="updateEmTotals()" style="width:64px;padding:5px 6px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:22px;">'+g.unit+'</span><span id="em-ingk-'+i+'" style="font-size:11px;color:#fb923c;min-width:34px;text-align:right;">0k</span><button onclick="emRemoveIng('+i+')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button></div>';
+  }).join('');
+  if(!_emRows.length&&!(_emBase&&_emBase.kcal))html+='<div style="font-size:12px;color:var(--text3);padding:8px 0;">Aucun ingrédient — ajoute-en ci-dessous.</div>';
+  el.innerHTML=html;
+}
+function emRemoveIng(i){syncEmRows();_emRows.splice(i,1);renderEmIngs();updateEmTotals();}
+function emAddIngredient(){
+  syncEmRows();
+  var all=Object.values(S.inv).reduce(function(a,arr){return a.concat((arr||[]).filter(function(it){return it.qty===null||it.qty>0;}));},[]);
+  document.getElementById('em-ing-sel').innerHTML=all.map(function(it){return '<option value="'+it.id+'">'+it.name+(it.qty!==null?' ('+it.qty+(it.unit||'')+')':'')+'</option>';}).join('');
+  document.getElementById('em-ing-newqty').value='';
+  document.getElementById('em-ing-picker').style.display='flex';
+}
+function emConfirmAdd(){
+  var id=document.getElementById('em-ing-sel').value;
+  var q=parseFloat(document.getElementById('em-ing-newqty').value)||0;
+  var it=findItem(id);
+  document.getElementById('em-ing-picker').style.display='none';
+  if(!it||q<=0)return;
+  _emRows.push({id:it.id,name:it.name,qty:q,unit:it.unit||'',_pu:null});
+  renderEmIngs();updateEmTotals();
+}
+function updateEmTotals(){
+  var R=function(v){return Math.max(0,Math.round(v));};
+  var t={kcal:0,prot:0,gluc:0,lip:0},unk=false;
+  if(_emMode==='ings'){
+    syncEmRows();
+    _emRows.forEach(function(g,i){
+      var mm=_emRowMacros(g,g.qty);
+      t.kcal+=mm.kcal;t.prot+=mm.prot;t.gluc+=mm.gluc;t.lip+=mm.lip;
+      if(mm.unknown&&g.qty>0)unk=true;
+      var ke=document.getElementById('em-ingk-'+i);if(ke)ke.textContent=Math.round(mm.kcal)+'k';
+    });
+    if(_emBase){t.kcal+=_emBase.kcal;t.prot+=_emBase.prot;t.gluc+=_emBase.gluc;t.lip+=_emBase.lip;}
+    if(_editMeal){var d2=_editMeal.dess;t.kcal+=d2.kcal;t.prot+=d2.prot;t.gluc+=d2.gluc;t.lip+=d2.lip;}
+  }else{
+    var g2=function(id){var e=document.getElementById(id);return parseFloat(e?e.value:0)||0;};
+    t={kcal:g2('em-kcal'),prot:g2('em-prot'),gluc:g2('em-gluc'),lip:g2('em-lip')};
+  }
+  var el=document.getElementById('em-total');
+  if(el)el.innerHTML='Total : <span style="color:var(--orange);font-weight:600;">'+R(t.kcal)+' kcal</span> · <span style="color:var(--green);">'+R(t.prot)+'g P</span> · <span style="color:var(--blue);">'+R(t.gluc)+'g G</span> · <span style="color:var(--text2);">'+R(t.lip)+'g L</span>'+(unk?' <span style="color:#fb923c;">⚠ macros inconnues pour un ingrédient</span>':'');
+  return t;
+}
+function _emApplyStockDelta(orig,rows){
+  var o={},n={};
+  orig.forEach(function(r){o[r.id]=(o[r.id]||0)+(r.oq||0);});
+  rows.forEach(function(r){n[r.id]=(n[r.id]||0)+(r.qty||0);});
+  var ids={};Object.keys(o).forEach(function(k){ids[k]=1;});Object.keys(n).forEach(function(k){ids[k]=1;});
+  Object.keys(ids).forEach(function(id){
+    var d=(n[id]||0)-(o[id]||0);if(!d)return;
+    Object.values(S.inv).forEach(function(arr){var x=(arr||[]).find(function(i){return i.id===id;});if(x&&x.qty!==null)x.qty=Math.max(0,x.qty-d);});
+  });
+}
+function closeEditMeal(){document.getElementById('editmeal-overlay').style.display='none';_editMeal=null;_emRows=[];_emOrig=[];_emBase=null;}
 function saveEditMeal(){
   if(!_editMeal)return;
   var list=S.dayMeals[_editMeal.day];var m=list&&list[_editMeal.idx];if(!m){closeEditMeal();return;}
-  var g=function(id){return Math.max(0,Math.round(parseFloat(document.getElementById(id).value)||0));};
-  var nv={kcal:g('em-kcal'),prot:g('em-prot'),gluc:g('em-gluc'),lip:g('em-lip')};
   var nm=(document.getElementById('em-name').value||'').trim();
   if(nm)m.name=nm;
-  var o=_editMeal.orig;
-  if(nv.kcal!==o.kcal||nv.prot!==o.prot||nv.gluc!==o.gluc||nv.lip!==o.lip){
-    m.macros=nv;
-    delete m.extras;
-    m.dessert=null;m.customDessert=null;
+  if(_emMode==='ings'){
+    syncEmRows();
+    var rows=_emRows.filter(function(r){return r.qty>0;});
+    _emApplyStockDelta(_emOrig,rows);
+    var stored=rows.map(function(g){var mm=_emRowMacros(g,g.qty);return{id:g.id,n:g.n,name:g.name,qty:g.qty,unit:g.unit,kcal:Math.round(mm.kcal),prot:Math.round(mm.prot*10)/10,gluc:Math.round(mm.gluc*10)/10,lip:Math.round(mm.lip*10)/10};});
+    if(_editMeal.detailed){
+      var t={kcal:0,prot:0,gluc:0,lip:0};
+      stored.forEach(function(g){t.kcal+=g.kcal;t.prot+=g.prot;t.gluc+=g.gluc;t.lip+=g.lip;});
+      m.ings=stored;delete m.extras;
+      m.macros={kcal:Math.round(t.kcal),prot:Math.round(t.prot),gluc:Math.round(t.gluc),lip:Math.round(t.lip)};
+    }else{
+      if(stored.length)m.extras=stored;else delete m.extras;
+    }
+  }else{
+    var g=function(id){return Math.max(0,Math.round(parseFloat(document.getElementById(id).value)||0));};
+    var nv={kcal:g('em-kcal'),prot:g('em-prot'),gluc:g('em-gluc'),lip:g('em-lip')};
+    var o=_editMeal.orig;
+    if(nv.kcal!==o.kcal||nv.prot!==o.prot||nv.gluc!==o.gluc||nv.lip!==o.lip){
+      m.macros=nv;
+      delete m.extras;delete m.ings;
+      m.dessert=null;m.customDessert=null;
+    }
   }
   saveState();closeEditMeal();render();
 }
@@ -2552,7 +2679,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-06 21h16</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-06 21h28</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -2636,15 +2763,11 @@ ROOT.addEventListener('click',e=>{
       const meal=S.dayMeals[day][idx];
       if(meal){
         const r=RCP.find(x=>x.id===meal.rid);
-        // Restaurer les ingrédients trackés (pas les épices qty:null)
-        if(r&&r.used&&r.used.length){
-          r.used.forEach(({id,qty})=>{
-            Object.values(S.inv).forEach(arr=>{
-              const it=arr.find(i=>i.id===id);
-              if(it&&it.qty!==null)it.qty+=qty;
-            });
-          });
-        }
+        const _rst=(id,qty)=>{Object.values(S.inv).forEach(arr=>{const it=arr.find(i=>i.id===id);if(it&&it.qty!==null)it.qty+=qty;});};
+        // Restaurer les ingrédients trackés (détail réel si dispo, sinon recette)
+        if(meal.ings&&meal.ings.length){meal.ings.forEach(({id,qty})=>{if(id&&qty)_rst(id,qty);});}
+        else if(r&&r.used&&r.used.length){r.used.forEach(({id,qty})=>_rst(id,qty));}
+        if(meal.extras&&meal.extras.length){meal.extras.forEach(({id,qty})=>{if(id&&qty)_rst(id,qty);});}
         // Restaurer l'ingrédient du dessert si applicable
         if(meal.dessert&&meal.dessert!=='none'&&meal.dessert!=='autre'){
           const d=DESSERTS.find(x=>x.id===meal.dessert);
