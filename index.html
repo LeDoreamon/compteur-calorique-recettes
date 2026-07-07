@@ -2514,7 +2514,7 @@ function renderDlcSortedInventory(){
 }
 
 // ─── ✏️ Modification d'un repas tracké ──────────────────────────────────────
-var _editMeal=null;var _emMode='macros';var _emRows=[];var _emOrig=[];var _emBase=null;
+var _editMeal=null;var _emMode='macros';var _emRows=[];var _emOrig=[];var _emBase=null;var _emConvert=false;
 function _mealTotals(m){
   var r=findRecipe(m.rid);var base=m.macros||r||{kcal:0,prot:0,gluc:0,lip:0};
   var dm=getDessertMacros(m.dessert,m.customDessert);
@@ -2542,7 +2542,7 @@ function openEditMeal(day,idx){
   (m.extras||[]).forEach(function(g){_emRows.push(_emMkRow(g));});
   if(detailed)_emBase={kcal:0,prot:0,gluc:0,lip:0};
   else{var b=m.macros||r||{};_emBase={kcal:Math.round(b.kcal||0),prot:Math.round(b.prot||0),gluc:Math.round(b.gluc||0),lip:Math.round(b.lip||0)};}
-  _emOrig=_emRows.map(function(x){return{id:x.id,oq:x.qty};});
+  _emOrig=_emRows.map(function(x){return{id:x.id,oq:x.qty};});_emConvert=false;
   _editMeal={day:day,idx:idx,orig:t,detailed:detailed,dess:getDessertMacros(m.dessert,m.customDessert)};
   document.getElementById('em-name').value=m.name||(r&&r.name)||'Repas';
   document.getElementById('em-kcal').value=t.kcal;
@@ -2576,13 +2576,16 @@ function renderEmIngs(){
   var html='';
   if(_emBase&&(_emBase.kcal||_emBase.prot)){
     html+='<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid rgba(255,255,255,.06);"><span style="flex:1;font-size:12px;color:var(--text3);">Base du repas (non détaillée)</span><span style="font-size:11px;color:var(--text3);white-space:nowrap;">'+_emBase.kcal+'k · '+_emBase.prot+'g P</span></div>';
+    html+='<button onclick="emDetailBase()" style="width:100%;margin:4px 0 2px;padding:8px;background:transparent;border:0.5px dashed rgba(251,146,60,.5);border-radius:8px;color:#fb923c;font-size:12px;cursor:pointer;">✏️ Corriger la base : la détailler en ingrédients</button>';
   }
+  if(_emConvert){html+='<div style="font-size:11px;color:#fb923c;padding:6px 0;line-height:1.45;">Base remise à zéro — compose le repas ci-dessous. Le stock ne sera pas modifié pour ce détaillage.</div>';}
   html+=_emRows.map(function(g,i){
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(255,255,255,.06);"><span style="flex:1;min-width:0;font-size:13px;color:var(--text2);">'+g.name+'</span><input type="number" id="em-ing-'+i+'" value="'+g.qty+'" min="0" oninput="updateEmTotals()" style="width:64px;padding:5px 6px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:22px;">'+g.unit+'</span><span id="em-ingk-'+i+'" style="font-size:11px;color:#fb923c;min-width:34px;text-align:right;">0k</span><button onclick="emRemoveIng('+i+')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button></div>';
   }).join('');
   if(!_emRows.length&&!(_emBase&&_emBase.kcal))html+='<div style="font-size:12px;color:var(--text3);padding:8px 0;">Aucun ingrédient — ajoute-en ci-dessous.</div>';
   el.innerHTML=html;
 }
+function emDetailBase(){syncEmRows();_emConvert=true;_emBase={kcal:0,prot:0,gluc:0,lip:0};renderEmIngs();updateEmTotals();}
 function emRemoveIng(i){syncEmRows();_emRows.splice(i,1);renderEmIngs();updateEmTotals();}
 function emAddIngredient(){
   syncEmRows();
@@ -2633,7 +2636,7 @@ function _emApplyStockDelta(orig,rows){
     Object.values(S.inv).forEach(function(arr){var x=(arr||[]).find(function(i){return i.id===id;});if(x&&x.qty!==null)x.qty=Math.max(0,x.qty-d);});
   });
 }
-function closeEditMeal(){document.getElementById('editmeal-overlay').style.display='none';_editMeal=null;_emRows=[];_emOrig=[];_emBase=null;}
+function closeEditMeal(){document.getElementById('editmeal-overlay').style.display='none';_editMeal=null;_emRows=[];_emOrig=[];_emBase=null;_emConvert=false;}
 function saveEditMeal(){
   if(!_editMeal)return;
   var list=S.dayMeals[_editMeal.day];var m=list&&list[_editMeal.idx];if(!m){closeEditMeal();return;}
@@ -2642,9 +2645,9 @@ function saveEditMeal(){
   if(_emMode==='ings'){
     syncEmRows();
     var rows=_emRows.filter(function(r){return r.qty>0;});
-    _emApplyStockDelta(_emOrig,rows);
+    if(!_emConvert)_emApplyStockDelta(_emOrig,rows);
     var stored=rows.map(function(g){var mm=_emRowMacros(g,g.qty);return{id:g.id,n:g.n,name:g.name,qty:g.qty,unit:g.unit,kcal:Math.round(mm.kcal),prot:Math.round(mm.prot*10)/10,gluc:Math.round(mm.gluc*10)/10,lip:Math.round(mm.lip*10)/10};});
-    if(_editMeal.detailed){
+    if(_editMeal.detailed||_emConvert){
       var t={kcal:0,prot:0,gluc:0,lip:0};
       stored.forEach(function(g){t.kcal+=g.kcal;t.prot+=g.prot;t.gluc+=g.gluc;t.lip+=g.lip;});
       m.ings=stored;delete m.extras;
@@ -2681,7 +2684,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-07 06h39</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-07 07h10</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
