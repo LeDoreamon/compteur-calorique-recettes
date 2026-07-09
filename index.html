@@ -1427,6 +1427,7 @@ RÈGLES ABSOLUES:
 - "qty" JAMAIS supérieur au stock disponible indiqué entre parenthèses.
 - Si un ingrédient indique un EMBALLAGE, sa "qty" doit être un MULTIPLE de la taille d'emballage (ex. emballage de 100g → 100, 200… JAMAIS 120), pour ne pas forcer l'ouverture d'un emballage pour quelques grammes.
 - Si un ingrédient est PAR PIÈCE, sa "qty" est un nombre ENTIER de pièces (ex. 2 œufs, jamais 1.5) avec "unit":"pcs".
+- INTERDIT d'utiliser ou même de MENTIONNER un aliment ABSENT de la liste — ni dans le nom, ni dans les étapes (pas de wrap, tortilla, pain, riz, pâtes… s'ils n'y sont pas). Si le plat classique demande un support absent, ADAPTE la recette (bol, assiette, salade, poêlée) et nomme-la en conséquence.
 - "steps" = TABLEAU de 3 à 5 étapes SÉPARÉES. UNE seule action par étape. Ne JAMAIS tout mettre dans une seule étape.
 - macros calculées \u00e0 partir des valeurs « pour 100g/ml » de CHAQUE ingr\u00e9dient indiqu\u00e9es ci-dessus, multipli\u00e9es par la quantit\u00e9 utilis\u00e9e, puis additionn\u00e9es pour 1 portion. Ne devine pas au hasard si les valeurs sont fournies.
 - Assaisonne les plats SALÉS avec l'épice PERTINENTE (curry sur un curry, paprika sur une viande, ail dans un wok...), mais JAMAIS de la salade au hasard. Les plats SUCRÉS (bowls sucrés, shakes, compotes, fruits) ne reçoivent PAS d'épices salées.
@@ -1465,7 +1466,7 @@ RÈGLES ABSOLUES:
         kcal:Math.round(r.kcal)||0,prot:Math.round(r.prot)||0,gluc:Math.round(r.gluc)||0,lip:Math.round(r.lip)||0,
         steps,used,extras:[]
       };
-    }).filter(r=>r.used.length>0&&r.slots.length>0);
+    }).filter(r=>r.used.length>0&&r.slots.length>0&&!_aiMissingSupport(r));
     if(newRecipes.length===0)throw new Error('Les recettes générées ne correspondent pas à ton inventaire. Réessaie.');
     S.aiRecipes=newRecipes;
     S.aiRecipes.forEach(r=>{r.profile=ACTIVE_PROFILE;if(!RCP.find(x=>x.id===r.id))RCP.push(r);});
@@ -1476,6 +1477,14 @@ RÈGLES ABSOLUES:
   }
 }
 
+function _aiMissingSupport(r){
+  const SUP=['wrap','wraps','tortilla','tortillas','pain','pains','baguette','baguettes','pita','pitas','naan','bagel','bagels','galette','galettes','toast','toasts','brioche','riz','pates','nouilles','vermicelles','semoule','quinoa'];
+  const txt=normMac((r.name||'')+' '+((r.steps||[]).join(' ')));
+  const words=new Set(txt.split(' '));
+  const invNames=Object.values(S.inv).reduce((a,arr)=>a.concat((arr||[]).map(x=>normMac(x.name||''))),[]).join(' ');
+  for(const w of SUP){if(words.has(w)&&invNames.indexOf(w)<0)return w;}
+  return null;
+}
 function clearAIRecipes(){
   S.aiRecipes.forEach(r=>{const i=RCP.findIndex(x=>x.id===r.id);if(i>=0)RCP.splice(i,1);});
   S.aiRecipes=[];
@@ -2684,7 +2693,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-07 07h10</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-09 08h48</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -2887,7 +2896,7 @@ function setInvMode(yes) {
 function buildInvContext() {
   return Object.values(S.inv).flatMap(arr =>
     arr.filter(it => it.qty === null || it.qty > 0)
-       .map(it => `${it.id}|${it.name}|${it.qty??'illimité'}${it.unit}`)
+       .map(it => `${it.id}|${it.name}|${it.qty??'illimité'}${it.unit}${it.pkg&&it.pkg.size>0?`|portion:${it.pkg.size}${it.unit||'g'}`:(it.pieceG?`|pièce:${it.pieceG}g`:'')}`)
   ).join(', ');
 }
 
@@ -2992,6 +3001,28 @@ function verifyMealNo(){
   const i=document.getElementById('addmeal-input');if(i)i.style.display='block';
   const ta=document.getElementById('addmeal-textarea');if(ta)ta.focus();
 }
+function _invFallbackSuggestion(){
+  try{
+    const el=document.getElementById('addmeal-textarea');
+    const t=normMac((el&&el.value)||'');
+    if(!t)return[];
+    const mnb=t.match(/(\d+(?:[.,]\d+)?)/);
+    const nb=mnb?Math.max(0.1,parseFloat(mnb[1].replace(',','.'))):1;
+    const all=Object.values(S.inv).reduce((a,arr)=>a.concat((arr||[]).filter(x=>x.qty===null||x.qty>0)),[]);
+    const tw=t.split(' ').filter(w=>w.length>=4).map(w=>w.replace(/s$/,''));
+    const hit=all.find(x=>{const nm=normMac(x.name||'');if(!nm)return false;if(nm.length>=4&&t.indexOf(nm)>=0)return true;const nw=nm.split(' ').filter(w=>w.length>=4).map(w=>w.replace(/s$/,''));return nw.some(a=>tw.some(b=>a===b));});
+    if(!hit)return[];
+    if(hit.macPiece){
+      const pc=Math.max(1,Math.round(nb));const mp=hit.macPiece;
+      return[{id:hit.id,name:hit.name,qty:pc,unit:'pc',baseQty:pc,m:{kcal:Math.round(mp.kcal*pc),prot:Math.round(mp.prot*pc),gluc:Math.round(mp.gluc*pc),lip:Math.round(mp.lip*pc)}}];
+    }
+    const per=(hit.pkg&&hit.pkg.size>0)?hit.pkg.size:(hit.pieceG||100);
+    const g=Math.round(nb>10?nb:nb*per);
+    const m100=hit.mac100||null;const f=g/100;
+    const m=m100?{kcal:Math.round(m100.kcal*f),prot:Math.round(m100.prot*f),gluc:Math.round(m100.gluc*f),lip:Math.round(m100.lip*f)}:{kcal:0,prot:0,gluc:0,lip:0};
+    return[{id:hit.id,name:hit.name,qty:g,unit:(hit.unit==='ml')?'ml':'g',baseQty:g,m}];
+  }catch(e){return[];}
+}
 async function runAddMealAI(msgs) {
   let sys;
   if(_addMealUseStock){
@@ -3000,7 +3031,9 @@ Inventaire disponible (format id|nom|quantité): ${buildInvContext()}
 Réponds UNIQUEMENT avec un JSON valide sans markdown:
 {"name":string,"inv_suggestions":[{"id":string,"name":string,"qty":number,"unit":string,"g":number}]}
 inv_suggestions: UNIQUEMENT les items utilisés (id exact). qty = quantité CONSOMMÉE dans CE repas, dans l'unité de l'item (ex. 100 pour 100g, 2 pour 2 pièces) — JAMAIS le stock disponible affiché. g = cette quantité en grammes/ml RÉELS — pour une pièce, estime son vrai poids (1 gourde de compote ≈ 90g, 1 œuf ≈ 55g), surtout PAS g=qty. Laisse [] si aucun item utilisé.
-Sois légèrement pessimiste sur les quantités.`;
+Sois légèrement pessimiste sur les quantités.
+- Si l'utilisateur donne un NOMBRE d'un produit vendu en portions (yaourts, compotes, œufs, barres, tranches), c'est ce nombre de PORTIONS INDIVIDUELLES : utilise la taille "portion:" ou "pièce:" fournie (ex. "1 Activia" avec portion:125g → qty=125 et g=125). JAMAIS le pack ou le lot entier.
+- Correspondance TOLÉRANTE : marques, pluriels, fautes ("1 activia" correspond à l'item Activia). Si un aliment du repas existe dans la liste, tu DOIS le retourner avec son id exact.`;
   } else {
     sys = `Tu analyses un repas (l'inventaire n'est PAS utilisé). Le repas est décrit en texte (parfois avec des FAUTES de frappe ou d'orthographe à corriger) ou montré en photo.
 Corrige les fautes et interprète le plat le plus probable (ex. "poulet fris" -> "poulet frit", "cacahouète" -> "cacahuète").
@@ -3029,6 +3062,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
         const m=m100?{kcal:Math.round(m100.kcal*f),prot:Math.round(m100.prot*f),gluc:Math.round(m100.gluc*f),lip:Math.round(m100.lip*f)}:{kcal:0,prot:0,gluc:0,lip:0};
         return {id:s.id,name:s.name||(it&&it.name)||'?',qty:g,unit:(it&&it.unit==='ml')?'ml':'g',baseQty:g,m};
       });
+      if(!_addMealInvSuggestions.length)_addMealInvSuggestions=_invFallbackSuggestion();
       _addMealBase={kcal:0,prot:0,gluc:0,lip:0};
       document.getElementById('addmeal-analyzing').style.display = 'none';
       document.getElementById('addmeal-confirm').style.display = 'block';
