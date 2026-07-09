@@ -1153,6 +1153,26 @@ function toggleInvPresent(cat,id){
 }
 // ─── SYNC FIREBASE + LOCALSTORAGE ───────────────────────────────────────────
 const FB = 'https://bouffe-frigo-default-rtdb.europe-west1.firebasedatabase.app';
+// ─── Auth anonyme Firebase (REST) — s'active dès que _FBK.key est renseignée ─
+const _FBK={key:''};
+let _fbTok=null,_fbTokExp=0;
+async function fbAuthToken(){
+  if(!_FBK.key)return null;
+  const now=Date.now();
+  if(_fbTok&&now<_fbTokExp-60000)return _fbTok;
+  try{
+    const rt=localStorage.getItem('fb_rtok');
+    if(rt){
+      const r=await fetch('https://securetoken.googleapis.com/v1/token?key='+_FBK.key,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(rt)});
+      if(r.ok){const d=await r.json();_fbTok=d.id_token;_fbTokExp=now+(parseInt(d.expires_in,10)||3600)*1000;if(d.refresh_token){try{localStorage.setItem('fb_rtok',d.refresh_token);}catch(e){}}return _fbTok;}
+      try{localStorage.removeItem('fb_rtok');}catch(e){}
+    }
+    const r2=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+_FBK.key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})});
+    if(r2.ok){const d=await r2.json();_fbTok=d.idToken;_fbTokExp=now+(parseInt(d.expiresIn,10)||3600)*1000;try{localStorage.setItem('fb_rtok',d.refreshToken);}catch(e){}return _fbTok;}
+  }catch(e){}
+  return null;
+}
+async function fbUrl(path){const t=await fbAuthToken();return FB+'/'+path+'.json'+(t?('?auth='+t):'');}
 let _syncStatus = ''; // '' | 'ok' | 'offline'
 let _lastSyncErr='';
 
@@ -1309,7 +1329,7 @@ async function saveState(){
   try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
   try{
     const _sc=new AbortController();const _stid=setTimeout(()=>_sc.abort(),8000);
-    const r=await fetch(`${FB}/${ACTIVE_PROFILE}/state.json`,{
+    const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'),{
       method:'PUT',
       headers:{'Content-Type':'application/json'},
       body:payload,
@@ -1326,7 +1346,7 @@ async function saveState(){
 async function loadState(){
   try{
     const _ctrl=new AbortController();const _tid=setTimeout(()=>_ctrl.abort(),7000);
-    const r=await fetch(`${FB}/${ACTIVE_PROFILE}/state.json`,{signal:_ctrl.signal});
+    const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'),{signal:_ctrl.signal});
     clearTimeout(_tid);
     if(r.ok){
       const d=await r.json();
@@ -2693,7 +2713,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-09 08h48</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-09 20h39</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
