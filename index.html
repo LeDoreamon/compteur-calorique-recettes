@@ -132,6 +132,7 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
       <div style="margin-bottom:10px;">
         <label style="font-size:10px;color:#586577;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Repas</label>
         <input id="addmeal-name" type="text" style="width:100%;padding:8px 10px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#eceff5;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
+        <div id="am-slots" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
         <div><label style="font-size:10px;color:#586577;display:block;margin-bottom:3px;">Kcal</label><input id="addmeal-kcal" type="number" style="width:100%;padding:7px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#fb923c;font-size:13px;outline:none;box-sizing:border-box;"></div>
@@ -1625,7 +1626,7 @@ function handlePhotoSelected(input){
     try{
       const data=await callAI([{role:'user',content:[
         {type:'image',source:{type:'base64',media_type:mime,data:b64}},
-        {type:'text',text:'Analyse cette image. Si ce n\'est PAS un aliment ou un repas (objet, meuble, animal, personne, paysage, etc.), réponds UNIQUEMENT: {"error":"non_alimentaire"}. Sinon, estime les macros (légèrement pessimiste) et réponds UNIQUEMENT avec un JSON sans markdown: {"name":string (description courte en français, max 60 chars),"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}'}
+        {type:'text',text:'Analyse cette image. Si ce n\'est PAS un aliment ou un repas (objet, meuble, animal, personne, paysage, etc.), réponds UNIQUEMENT: {"error":"non_alimentaire"}. Sinon, estime les macros (légèrement pessimiste) et réponds UNIQUEMENT avec un JSON sans markdown: {"name":string (nom court et représentatif des ALIMENTS, ex. « Pâtes à la crème et jambon », « Flocons d\'avoine, banane et miel » — JAMAIS « Repas », « Repas simple » ni aucun nom générique; max 60 chars),"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}'}
       ]}],500);
       const raw=data.content.map(i=>i.text||'').join('');
       const p=JSON.parse(raw.replace(/```json|```/g,'').trim());
@@ -1680,7 +1681,7 @@ function getMissingFor2(r){return(r.used||[]).filter(({id,qty,n})=>{const it=res
 async function analyzeCustomDessert(rid,text){
   S.customDesserts[rid]={loading:true};render();
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,system:'Tu es nutritionniste. Réponds UNIQUEMENT avec un JSON valide (sans markdown): {"name":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}. Si non comestible: {"error":"non comestible"}.',messages:[{role:'user',content:text}]})});
+    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,system:'Tu es nutritionniste. Réponds UNIQUEMENT avec un JSON valide (sans markdown): {"name":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}. Si non comestible: {"error":"non comestible"}. name = nom court décrivant les aliments (ex. « Omelette jambon fromage »), JAMAIS « Repas » ni un nom générique.',messages:[{role:'user',content:text}]})});
     const data=await resp.json();const raw=data.content.map(i=>i.text||'').join('');const clean=raw.replace(/```json|```/g,'').trim();const p=JSON.parse(clean);
     S.customDesserts[rid]=p.error?{error:p.error}:{name:p.name||text,kcal:Math.round(p.kcal)||0,prot:Math.round(p.prot)||0,gluc:Math.round(p.gluc)||0,lip:Math.round(p.lip)||0};
   }catch(e){S.customDesserts[rid]={error:e.message==='NO_KEY'?'Configure ta clé API (⚙)':'Erreur — réessaie'};}
@@ -2866,7 +2867,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-15 05h35</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-16 09h24</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -3157,9 +3158,27 @@ function showMealVerify(name,macros,uncertain){
   document.getElementById('addmeal-confirm').style.display='none';
   document.getElementById('addmeal-verify').style.display='block';
 }
+var _amSlot=null,_amBaseName='';
+function _amLc(s){return s?s.charAt(0).toLowerCase()+s.slice(1):s;}
+function setAmSlot(s){
+  if(_amSlot===null){var e0=document.getElementById('addmeal-name');if(e0&&e0.value.trim())_amBaseName=e0.value.trim();}
+  _amSlot=(_amSlot===s)?null:s;
+  var L={breakfast:'Petit d\u00e9jeuner',lunch:'D\u00e9jeuner',snack:'Collation',dinner:'D\u00eener'};
+  var el=document.getElementById('addmeal-name');
+  if(el)el.value=_amSlot?(L[_amSlot]+' \u00e0 base de '+_amLc(_amBaseName)):_amBaseName;
+  renderAmSlots();
+}
+function renderAmSlots(){
+  var L={breakfast:'Petit-d\u00e9j',lunch:'D\u00e9jeuner',snack:'Collation',dinner:'D\u00eener'};
+  var el=document.getElementById('am-slots');if(!el)return;
+  el.innerHTML=Object.keys(L).map(function(s){
+    var on=_amSlot===s;
+    return '<button onclick="setAmSlot(\''+s+'\')" style="padding:6px 9px;border-radius:8px;font-size:11px;cursor:pointer;'+(on?'background:rgba(74,222,128,.15);border:0.5px solid rgba(74,222,128,.5);color:#4ade80;font-weight:600;':'background:transparent;border:0.5px solid rgba(255,255,255,.12);color:#586577;')+'">'+L[s]+'</button>';
+  }).join('');
+}
 function applyPendingMealToConfirm(){
   if(!_pendingMeal)return;
-  document.getElementById('addmeal-name').value=_pendingMeal.name;
+  document.getElementById('addmeal-name').value=_pendingMeal.name;_amBaseName=_pendingMeal.name||'';_amSlot=null;renderAmSlots();
   document.getElementById('addmeal-kcal').value=_pendingMeal.kcal;
   document.getElementById('addmeal-prot').value=_pendingMeal.prot;
   document.getElementById('addmeal-gluc').value=_pendingMeal.gluc;
@@ -3209,7 +3228,8 @@ Réponds UNIQUEMENT avec un JSON valide sans markdown:
 inv_suggestions: UNIQUEMENT les items utilisés (id exact). qty = quantité CONSOMMÉE dans CE repas, dans l'unité de l'item (ex. 100 pour 100g, 2 pour 2 pièces) — JAMAIS le stock disponible affiché. g = cette quantité en grammes/ml RÉELS — pour une pièce, estime son vrai poids (1 gourde de compote ≈ 90g, 1 œuf ≈ 55g), surtout PAS g=qty. Laisse [] si aucun item utilisé.
 Sois légèrement pessimiste sur les quantités.
 - Si l'utilisateur donne un NOMBRE d'un produit vendu en portions (yaourts, compotes, œufs, barres, tranches), c'est ce nombre de PORTIONS INDIVIDUELLES : utilise la taille "portion:" ou "pièce:" fournie (ex. "1 Activia" avec portion:125g → qty=125 et g=125). JAMAIS le pack ou le lot entier.
-- Correspondance TOLÉRANTE : marques, pluriels, fautes ("1 activia" correspond à l'item Activia). Si un aliment du repas existe dans la liste, tu DOIS le retourner avec son id exact.`;
+- Correspondance TOLÉRANTE : marques, pluriels, fautes ("1 activia" correspond à l'item Activia). Si un aliment du repas existe dans la liste, tu DOIS le retourner avec son id exact.
+- name = nom court et représentatif des aliments (ex. « Pâtes à la crème et jambon »), JAMAIS « Repas » ni un nom générique.`;
   } else {
     sys = `Tu analyses un repas (l'inventaire n'est PAS utilisé). Le repas est décrit en texte (parfois avec des FAUTES de frappe ou d'orthographe à corriger) ou montré en photo.
 Corrige les fautes et interprète le plat le plus probable (ex. "poulet fris" -> "poulet frit", "cacahouète" -> "cacahuète").
