@@ -1085,12 +1085,12 @@ function _scanTick(){
   }).catch(()=>{if(_scanActive)requestAnimationFrame(_scanTick);});
 }
 function loadZXing(){return new Promise(function(resolve,reject){if(window.ZXing)return resolve();var s=document.createElement('script');s.src='zxing.min.js?v=1';s.onload=function(){window.ZXing?resolve():reject(new Error('zxing'));};s.onerror=function(){reject(new Error('load'));};document.head.appendChild(s);});}
-function startZXingSync(st){try{var v=document.getElementById('scan-video');_zxReader=new ZXing.BrowserMultiFormatReader();st.textContent='Vise le code-barres…';_zxReader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}}},v,function(result,err){if(!_scanActive)return;if(result){lookupBarcode(result.getText?result.getText():(''+result));}});}catch(e){st.textContent='Caméra indisponible — tape le code à la main 👇';}}
+function startZXingSync(st){try{var v=document.getElementById('scan-video');_zxReader=new ZXing.BrowserMultiFormatReader();st.textContent='Vise le code-barres…';var _p=_zxReader.decodeFromConstraints({video:{facingMode:{ideal:'environment'}}},v,function(result,err){if(!_scanActive)return;if(result){lookupBarcode(result.getText?result.getText():(''+result));}});if(_p&&_p.catch)_p.catch(function(){if(_scanActive)st.textContent='Caméra refusée ou indisponible — tape le code à la main 👇';});}catch(e){st.textContent='Caméra indisponible — tape le code à la main 👇';}}
 async function openScanner(mode){_scanMode=mode||'inv';
   const ov=document.getElementById('scan-overlay');ov.style.display='flex';
   const st=document.getElementById('scan-status');const ci=document.getElementById('scan-code');if(ci)ci.value='';
   _scanActive=true;_scanDetector=null;
-  if(!('BarcodeDetector' in window)){if(window.ZXing){startZXingSync(st);}else{st.textContent='Préparation du scanner…';loadZXing().then(function(){st.textContent='Prêt ! Appuie à nouveau sur « Scanner ».';}).catch(function(){st.textContent='Scanner caméra indisponible — tape le code à la main 👇';});}return;}
+  if(!('BarcodeDetector' in window)){if(window.ZXing){startZXingSync(st);}else{st.textContent='Préparation du scanner…';loadZXing().then(function(){if(_scanActive)startZXingSync(st);}).catch(function(){st.textContent='Scanner caméra indisponible — tape le code à la main 👇';});}return;}
   try{
     _scanStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}}});
     const v=document.getElementById('scan-video');v.srcObject=_scanStream;await v.play();
@@ -2867,7 +2867,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-16 09h24</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-18 00h51</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
