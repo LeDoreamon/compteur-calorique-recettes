@@ -236,6 +236,7 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
       <button onclick="crConfirmAdd()" style="padding:6px 12px;background:#4ade80;border:none;border-radius:6px;color:#0b0e15;font-size:12px;font-weight:700;cursor:pointer;">OK</button>
     </div>
     <button onclick="crAddIngredient()" style="width:100%;margin-top:8px;padding:9px;background:transparent;border:0.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">+ Ajouter un ingrédient</button>
+    <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:6px;">🔄 = ingrédient « au choix » : la carte affiche ses macros par défaut, et tu choisiras le vrai ingrédient au moment de cuisiner.</div>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 4px;">Étapes <span style="text-transform:none;letter-spacing:0;">(une par ligne)</span></div>
     <textarea id="cr-steps" rows="5" placeholder="Cuire le riz 12 min.&#10;Poêler le saumon 4 min par face.&#10;Assembler et assaisonner." style="width:100%;box-sizing:border-box;padding:9px 10px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text);font-size:13px;line-height:1.5;outline:none;resize:vertical;"></textarea>
     <div id="cr-total" style="font-size:12px;color:var(--text2);margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);"></div>
@@ -742,14 +743,22 @@ function getM100(id){return MACROS100[id]||null;}
 let _cc={rid:null,mult:1,day:null,ings:[]};
 function openConfirmCook(rid,mult,day,subst){
   const r=RCP.find(x=>x.id===rid);if(!r)return;
-  _cc={rid,mult,day,subst:!!subst,ings:(r.used||[]).map(u=>{const it=resolveInv(u.id,u.n);const m=getM100(it?it.id:u.id);const need=u.qty*mult;const avail=it?(it.qty===null?Infinity:it.qty):0;const q=subst?Math.min(need,avail):need;return{id:it?it.id:u.id,n:u.n,name:it?it.name:(u.n||u.id),qty:(q===Infinity?need:q),unit:it?it.unit:'',m100:m,_miss:!!subst&&avail<need};})};
+  _cc={rid,mult,day,subst:!!subst,ings:(r.used||[]).map(u=>{const it=resolveInv(u.id,u.n);const m=getM100(it?it.id:u.id);const need=u.qty*mult;const avail=it?(it.qty===null?Infinity:it.qty):0;const q=subst?Math.min(need,avail):need;return{id:it?it.id:u.id,n:u.n,name:it?it.name:(u.n||u.id),qty:(q===Infinity?need:q),unit:it?it.unit:'',m100:m,flex:!!u.flex,_miss:!!subst&&avail<need&&!u.flex};})};
   document.getElementById('cc-title').textContent=(subst?'🔁 ':'')+(mult===2?'\u00d72 \u2014 ':'')+r.name;
   renderCCIngs();const _ex=document.getElementById('cc-extras');if(_ex)_ex.innerHTML='';document.getElementById('cc-overlay').style.display='flex';
 }
 function closeConfirmCook(){document.getElementById('cc-overlay').style.display='none';}
+function ccFlexPick(i){
+  var s=document.getElementById('cc-sel-'+i);if(!s||!_cc||!_cc.ings[i])return;
+  var it=findItem(s.value);if(!it)return;
+  var g=_cc.ings[i];g.id=it.id;g.n=null;g.name=it.name;g.unit=it.unit||'';g.m100=getM100(it.id);
+  var u=document.getElementById('cc-unit-'+i);if(u)u.textContent=g.unit;
+  updateCCTotals();
+}
 function renderCCIngs(){
   const el=document.getElementById('cc-ings');if(!el)return;
-  el.innerHTML=(_cc.subst?'<div style="font-size:11px;color:#60a5fa;background:rgba(96,165,250,.1);border:0.5px solid rgba(96,165,250,.3);border-radius:8px;padding:8px 10px;margin-bottom:6px;line-height:1.45;">🔁 Mode remplacement — les ingrédients manquants sont à 0 : ajuste les quantités et ajoute tes substituts avec « + Ajouter un ingrédient ». La recette d\'origine ne sera pas modifiée.</div>':'')+_cc.ings.map((g,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid rgba(255,255,255,.06);"><span style="flex:1;font-size:13px;color:var(--text2);">${g.name}${g._miss?' <span style="font-size:10px;color:var(--red);">(manquant)</span>':''}</span><input type="number" id="cc-${i}" value="${g.qty}" min="0" oninput="updateCCTotals()" style="width:68px;padding:5px 7px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:20px;">${g.unit}</span></div>`).join('');
+  el.innerHTML=(_cc.subst?'<div style="font-size:11px;color:#60a5fa;background:rgba(96,165,250,.1);border:0.5px solid rgba(96,165,250,.3);border-radius:8px;padding:8px 10px;margin-bottom:6px;line-height:1.45;">🔁 Mode remplacement — les ingrédients manquants sont à 0 : ajuste les quantités et ajoute tes substituts avec « + Ajouter un ingrédient ». La recette d\'origine ne sera pas modifiée.</div>':'')+_cc.ings.map((g,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid rgba(255,255,255,.06);">${g.flex?`<select id="cc-sel-${i}" onchange="ccFlexPick(${i})" style="flex:1;min-width:0;padding:6px;background:#0b0e15;border:0.5px solid rgba(96,165,250,.45);border-radius:6px;color:#eceff5;font-size:12px;outline:none;"></select>`:`<span style="flex:1;font-size:13px;color:var(--text2);">${g.name}${g._miss?' <span style="font-size:10px;color:var(--red);">(manquant)</span>':''}</span>`}<input type="number" id="cc-${i}" value="${g.qty}" min="0" oninput="updateCCTotals()" style="width:68px;padding:5px 7px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span id="cc-unit-${i}" style="font-size:11px;color:var(--text3);min-width:20px;">${g.unit}</span></div>`).join('');
+  _cc.ings.forEach((g,i)=>{if(!g.flex)return;const s=document.getElementById('cc-sel-'+i);if(!s)return;s.innerHTML=invPickOptions();s.value=g.id;if(s.value&&s.value!==g.id)ccFlexPick(i);});
   updateCCTotals();
 }
 function invPickOptions(){
@@ -1666,7 +1675,7 @@ function confirmPhotoMeal(){
 function findItem(id){for(const arr of Object.values(S.inv)){const it=arr.find(i=>i.id===id);if(it)return it;}return null;}
 function findItemByName(name){if(!name)return null;const k=normMac(name);for(const arr of Object.values(S.inv)){const it=arr.find(i=>normMac(i.name)===k);if(it)return it;}return null;}
 function resolveInv(id,name){return findItem(id)||findItemByName(name);}
-function canCook(r,m=1){return(r.used||[]).every(({id,qty,n})=>{const it=resolveInv(id,n);return it&&(it.qty===null||it.qty>=qty*m);});}
+function canCook(r,m=1){return(r.used||[]).every(({id,qty,n,flex})=>{if(flex)return true;const it=resolveInv(id,n);return it&&(it.qty===null||it.qty>=qty*m);});}
 function dessertDeductQty(it,d){if(!it)return 0;if(it.unit==='g'||it.unit==='ml'){var per=(it.pkg&&it.pkg.size)||it.pieceG||0;return per?d.qty*per:d.qty;}return d.qty;}
 function canTakeDessert(d){if(d.id==='none'||d.id==='autre')return true;if(!d.inv)return true;var it=resolveInv(d.inv,d.n);if(!it)return false;if(it.qty===null)return true;return it.qty>=dessertDeductQty(it,d);}
 function weekCount(rid){let n=0;for(let i=0;i<=6;i++){const day=shiftDate(S.today,-i);n+=(S.dayMeals[day]||[]).filter(m=>m.rid===rid).length;}return n;}
@@ -2433,6 +2442,7 @@ function favStar(id){
 function missingIngredients(r,m){
   m=m||1;var out=[];
   (r.used||[]).forEach(function(u){
+    if(u.flex)return;
     var it=resolveInv(u.id,u.n);
     if(!it||(it.qty!==null&&it.qty<u.qty*m))out.push(u.n||(it&&it.name)||u.id);
   });
@@ -2751,7 +2761,7 @@ function openCustRec(id){
   var r=id?(S.customRecipes||[]).find(function(x){return x.id===id;}):null;
   _cr={id:r?r.id:null,slots:{breakfast:false,lunch:false,snack:false,dinner:false},rows:[]};
   if(r){(r.slots||[]).forEach(function(s){if(_cr.slots.hasOwnProperty(s))_cr.slots[s]=true;});
-    _cr.rows=(r.used||[]).map(function(u){var it=findItem(u.id);return{id:u.id,name:(it&&it.name)||u.n||u.id,qty:u.qty,unit:(it&&it.unit)||''};});}
+    _cr.rows=(r.used||[]).map(function(u){var it=findItem(u.id);return{id:u.id,name:(it&&it.name)||u.n||u.id,qty:u.qty,unit:(it&&it.unit)||'',flex:!!u.flex};});}
   document.getElementById('cr-name').value=r?(r.name||''):'';
   document.getElementById('cr-time').value=r?(r.time||15):15;
   document.getElementById('cr-steps').value=r?((r.steps||[]).join('\n')):'';
@@ -2774,9 +2784,10 @@ function _crSync(){if(_cr)_cr.rows.forEach(function(r,i){var el=document.getElem
 function renderCrIngs(){
   var el=document.getElementById('cr-ings-list');if(!el||!_cr)return;
   el.innerHTML=_cr.rows.map(function(g,i){
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(255,255,255,.06);"><span style="flex:1;min-width:0;font-size:13px;color:var(--text2);">'+g.name+'</span><input type="number" id="cr-ing-'+i+'" value="'+g.qty+'" min="0" oninput="updateCrTotals()" style="width:64px;padding:5px 6px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:22px;">'+g.unit+'</span><span id="cr-ingk-'+i+'" style="font-size:11px;color:#fb923c;min-width:34px;text-align:right;">0k</span><button onclick="crRemoveIng('+i+')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button></div>';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(255,255,255,.06);"><span style="flex:1;min-width:0;font-size:13px;color:var(--text2);">'+g.name+(g.flex?' <span style="font-size:10px;color:#60a5fa;">🔄 au choix</span>':'')+'</span><input type="number" id="cr-ing-'+i+'" value="'+g.qty+'" min="0" oninput="updateCrTotals()" style="width:64px;padding:5px 6px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:22px;">'+g.unit+'</span><span id="cr-ingk-'+i+'" style="font-size:11px;color:#fb923c;min-width:34px;text-align:right;">0k</span><button onclick="crToggleFlex('+i+')" title="Au choix à la cuisson" style="padding:3px 6px;border-radius:6px;font-size:11px;cursor:pointer;background:none;border:0.5px solid '+(g.flex?'rgba(96,165,250,.7)':'var(--border)')+';color:'+(g.flex?'#60a5fa':'var(--text3)')+';">🔄</button><button onclick="crRemoveIng('+i+')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button></div>';
   }).join('')||'<div style="font-size:12px;color:var(--text3);padding:8px 0;">Aucun ingrédient — ajoute-en ci-dessous.</div>';
 }
+function crToggleFlex(i){_crSync();if(_cr&&_cr.rows[i])_cr.rows[i].flex=!_cr.rows[i].flex;renderCrIngs();updateCrTotals();}
 function crRemoveIng(i){_crSync();_cr.rows.splice(i,1);renderCrIngs();updateCrTotals();}
 function crAddIngredient(){
   _crSync();
@@ -2792,7 +2803,7 @@ function crConfirmAdd(){
   var it=findItem(id);
   document.getElementById('cr-ing-picker').style.display='none';
   if(!it||q<=0)return;
-  _cr.rows.push({id:it.id,name:it.name,qty:q,unit:it.unit||''});
+  _cr.rows.push({id:it.id,name:it.name,qty:q,unit:it.unit||'',flex:false});
   renderCrIngs();updateCrTotals();
 }
 function _crMacros(){
@@ -2826,7 +2837,7 @@ function saveCustRec(){
   var rec={id:_cr.id||('cust_'+Date.now().toString(36)),custom:true,profile:ACTIVE_PROFILE,
     slots:slots,name:name,urgent:0,ur:null,time:Math.max(1,parseInt(document.getElementById('cr-time').value,10)||15),
     kcal:Math.round(t.kcal),prot:Math.round(t.prot),gluc:Math.round(t.gluc),lip:Math.round(t.lip),
-    steps:steps,used:rows.map(function(r){return{id:r.id,qty:r.qty};}),extras:[]};
+    steps:steps,used:rows.map(function(r){var u={id:r.id,qty:r.qty};if(r.flex)u.flex=true;return u;}),extras:[]};
   if(!S.customRecipes)S.customRecipes=[];
   var ci=S.customRecipes.findIndex(function(x){return x.id===rec.id;});
   if(ci>=0)S.customRecipes[ci]=rec;else S.customRecipes.push(rec);
@@ -2867,7 +2878,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-18 00h51</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-18 16h31</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -3292,6 +3303,7 @@ function confirmAddMealFinal() {
   const gluc = parseInt(document.getElementById('addmeal-gluc').value)||0;
   const lip  = parseInt(document.getElementById('addmeal-lip').value)||0;
 
+  const _ings=[];
   if (_addMealInvMode) {
     // Deduct AI-suggested items
     _addMealInvSuggestions.forEach((s, i) => {
@@ -3299,10 +3311,16 @@ function confirmAddMealFinal() {
       const qi = document.getElementById(`inv-qty-${i}`);
       if (cb?.checked && qi) {
         const qty = parseFloat(qi.value)||0;
-        if (qty > 0) Object.values(S.inv).forEach(arr => {
-          const it = arr.find(x=>x.id===s.id);
-          if (it && it.qty!==null && (it.macPiece||it.unit==='g'||it.unit==='ml')) it.qty = Math.max(0, it.qty - qty);
-        });
+        if (qty > 0) {
+          Object.values(S.inv).forEach(arr => {
+            const it = arr.find(x=>x.id===s.id);
+            if (it && it.qty!==null && (it.macPiece||it.unit==='g'||it.unit==='ml')) it.qty = Math.max(0, it.qty - qty);
+          });
+          const _it=findItem(s.id);let _m=null;
+          if(_it&&(_it.mac100||_it.macPiece))_m=itemMealMacros(_it,qty);
+          else if(s.m&&s.baseQty>0)_m={kcal:s.m.kcal*qty/s.baseQty,prot:s.m.prot*qty/s.baseQty,gluc:s.m.gluc*qty/s.baseQty,lip:s.m.lip*qty/s.baseQty};
+          _ings.push({id:s.id,name:s.name,qty:qty,unit:s.unit||'',kcal:Math.round((_m&&_m.kcal)||0),prot:Math.round(((_m&&_m.prot)||0)*10)/10,gluc:Math.round(((_m&&_m.gluc)||0)*10)/10,lip:Math.round(((_m&&_m.lip)||0)*10)/10});
+        }
       }
     });
     // Deduct custom items
@@ -3313,10 +3331,15 @@ function confirmAddMealFinal() {
       const qi  = document.getElementById(`inv-qty-${idx}`);
       if (cb?.checked && sel && qi) {
         const qty = parseFloat(qi.value)||0;
-        if (qty > 0) Object.values(S.inv).forEach(arr => {
-          const it = arr.find(x=>x.id===sel.value);
-          if (it && it.qty!==null) it.qty = Math.max(0, it.qty - qty);
-        });
+        if (qty > 0) {
+          Object.values(S.inv).forEach(arr => {
+            const it = arr.find(x=>x.id===sel.value);
+            if (it && it.qty!==null) it.qty = Math.max(0, it.qty - qty);
+          });
+          const _it2=findItem(sel.value);
+          if(_it2){const _m2=(_it2.mac100||_it2.macPiece)?itemMealMacros(_it2,qty):null;
+          _ings.push({id:_it2.id,name:_it2.name,qty:qty,unit:_it2.unit||'',kcal:Math.round((_m2&&_m2.kcal)||0),prot:Math.round(((_m2&&_m2.prot)||0)*10)/10,gluc:Math.round(((_m2&&_m2.gluc)||0)*10)/10,lip:Math.round(((_m2&&_m2.lip)||0)*10)/10});}
+        }
       }
     });
   }
@@ -3326,7 +3349,7 @@ function confirmAddMealFinal() {
   RCP.push(freeRecipe);
   if(!S.customRecipes)S.customRecipes=[];
   S.customRecipes.push(freeRecipe);
-  const _meal={rid:id, mult:1, dessert:null, customDessert:null, macros:{kcal,prot,gluc,lip}, name};
+  const _meal={rid:id, mult:1, dessert:null, customDessert:null, macros:{kcal,prot,gluc,lip}, name};if(_addMealInvMode&&_ings.length)_meal.ings=_ings;
   if(new Date().getHours()<4){
     S.pendingFreeMeal=_meal;saveState();closeAddMeal();render();return;
   }
