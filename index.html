@@ -1230,6 +1230,8 @@ async function fbAuthToken(){
   return null;
 }
 async function fbUrl(path){const t=await fbAuthToken();return FB+'/'+path+'.json'+(t?('?auth='+t):'');}
+let _burnData={};
+function getBurn(day){var b=_burnData&&_burnData[day];if(!b)return null;var a=+((b.active)||0),r=+((b.rest)||0);var t=Math.round(a+r);return t>0?{active:Math.round(a),rest:Math.round(r),total:t}:null;}
 let _syncStatus = ''; // '' | 'ok' | 'offline'
 let _lastSyncErr='';
 
@@ -1413,6 +1415,7 @@ async function loadState(){
         _loaded=true;
         try{localStorage.setItem(ACTIVE_PROFILE+'_st',JSON.stringify(d));}catch(e){}
         _syncStatus='ok';
+        try{const rb=await fetch(await fbUrl(ACTIVE_PROFILE+'/burn'));if(rb.ok){const bd=await rb.json();_burnData=(bd&&typeof bd==='object')?bd:{};}}catch(e){}
         if(_mzJustFixed){_mzJustFixed=false;saveState();}
         return;
       }
@@ -1827,7 +1830,7 @@ function renderMacros(){
   const dateLabel=dt.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   const suffix=isToday?' <span style="font-size:10px;color:var(--text3);">· aujourd\'hui</span>':isTomorrow?' <span style="font-size:10px;color:var(--blue);">· demain</span>':'';
   const list=meals.map(({rid,dessert,customDessert,extras,macros,name},idx)=>{const r=findRecipe(rid);const base=macros||r;if(!base)return'';const _nm=name||(r&&r.name)||'Repas';let dl='';if(dessert&&dessert!=='none'){if(dessert==='autre'&&customDessert)dl=` + ${customDessert.name}`;else{const d=DESSERTS.find(x=>x.id===dessert);if(d)dl=` + ${d.name}`;}}const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0)}),{kcal:0,prot:0});if(extras&&extras.length)dl+=' + '+extras.map(e=>e.name).join(', ');return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(base.kcal+dm.kcal+ex.kcal)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round((base.prot+dm.prot+ex.prot)*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:1px 6px;flex-shrink:0;line-height:1;">✕</button></div>`;}).filter(Boolean).join('');
-  const rem=isToday&&meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;"><span style="font-size:11px;color:var(--text2);">Reste : <strong style="color:var(--text);">${Math.round(Math.max(0,TARGETS.kcal-m.kcal))} kcal</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10}g</strong></span></div>`:'';
+  const rem=isToday&&meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text2);">Reste : <strong style="color:var(--text);">${Math.round(Math.max(0,TARGETS.kcal-m.kcal))} kcal</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10}g</strong></span>${(()=>{const b=getBurn(S.today);if(!b)return '';const bal=Math.round(m.kcal-b.total);const wg=(typeof S.weightGoal==='number')?S.weightGoal:(S.weightGoal&&S.weightGoal.goal);const _wv=x=>(typeof x==='number')?x:(x&&(x.w!=null?x.w:(x.kg!=null?x.kg:x.weight)));const lw=(S.weights&&S.weights.length)?_wv(S.weights[S.weights.length-1]):null;const dirBulk=!!(wg&&lw&&wg>lw);const good=dirBulk?bal>0:bal<0;return `<span style="font-size:11px;color:var(--text2);">🔥 <strong style="color:var(--text);">${b.total} kcal</strong> · Balance : <strong style="color:${good?'#4ade80':'#fb923c'};">${bal>0?'+':''}${bal}</strong></span>`;})()}</div>`:'';
   const ICNAV={'chevron-left':'←','chevron-right':'→'};
   const navBtn=(a,icon,en)=>`<button data-action="${a}" ${!en?'data-disabled="true"':''} style="background:none;border:0.5px solid var(--border);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:${en?'pointer':'default'};color:${en?'var(--text2)':'var(--border)'};flex-shrink:0;font-size:16px;">${ICNAV[icon]||icon}</button>`;
   return`<div style="background:var(--bg2);border:0.5px solid ${isTomorrow?'var(--blue)':'var(--border)'};border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;">
@@ -2215,6 +2218,25 @@ function renderTDEEBlock(t){
     '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+t.days+' j : ~'+t.avgCal+' kcal/j en moyenne · '+perWeekTxt+'</div>'+
     '<div style="font-size:12px;color:#a99bff;margin-top:9px;line-height:1.45;">💡 '+tip+'</div></div>';
 }
+function renderBurnBlock(){
+  try{
+    var days=Object.keys(_burnData||{}).sort();if(!days.length)return '';
+    var last=days.slice(-7);var tot=0,n=0;
+    last.forEach(function(d){var b=getBurn(d);if(b){tot+=b.total;n++;}});
+    if(!n)return '';
+    var avg=Math.round(tot/n);var tb=getBurn(S.today);
+    var est=null;try{est=estimateTDEE();}catch(e){}
+    var estV=(typeof est==='number')?est:(est&&(est.tdee||est.value||est.kcal));
+    var estK=estV?Math.round(estV):null;
+    return '<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:12px;margin-top:10px;">'
+      +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🔥 D\u00e9pense mesur\u00e9e (Apple Sant\u00e9)</div>'
+      +'<div style="display:flex;gap:8px;">'
+      +(tb?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">Aujourd\u2019hui</div><div style="font-size:16px;font-weight:600;color:var(--orange);margin-top:3px;">'+tb.total+'</div><div style="font-size:9px;color:var(--text3);">kcal</div></div>':'')
+      +'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">Moy. '+n+' j</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:3px;">'+avg+'</div><div style="font-size:9px;color:var(--text3);">kcal</div></div>'
+      +(estK?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">TDEE estim\u00e9</div><div style="font-size:16px;font-weight:600;color:var(--text2);margin-top:3px;">'+estK+'</div><div style="font-size:9px;color:var(--text3);">kcal (poids)</div></div>':'')
+      +'</div></div>';
+  }catch(e){return '';}
+}
 function renderCockpit(){
   var avg=avgMacrosOverDays(7);
   var html='<div style="margin-bottom:18px;">';
@@ -2234,6 +2256,7 @@ function renderCockpit(){
           '</div></div>';
     html+=renderTDEEBlock(estimateTDEE());
   }
+  html+=renderBurnBlock();
   html+='</div>';
   return html;
 }
@@ -2879,7 +2902,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-18 22h21</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-18 22h33</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
