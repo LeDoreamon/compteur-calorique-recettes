@@ -246,6 +246,26 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
     </div>
   </div>
 </div>
+<div id="burn-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:260;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+      <div style="font-size:16px;font-weight:600;color:var(--text);">🔥 Dépense du jour</div>
+      <button onclick="closeBurnLog()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">👟 Nombre de pas</div>
+    <input id="burn-steps" type="number" min="0" placeholder="ex. 8500" oninput="updateBurnTotals()" style="width:100%;box-sizing:border-box;padding:9px 10px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px;">
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">🏃 Activités</div>
+    <div id="burn-acts-list"></div>
+    <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
+      <input id="burn-act-name" type="text" placeholder="course, vélo, muscu…" style="flex:1;min-width:0;padding:8px 10px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;">
+      <input id="burn-act-min" type="number" min="1" placeholder="min" style="width:64px;padding:8px 6px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;text-align:center;">
+    </div>
+    <button id="burn-est-btn" onclick="burnEstimateActivity()" style="width:100%;margin-top:8px;padding:9px;background:rgba(96,165,250,.12);border:0.5px solid rgba(96,165,250,.45);border-radius:8px;color:#60a5fa;font-size:12px;font-weight:600;cursor:pointer;">✨ Estimer les calories & ajouter</button>
+    <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:8px;">L'IA estime les calories selon ton poids, l'activité et la durée. Chaque activité ajoutée s'additionne.</div>
+    <div id="burn-total" style="font-size:12px;color:var(--text2);margin-top:14px;padding-top:10px;border-top:0.5px solid var(--border);"></div>
+    <button onclick="saveBurnLog()" style="width:100%;margin-top:14px;padding:12px;background:#fb923c;border:none;border-radius:10px;color:#0b0e15;font-size:14px;font-weight:700;cursor:pointer;">✓ Enregistrer</button>
+  </div>
+</div>
 <div id="editmeal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:260;align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:85vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
@@ -1231,7 +1251,101 @@ async function fbAuthToken(){
 }
 async function fbUrl(path){const t=await fbAuthToken();return FB+'/'+path+'.json'+(t?('?auth='+t):'');}
 let _burnData={};
-function getBurn(day){var b=_burnData&&_burnData[day];if(!b)return null;var a=+((b.active)||0),r=+((b.rest)||0);var t=Math.round(a+r);return t>0?{active:Math.round(a),rest:Math.round(r),total:t}:null;}
+function getBurn(day){return burnDayTotal(day);}
+// ─── 🔥 Dépense énergétique : pas + activités (saisie native + IA) ────────────
+function _burnSave(day){
+  var d=_burnData[day];
+  if(d&&!d.active&&!d.rest&&!d.steps&&(!d.activities||!d.activities.length)){delete _burnData[day];}
+  try{fetch(FB+'/'+ACTIVE_PROFILE+'/burn/'+day+'.json'+((_fbTok)?('?auth='+_fbTok):''),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(_burnData[day]||null)});}catch(e){}
+  fbAuthToken().then(function(t){if(!t)return;try{fetch(FB+'/'+ACTIVE_PROFILE+'/burn/'+day+'.json?auth='+t,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(_burnData[day]||null)});}catch(e){}});
+}
+function burnStepKcal(steps){return Math.round((+steps||0)*0.04);}
+function burnDayTotal(day){
+  var d=_burnData[day];if(!d)return null;
+  var a=+(d.active||0),r=+(d.rest||0);
+  var st=burnStepKcal(d.steps);
+  var act=(d.activities||[]).reduce(function(s,x){return s+(+x.kcal||0);},0);
+  var t=Math.round(a+r+st+act);
+  return t>0?{active:Math.round(a),rest:Math.round(r),steps:+d.steps||0,stepKcal:st,activities:d.activities||[],actKcal:Math.round(act),total:t}:null;
+}
+var _burnActs=[];
+function openBurnLog(){
+  var day=S.today;var d=_burnData[day]||{};
+  _burnActs=(d.activities||[]).map(function(x){return{name:x.name,min:x.min,kcal:x.kcal};});
+  document.getElementById('burn-steps').value=d.steps||'';
+  document.getElementById('burn-act-name').value='';
+  document.getElementById('burn-act-min').value='';
+  renderBurnActs();updateBurnTotals();
+  document.getElementById('burn-overlay').style.display='flex';
+}
+function closeBurnLog(){document.getElementById('burn-overlay').style.display='none';_burnActs=[];}
+function renderBurnActs(){
+  var el=document.getElementById('burn-acts-list');if(!el)return;
+  el.innerHTML=_burnActs.map(function(a,i){
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(255,255,255,.06);"><span style="flex:1;min-width:0;font-size:13px;color:var(--text2);">'+a.name+' <span style="color:var(--text3);font-size:11px;">· '+a.min+' min</span></span><span style="font-size:12px;color:#fb923c;font-weight:600;min-width:46px;text-align:right;">'+a.kcal+' kcal</span><button onclick="burnRemoveAct('+i+')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button></div>';
+  }).join('')||'<div style="font-size:12px;color:var(--text3);padding:6px 0;">Aucune activité ajoutée.</div>';
+}
+function burnRemoveAct(i){_burnActs.splice(i,1);renderBurnActs();updateBurnTotals();}
+function updateBurnTotals(){
+  var steps=parseInt(document.getElementById('burn-steps').value,10)||0;
+  var sk=burnStepKcal(steps);
+  var ak=_burnActs.reduce(function(s,a){return s+(+a.kcal||0);},0);
+  var el=document.getElementById('burn-total');
+  if(el)el.innerHTML='Estimation dépense : <span style="color:var(--orange);font-weight:600;">'+Math.round(sk+ak)+' kcal</span> <span style="color:var(--text3);font-size:11px;">('+steps+' pas → '+sk+' · activités → '+Math.round(ak)+')</span>';
+}
+async function burnEstimateActivity(){
+  var name=(document.getElementById('burn-act-name').value||'').trim();
+  var min=parseInt(document.getElementById('burn-act-min').value,10)||0;
+  if(!name){alert('Indique une activité (ex. course, vélo, marche).');return;}
+  if(min<=0){alert('Indique une durée en minutes.');return;}
+  var btn=document.getElementById('burn-est-btn');var old=btn?btn.textContent:'';
+  if(btn){btn.textContent='⏳ Estimation…';btn.disabled=true;}
+  var kcal=null;
+  try{
+    var w=(S.weights&&S.weights.length)?(S.weights[S.weights.length-1].w||S.weights[S.weights.length-1]):75;
+    var sys='Tu estimes les calories brûlées lors d\'une activité physique. Réponds UNIQUEMENT par un nombre entier (kcal), sans texte ni unité. Base-toi sur le poids et la durée. Sois réaliste (MET standards).';
+    var prompt='Poids: '+w+' kg. Activité: "'+name+'". Durée: '+min+' minutes. Combien de calories brûlées ? Réponds juste le nombre.';
+    var data=await callAI([{role:'user',content:prompt}],20,sys,'openai/gpt-oss-20b',0);
+    var txt='';
+    if(data&&data.content)txt=Array.isArray(data.content)?data.content.map(function(p){return p.text||'';}).join(''):(''+data.content);
+    else if(typeof data==='string')txt=data;
+    var m=(''+txt).match(/\d+/);
+    if(m)kcal=parseInt(m[0],10);
+  }catch(e){}
+  if(kcal===null||isNaN(kcal)){kcal=_burnFallbackKcal(name,min);}
+  if(btn){btn.textContent=old;btn.disabled=false;}
+  _burnActs.push({name:name,min:min,kcal:kcal});
+  document.getElementById('burn-act-name').value='';
+  document.getElementById('burn-act-min').value='';
+  renderBurnActs();updateBurnTotals();
+}
+function _burnFallbackKcal(name,min){
+  var w=(S.weights&&S.weights.length)?(S.weights[S.weights.length-1].w||75):75;
+  var n=(name||'').toLowerCase();
+  var met=4;
+  if(/course|courir|run|footing|jogg/.test(n))met=9.8;
+  else if(/v[ée]lo|cycl|bike/.test(n))met=7.5;
+  else if(/marche|walk|randonn/.test(n))met=3.8;
+  else if(/nage|natation|swim|piscine/.test(n))met=8;
+  else if(/muscu|renfo|fitness|gym|poids/.test(n))met=6;
+  else if(/foot|basket|tennis|sport co|hand|rugby/.test(n))met=8;
+  else if(/danse|zumba/.test(n))met=6.5;
+  else if(/corde|hiit|burpee|crossfit/.test(n))met=11;
+  else if(/yoga|[ée]tirement|stretch|pilate/.test(n))met=3;
+  else if(/escalier|mont[ée]e/.test(n))met=8;
+  return Math.round(met*(+w||75)*(min/60));
+}
+function saveBurnLog(){
+  var day=S.today;
+  var steps=parseInt(document.getElementById('burn-steps').value,10)||0;
+  var cur=_burnData[day]||{};
+  cur.steps=steps;
+  cur.activities=_burnActs.slice();
+  _burnData[day]=cur;
+  _burnSave(day);
+  closeBurnLog();render();
+}
+
 let _syncStatus = ''; // '' | 'ok' | 'offline'
 let _lastSyncErr='';
 
@@ -2220,21 +2334,22 @@ function renderTDEEBlock(t){
 }
 function renderBurnBlock(){
   try{
-    var days=Object.keys(_burnData||{}).sort();if(!days.length)return '';
+    var days=Object.keys(_burnData||{}).sort();
     var last=days.slice(-7);var tot=0,n=0;
     last.forEach(function(d){var b=getBurn(d);if(b){tot+=b.total;n++;}});
-    if(!n)return '';
-    var avg=Math.round(tot/n);var tb=getBurn(S.today);
+    var avg=n?Math.round(tot/n):0;var tb=getBurn(S.today);
     var est=null;try{est=estimateTDEE();}catch(e){}
     var estV=(typeof est==='number')?est:(est&&(est.tdee||est.value||est.kcal));
     var estK=estV?Math.round(estV):null;
     return '<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:12px;margin-top:10px;">'
-      +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🔥 D\u00e9pense mesur\u00e9e (Apple Sant\u00e9)</div>'
+      +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🔥 D\u00e9pense \u00e9nerg\u00e9tique</div>'+'<button data-action="log-burn" style="width:100%;margin-bottom:10px;padding:9px;background:rgba(251,146,60,.12);border:0.5px solid rgba(251,146,60,.45);border-radius:8px;color:#fb923c;font-size:12px;font-weight:600;cursor:pointer;">➕ Enregistrer pas & activit\u00e9s</button>'
       +'<div style="display:flex;gap:8px;">'
       +(tb?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">Aujourd\u2019hui</div><div style="font-size:16px;font-weight:600;color:var(--orange);margin-top:3px;">'+tb.total+'</div><div style="font-size:9px;color:var(--text3);">kcal</div></div>':'')
       +'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">Moy. '+n+' j</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:3px;">'+avg+'</div><div style="font-size:9px;color:var(--text3);">kcal</div></div>'
       +(estK?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">TDEE estim\u00e9</div><div style="font-size:16px;font-weight:600;color:var(--text2);margin-top:3px;">'+estK+'</div><div style="font-size:9px;color:var(--text3);">kcal (poids)</div></div>':'')
-      +'</div></div>';
+      +'</div>'
+      +(tb&&(tb.steps||tb.activities.length)?'<div style="margin-top:9px;padding-top:8px;border-top:0.5px solid rgba(255,255,255,.06);font-size:11px;color:var(--text3);line-height:1.6;">'+(tb.steps?'\ud83d\udc5f '+tb.steps+' pas \u2192 '+tb.stepKcal+' kcal<br>':'')+(tb.activities||[]).map(function(a){return '\ud83c\udfc3 '+a.name+' ('+a.min+' min) \u2192 '+a.kcal+' kcal';}).join('<br>')+'</div>':'')
+      +'</div>';
   }catch(e){return '';}
 }
 function renderCockpit(){
@@ -2902,7 +3017,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-18 22h33</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-22 20h31</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -3006,6 +3121,7 @@ ROOT.addEventListener('click',e=>{
       saveState();
     }
   }
+  else if(action==='log-burn'){openBurnLog();return;}
   else if(action==='cook-again'){handleCook(el.dataset.rid,1,false,true);return;}
   else if(action==='cook-subst'){handleCook(el.dataset.rid,1,true,true);return;}
   else if(action==='edit-custrec'){openCustRec(el.dataset.val);return;}
