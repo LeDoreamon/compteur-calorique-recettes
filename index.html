@@ -1629,7 +1629,7 @@ RÈGLES ABSOLUES:
 - recettes vari\u00e9es, savoureuses et COH\u00c9RENTES : de vrais plats \u00e9quilibr\u00e9s, pas de simples assemblages. Associe intelligemment prot\u00e9ines + f\u00e9culents + l\u00e9gumes/sauce.
 - privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : mieux vaut 6 excellentes recettes que 12 m\u00e9diocres.`;
   try{
-    const data=await callAI([{role:'user',content:'Génère le maximum de recettes variées et cohérentes maintenant, en JSON. Prends le temps de bien faire.'}],4000,sys,'openai/gpt-oss-20b');
+    const data=await callAI([{role:'user',content:'Génère le maximum de recettes variées et cohérentes maintenant, en JSON. Prends le temps de bien faire.'}],2400,sys,'openai/gpt-oss-20b');
     const raw=data.content.map(i=>i.text||'').join('');
     let recipes;
     try{recipes=extractJSONArray(raw);}catch(pe){throw new Error('Réponse IA illisible. Réessaie.');}
@@ -1668,7 +1668,7 @@ RÈGLES ABSOLUES:
     saveState();render();
   }catch(e){
     if(btn){btn.disabled=false;btn.textContent='✨ Générer des recettes selon mon stock';}
-    alert('⚠ '+e.message);
+    if(e.message!=='NO_KEY')alert('⚠ '+_aiFriendly(e.message));
   }
 }
 
@@ -1693,7 +1693,25 @@ function clearAIRecipes(){
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temperature=0.2,seed=null){
+function _aiRetryNotice(sec){
+  const t=Math.ceil(sec);
+  ['addmeal-textarea','photo-status','burn-est-btn'].forEach(function(id){
+    const el=document.getElementById(id);if(!el)return;
+    const msg='\u23f3 Quota IA atteint \u2014 nouvelle tentative dans '+t+' s\u2026';
+    if(el.placeholder!==undefined&&el.tagName==='TEXTAREA')el.placeholder=msg;else el.textContent=msg;
+  });
+}
+function _aiFriendly(msg){
+  if(!msg)return 'Erreur \u2014 r\u00e9essaie';
+  if(/rate.?limit/i.test(msg)){
+    const m=msg.match(/try again in ([\d.]+)\s*s/i);
+    return '\u23f3 Quota IA atteint \u2014 patiente '+(m?Math.ceil(parseFloat(m[1]))+' s':'une minute')+' puis r\u00e9essaie.';
+  }
+  if(msg.indexOf('NETWORK:timeout')>=0)return 'Trop long \u2014 r\u00e9seau lent, r\u00e9essaie';
+  if(msg.indexOf('NETWORK:')===0)return 'Pas de connexion \u2014 r\u00e9essaie';
+  return msg.indexOf('API:')===0?msg.slice(4,120):msg;
+}
+async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temperature=0.2,seed=null,_retried=false){
   const key=getApiKey();
   if(!key){openSettings();throw new Error('NO_KEY');}
   // Détecte si la requête contient une image
@@ -1727,7 +1745,17 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
     });
     data=await resp.json();
   }catch(netErr){throw new Error(netErr.name==='AbortError'?'NETWORK:timeout':'NETWORK:'+netErr.message);}finally{clearTimeout(_tid);}
-  if(data.error)throw new Error('API:'+(data.error.message||JSON.stringify(data.error)));
+  if(data.error){
+    const _em=data.error.message||JSON.stringify(data.error);
+    const _wm=_em.match(/try again in ([\d.]+)\s*s/i);
+    if(!_retried&&/rate.?limit/i.test(_em)&&_wm){
+      const _w=Math.min(50,parseFloat(_wm[1])+1.5);
+      if(typeof _aiRetryNotice==='function')_aiRetryNotice(_w);
+      await new Promise(r=>setTimeout(r,_w*1000));
+      return callAI(messages,maxTokens,system,modelOverride,temperature,seed,true);
+    }
+    throw new Error('API:'+_em);
+  }
   const text=data.choices?.[0]?.message?.content||'';
   return{content:[{type:'text',text}]};
 }
@@ -3023,7 +3051,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-25 12h53</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-25 12h58</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -3447,13 +3475,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
     const ta = document.getElementById('addmeal-textarea');
     ta.placeholder = err.message === 'NO_KEY'
       ? "⚠ Configure ta clé API d'abord (bouton ⚙)"
-      : (err.message && err.message.indexOf('NETWORK:timeout')>=0)
-        ? "⚠ Trop long — réseau lent, réessaie"
-        : (err.message && err.message.indexOf('NETWORK:')===0)
-          ? "⚠ Pas de connexion — réessaie"
-          : (err.message && err.message.indexOf('API:')===0)
-            ? ("⚠ " + err.message.slice(4, 90))
-            : "⚠ Erreur — réessaie";
+      : "⚠ " + _aiFriendly(err.message);
   }
 }
 
@@ -3656,8 +3678,7 @@ async function analyzeFreeText(){
   }catch(e){
     showFreeStep('input');
     if(e.message!=='NO_KEY'){
-      const d=e.message.startsWith('API:')?e.message.slice(4):e.message.startsWith('NETWORK:')?'Erreur réseau':e.message;
-      alert('\u26a0\ufe0f '+d);
+      alert('\u26a0\ufe0f '+_aiFriendly(e.message));
     }
   }
 }
