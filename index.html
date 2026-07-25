@@ -1622,7 +1622,7 @@ RÈGLES ABSOLUES:
 - "qty" JAMAIS supérieur au stock disponible indiqué entre parenthèses.
 - Si un ingrédient indique un EMBALLAGE, sa "qty" doit être un MULTIPLE de la taille d'emballage (ex. emballage de 100g → 100, 200… JAMAIS 120), pour ne pas forcer l'ouverture d'un emballage pour quelques grammes.
 - Si un ingrédient est PAR PIÈCE, sa "qty" est un nombre ENTIER de pièces (ex. 2 œufs, jamais 1.5) avec "unit":"pcs".
-- INTERDIT d'utiliser ou même de MENTIONNER un aliment ABSENT de la liste — ni dans le nom, ni dans les étapes (pas de wrap, tortilla, pain, riz, pâtes… s'ils n'y sont pas). Si le plat classique demande un support absent, ADAPTE la recette (bol, assiette, salade, poêlée) et nomme-la en conséquence.
+- INTERDIT d'utiliser ou même de MENTIONNER un aliment ABSENT de la liste — ni dans le nom, ni dans les étapes. AUCUNE exception : pas d'épinards, tomates, riz, pain, huile… s'ils ne sont pas listés. Le NOM de la recette ne doit citer QUE des ingrédients de "used". Si le plat classique demande un aliment absent, ADAPTE la recette (bol, assiette, poêlée) et renomme-la en conséquence.
 - "steps" = TABLEAU de 3 à 5 étapes SÉPARÉES. UNE seule action par étape. Ne JAMAIS tout mettre dans une seule étape.
 - macros calculées \u00e0 partir des valeurs « pour 100g/ml » de CHAQUE ingr\u00e9dient indiqu\u00e9es ci-dessus, multipli\u00e9es par la quantit\u00e9 utilis\u00e9e, puis additionn\u00e9es pour 1 portion. Ne devine pas au hasard si les valeurs sont fournies.
 - Assaisonne les plats SALÉS avec l'épice PERTINENTE (curry sur un curry, paprika sur une viande, ail dans un wok...), mais JAMAIS de la salade au hasard. Les plats SUCRÉS (bowls sucrés, shakes, compotes, fruits) ne reçoivent PAS d'épices salées.
@@ -1661,7 +1661,7 @@ RÈGLES ABSOLUES:
         kcal:Math.round(r.kcal)||0,prot:Math.round(r.prot)||0,gluc:Math.round(r.gluc)||0,lip:Math.round(r.lip)||0,
         steps,used,extras:[]
       };
-    }).filter(r=>r.used.length>0&&r.slots.length>0&&!_aiMissingSupport(r));
+    }).filter(r=>r.used.length>0&&r.slots.length>0&&!_aiPhantomFood(r));
     if(newRecipes.length===0)throw new Error('Les recettes générées ne correspondent pas à ton inventaire. Réessaie.');
     S.aiRecipes=newRecipes;
     S.aiRecipes.forEach(r=>{r.profile=ACTIVE_PROFILE;if(!RCP.find(x=>x.id===r.id))RCP.push(r);});
@@ -1672,12 +1672,18 @@ RÈGLES ABSOLUES:
   }
 }
 
-function _aiMissingSupport(r){
-  const SUP=['wrap','wraps','tortilla','tortillas','pain','pains','baguette','baguettes','pita','pitas','naan','bagel','bagels','galette','galettes','toast','toasts','brioche','riz','pates','nouilles','vermicelles','semoule','quinoa'];
+function _aiPhantomFood(r){
+  const FOOD=['abricot','agneau','ail','amande','ananas','anchois','artichaut','asperge','aubergine','avocat','avoine','bacon','bagel','baguette','banane','betterave','beurre','biscotte','boeuf','boulgour','brioche','brocoli','cabillaud','cacahuete','cacao','cajou','carotte','celeri','cerise','champignon','cheddar','chevre','chia','chocolat','chorizo','citron','clementine','colin','comte','concombre','confiture','cornichon','courge','courgette','couscous','crabe','creme','crevette','cuisse','datte','dinde','echalote','emmental','endive','epinard','escalope','farine','fenouil','feta','figue','flocon','fraise','framboise','fromage','galette','gnocchi','granola','gruyere','haricot','jambon','kiwi','lait','laitue','lardon','lentille','mache','mandarine','mangue','maquereau','mascarpone','melon','merguez','merlu','miel','moule','mozzarella','muesli','myrtille','naan','navet','noisette','nouille','oeuf','oignon','olive','orange','pain','pamplemousse','parmesan','pasteque','patate','peche','penne','pistache','pita','poire','poireau','pois','poivron','polenta','pomme','porc','potiron','poulet','prune','quinoa','radis','raisin','ricotta','riz','roquette','sardine','saucisse','saumon','seitan','semoule','sesame','skyr','spaghetti','steak','surimi','tagliatelle','thon','toast','tofu','tomate','tortilla','truite','veau','vermicelle','wrap','yaourt'];
+  const sing=w=>w.replace(/eaux$/,'eau').replace(/aux$/,'al').replace(/s$/,'');
   const txt=normMac((r.name||'')+' '+((r.steps||[]).join(' ')));
-  const words=new Set(txt.split(' '));
-  const invNames=Object.values(S.inv).reduce((a,arr)=>a.concat((arr||[]).map(x=>normMac(x.name||''))),[]).join(' ');
-  for(const w of SUP){if(words.has(w)&&invNames.indexOf(w)<0)return w;}
+  const words=new Set(txt.split(' ').filter(w=>w.length>2).map(sing));
+  const known=[];
+  (r.used||[]).forEach(u=>{const it=findItem(u.id);known.push(normMac((it&&it.name)||u.n||u.name||''));});
+  (r.extras||[]).forEach(e=>known.push(normMac(e.n||e.name||'')));
+  Object.values(S.inv).forEach(arr=>(arr||[]).forEach(x=>known.push(normMac(x.name||''))));
+  const knownWords=new Set();
+  known.join(' ').split(' ').filter(Boolean).forEach(w=>{if(w.length>2)knownWords.add(sing(w));});
+  for(const f of FOOD){if(words.has(f)&&!knownWords.has(f))return f;}
   return null;
 }
 function clearAIRecipes(){
@@ -3017,7 +3023,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-24 13h05</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-25 12h53</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
