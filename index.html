@@ -252,6 +252,8 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
       <div style="font-size:16px;font-weight:600;color:var(--text);">🔥 Dépense du jour</div>
       <button onclick="closeBurnLog()" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;line-height:1;">✕</button>
     </div>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">📅 Jour</div>
+    <input id="burn-date" type="date" onchange="burnDateChanged()" style="width:100%;box-sizing:border-box;padding:9px 10px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px;">
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">👟 Nombre de pas</div>
     <input id="burn-steps" type="number" min="0" placeholder="ex. 8500" oninput="updateBurnTotals()" style="width:100%;box-sizing:border-box;padding:9px 10px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.12);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px;">
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">🏃 Activités</div>
@@ -1253,6 +1255,17 @@ async function fbUrl(path){const t=await fbAuthToken();return FB+'/'+path+'.json
 let _burnData={};
 function getBurn(day){return burnDayTotal(day);}
 // ─── 🔥 Dépense énergétique : pas + activités (saisie native + IA) ────────────
+function _burnDays(n){
+  var out=[];var p=(S.today||'').split('-');if(p.length!==3)return out;
+  var base=new Date(+p[0],+p[1]-1,+p[2]);
+  var W=['dim','lun','mar','mer','jeu','ven','sam'];
+  for(var i=0;i<n;i++){
+    var dt=new Date(base.getFullYear(),base.getMonth(),base.getDate()-i);
+    var mm=('0'+(dt.getMonth()+1)).slice(-2),dd=('0'+dt.getDate()).slice(-2);
+    out.push({d:dt.getFullYear()+'-'+mm+'-'+dd,lbl:W[dt.getDay()]+' '+dt.getDate()});
+  }
+  return out;
+}
 function _burnSave(day){
   var d=_burnData[day];
   if(d&&!d.active&&!d.rest&&!d.steps&&(!d.activities||!d.activities.length)){delete _burnData[day];}
@@ -1269,15 +1282,23 @@ function burnDayTotal(day){
   return t>0?{active:Math.round(a),rest:Math.round(r),steps:+d.steps||0,stepKcal:st,activities:d.activities||[],actKcal:Math.round(act),total:t}:null;
 }
 var _burnActs=[];
-function openBurnLog(){
-  var day=S.today;var d=_burnData[day]||{};
+function openBurnLog(day){
+  var d0=day||S.displayDate||S.today;
+  var de=document.getElementById('burn-date');
+  if(de){de.max=S.today;de.value=d0;}
+  _burnLoadDay(d0);
+  document.getElementById('burn-overlay').style.display='flex';
+}
+function _burnLoadDay(day){
+  var d=_burnData[day]||{};
   _burnActs=(d.activities||[]).map(function(x){return{name:x.name,min:x.min,kcal:x.kcal};});
   document.getElementById('burn-steps').value=d.steps||'';
   document.getElementById('burn-act-name').value='';
   document.getElementById('burn-act-min').value='';
   renderBurnActs();updateBurnTotals();
-  document.getElementById('burn-overlay').style.display='flex';
 }
+function burnDateChanged(){var de=document.getElementById('burn-date');if(de&&de.value)_burnLoadDay(de.value);}
+function _burnCurDay(){var de=document.getElementById('burn-date');return (de&&de.value)||S.today;}
 function closeBurnLog(){document.getElementById('burn-overlay').style.display='none';_burnActs=[];}
 function renderBurnActs(){
   var el=document.getElementById('burn-acts-list');if(!el)return;
@@ -1336,7 +1357,7 @@ function _burnFallbackKcal(name,min){
   return Math.round(met*(+w||75)*(min/60));
 }
 function saveBurnLog(){
-  var day=S.today;
+  var day=_burnCurDay();
   var steps=parseInt(document.getElementById('burn-steps').value,10)||0;
   var cur=_burnData[day]||{};
   cur.steps=steps;
@@ -2383,6 +2404,13 @@ function renderBurnBlock(){
       +(estK?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">TDEE estim\u00e9</div><div style="font-size:16px;font-weight:600;color:var(--text2);margin-top:3px;">'+estK+'</div><div style="font-size:9px;color:var(--text3);">kcal (poids)</div></div>':'')
       +'</div>'
       +(tb&&(tb.steps||tb.activities.length)?'<div style="margin-top:9px;padding-top:8px;border-top:0.5px solid rgba(255,255,255,.06);font-size:11px;color:var(--text3);line-height:1.6;">'+(tb.steps?'\ud83d\udc5f '+tb.steps+' pas \u2192 '+tb.stepKcal+' kcal<br>':'')+(tb.activities||[]).map(function(a){return '\ud83c\udfc3 '+a.name+' ('+a.min+' min) \u2192 '+a.kcal+' kcal';}).join('<br>')+'</div>':'')
+      +'<div style="display:flex;gap:5px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;">'
+        +_burnDays(7).reverse().map(function(x){
+          var bb=getBurn(x.d);var on=!!bb;
+          return '<button data-action="log-burn" data-day="'+x.d+'" style="flex:1;min-width:44px;padding:6px 3px;border-radius:8px;cursor:pointer;border:0.5px solid '+(on?'rgba(251,146,60,.45)':'rgba(255,255,255,.10)')+';background:'+(on?'rgba(251,146,60,.10)':'transparent')+';color:'+(on?'#fb923c':'var(--text3)')+';font-size:10px;line-height:1.35;">'+x.lbl+'<br><strong style="font-size:11px;">'+(on?bb.total:'\u2014')+'</strong></button>';
+        }).join('')
+      +'</div>'
+      +'<div style="font-size:10px;color:var(--text3);margin-top:6px;">Touche un jour pour compl\u00e9ter un oubli.</div>'
       +'</div>';
   }catch(e){return '';}
 }
@@ -3051,7 +3079,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-25 12h58</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-27 00h54</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -3155,7 +3183,7 @@ ROOT.addEventListener('click',e=>{
       saveState();
     }
   }
-  else if(action==='log-burn'){openBurnLog();return;}
+  else if(action==='log-burn'){openBurnLog(el.dataset.day||null);return;}
   else if(action==='cook-again'){handleCook(el.dataset.rid,1,false,true);return;}
   else if(action==='cook-subst'){handleCook(el.dataset.rid,1,true,true);return;}
   else if(action==='edit-custrec'){openCustRec(el.dataset.val);return;}
