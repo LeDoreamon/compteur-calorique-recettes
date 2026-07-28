@@ -1971,12 +1971,32 @@ function renderCardBottom(r){
   return`${renderDessert(r)}${rup1.length?`<div style="margin-top:8px;font-size:11px;color:var(--red);line-height:1.45;">Rupture — il te manque : ${rup1.join(', ')}</div><button data-action="cook-subst" data-rid="${r.id}" style="margin-top:8px;width:100%;padding:9px;background:rgba(96,165,250,.12);border:0.5px solid rgba(96,165,250,.45);border-radius:8px;color:#60a5fa;font-size:12px;font-weight:600;cursor:pointer;">🔁 Cuisiner en remplaçant des ingrédients</button>`:''}<div style="display:flex;gap:8px;margin-top:12px;">${btn(r.id,1,c1,'1 portion','user')}${btn(r.id,2,c2,'Préparer pour 2','users')}</div>${missHtml}`;
 }
 
+function _mealStock(meal,sign){
+  if(!meal)return;
+  const app=(id,qty)=>{
+    if(!id||!qty)return;
+    Object.values(S.inv).forEach(arr=>{
+      const it=(arr||[]).find(i=>i.id===id);
+      if(it&&it.qty!==null)it.qty=Math.max(0,Math.round((it.qty+sign*qty)*10)/10);
+    });
+  };
+  const r=RCP.find(x=>x.id===meal.rid);
+  if(meal.ings&&meal.ings.length)meal.ings.forEach(g=>app(g.id,g.qty));
+  else if(r&&r.used&&r.used.length)r.used.forEach(g=>app(g.id,g.qty));
+  if(meal.extras&&meal.extras.length)meal.extras.forEach(g=>app(g.id,g.qty));
+  if(meal.dessert&&meal.dessert!=='none'&&meal.dessert!=='autre'){
+    const d=DESSERTS.find(x=>x.id===meal.dessert);
+    if(d&&d.inv)app(d.inv,d.qty);
+  }
+}
 function copyMealTo(dayKey,idx,target){
   if(!target){alert('Choisis une date cible (le champ date en bas de la carte).');return;}
   if(target===dayKey){alert('La date cible est le jour affiché.');return;}
   const meal=(S.dayMeals[dayKey]||[])[idx];
   if(!meal)return;
-  S.dayMeals[target]=(S.dayMeals[target]||[]).concat([JSON.parse(JSON.stringify(meal))]);
+  const copy=JSON.parse(JSON.stringify(meal));
+  S.dayMeals[target]=(S.dayMeals[target]||[]).concat([copy]);
+  _mealStock(copy,-1);
   S.displayDate=target;
   saveState();render();
 }
@@ -1987,7 +2007,9 @@ function copyDayTo(target){
   if(target===S.displayDate){alert('La date cible est le jour affiché. Choisis une autre date.');return;}
   const existing=(S.dayMeals[target]||[]).length;
   if(existing&&!confirm('Le '+target+' a déjà '+existing+' repas. Ajouter les '+src.length+' repas du jour affiché par-dessus ?'))return;
-  S.dayMeals[target]=(S.dayMeals[target]||[]).concat(JSON.parse(JSON.stringify(src)));
+  const copies=JSON.parse(JSON.stringify(src));
+  S.dayMeals[target]=(S.dayMeals[target]||[]).concat(copies);
+  copies.forEach(m=>_mealStock(m,-1));
   S.displayDate=target;
   saveState();render();
 }
@@ -3079,7 +3101,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-27 00h54</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-29 00h13</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -3162,22 +3184,8 @@ ROOT.addEventListener('click',e=>{
     if(S.dayMeals[day]){
       const meal=S.dayMeals[day][idx];
       if(meal){
-        const r=RCP.find(x=>x.id===meal.rid);
-        const _rst=(id,qty)=>{Object.values(S.inv).forEach(arr=>{const it=arr.find(i=>i.id===id);if(it&&it.qty!==null)it.qty+=qty;});};
-        // Restaurer les ingrédients trackés (détail réel si dispo, sinon recette)
-        if(meal.ings&&meal.ings.length){meal.ings.forEach(({id,qty})=>{if(id&&qty)_rst(id,qty);});}
-        else if(r&&r.used&&r.used.length){r.used.forEach(({id,qty})=>_rst(id,qty));}
-        if(meal.extras&&meal.extras.length){meal.extras.forEach(({id,qty})=>{if(id&&qty)_rst(id,qty);});}
-        // Restaurer l'ingrédient du dessert si applicable
-        if(meal.dessert&&meal.dessert!=='none'&&meal.dessert!=='autre'){
-          const d=DESSERTS.find(x=>x.id===meal.dessert);
-          if(d&&d.inv){
-            Object.values(S.inv).forEach(arr=>{
-              const it=arr.find(i=>i.id===d.inv);
-              if(it&&it.qty!==null)it.qty+=d.qty;
-            });
-          }
-        }
+        // Restituer le stock (detail reel si dispo, sinon recette) + extras + dessert
+        _mealStock(meal,1);
       }
       S.dayMeals[day].splice(idx,1);
       saveState();
