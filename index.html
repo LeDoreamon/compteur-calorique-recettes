@@ -289,6 +289,7 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
       </div>
       <button onclick="emAddIngredient()" style="width:100%;margin-top:8px;padding:9px;background:transparent;border:0.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">+ Ajouter un ingrédient</button>
       <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:8px;">Les macros se recalculent en direct. À l'enregistrement, le stock de l'inventaire est ajusté de la différence.</div>
+      <button onclick="emSaveAsRecipe()" style="width:100%;margin-top:10px;padding:10px;background:rgba(74,222,128,.12);border:0.5px solid rgba(74,222,128,.45);border-radius:8px;color:#4ade80;font-size:12px;font-weight:600;cursor:pointer;">👨‍🍳 Enregistrer comme recette perso</button>
     </div>
     <div id="em-pane-macros" style="display:none;">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
@@ -2055,7 +2056,15 @@ function renderNightModal(){
 }
 
 function renderIngredients(r){
-  const tr=(r.used||[]).map(u=>{const it=findItem(u.id);if(!it)return'';return`<span style="background:var(--bg3);color:var(--text2);border-radius:6px;padding:2px 9px;font-size:11px;">${u.qty}${it.unit?''+it.unit:''} · ${it.name}</span>`;}).join('');
+  const tr=(r.used||[]).map(u=>{
+    const it=findItem(u.id);
+    const nm=it?it.name:(u.n||u.name||u.id);
+    const unit=(it&&it.unit)?''+it.unit:'';
+    const miss=!u.flex&&(!it||(it.qty!==null&&it.qty<u.qty));
+    const st=miss?'background:rgba(248,113,113,.12);color:#f87171;border:0.5px solid rgba(248,113,113,.40);'
+                 :'background:var(--bg3);color:var(--text2);';
+    return `<span style="${st}border-radius:6px;padding:2px 9px;font-size:11px;">${u.qty}${unit} · ${nm}${miss?' \u26a0':''}</span>`;
+  }).join('');
   const exItems=(r.extras||[]).map(e=>`<span style="border:0.5px dashed var(--border);color:var(--text3);border-radius:6px;padding:2px 9px;font-size:11px;">${e.opt?'opt. ':''}${e.q?e.q+' · ':''}${e.n}</span>`);
   // Épices détectées dans la recette → ajoutées comme ingrédients optionnels (sans doublon avec les extras)
   const exNames=new Set((r.extras||[]).map(e=>(e.n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
@@ -2088,7 +2097,7 @@ function renderCard(r){
   const wb=wc>0?`<span class="chip" style="background:var(--green-bg);color:var(--green);">↺ ×${wc}/sem.</span>`:'';
   return`<div class="rcard" style="border-color:${bc};"><div class="rhead" data-action="toggle-recipe" data-val="${r.id}">
     <div style="flex:1;min-width:0;">
-      <div style="font-weight:500;font-size:14px;color:var(--text);">${favStar(r.id)}${r.custom?`<span data-action="edit-custrec" data-val="${r.id}" style="cursor:pointer;font-size:12px;margin-right:5px;opacity:.7;">✎</span>`:''}${r.ai?'✨ ':''}${r.name}</div>
+      <div style="font-weight:500;font-size:14px;color:var(--text);">${favStar(r.id)}${(r.custom&&S.mealTab==='perso')?`<span data-action="edit-custrec" data-val="${r.id}" style="cursor:pointer;font-size:12px;margin-right:5px;opacity:.7;">✎</span>`:''}${r.ai?'✨ ':''}${r.name}</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;">${r.urgent?`<span class="chip" style="background:var(--red-bg);color:var(--red);">⚠ ${r.ur}</span>`:''}${wb}</div>
       <div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;">
         ${chip('--text2','--bg3','⏱ '+r.time+'m')}
@@ -2897,6 +2906,18 @@ function renderEmIngs(){
   el.innerHTML=html;
 }
 function emDetailBase(){syncEmRows();_emConvert=true;_emBase={kcal:0,prot:0,gluc:0,lip:0};renderEmIngs();updateEmTotals();}
+function emSaveAsRecipe(){
+  if(!_editMeal)return;
+  syncEmRows();
+  var rows=_emRows.filter(function(r){return r.qty>0;});
+  if(!rows.length){alert('Ce repas n\'a pas d\'ingrédients détaillés. Utilise « Corriger la base » pour les détailler, puis réessaie.');return;}
+  var nm=(document.getElementById('em-name').value||'').trim();
+  var slot=null;
+  try{var mm=(S.dayMeals[_editMeal.day]||[])[_editMeal.idx];var rr=mm&&findRecipe(mm.rid);if(rr&&rr.slots&&rr.slots.length)slot=rr.slots[0];}catch(e){}
+  var pre={name:nm,rows:rows.map(function(g){return{id:g.id,name:g.name,qty:g.qty,unit:g.unit};}),slot:slot};
+  closeEditMeal();
+  openCustRec(null,pre);
+}
 function emRemoveIng(i){syncEmRows();_emRows.splice(i,1);renderEmIngs();updateEmTotals();}
 function emAddIngredient(){
   syncEmRows();
@@ -2980,12 +3001,16 @@ function saveEditMeal(){
 
 // ─── 👨‍🍳 Recettes personnalisées ─────────────────────────────────────────────
 var _cr=null;
-function openCustRec(id){
+function openCustRec(id,prefill){
   var r=id?(S.customRecipes||[]).find(function(x){return x.id===id;}):null;
   _cr={id:r?r.id:null,slots:{breakfast:false,lunch:false,snack:false,dinner:false},rows:[]};
   if(r){(r.slots||[]).forEach(function(s){if(_cr.slots.hasOwnProperty(s))_cr.slots[s]=true;});
     _cr.rows=(r.used||[]).map(function(u){var it=findItem(u.id);return{id:u.id,name:(it&&it.name)||u.n||u.id,qty:u.qty,unit:(it&&it.unit)||'',flex:!!u.flex};});}
-  document.getElementById('cr-name').value=r?(r.name||''):'';
+  else if(prefill){
+    _cr.rows=(prefill.rows||[]).map(function(g){var it=findItem(g.id);return{id:g.id,name:g.name||(it&&it.name)||g.id,qty:g.qty,unit:g.unit||(it&&it.unit)||'',flex:false};});
+    if(prefill.slot&&_cr.slots.hasOwnProperty(prefill.slot))_cr.slots[prefill.slot]=true;
+  }
+  document.getElementById('cr-name').value=r?(r.name||''):((prefill&&prefill.name)||'');
   document.getElementById('cr-time').value=r?(r.time||15):15;
   document.getElementById('cr-steps').value=r?((r.steps||[]).join('\n')):'';
   document.getElementById('cr-del').style.display=r?'block':'none';
@@ -3101,7 +3126,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-29 00h13</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-30 11h38</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
