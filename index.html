@@ -2060,10 +2060,12 @@ function renderIngredients(r){
     const it=findItem(u.id);
     const nm=it?it.name:(u.n||u.name||u.id);
     const unit=(it&&it.unit)?''+it.unit:'';
-    const miss=!u.flex&&(!it||(it.qty!==null&&it.qty<u.qty));
+    const flex=!!u.flex;
+    const miss=!flex&&(!it||(it.qty!==null&&it.qty<u.qty));
     const st=miss?'background:rgba(248,113,113,.12);color:#f87171;border:0.5px solid rgba(248,113,113,.40);'
+              :flex?'background:rgba(251,146,60,.12);color:#fb923c;border:0.5px solid rgba(251,146,60,.40);'
                  :'background:var(--bg3);color:var(--text2);';
-    return `<span style="${st}border-radius:6px;padding:2px 9px;font-size:11px;">${u.qty}${unit} · ${nm}${miss?' \u26a0':''}</span>`;
+    return `<span style="${st}border-radius:6px;padding:2px 9px;font-size:11px;">${flex?'\ud83d\udd04 ':''}${u.qty}${unit} · ${nm}${miss?' \u26a0':''}</span>`;
   }).join('');
   const exItems=(r.extras||[]).map(e=>`<span style="border:0.5px dashed var(--border);color:var(--text3);border-radius:6px;padding:2px 9px;font-size:11px;">${e.opt?'opt. ':''}${e.q?e.q+' · ':''}${e.n}</span>`);
   // Épices détectées dans la recette → ajoutées comme ingrédients optionnels (sans doublon avec les extras)
@@ -3126,7 +3128,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-30 11h38</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-30 11h48</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
