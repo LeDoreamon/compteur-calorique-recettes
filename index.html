@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Dorayaki</title>
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -115,7 +115,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 /* ═══ NAVIGATION BASSE ═════════════════════════════════════════════════ */
 .bnav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 180; display: flex;
   background: rgba(14,10,7,.88); -webkit-backdrop-filter: blur(18px) saturate(1.4); backdrop-filter: blur(18px) saturate(1.4);
-  border-top: 0.5px solid var(--border); padding: 5px 4px calc(5px + env(safe-area-inset-bottom)); }
+  border-top: 0.5px solid var(--border); padding: 6px 4px calc(10px + env(safe-area-inset-bottom, 12px)); }
 .bnav-b { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center;
   gap: 3px; padding: 7px 2px 5px; color: var(--text3); font-size: 10px; font-weight: 500; border-radius: 12px;
   transition: color .22s ease; }
@@ -124,7 +124,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .bnav-b.on .bnav-i { transform: translateY(-2px) scale(1.14); }
 .bnav-b:active { transform: none; }
 .bnav-b:active .bnav-i { transform: scale(.9); }
-.container { padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+.container { padding-bottom: calc(96px + env(safe-area-inset-bottom, 12px)); }
 
 /* ═══ EN-TETE COLLANT ══════════════════════════════════════════════════ */
 .apphead { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 12px;
@@ -2132,7 +2132,7 @@ function renderMacros(){
     ${list?`<div style="margin-top:8px;">${list}</div>`:''}
     ${rem}
     ${meals.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:10px;color:var(--text3);">Copier vers</span><input type="date" id="copy-day-target" value="${shiftDate(dd,1)}" style="font-size:11px;padding:2px 5px;background:var(--bg);border:0.5px solid var(--border);border-radius:5px;color:var(--text2);"><button onclick="copyDayTo(document.getElementById('copy-day-target').value)" style="font-size:10px;padding:3px 10px;background:var(--blue);color:#fff;border:0;border-radius:5px;cursor:pointer;font-weight:500;">⧉ Jour entier</button></div><div style="font-size:9px;color:var(--text3);margin-top:4px;">Astuce : le ⧉ à côté d'un repas le copie seul vers cette date.</div>`:''}
-    <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:10px;color:var(--text3);">J−7 à J+1</span></div>
+    <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:10px;color:var(--text3);">J−7 à J+1</span></div>
   </div>`;
 }
 
@@ -3250,17 +3250,19 @@ function renderCustHeader(){
 const _NAVORDER=['recipes','inventory','courses','weight'];
 let _lastMainTab='',_lastMealTab='';
 function _animateTabs(){
-  var pane=document.getElementById('tabpane');
-  if(!pane){_lastMainTab=S.mainTab;_lastMealTab=S.mealTab;return;}
-  var cls='';
+  var cls='',pane=null;
   if(_lastMainTab&&_lastMainTab!==S.mainTab){
+    // changement d'onglet principal : tout le contenu glisse
+    pane=document.getElementById('tabpane');
     cls=_NAVORDER.indexOf(S.mainTab)>_NAVORDER.indexOf(_lastMainTab)?'pane-r':'pane-l';
   }else if(S.mainTab==='recipes'&&_lastMealTab&&_lastMealTab!==S.mealTab){
+    // changement de creneau : SEULE la liste des recettes glisse
+    pane=document.getElementById('mealpane');
     var o=MEAL_TABS.map(function(t){return t.k;});
     cls=o.indexOf(S.mealTab)>o.indexOf(_lastMealTab)?'pane-r':'pane-l';
   }
   _lastMainTab=S.mainTab;_lastMealTab=S.mealTab;
-  if(!cls)return;
+  if(!cls||!pane)return;
   pane.classList.remove('pane-r','pane-l');
   void pane.offsetWidth;
   pane.classList.add(cls);
@@ -3282,7 +3284,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 00h33</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 00h41</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -3301,8 +3303,8 @@ function render(){
         ${S.aiRecipes&&S.aiRecipes.length?`<button onclick="clearAIRecipes()" style="width:100%;padding:7px;margin-top:6px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">🗑 Effacer les ${S.aiRecipes.length} recettes IA</button>`:''}
       </div>
       <div class="meal-tabs">${tabBtns}</div>
-      ${S.mealTab==='urgent'?renderDLCSection():''}${S.mealTab==='favs'?renderFavSection():''}${S.mealTab==='perso'?renderCustHeader():''}
-      ${S.mealTab==='favs'?'':shown.length?shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">Aucune recette disponible.</div>'}
+      <div id="mealpane">${S.mealTab==='urgent'?renderDLCSection():''}${S.mealTab==='favs'?renderFavSection():''}${S.mealTab==='perso'?renderCustHeader():''}
+      ${S.mealTab==='favs'?'':shown.length?shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">Aucune recette disponible.</div>'}</div>
       <div style="margin-top:10px;">
         <button onclick="openAddMeal('text')" style="width:100%;padding:12px;background:transparent;border:0.5px dashed rgba(246,237,227,.15);border-radius:10px;color:var(--text3);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:color .2s;" onmouseover="this.style.color='var(--text2)'" onmouseout="this.style.color='var(--text3)'">
           <span style="font-size:18px;">➕</span><span>Ajouter un repas libre (texte ou photo)</span>
