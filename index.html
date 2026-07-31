@@ -68,7 +68,6 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
 html { scroll-behavior: smooth; }
 body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; overscroll-behavior-y: contain; letter-spacing: -0.006em; }
 ::selection { background: var(--accent-bg); color: var(--text); }
-.container { padding-bottom: calc(20px + env(safe-area-inset-bottom)); }
 
 /* Barres de defilement discretes */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -110,6 +109,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 /* Apparition douce du contenu principal */
 @keyframes riseIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 #profile-screen > div { animation: riseIn .45s var(--ease) both; }
+#profile-screen { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
 
 
 /* ═══ NAVIGATION BASSE ═════════════════════════════════════════════════ */
@@ -124,11 +124,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .bnav-b.on .bnav-i { transform: translateY(-2px) scale(1.14); }
 .bnav-b:active { transform: none; }
 .bnav-b:active .bnav-i { transform: scale(.9); }
-.container { padding-bottom: calc(96px + env(safe-area-inset-bottom, 12px)); }
+.container { padding-bottom: calc(96px + env(safe-area-inset-bottom, 12px));
+  padding-left: calc(12px + env(safe-area-inset-left, 0px)); padding-right: calc(12px + env(safe-area-inset-right, 0px)); }
+.bnav { padding-left: calc(4px + env(safe-area-inset-left, 0px)); padding-right: calc(4px + env(safe-area-inset-right, 0px)); }
 
 /* ═══ EN-TETE COLLANT ══════════════════════════════════════════════════ */
 .apphead { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 12px;
-  margin: -14px -12px 12px; padding: 12px; background: rgba(14,10,7,.82);
+  margin: -14px -12px 12px; padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 12px; background: rgba(14,10,7,.82);
   -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
   border-bottom: 0.5px solid var(--border); }
 
@@ -3284,7 +3286,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 00h41</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 00h45</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
