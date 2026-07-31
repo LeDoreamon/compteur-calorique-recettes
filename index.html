@@ -133,6 +133,7 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
         <label style="font-size:10px;color:#586577;text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Repas</label>
         <input id="addmeal-name" type="text" style="width:100%;padding:8px 10px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.1);border-radius:8px;color:#eceff5;font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
         <div id="am-slots" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;"></div>
+        <div id="addmeal-breakdown" style="display:none;margin-top:10px;padding:9px 11px;background:rgba(255,255,255,.03);border:0.5px solid rgba(255,255,255,.08);border-radius:8px;font-size:11px;color:#8c97ab;line-height:1.65;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
         <div><label style="font-size:10px;color:#586577;display:block;margin-bottom:3px;">Kcal</label><input id="addmeal-kcal" type="number" style="width:100%;padding:7px;background:#0b0e15;border:0.5px solid rgba(255,255,255,.1);border-radius:6px;color:#fb923c;font-size:13px;outline:none;box-sizing:border-box;"></div>
@@ -3166,7 +3167,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-31 15h23</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-07-31 22h50</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openPhotoOverlay()" title="Analyser une photo" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">📷</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -3476,6 +3477,14 @@ function setAmSlot(s){
   if(el)el.value=_amSlot?(L[_amSlot]+' \u00e0 base de '+_amLc(_amBaseName)):_amBaseName;
   renderAmSlots();
 }
+function renderMealBreakdown(){
+  var el=document.getElementById('addmeal-breakdown');if(!el)return;
+  var it=(_pendingMeal&&_pendingMeal.items)||[];
+  if(it.length<2){el.style.display='none';el.innerHTML='';return;}
+  el.innerHTML='<div style="color:#586577;text-transform:uppercase;letter-spacing:.06em;font-size:9px;margin-bottom:5px;">Détail estimé — corrige le total si une ligne te semble fausse</div>'
+    +it.map(function(x){return '<div style="display:flex;justify-content:space-between;gap:10px;"><span style="flex:1;min-width:0;">'+(x.n||'?')+'</span><span style="color:#fb923c;white-space:nowrap;">'+Math.round(+x.kcal||0)+' kcal</span></div>';}).join('');
+  el.style.display='block';
+}
 function renderAmSlots(){
   var L={breakfast:'Petit-d\u00e9j',lunch:'D\u00e9jeuner',snack:'Collation',dinner:'D\u00eener'};
   var el=document.getElementById('am-slots');if(!el)return;
@@ -3486,7 +3495,7 @@ function renderAmSlots(){
 }
 function applyPendingMealToConfirm(){
   if(!_pendingMeal)return;
-  document.getElementById('addmeal-name').value=_pendingMeal.name;_amBaseName=_pendingMeal.name||'';_amSlot=null;renderAmSlots();
+  document.getElementById('addmeal-name').value=_pendingMeal.name;_amBaseName=_pendingMeal.name||'';_amSlot=null;renderAmSlots();renderMealBreakdown();
   document.getElementById('addmeal-kcal').value=_pendingMeal.kcal;
   document.getElementById('addmeal-prot').value=_pendingMeal.prot;
   document.getElementById('addmeal-gluc').value=_pendingMeal.gluc;
@@ -3526,6 +3535,28 @@ function _invFallbackSuggestion(){
     return[{id:hit.id,name:hit.name,qty:g,unit:(hit.unit==='ml')?'ml':'g',baseQty:g,m}];
   }catch(e){return[];}
 }
+function _reconcileMacros(m){
+  var k=Math.max(0,Math.round(+m.kcal||0));
+  var p=Math.max(0,+m.prot||0),g=Math.max(0,+m.gluc||0),l=Math.max(0,+m.lip||0);
+  var calc=Math.round(4*p+4*g+9*l);
+  if(!k&&calc)k=calc;
+  else if(k&&calc){
+    var ecart=Math.abs(calc-k)/Math.max(calc,k);
+    if(ecart>0.10)k=Math.max(k,calc);
+  }
+  return {kcal:k,prot:Math.round(p*10)/10,gluc:Math.round(g*10)/10,lip:Math.round(l*10)/10};
+}
+function _macrosFromItems(items){
+  if(!Array.isArray(items)||!items.length)return null;
+  var t={kcal:0,prot:0,gluc:0,lip:0},n=0;
+  items.forEach(function(x){
+    if(!x)return;
+    var k=+x.kcal||0,p=+x.prot||0,g=+x.gluc||0,l=+x.lip||0;
+    if(!k&&!p&&!g&&!l)return;
+    t.kcal+=k;t.prot+=p;t.gluc+=g;t.lip+=l;n++;
+  });
+  return n?t:null;
+}
 async function runAddMealAI(msgs) {
   let sys;
   if(_addMealUseStock){
@@ -3542,15 +3573,21 @@ Sois légèrement pessimiste sur les quantités.
     sys = `Tu analyses un repas (l'inventaire n'est PAS utilisé). Le repas est décrit en texte (parfois avec des FAUTES de frappe ou d'orthographe à corriger) ou montré en photo.
 Corrige les fautes et interprète le plat le plus probable (ex. "poulet fris" -> "poulet frit", "cacahouète" -> "cacahuète").
 Réponds UNIQUEMENT en JSON sans markdown:
-{"corrected":string,"ok":boolean,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}
+{"corrected":string,"ok":boolean,"items":[{"n":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}],"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}
 - "corrected" = le nom du repas corrigé, propre et lisible.
 - "ok" = true si tu reconnais un/des aliment(s) réel(s) et peux estimer; false seulement si c'est vraiment incompréhensible.
-- Si ok=true, donne des macros RÉALISTES pour la portion décrite (JAMAIS 0 pour un vrai aliment).
+- "items" = OBLIGATOIRE : une ligne par aliment cité (respecte les quantités : « 8 gyozas » = une ligne pour les 8). Estime CHAQUE ligne séparément, ne raisonne jamais sur le repas en bloc.
+- Les totaux kcal/prot/gluc/lip = somme EXACTE des items.
+- COHÉRENCE obligatoire : kcal ≈ 4×prot + 4×gluc + 9×lip (±5 %). Vérifie ce calcul avant de répondre.
+- FRITURE (tempura, beignet, corn dog, nuggets, gyoza poêlé, frites, panure) : l'huile absorbée ajoute 30 à 50 % de kcal et beaucoup de lipides. N'estime JAMAIS un aliment frit comme sa version nature.
+- N'oublie pas ce qui accompagne : sauces, mayonnaise, fromage fondu, panure, huile de cuisson, sucre ajouté.
+- Boisson sucrée ou énergisante = canette entière (Monster 50 cl ≈ 230 kcal, 60 g de sucre).
+- Plat de restaurant, traiteur ou street-food ≈ 1,3× la portion maison.
 - Si la taille ou le poids n'est pas précisé, suppose la portion STANDARD du commerce, jamais la version mini : 1 cookie au chocolat ≈ 30-35 g ≈ 160 kcal ; 1 croissant ≈ 55 g ≈ 230 kcal ; 1 banane ≈ 120 g ≈ 105 kcal ; 1 part de pizza ≈ 1/6 d'une pizza entière.
 - En cas de doute, arrondis les kcal vers le HAUT (légère surestimation), jamais vers le bas.`;
   }
   try {
-    const data = await callAI(msgs, 600, sys, msgs.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'))?null:'openai/gpt-oss-120b');
+    const data = await callAI(msgs, 1300, sys, msgs.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'))?null:'openai/gpt-oss-120b');
     const raw = data.content.map(i=>i.text||'').join('');
     const p = JSON.parse(raw.replace(/```json|```/g,'').trim());
     if(_addMealUseStock){
@@ -3575,8 +3612,11 @@ Réponds UNIQUEMENT en JSON sans markdown:
       recalcAddMealMacros();
     } else {
       const corrected=p.corrected||p.name||'Repas';
-      const macros={kcal:Math.round(p.kcal)||0,prot:Math.round(p.prot)||0,gluc:Math.round(p.gluc)||0,lip:Math.round(p.lip)||0};
-      _pendingMeal={name:corrected,kcal:macros.kcal,prot:macros.prot,gluc:macros.gluc,lip:macros.lip};
+      const _items=Array.isArray(p.items)?p.items.filter(function(x){return x&&(x.kcal||x.prot||x.gluc||x.lip);}):[];
+      const _sum=_macrosFromItems(_items);
+      const _base=_sum||{kcal:+p.kcal||0,prot:+p.prot||0,gluc:+p.gluc||0,lip:+p.lip||0};
+      const macros=_reconcileMacros(_base);
+      _pendingMeal={name:corrected,kcal:macros.kcal,prot:macros.prot,gluc:macros.gluc,lip:macros.lip,items:_items};
       const inputTxt=(document.getElementById('addmeal-textarea').value||'').trim();
       const changed=inputTxt&&normMac(inputTxt)!==normMac(corrected);
       document.getElementById('addmeal-analyzing').style.display='none';
