@@ -6,8 +6,8 @@
   "scope": "/compteur-calorique-recettes/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#14100D",
-  "theme_color": "#14100D",
+  "background_color": "#0E0A07",
+  "theme_color": "#0E0A07",
   "icons": [
     {
       "src": "icon-512.png",
