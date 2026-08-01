@@ -31,6 +31,7 @@
   --green-bg: rgba(111,191,115,0.12);
   --orange: #E9A13B;
   --orange-bg: rgba(233,161,59,0.12);
+  --gold-bg: rgba(233,161,59,0.14);
   --blue: #5FA8C9;
   --blue-bg: rgba(95,168,201,0.12);
   --red: #E05C4F;
@@ -2205,11 +2206,13 @@ function renderDessert(r){
   const rm=recipeMacros(r);
   const btns=dessertChoices().map(d=>{
     const ok=canTakeDessert(d),isSel=sel===d.id,isAI=d.id==='autre';
-    const bc=isSel?'var(--text)':(d.urgent&&ok)?'var(--warn)':isAI?'var(--blue)':'var(--text3)';
-    const bg=isSel?'var(--bg3)':'transparent';
+    // texte toujours lisible ; la bordure porte la nuance (urgent / IA / neutre)
+    const tc=isSel?'var(--text)':(d.urgent&&ok)?'var(--warn)':isAI?'var(--blue)':'var(--text)';
+    const bc=isSel?'var(--gold)':(d.urgent&&ok)?'var(--warn)':isAI?'var(--blue)':'var(--border)';
+    const bg=isSel?'var(--gold-bg, rgba(233,161,59,.14))':'transparent';
     const extra=d.kcal>0?` <span style="font-size:10px;opacity:0.6;">+${d.kcal}</span>`:'';
     const ico=isAI?`✦ `:'';
-    return`<button data-action="select-dessert" data-val="${r.id}" data-dessert="${d.id}" ${!ok?'data-disabled="true"':''} style="padding:4px 10px;border-radius:20px;border:0.5px solid ${bc};background:${bg};font-size:12px;color:${bc};cursor:${ok?'pointer':'not-allowed'};display:inline-flex;align-items:center;gap:2px;">${ico}${d.name}${extra}</button>`;
+    return`<button data-action="select-dessert" data-val="${r.id}" data-dessert="${d.id}" ${!ok?'data-disabled="true"':''} style="padding:4px 10px;border-radius:20px;border:0.5px solid ${bc};background:${bg};font-size:12px;color:${tc};font-weight:${isSel?600:400};cursor:${ok?'pointer':'not-allowed'};display:inline-flex;align-items:center;gap:2px;">${ico}${d.name}${extra}</button>`;
   }).join('');
   const hint=`<div style="font-size:10px;color:var(--text3);margin-top:6px;">Touche à nouveau pour retirer le dessert. Marque un article de l'inventaire avec 🍰 pour l'ajouter ici.</div>`;
   let inp='';
@@ -3474,7 +3477,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 03h37</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 03h44</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
