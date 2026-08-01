@@ -1872,15 +1872,15 @@ RÈGLES ABSOLUES:
 - privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : mieux vaut 6 excellentes recettes que 12 m\u00e9diocres.`;
   try{
     const _ask=async(n,tok)=>{
-      const d=await callAI([{role:'user',content:'Génère '+n+' recettes variées et cohérentes maintenant, en JSON compact. Pas de texte hors du tableau JSON.'}],tok,sys,'openai/gpt-oss-20b',0.2,null,false,{reasoning:'none'});
+      const d=await callAI([{role:'user',content:'Génère '+n+' recettes variées et cohérentes maintenant, en JSON compact. Pas de texte hors du tableau JSON.'}],tok,sys,'openai/gpt-oss-20b',0.2,null,false,{reasoning:'low'});
       return{raw:d.content.map(i=>i.text||'').join(''),d:d};
     };
-    let recipes=null,att=await _ask(8,2400);
+    let recipes=null,att=await _ask(6,3000);
     try{recipes=extractJSONArray(att.raw);}catch(pe){recipes=null;}
     if((!recipes||!recipes.length)&&(att.d.truncated||att.d.empty)){
       // Reponse coupee ou vide : on redemande plus court
       if(btn)btn.textContent='✨ Nouvelle tentative…';
-      att=await _ask(4,2000);
+      att=await _ask(3,2200);
       try{recipes=extractJSONArray(att.raw);}catch(pe2){recipes=null;}
     }
     if(!recipes||!recipes.length){
@@ -1989,7 +1989,14 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   });
   let resp,data;
   const _body={model,messages:msgs,max_tokens:maxTokens,temperature};
-  if(model.indexOf('qwen3.6')>=0)_body.reasoning_effort='none';else if(model.indexOf('gpt-oss')>=0){_body.reasoning_effort=(opts&&opts.reasoning)||'low';_body.reasoning_format='hidden';}
+  if(model.indexOf('qwen3.6')>=0){_body.reasoning_effort='none';}
+  else if(model.indexOf('gpt-oss')>=0){
+    // gpt-oss n'accepte que 'low' | 'medium' | 'high' ('none' est refuse par l'API)
+    var _re=(opts&&opts.reasoning)||'low';
+    if(_re==='off'){delete _body.reasoning_effort;}                    // on omet : defaut du modele
+    else _body.reasoning_effort=(['low','medium','high'].indexOf(_re)>=0)?_re:'low';
+    _body.reasoning_format='hidden';
+  }
   if(seed!=null)_body.seed=seed;
   const _ctrl=new AbortController();const _tid=setTimeout(()=>_ctrl.abort(),hasImg?45000:25000);
   try{
@@ -3467,7 +3474,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 03h30</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 03h37</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
