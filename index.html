@@ -1801,25 +1801,27 @@ function extractJSON(text){
   return JSON.parse(t);
 }
 function extractJSONArray(text){
-  let t=text.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json/gi,'').replace(/```/g,'').trim();
-  const s=t.indexOf('['),e=t.lastIndexOf(']');
-  if(s>=0&&e>s)t=t.slice(s,e+1);
-  try{return JSON.parse(t);}catch(err){
-    // Reponse coupee (limite de jetons) : on recupere les objets complets
-    const from=t.indexOf('[');if(from<0)throw err;
-    const body=t.slice(from+1);
-    const out=[];let depth=0,start=-1,inStr=false,esc=false;
-    for(let i=0;i<body.length;i++){
-      const ch=body[i];
-      if(inStr){ if(esc){esc=false;} else if(ch==='\\'){esc=true;} else if(ch==='"'){inStr=false;} continue; }
-      if(ch==='"'){inStr=true;continue;}
-      if(ch==='{'){ if(depth===0)start=i; depth++; }
-      else if(ch==='}'){ depth--; if(depth===0&&start>=0){ try{out.push(JSON.parse(body.slice(start,i+1)));}catch(e2){} start=-1; } }
-    }
-    if(!out.length)throw err;
-    return out;
+  const t=text.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json/gi,'').replace(/```/g,'').trim();
+  const s=t.indexOf('[');
+  if(s<0)throw new Error('Aucun tableau JSON');
+  const e=t.lastIndexOf(']');
+  // Cas normal : le tableau est complet
+  if(e>s){try{return JSON.parse(t.slice(s,e+1));}catch(e1){}}
+  // Reponse coupee : on repart du '[' initial (surtout PAS du dernier ']',
+  // qui appartient souvent a un tableau interne comme "steps")
+  const body=t.slice(s+1);
+  const out=[];let depth=0,start=-1,inStr=false,esc=false;
+  for(let i=0;i<body.length;i++){
+    const ch=body[i];
+    if(inStr){ if(esc){esc=false;} else if(ch==='\\'){esc=true;} else if(ch==='"'){inStr=false;} continue; }
+    if(ch==='"'){inStr=true;continue;}
+    if(ch==='{'){ if(depth===0)start=i; depth++; }
+    else if(ch==='}'){ depth--; if(depth===0&&start>=0){ try{out.push(JSON.parse(body.slice(start,i+1)));}catch(e2){} start=-1; } }
   }
+  if(!out.length)throw new Error('JSON illisible');
+  return out;
 }
+
 
 // ─── GÉNÉRATION RECETTES IA SELON STOCK ──────────────────────────────────────
 async function generateStockRecipes(){
@@ -1869,10 +1871,23 @@ RÈGLES ABSOLUES:
 - recettes vari\u00e9es, savoureuses et COH\u00c9RENTES : de vrais plats \u00e9quilibr\u00e9s, pas de simples assemblages. Associe intelligemment prot\u00e9ines + f\u00e9culents + l\u00e9gumes/sauce.
 - privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : mieux vaut 6 excellentes recettes que 12 m\u00e9diocres.`;
   try{
-    const data=await callAI([{role:'user',content:'Génère le maximum de recettes variées et cohérentes maintenant, en JSON. Prends le temps de bien faire.'}],2400,sys,'openai/gpt-oss-20b');
-    const raw=data.content.map(i=>i.text||'').join('');
-    let recipes;
-    try{recipes=extractJSONArray(raw);}catch(pe){throw new Error('Réponse IA illisible. Réessaie.');}
+    const _ask=async(n,tok)=>{
+      const d=await callAI([{role:'user',content:'Génère '+n+' recettes variées et cohérentes maintenant, en JSON compact. Pas de texte hors du tableau JSON.'}],tok,sys,'openai/gpt-oss-20b',0.2,null,false,{reasoning:'none'});
+      return{raw:d.content.map(i=>i.text||'').join(''),d:d};
+    };
+    let recipes=null,att=await _ask(8,2400);
+    try{recipes=extractJSONArray(att.raw);}catch(pe){recipes=null;}
+    if((!recipes||!recipes.length)&&(att.d.truncated||att.d.empty)){
+      // Reponse coupee ou vide : on redemande plus court
+      if(btn)btn.textContent='✨ Nouvelle tentative…';
+      att=await _ask(4,2000);
+      try{recipes=extractJSONArray(att.raw);}catch(pe2){recipes=null;}
+    }
+    if(!recipes||!recipes.length){
+      throw new Error(att.d.empty?'L\'IA n\'a rien renvoyé (quota ou surcharge). Réessaie dans une minute.'
+        :att.d.truncated?'Réponse trop longue, coupée en route. Réessaie.'
+        :'Réponse IA illisible. Réessaie.');
+    }
     if(!Array.isArray(recipes)||!recipes.length)throw new Error('Aucune recette générée. Réessaie.');
     const resolveId=(g)=>{
       if(g.id&&findItem(g.id))return g.id;
@@ -1951,7 +1966,7 @@ function _aiFriendly(msg){
   if(msg.indexOf('NETWORK:')===0)return 'Pas de connexion \u2014 r\u00e9essaie';
   return msg.indexOf('API:')===0?msg.slice(4,120):msg;
 }
-async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temperature=0.2,seed=null,_retried=false){
+async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temperature=0.2,seed=null,_retried=false,opts){
   const key=getApiKey();
   if(!key){openSettings();throw new Error('NO_KEY');}
   // Détecte si la requête contient une image
@@ -1974,7 +1989,7 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   });
   let resp,data;
   const _body={model,messages:msgs,max_tokens:maxTokens,temperature};
-  if(model.indexOf('qwen3.6')>=0)_body.reasoning_effort='none';else if(model.indexOf('gpt-oss')>=0){_body.reasoning_effort='low';_body.reasoning_format='hidden';}
+  if(model.indexOf('qwen3.6')>=0)_body.reasoning_effort='none';else if(model.indexOf('gpt-oss')>=0){_body.reasoning_effort=(opts&&opts.reasoning)||'low';_body.reasoning_format='hidden';}
   if(seed!=null)_body.seed=seed;
   const _ctrl=new AbortController();const _tid=setTimeout(()=>_ctrl.abort(),hasImg?45000:25000);
   try{
@@ -1992,12 +2007,13 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
       const _w=Math.min(50,parseFloat(_wm[1])+1.5);
       if(typeof _aiRetryNotice==='function')_aiRetryNotice(_w);
       await new Promise(r=>setTimeout(r,_w*1000));
-      return callAI(messages,maxTokens,system,modelOverride,temperature,seed,true);
+      return callAI(messages,maxTokens,system,modelOverride,temperature,seed,true,opts);
     }
     throw new Error('API:'+_em);
   }
   const text=data.choices?.[0]?.message?.content||'';
-  return{content:[{type:'text',text}]};
+  const fin=data.choices?.[0]?.finish_reason||'';
+  return{content:[{type:'text',text}],finish_reason:fin,truncated:fin==='length',empty:!text.trim()};
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3451,7 +3467,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 03h24</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 03h30</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
