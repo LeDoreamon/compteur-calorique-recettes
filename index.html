@@ -2488,11 +2488,93 @@ function qtyLabel(it){
   if(it.pkg&&it.pkg.size>0){const n=it.qty/it.pkg.size;s+=' · '+(Number.isInteger(n)?n:n.toFixed(1))+'×'+it.pkg.size+it.unit;}
   return s;
 }
+// ─── 🔎 Diagnostic + recherche d'inventaire ─────────────────────────────────
+function _normNom(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
+function invIssues(){
+  var zero=[],dupes={},expires=[],vus={};
+  Object.keys(S.inv||{}).forEach(function(cat){
+    (S.inv[cat]||[]).forEach(function(it){
+      if(!it)return;
+      var actif=(it.qty===null||it.qty>0);
+      // 1. macros impossibles a calculer
+      var k=(it.mac100&&it.mac100.kcal)||0;
+      var convertible=(it.unit==='g'||it.unit==='ml'||!it.unit)||it.macPiece||it.pieceG||(it.pkg&&it.pkg.size>0);
+      if(actif&&k>0&&!convertible)zero.push({cat:cat,it:it});
+      // 2. doublons (meme nom, toutes categories)
+      var n=_normNom(it.name);
+      if(!n)return;
+      if(vus[n])dupes[n]=(dupes[n]||[vus[n]]).concat([{cat:cat,it:it}]);
+      else vus[n]={cat:cat,it:it};
+      // 3. DLC depassee
+      if(actif&&it.dlc){var e=(typeof effDlc==='function')?effDlc(it):it.dlc;if(e&&e<getToday())expires.push({cat:cat,it:it});}
+    });
+  });
+  var dl=Object.keys(dupes).map(function(n){return dupes[n];});
+  return {zero:zero,dupes:dl,expires:expires,total:zero.length+dl.length+expires.length};
+}
+function renderInvDiag(){
+  var d=invIssues();
+  if(!d.total)return '';
+  if(!S.diagOpen){
+    return '<button onclick="S.diagOpen=1;render()" style="width:100%;margin-bottom:12px;padding:10px;background:var(--warn-bg);border:0.5px solid rgba(240,185,62,.45);border-radius:10px;color:var(--warn);font-size:12.5px;font-weight:600;cursor:pointer;">\u26a0 '+d.total+' point'+(d.total>1?'s':'')+' \u00e0 corriger dans ton inventaire</button>';
+  }
+  var h='<div style="margin-bottom:12px;padding:12px;background:var(--bg2);border:0.5px solid rgba(240,185,62,.4);border-radius:12px;">'
+   +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:9px;">'
+   +'<span style="font-size:12.5px;font-weight:600;color:var(--warn);">\u26a0 '+d.total+' point'+(d.total>1?'s':'')+' \u00e0 corriger</span>'
+   +'<button onclick="S.diagOpen=0;render()" style="background:none;border:0;color:var(--text3);font-size:17px;cursor:pointer;line-height:1;">\u00d7</button></div>';
+  if(d.zero.length){
+    h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:8px 0 5px;">Compte 0 kcal dans tes repas</div>';
+    h+=d.zero.map(function(x){
+      return '<div onclick="openItemDetail(\''+x.cat+'\',\''+x.it.id+'\')" style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);cursor:pointer;">'
+        +'<span style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'+x.it.name+'</span>'
+        +'<span style="font-size:10.5px;color:var(--red);white-space:nowrap;">en \u00ab '+(x.it.unit||'?')+' \u00bb \u2192 corriger</span></div>';
+    }).join('');
+  }
+  if(d.dupes.length){
+    h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 5px;">Doublons</div>';
+    h+=d.dupes.map(function(g){
+      var ou=g.map(function(x){return (CINFO[x.cat]&&CINFO[x.cat].n)||x.cat;}).join(' + ');
+      return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);">'
+        +'<span style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'+g[0].it.name+'</span>'
+        +'<span style="font-size:10.5px;color:var(--text3);white-space:nowrap;">'+g.length+'\u00d7 \u00b7 '+ou+'</span></div>';
+    }).join('');
+    h+='<button onclick="runMergeDuplicates()" style="width:100%;margin-top:7px;padding:8px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:11.5px;font-weight:600;cursor:pointer;">\ud83e\uddec Fusionner les doublons</button>';
+  }
+  if(d.expires.length){
+    h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 5px;">DLC d\u00e9pass\u00e9e</div>';
+    h+=d.expires.map(function(x){
+      return '<div onclick="openItemDetail(\''+x.cat+'\',\''+x.it.id+'\')" style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);cursor:pointer;">'
+        +'<span style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'+x.it.name+'</span>'
+        +'<span style="font-size:10.5px;color:var(--red);white-space:nowrap;">'+x.it.dlc+'</span></div>';
+    }).join('');
+    h+='<div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.45;">V\u00e9rifie avant de jeter : \u0153ufs et yaourts tiennent souvent au-del\u00e0 de la date.</div>';
+  }
+  return h+'</div>';
+}
+function invSearchBox(){
+  var q=S.invSearch||'';
+  return '<div style="position:relative;margin-bottom:12px;">'
+    +'<input id="inv-search" type="text" value="'+String(q).replace(/"/g,'&quot;')+'" oninput="onInvSearch(this.value)" placeholder="\ud83d\udd0d Rechercher un aliment\u2026" style="width:100%;box-sizing:border-box;padding:9px 32px 9px 11px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;outline:none;">'
+    +(q?'<button onclick="onInvSearch(\'\')" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--text3);font-size:16px;cursor:pointer;padding:2px 6px;">\u00d7</button>':'')
+    +'</div>';
+}
+function onInvSearch(v){
+  S.invSearch=v;
+  var el=document.getElementById('inv-list');
+  if(el){el.innerHTML=renderInvCats();return;}
+  render();
+}
 function renderInv(){
   if(S.invDlcSort)return _invDlcBar()+'<div style="animation:dlcIn .25s ease;">'+renderDlcSortedInventory()+'</div>';
   const editBtn=_invDlcBar()+`<button onclick="toggleEditMode()" style="padding:6px 14px;background:${S.editMode?'rgba(95,168,201,.2)':'transparent'};border:0.5px solid ${S.editMode?'var(--blue)':'var(--border)'};border-radius:8px;color:${S.editMode?'var(--blue)':'var(--text2)'};font-size:13px;cursor:pointer;margin-bottom:14px;display:block;width:100%;">${S.editMode?'\u2713 Terminer l\'édition':'\u270f\ufe0f Éditer l\'inventaire'}</button>`;
+  return editBtn+renderInvDiag()+invSearchBox()+'<div id="inv-list">'+renderInvCats()+'</div>';
+}
+function renderInvCats(){
+  const q=_normNom(S.invSearch||'');
   const cats=Object.entries(S.inv).map(([cat,items])=>{
-    const visible=(S.editMode?items.slice():items.filter(i=>i.qty===null||i.qty>0)).sort((a,b)=>(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'}));
+    let base=(S.editMode?items.slice():items.filter(i=>i.qty===null||i.qty>0));
+    if(q)base=base.filter(i=>_normNom(i.name).indexOf(q)>=0);
+    const visible=base.sort((a,b)=>(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'}));
     const info=CINFO[cat],urg=visible.filter(i=>i.urgent&&(i.qty===null||i.qty>0)),open=S.editMode?true:S.openCat[cat];
     const rows=open?visible.map(it=>{
       const isUrg=it.urgent&&(it.qty===null||it.qty>0);
@@ -2522,8 +2604,7 @@ function renderInv(){
   const histSection=S.editMode&&_del.length?`<div style="margin-top:16px;padding:12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🗑 Récemment supprimés · récupérables 24h, sinon définitif</div>${_del.map((d,i)=>{const hh=Math.floor((Date.now()-d.deletedAt)/3600000);const left=Math.max(1,24-hh);const ci=CINFO[d.cat];return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--border);"><span style="flex:1;font-size:12px;color:var(--text2);">${d.item.name} <span style="color:var(--text3);font-size:10px;">· ${ci?ci.label:d.cat} · encore ${left}h pour récupérer</span></span><button onclick="restoreDeletedItem(${i})" style="padding:4px 10px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;flex-shrink:0;">↩ Restaurer</button></div>`;}).join('')}</div>`:'';
   const bottomAdd=S.editMode?`<button onclick="openAddItem('frigo')" style="width:100%;padding:11px;margin-top:14px;background:linear-gradient(135deg,var(--green),var(--green));border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button>`:'';
   const waitSection=(S.waiting&&S.waiting.length)?`<div style="background:rgba(192,87,70,.07);border:0.5px solid rgba(192,87,70,.25);border-radius:12px;padding:12px;margin-bottom:14px;"><div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:2px;">\ud83d\uded2 Salle d'attente \u00b7 ${S.waiting.length}</div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Articles achet\u00e9s \u00e0 ranger. Tape un article pour le placer ; \u2715 pour le retirer.</div>${S.waiting.map(w=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;"><span onclick="openWaitingItem('${w.id}')" style="flex:1;font-size:13px;color:var(--text);cursor:pointer;">${w.name}</span><span onclick="openWaitingItem('${w.id}')" style="font-size:15px;color:var(--accent);cursor:pointer;">\u2192</span><button onclick="deleteWaiting('${w.id}')" style="background:none;border:0;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:2px 6px;">\u2715</button></div>`).join('')}</div>`:'';
-  const _dupN=countDuplicates();const mergeBtn=_dupN?`<button onclick="runMergeDuplicates()" style="width:100%;padding:10px;margin-top:10px;background:rgba(192,87,70,.12);border:0.5px solid var(--accent);border-radius:10px;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer;">♻️ Fusionner ${_dupN} doublon(s)</button>`:'';
-  return editBtn+waitSection+cats+bottomAdd+mergeBtn+histSection;
+  return waitSection+cats+bottomAdd+histSection;
 }
 function renderCoursesHTML(){
   const byR={};SHOP_CATS.forEach(c=>byR[c.k]=[]);
@@ -3700,7 +3781,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-02 16h42</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-02 17h37</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
