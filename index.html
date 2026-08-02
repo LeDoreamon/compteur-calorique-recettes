@@ -165,6 +165,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .am-m .am-i { font-size: 19px; line-height: 1; }
 .am-m:hover { border-color: rgba(246,237,227,.18); color: var(--text); }
 
+
+/* ═══ RETOUR DU COACH ══════════════════════════════════════════════════ */
+#coach-toast { position: fixed; left: 12px; right: 12px; z-index: 240; display: none;
+  bottom: calc(96px + env(safe-area-inset-bottom, 12px));
+  background: rgba(23,17,13,.97); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
+  border: 0.5px solid var(--border); border-left: 3px solid var(--green); border-radius: 12px;
+  padding: 11px 14px; box-shadow: 0 12px 34px rgba(0,0,0,.5); cursor: pointer; max-width: 520px; margin: 0 auto; }
+@keyframes coachIn { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: none; } }
+@keyframes coachOut { to { opacity: 0; transform: translateY(10px); } }
+.coach-in { animation: coachIn .42s var(--ease) both; }
+.coach-out { animation: coachOut .4s var(--ease) both; }
+@media (prefers-reduced-motion: reduce) { .coach-in, .coach-out { animation: none !important; } }
+
 </style>
 </head>
 <body>
@@ -1023,6 +1036,7 @@ function executeCook(){
   if(mult>=2){const nd=shiftDate(day,1);if(!S.dayMeals[nd])S.dayMeals[nd]=[];const _e2={rid,mult:1,dessert:null,customDessert:null,macros:_per,name:r.name};if(_pings.length)_e2.ings=JSON.parse(JSON.stringify(_pings));if(ccExtras.length)_e2.extras=JSON.parse(JSON.stringify(ccExtras));S.dayMeals[nd].push(_e2);}
   const sp=getSpicesUsedByRecipe(r);S.pendingSpiceCheck=sp.length?sp.map(s=>({id:s.id,name:s.name})):null;
   closeConfirmCook();render();saveState();
+  showCoachToast(_cc&&_cc.day?_cc.day:S.today);
 }
 // ─── ADD ITEM ────────────────────────────
 let _aic='frigo';
@@ -3505,6 +3519,87 @@ function _fillRing(force){
     arc.setAttribute('stroke-dashoffset',target);
   }
 }
+// ─── 💬 Retour du coach apres un repas ──────────────────────────────────────
+function coachAdvice(day){
+  var m=getDayMacros(day||S.today), T=TARGETS;
+  var r={kcal:Math.round(T.kcal-m.kcal),prot:Math.round(T.prot-m.prot),
+         gluc:Math.round(T.gluc-m.gluc),lip:Math.round(T.lip-m.lip)};
+  var over=[];                                   // depassements notables (>8 %)
+  if(m.kcal>T.kcal+100)over.push('kcal');           // +100 kcal = seuil parlant
+  if(m.gluc>T.gluc*1.08)over.push('gluc');
+  if(m.lip>T.lip*1.08)over.push('lip');
+  var protOk=m.prot>=T.prot*0.98;
+  var kcalOk=m.kcal<=T.kcal+100;
+  var titre,corps,ton;
+
+  if(!over.length){
+    ton='ok';
+    if(protOk&&r.kcal>=0&&r.kcal<=T.kcal*0.12){
+      titre='🎯 Journée bouclée, beau travail';
+      corps='Objectifs atteints : '+Math.round(m.prot)+' g de protéines et '+Math.round(m.kcal)+' kcal. Rien à ajouter.';
+    }else if(protOk){
+      titre='💪 Protéines validées';
+      corps='Tu es à '+Math.round(m.prot)+' g. Il te reste '+Math.max(0,r.kcal)+' kcal de marge si tu as encore faim.';
+    }else{
+      titre='✅ Repas enregistré';
+      corps='Il te reste '+Math.max(0,r.kcal)+' kcal et surtout '+Math.max(0,r.prot)+' g de protéines à aller chercher.';
+    }
+  }else if(over.length===1&&over[0]!=='kcal'&&kcalOk&&protOk){
+    // le cas mixte : total correct, un macro qui deborde
+    ton='mixte';
+    var quoi=over[0]==='lip'?'lipides':'glucides';
+    var dep=over[0]==='lip'?-r.lip:-r.gluc;
+    titre='👍 Bilan correct, un point à surveiller';
+    corps='Calories et protéines sont bonnes. En revanche tu dépasses de '+dep+' g en '+quoi+
+      (over[0]==='lip'?' — vise des cuissons plus sèches sur le prochain repas.':' — privilégie des sources plus rassasiantes ensuite.');
+  }else if(over.indexOf('kcal')>=0){
+    ton='sur';
+    var d=-r.kcal;
+    var pct=Math.round(m.kcal/T.kcal*100);
+    if(d<=250){
+      titre='🙂 Léger dépassement, rien de grave';
+      corps='+'+d+' kcal au-dessus de ta cible ('+pct+' %). Sur une semaine ça ne se voit pas — repars normalement demain.';
+    }else{
+      titre='📌 Journée au-dessus de la cible';
+      corps='+'+d+' kcal ('+pct+' %). Ça arrive et ça ne casse rien : reprends simplement ton rythme au prochain repas.';
+    }
+    if(protOk)corps+=' Bonne nouvelle : tes protéines sont au rendez-vous.';
+    else if(r.prot>0)corps+=' Pense à couvrir tes '+r.prot+' g de protéines restants.';
+  }else{
+    ton='mixte';
+    var libs=over.map(function(x){return x==='lip'?('lipides (+'+(-r.lip)+' g)'):('glucides (+'+(-r.gluc)+' g)');});
+    titre='👀 Un œil sur la répartition';
+    corps='Tu débordes en '+libs.join(' et ')+', mais tu restes dans tes calories. '+
+      (protOk?'Protéines validées, c\'est le principal.':'Il te reste '+Math.max(0,r.prot)+' g de protéines à prendre.');
+  }
+  return {titre:titre,corps:corps,ton:ton};
+}
+var _coachTid=null;
+function showCoachToast(day){
+  try{
+    var a=coachAdvice(day);
+    var el=document.getElementById('coach-toast');
+    if(!el){
+      el=document.createElement('div');el.id='coach-toast';
+      document.body.appendChild(el);
+      el.addEventListener('click',function(){hideCoachToast();});
+    }
+    var col=a.ton==='ok'?'var(--green)':(a.ton==='sur'?'var(--orange)':'var(--gold)');
+    el.className='coach-in';
+    el.style.borderLeftColor=col;
+    el.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;">'+a.titre+'</div>'
+      +'<div style="font-size:11.5px;color:var(--text2);line-height:1.5;">'+a.corps+'</div>';
+    el.style.display='block';
+    if(_coachTid)clearTimeout(_coachTid);
+    _coachTid=setTimeout(hideCoachToast,7000);
+  }catch(e){}
+}
+function hideCoachToast(){
+  var el=document.getElementById('coach-toast');if(!el)return;
+  el.className='coach-out';
+  if(_coachTid){clearTimeout(_coachTid);_coachTid=null;}
+  setTimeout(function(){if(el)el.style.display='none';},420);
+}
 function render(){
   const urgTotal=Object.values(S.inv).flat().filter(i=>i.urgent&&(i.qty===null||i.qty>0)).length;
   const urgCount=RCP.filter(r=>(!r.profile||r.profile===ACTIVE_PROFILE)&&r.urgent===1&&r.slots&&r.slots.length>0&&canCook(r,1)).length;
@@ -3522,7 +3617,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-02 03h58</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-02 14h03</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4065,6 +4160,7 @@ function confirmAddMealFinal() {
   saveState();
   closeAddMeal();
   render();
+  showCoachToast(S.today);
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
