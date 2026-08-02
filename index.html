@@ -3568,15 +3568,50 @@ function _fillRing(force){
   }
 }
 // ─── 💬 Retour du coach apres un repas ──────────────────────────────────────
+// Objectif du profil : prise de masse ou seche (deduit du poids cible, sinon du profil)
+function _enPriseDeMasse(){
+  try{
+    var wg=(typeof S.weightGoal==='number')?S.weightGoal:(S.weightGoal&&S.weightGoal.goal);
+    var w=(S.weights&&S.weights.length)?S.weights[S.weights.length-1]:null;
+    var lw=w?(typeof w==='number'?w:(w.w!=null?w.w:(w.kg!=null?w.kg:w.weight))):null;
+    if(wg&&lw)return wg>lw;
+  }catch(e){}
+  return ACTIVE_PROFILE==='maureen';
+}
 function coachAdvice(day){
-  var m=getDayMacros(day||S.today), T=TARGETS;
+  var m=getDayMacros(day||S.today), T=TARGETS, bulk=_enPriseDeMasse();
   var r={kcal:Math.round(T.kcal-m.kcal),prot:Math.round(T.prot-m.prot),
          gluc:Math.round(T.gluc-m.gluc),lip:Math.round(T.lip-m.lip)};
-  var over=[];                                   // depassements notables (>8 %)
-  if(m.kcal>T.kcal+100)over.push('kcal');           // +100 kcal = seuil parlant
+  var protOk=m.prot>=T.prot*0.98;
+
+  if(bulk){
+    // ── PRISE DE MASSE : l'enjeu est d'atteindre le total, pas de le limiter ──
+    var titre,corps,ton;
+    if(r.kcal<=0){
+      ton='ok';
+      if(protOk){titre='🎯 Objectif atteint, très bien';
+        corps='Total couvert : '+Math.round(m.kcal)+' kcal et '+Math.round(m.prot)+' g de protéines. C\'est exactement ce qu\'il faut pour construire.';}
+      else{titre='📈 Calories au rendez-vous';
+        corps='Tu es à '+Math.round(m.kcal)+' kcal. Il te manque encore '+Math.max(0,r.prot)+' g de protéines — ce sont elles qui font le muscle.';}
+    }else if(r.kcal<=250){
+      ton='ok';titre='💪 Tu y es presque';
+      corps='Plus que '+r.kcal+' kcal'+(protOk?'':' et '+Math.max(0,r.prot)+' g de protéines')+' pour boucler ta journée. Une collation et c\'est réglé.';
+    }else if(r.kcal<=700){
+      ton='mixte';titre='🍽️ Encore de la marge';
+      corps='Il te reste '+r.kcal+' kcal à aller chercher'+(r.prot>0?' et '+r.prot+' g de protéines':'')+'. En prise de masse, le surplus est le moteur — ne le laisse pas filer.';
+    }else{
+      ton='sur';titre='⚠️ Journée encore légère';
+      corps='Il manque '+r.kcal+' kcal sur ta cible de '+T.kcal+'. Pense à des apports denses : lait entier, fruits secs, féculents en plus.';
+      if(r.prot>0)corps+=' Et '+r.prot+' g de protéines à couvrir.';
+    }
+    return {titre:titre,corps:corps,ton:ton};
+  }
+
+  // ── SÈCHE ──
+  var over=[];
+  if(m.kcal>T.kcal+100)over.push('kcal');
   if(m.gluc>T.gluc*1.08)over.push('gluc');
   if(m.lip>T.lip*1.08)over.push('lip');
-  var protOk=m.prot>=T.prot*0.98;
   var kcalOk=m.kcal<=T.kcal+100;
   var titre,corps,ton;
 
@@ -3665,7 +3700,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-02 14h52</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-02 16h42</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
