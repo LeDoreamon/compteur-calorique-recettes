@@ -246,6 +246,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
         <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Repas</label>
         <input id="addmeal-name" type="text" style="width:100%;padding:8px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
         <div id="am-slots" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px;"></div>
+        <div id="addmeal-qty-row" style="display:none;align-items:center;gap:8px;margin-top:10px;padding:9px 11px;background:var(--bg3);border-radius:9px;">
+          <span style="font-size:11px;color:var(--text3);white-space:nowrap;">Quantité</span>
+          <input id="addmeal-qty" type="number" min="0" step="1" oninput="scanQtyChanged()" style="width:78px;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;text-align:center;outline:none;">
+          <span id="addmeal-qty-unit" style="font-size:11px;color:var(--text3);">g</span>
+          <span id="addmeal-qty-hint" style="flex:1;text-align:right;font-size:10px;color:var(--text3);"></span>
+        </div>
         <div id="addmeal-breakdown" style="display:none;margin-top:10px;padding:9px 11px;background:rgba(246,237,227,.03);border:0.5px solid rgba(246,237,227,.08);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.65;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
@@ -2989,12 +2995,25 @@ function addScannedToFree(name,mac100,qtyStr){
 
 
 // ─── Scan code-barres → repas (système addmeal) ─────────────────────────────
+var _scanBase=null;
+function scanQtyChanged(){
+  if(!_scanBase)return;
+  var q=parseFloat((document.getElementById('addmeal-qty')||{}).value)||0;
+  var f=q/100;
+  var put=function(id,v,ent){var e=document.getElementById(id);if(e)e.value=ent?Math.round(v*f):Math.round(v*f*10)/10;};
+  put('addmeal-kcal',_scanBase.kcal,true);put('addmeal-prot',_scanBase.prot);
+  put('addmeal-gluc',_scanBase.gluc);put('addmeal-lip',_scanBase.lip);
+  var hint=document.getElementById('addmeal-qty-hint');
+  if(hint)hint.textContent=Math.round(_scanBase.kcal||0)+' kcal / 100'+(_scanBase.unit||'g');
+  var g=function(id){return parseFloat((document.getElementById(id)||{}).value)||0;};
+  _addMealBase={kcal:g('addmeal-kcal'),prot:g('addmeal-prot'),gluc:g('addmeal-gluc'),lip:g('addmeal-lip')};
+}
 function addScannedToMeal(name,mac100,qtyStr){
   var pq=(typeof _parseQty==='function')?_parseQty(qtyStr):null;
   var q=(pq&&pq.size)?pq.size:100;
   var f=q/100;
-  var label=name+((pq&&pq.size)?' ('+q+(pq.unit||'g')+')':'');
-  _pendingMeal={name:label,kcal:Math.round((mac100.kcal||0)*f),prot:Math.round((mac100.prot||0)*f),gluc:Math.round((mac100.gluc||0)*f),lip:Math.round((mac100.lip||0)*f)};
+  _scanBase={kcal:+mac100.kcal||0,prot:+mac100.prot||0,gluc:+mac100.gluc||0,lip:+mac100.lip||0,unit:(pq&&pq.unit)||'g',qty:q};
+  _pendingMeal={name:name,kcal:Math.round((mac100.kcal||0)*f),prot:Math.round((mac100.prot||0)*f),gluc:Math.round((mac100.gluc||0)*f),lip:Math.round((mac100.lip||0)*f)};
   var ov=document.getElementById('addmeal-overlay');if(ov)ov.style.display='flex';
   applyPendingMealToConfirm();
 }
@@ -3503,7 +3522,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-01 23h45</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-02 03h58</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -3620,7 +3639,7 @@ function setMealStock(yes){
   const off='padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;border:0.5px solid rgba(246,237,227,.15);color:var(--text2);';
   if(y)y.style.cssText=yes?on:off;if(n)n.style.cssText=!yes?on:off;
 }
-function openAddMeal(type) {
+function openAddMeal(type) {_scanBase=null;
   const ov = document.getElementById('addmeal-overlay');
   ov.style.display = 'flex';
   // Reset states
@@ -3829,7 +3848,7 @@ function renderAmSlots(){
     return '<button onclick="setAmSlot(\''+s+'\')" style="padding:6px 9px;border-radius:8px;font-size:11px;cursor:pointer;'+(on?'background:rgba(111,191,115,.15);border:0.5px solid rgba(111,191,115,.5);color:var(--green);font-weight:600;':'background:transparent;border:0.5px solid rgba(246,237,227,.12);color:var(--text3);')+'">'+L[s]+'</button>';
   }).join('');
 }
-function manualAddMeal(){
+function manualAddMeal(){_scanBase=null;
   _pendingMeal={name:'',kcal:0,prot:0,gluc:0,lip:0,items:[]};
   applyPendingMealToConfirm();
   var n=document.getElementById('addmeal-name');
@@ -3844,6 +3863,15 @@ function applyPendingMealToConfirm(){
   document.getElementById('addmeal-lip').value=_pendingMeal.lip;
   _addMealInvSuggestions=[];
   _addMealBase={kcal:_pendingMeal.kcal,prot:_pendingMeal.prot,gluc:_pendingMeal.gluc,lip:_pendingMeal.lip};
+  var qr=document.getElementById('addmeal-qty-row');
+  if(qr){
+    if(_scanBase){
+      qr.style.display='flex';
+      var qi=document.getElementById('addmeal-qty');if(qi)qi.value=_scanBase.qty||100;
+      var qu=document.getElementById('addmeal-qty-unit');if(qu)qu.textContent=_scanBase.unit||'g';
+      var qh=document.getElementById('addmeal-qty-hint');if(qh)qh.textContent=Math.round(_scanBase.kcal)+' kcal / 100'+(_scanBase.unit||'g');
+    }else qr.style.display='none';
+  }
   const v=document.getElementById('addmeal-verify');if(v)v.style.display='none';
   const i=document.getElementById('addmeal-input');if(i)i.style.display='none';
   document.getElementById('addmeal-confirm').style.display='block';
