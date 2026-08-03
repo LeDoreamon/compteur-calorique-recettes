@@ -184,13 +184,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 
 <!-- Settings modal -->
 <div id="set-overlay" onclick="overlayBackdrop(event,this,closeSettings)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:center;justify-content:center;padding:16px;">
-  <div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:14px;padding:24px;width:100%;max-width:380px;">
-    <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px;">⚙ Clé API Groq</div>
-    <div style="font-size:12px;color:var(--text2);margin-bottom:16px;">100% gratuit — 14 400 req/jour, vision incluse, sans carte bancaire.<br>Crée ta clé sur <a href="https://console.groq.com" target="_blank" style="color:var(--blue);">console.groq.com</a> → API Keys → Create API Key</div>
+  <div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:14px;padding:22px;width:100%;max-width:400px;max-height:88vh;overflow-y:auto;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><div style="font-size:17px;font-weight:600;color:var(--text);">\u2699\ufe0f R\u00e9glages</div><button onclick="closeSettings()" style="background:none;border:none;color:var(--text3);font-size:19px;cursor:pointer;line-height:1;">\u2715</button></div><div id="set-profile" style="padding:11px 12px;background:var(--bg3);border-radius:10px;margin-bottom:16px;"></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">\ud83e\udde0 Cl\u00e9 API Groq</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.45;">Sert à l'analyse des repas et à la génération de recettes. Gratuite sur <a href="https://console.groq.com" target="_blank" style="color:var(--blue);">console.groq.com</a>.</div>
     <input type="password" id="api-key-input" placeholder="gsk_..." style="width:100%;padding:10px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
-    <div style="display:flex;gap:8px;">
-      <button onclick="saveApiKey()" style="flex:1;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">Enregistrer</button>
-      <button onclick="closeSettings()" style="padding:10px 14px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Annuler</button>
+    <button onclick="saveApiKey()" style="width:100%;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">Enregistrer la cl\u00e9</button>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">\ud83d\udcbe Sauvegardes automatiques</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.45;">Un instantan\u00e9 par jour, les '+BACKUP_KEEP+' derniers conserv\u00e9s.</div>
+    <div id="set-backups"></div>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">\ud83d\udce4 Export</div>
+    <div id="set-export"></div>
+    <div style="display:flex;gap:8px;margin-top:20px;">
+      <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
     <button onclick="clearApiKey()" style="margin-top:10px;background:none;border:none;color:var(--red);font-size:12px;cursor:pointer;width:100%;text-align:center;">Supprimer la clé</button>
   </div>
@@ -1838,6 +1843,7 @@ async function loadState(){
         _syncStatus='ok';
         try{const rb=await fetch(await fbUrl(ACTIVE_PROFILE+'/burn'));if(rb.ok){const bd=await rb.json();_burnData=(bd&&typeof bd==='object')?bd:{};}}catch(e){}
         if(_mzJustFixed){_mzJustFixed=false;saveState();}
+        setTimeout(function(){autoBackup();},4000);   // sauvegarde du jour, sans retarder l'affichage
         return;
       }
     }
@@ -1861,6 +1867,18 @@ function openSettings(){
   const ov=document.getElementById('set-overlay');
   ov.style.display='flex';
   document.getElementById('api-key-input').value=getApiKey();
+  var p=document.getElementById('set-profile');
+  if(p){
+    var but=_enPriseDeMasse()?'Prise de masse':'S\u00e8che';
+    var bd=(document.querySelector&&0)||'';
+    p.innerHTML='<div style="font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:3px;">'
+      +(ACTIVE_PROFILE==='maureen'?'\ud83c\udf38 Maureen':'\ud83c\udfcb\ufe0f Liam')+' \u00b7 '+but+'</div>'
+      +'<div style="font-size:11px;color:var(--text3);line-height:1.5;">'
+      +TARGETS.kcal+' kcal \u00b7 '+TARGETS.prot+' g prot. \u00b7 '+TARGETS.gluc+' g gluc. \u00b7 '+TARGETS.lip+' g lip.</div>';
+  }
+  var ex=document.getElementById('set-export');
+  if(ex){try{ex.innerHTML=renderDataExport();}catch(e){ex.innerHTML='';}}
+  renderBackupList();
 }
 function closeSettings(){document.getElementById('set-overlay').style.display='none';}
 function saveApiKey(){
@@ -3648,6 +3666,67 @@ function _fillRing(force){
     arc.setAttribute('stroke-dashoffset',target);
   }
 }
+// ─── 💾 Sauvegardes automatiques ────────────────────────────────────────────
+const BACKUP_KEEP=14;
+async function autoBackup(){
+  try{
+    var d=getToday();
+    if(S.lastBackup===d)return;                       // une seule par jour
+    var snap=localStorage.getItem(ACTIVE_PROFILE+'_st');
+    if(!snap||snap.length<200)return;                 // rien de consistant a sauver
+    var url=await fbUrl(ACTIVE_PROFILE+'/backups/'+d);
+    var r=await fetch(url,{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({date:d,at:new Date().toISOString(),state:snap})});
+    if(!r.ok)return;
+    S.lastBackup=d;
+    try{
+      var lu=await fbUrl(ACTIVE_PROFILE+'/backups');
+      var lr=await fetch(lu+(lu.indexOf('?')>=0?'&':'?')+'shallow=true');
+      if(lr.ok){
+        var keys=Object.keys((await lr.json())||{}).sort();
+        for(var i=0;i<keys.length-BACKUP_KEEP;i++){
+          var du=await fbUrl(ACTIVE_PROFILE+'/backups/'+keys[i]);
+          fetch(du,{method:'DELETE'});
+        }
+      }
+    }catch(e){}
+    saveState();
+  }catch(e){}
+}
+async function listBackups(){
+  try{
+    var u=await fbUrl(ACTIVE_PROFILE+'/backups');
+    var r=await fetch(u+(u.indexOf('?')>=0?'&':'?')+'shallow=true');
+    if(!r.ok)return [];
+    return Object.keys((await r.json())||{}).sort().reverse();
+  }catch(e){return [];}
+}
+async function restoreBackup(day){
+  if(!confirm('Restaurer la sauvegarde du '+day+' ?\n\nToutes les données actuelles seront remplacées.'))return;
+  try{
+    var u=await fbUrl(ACTIVE_PROFILE+'/backups/'+day);
+    var r=await fetch(u);
+    if(!r.ok)throw new Error('lecture impossible');
+    var b=await r.json();
+    if(!b||!b.state)throw new Error('sauvegarde vide');
+    var st=JSON.parse(b.state);
+    _applyState(st);
+    S.lastBackup=null;
+    saveState();closeSettings();render();
+    alert('✓ Sauvegarde du '+day+' restaurée.');
+  }catch(e){alert('⚠ Restauration impossible : '+(e.message||e));}
+}
+async function renderBackupList(){
+  var el=document.getElementById('set-backups');if(!el)return;
+  el.innerHTML='<div style="font-size:11px;color:var(--text3);">Chargement…</div>';
+  var l=await listBackups();
+  if(!l.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);">Aucune sauvegarde pour l\'instant — elle se crée à la première ouverture du jour.</div>';return;}
+  el.innerHTML=l.slice(0,BACKUP_KEEP).map(function(d){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);">'
+      +'<span style="font-size:12px;color:var(--text2);">'+d+'</span>'
+      +'<button onclick="restoreBackup(\''+d+'\')" style="padding:4px 10px;background:transparent;border:0.5px solid var(--border);border-radius:7px;color:var(--blue);font-size:11px;cursor:pointer;">Restaurer</button></div>';
+  }).join('');
+}
 // ─── 💬 Retour du coach apres un repas ──────────────────────────────────────
 // Objectif du profil : prise de masse ou seche (deduit du poids cible, sinon du profil)
 function _enPriseDeMasse(){
@@ -3781,7 +3860,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-02 17h37</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-04 00h51</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
