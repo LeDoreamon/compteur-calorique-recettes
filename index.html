@@ -348,7 +348,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <div id="cc-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:200;align-items:center;justify-content:center;padding:12px;"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:14px;padding:20px;width:100%;max-width:420px;max-height:90vh;overflow-y:auto;"><div id="cc-title" style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:4px;"></div><div style="font-size:11px;color:var(--text3);margin-bottom:14px;">Ajuste si tu as utilisé des quantités différentes</div><div id="cc-ings" style="margin-bottom:12px;"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Ingrédients en plus ?</span><button onclick="addCCExtra()" style="background:transparent;border:0.5px dashed rgba(246,237,227,.15);border-radius:7px;color:var(--text2);font-size:11px;padding:4px 9px;cursor:pointer;">+ Ajouter</button></div><div id="cc-extras" style="margin-bottom:12px;"></div><div id="cc-totals" style="display:flex;justify-content:center;flex-wrap:wrap;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;margin-bottom:14px;font-size:12px;"></div><div style="display:flex;gap:8px;"><button onclick="executeCook()" style="flex:1;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">✓ Confirmer la cuisson</button><button onclick="closeConfirmCook()" style="padding:10px 14px;background:transparent;border:0.5px solid rgba(246,237,227,.1);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">✕</button></div></div></div>
 <div id="wait-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:20px;overflow-y:auto;" onclick="overlayBackdrop(event,this,closeWaitingItem)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:340px;width:100%;box-sizing:border-box;margin:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div id="wait-name" style="font-size:16px;font-weight:600;color:var(--text);">Article</div><button onclick="closeWaitingItem()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Où le placer ?</div><div id="wait-cat-row" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div><div id="wait-mac-toggle" style="display:flex;gap:6px;margin-bottom:12px;"></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" id="wait-qtylabel">Quantité</div><div style="display:flex;gap:6px;margin-bottom:8px;" id="wait-qtyrow"><input id="wait-qty" type="number" placeholder="0" style="flex:1;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><select id="wait-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select><input id="wait-pieceg" type="number" placeholder="poids/pièce" style="display:none;flex:1;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><span id="wait-pieceg-u" style="display:none;font-size:12px;color:var(--text3);white-space:nowrap;align-self:center;">g/pièce</span></div><label style="display:flex;align-items:center;gap:7px;margin-bottom:8px;font-size:12px;color:var(--text2);cursor:pointer;"><input type="checkbox" id="wait-pkg-on" onchange="toggleWaitPkg()" style="width:16px;height:16px;accent-color:var(--accent);"> Emballage (paquet, boîte, pot…)</label><div id="wait-pkg-fields" style="display:none;gap:6px;margin-bottom:8px;grid-template-columns:1fr 1fr auto;align-items:center;"><input id="wait-pkg-size" type="number" placeholder="taille g/ml" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><input id="wait-pkg-count" type="number" placeholder="nombre" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><select id="wait-pkg-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select></div><label style="display:flex;align-items:center;gap:7px;margin-bottom:14px;font-size:12px;color:var(--text2);cursor:pointer;"><input type="checkbox" id="wait-present" onchange="toggleWaitPresent()" style="width:16px;height:16px;"> Illimité (présent)</label><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" id="wait-mac-label">Macros pour 100 g/ml</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;"><div><label style="font-size:9px;color:var(--text3);display:block;">Kcal</label><input id="wait-kcal" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--orange);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:var(--text3);display:block;">Prot</label><input id="wait-prot" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--green);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:var(--text3);display:block;">Gluc</label><input id="wait-gluc" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--blue);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:var(--text3);display:block;">Lip</label><input id="wait-lip" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--red);font-size:12px;outline:none;box-sizing:border-box;"></div></div><div id="wait-macsrc" style="display:flex;gap:6px;margin-bottom:8px;align-items:center;"></div><button id="wait-ai-btn" onclick="aiWaitMacros()" style="width:100%;padding:8px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:7px;color:var(--blue);font-size:12px;cursor:pointer;margin-bottom:14px;">❆ Chercher via IA</button><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">DLC (optionnel)</div><input id="wait-dlc" type="date" style="width:100%;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;margin-bottom:14px;box-sizing:border-box;"><button onclick="confirmWaitPlace()" style="width:100%;padding:11px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">Placer dans l'inventaire</button></div></div>
 <div id="shopitem-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:20px;" onclick="overlayBackdrop(event,this,closeShopItem)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:320px;width:100%;box-sizing:border-box;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><input id="shopitem-name" type="text" placeholder="Nom" onkeydown="if(event.key==='Enter')moveShopItem()" style="font-size:16px;font-weight:600;color:var(--text);background:transparent;border:0;border-bottom:1px solid rgba(246,237,227,.15);outline:none;padding:3px 0;flex:1;min-width:0;margin-right:10px;box-sizing:border-box;"><button onclick="closeShopItem()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Rayon</div><div id="shopitem-hint" style="font-size:11px;color:var(--text2);margin:-2px 0 8px;"></div><select id="shopitem-rayon" style="width:100%;padding:9px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;margin-bottom:12px;box-sizing:border-box;"></select><button onclick="moveShopItem()" style="width:100%;padding:10px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px;">Enregistrer</button><button onclick="deleteShopItem()" style="width:100%;padding:9px;background:transparent;border:0.5px solid rgba(224,92,79,.3);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">Supprimer de la liste</button></div></div>
-<div id="item-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:20px;" onclick="overlayBackdrop(event,this,closeItemDetail)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:330px;width:100%;box-sizing:border-box;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:2px;"><div id="item-name" style="font-size:16px;font-weight:600;color:var(--text);">Item</div><button onclick="closeItemDetail()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div id="item-sub" style="font-size:12px;color:var(--text3);margin-bottom:14px;">—</div><div id="item-unit-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Unite de mesure</div><select id="item-unit" onchange="onItemUnitChange()" style="width:100%;box-sizing:border-box;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><option value="g">grammes (g)</option><option value="ml">millilitres (ml)</option><option value="pcs">pieces</option><option value="tubes">tubes</option><option value="boites">boites</option><option value="cubes">cubes</option></select><div id="item-pieceg-row" style="display:none;align-items:center;gap:8px;margin-top:8px;"><span style="font-size:11px;color:var(--text3);white-space:nowrap;">Poids d'une unite</span><input id="item-pieceg" type="number" min="1" step="1" oninput="updateItemUnitHint()" style="width:74px;padding:6px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;text-align:center;outline:none;"><span style="font-size:11px;color:var(--text3);">g</span></div><div id="item-unit-hint" style="font-size:10.5px;color:var(--text3);margin-top:7px;line-height:1.45;"></div></div><div id="item-dessert-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;">
+<div id="item-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:20px;" onclick="overlayBackdrop(event,this,closeItemDetail)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:330px;width:100%;box-sizing:border-box;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:2px;"><div id="item-name" style="font-size:16px;font-weight:600;color:var(--text);">Item</div><button onclick="closeItemDetail()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div id="item-sub" style="font-size:12px;color:var(--text3);margin-bottom:14px;">—</div><div style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">\ud83d\udcc5 Date limite (DLC)</div><div style="display:flex;align-items:center;gap:8px;"><input id="item-dlc" type="date" onchange="updateItemDlcHint()" style="flex:1;min-width:0;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><button onclick="document.getElementById('item-dlc').value='';updateItemDlcHint();" style="padding:7px 11px;background:transparent;border:0.5px solid var(--border);border-radius:7px;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">Effacer</button></div><div id="item-dlc-hint" style="font-size:10.5px;color:var(--text3);margin-top:6px;"></div></div><div id="item-unit-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Unite de mesure</div><select id="item-unit" onchange="onItemUnitChange()" style="width:100%;box-sizing:border-box;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><option value="g">grammes (g)</option><option value="ml">millilitres (ml)</option><option value="pcs">pieces</option><option value="tubes">tubes</option><option value="boites">boites</option><option value="cubes">cubes</option></select><div id="item-pieceg-row" style="display:none;align-items:center;gap:8px;margin-top:8px;"><span style="font-size:11px;color:var(--text3);white-space:nowrap;">Poids d'une unite</span><input id="item-pieceg" type="number" min="1" step="1" oninput="updateItemUnitHint()" style="width:74px;padding:6px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;text-align:center;outline:none;"><span style="font-size:11px;color:var(--text3);">g</span></div><div id="item-unit-hint" style="font-size:10.5px;color:var(--text3);margin-top:7px;line-height:1.45;"></div></div><div id="item-dessert-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;">
   <label style="display:flex;align-items:center;gap:9px;cursor:pointer;"><input type="checkbox" id="item-dessert" onchange="toggleItemDessert()" style="width:17px;height:17px;accent-color:var(--gold);flex:0 0 auto;"><span style="font-size:12px;color:var(--text2);">🍰 Proposer comme dessert</span></label>
   <div id="item-dessert-qty-row" style="display:none;align-items:center;gap:8px;margin-top:9px;">
     <span style="font-size:11px;color:var(--text3);">Portion</span>
@@ -1231,6 +1231,8 @@ function openItemDetail(cat,id){
   const m=(_itemMacMode==='piece'?it.macPiece:it.mac100)||{};
   const sv=(eid,v)=>{document.getElementById(eid).value=(v===undefined||v===null)?'':v;};
   sv('item-kcal',m.kcal);sv('item-prot',m.prot);sv('item-gluc',m.gluc);sv('item-lip',m.lip);
+  var dlEl=document.getElementById('item-dlc');
+  if(dlEl){dlEl.value=it.dlc||'';updateItemDlcHint();}
   var uEl=document.getElementById('item-unit');
   if(uEl){
     var u=it.unit||'g';
@@ -1291,6 +1293,15 @@ async function aiLookupItemMacros(){
     if(btn)btn.textContent='✓ Vérifie puis Enregistre';
   }catch(e){if(btn)btn.textContent='Erreur — réessaie';}
   if(btn)btn.disabled=false;
+}
+function updateItemDlcHint(){
+  var el=document.getElementById('item-dlc-hint');if(!el)return;
+  var v=(document.getElementById('item-dlc')||{}).value;
+  if(!v){el.textContent='Aucune date — l\'article n\'apparaîtra pas dans les alertes DLC.';el.style.color='var(--text3)';return;}
+  var j=Math.round((new Date(v)-new Date(getToday()))/86400000);
+  if(j<0){el.textContent='Dépassée depuis '+(-j)+' jour'+(-j>1?'s':'')+'.';el.style.color='var(--red)';}
+  else if(j===0){el.textContent="C'est aujourd'hui.";el.style.color='var(--warn)';}
+  else{el.textContent='Dans '+j+' jour'+(j>1?'s':'')+'.';el.style.color=j<=3?'var(--warn)':'var(--text3)';}
 }
 function onItemUnitChange(){
   var u=(document.getElementById('item-unit')||{}).value;
@@ -1374,6 +1385,8 @@ function saveItemDetail(){
     it.macSource=_macSrc.item;
     if(_macSrc.item==='manual'){it.macManual={kcal:mm.kcal,prot:mm.prot,gluc:mm.gluc,lip:mm.lip};}else if(_macManual.item){it.macManual={kcal:+_macManual.item.kcal||0,prot:+_macManual.item.prot||0,gluc:+_macManual.item.gluc||0,lip:+_macManual.item.lip||0};}
     // Unite : applique EN DERNIER, apres les blocs macros qui reinitialisent pieceG
+    var _dl=document.getElementById('item-dlc');
+    if(_dl){if(_dl.value){it.dlc=_dl.value;it.dlcAuto=false;}else{delete it.dlc;delete it.dlcAuto;}}
     var _uEl=document.getElementById('item-unit');
     if(_uEl&&_uEl.value){
       it.unit=_uEl.value;
@@ -1656,6 +1669,7 @@ function saveBurnLog(){
   _burnData[day]=cur;
   _burnSave(day);
   closeBurnLog();render();
+  showCoachToast(day);
 }
 
 let _syncStatus = ''; // '' | 'ok' | 'offline'
@@ -2950,9 +2964,60 @@ function renderBurnBlock(){
       +'</div>';
   }catch(e){return '';}
 }
+function renderCoachSummary(){
+  try{
+    var T=TARGETS,bulk=_enPriseDeMasse();
+    var m=getDayMacros(S.today), b=getBurn(S.today);
+    var brule=b?b.total:0, bal=Math.round(m.kcal-brule);
+    // moyenne sur 7 jours
+    var n=0,sk=0,sp=0,jours=0,nb=0;
+    for(var i=0;i<7;i++){
+      var d=shiftDate(S.today,-i);
+      var dm=getDayMacros(d);
+      if(dm.kcal>0){n++;sk+=dm.kcal;sp+=dm.prot;if(dm.prot>=T.prot*0.95)jours++;}
+      if(getBurn(d))nb++;
+    }
+    var mk=n?Math.round(sk/n):0, mp=n?Math.round(sp/n):0;
+    var tuile=function(lbl,val,unit,col){
+      return '<div style="flex:1;min-width:0;background:var(--bg3);border-radius:9px;padding:9px 6px;text-align:center;">'
+        +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">'+lbl+'</div>'
+        +'<div style="font-size:15px;font-weight:600;color:'+(col||'var(--text)')+';margin-top:3px;">'+val+'</div>'
+        +'<div style="font-size:9px;color:var(--text3);">'+unit+'</div></div>';
+    };
+    // phrase du coach, croisant alimentation ET depense
+    var phrase,col;
+    if(!n){phrase='Aucun repas enregistré cette semaine — commence par logger ta journée.';col='var(--text3)';}
+    else if(bulk){
+      if(mk>=T.kcal-100){phrase='Tu tiens ton surplus : '+mk+' kcal en moyenne sur '+n+' jour'+(n>1?'s':'')+'. C\'est là que la masse se construit.';col='var(--green)';}
+      else{phrase='Moyenne à '+mk+' kcal, soit '+(T.kcal-mk)+' de moins que ta cible. Sur la semaine, ça freine la prise.';col='var(--warn)';}
+      if(mp<T.prot*0.9)phrase+=' Tes protéines aussi sont courtes ('+mp+' g/jour).';
+    }else{
+      var ec=mk-T.kcal;
+      if(Math.abs(ec)<=120){phrase='Moyenne à '+mk+' kcal, pile sur ta cible. C\'est la régularité qui fait la sèche, et tu l\'as.';col='var(--green)';}
+      else if(ec>0){phrase='Moyenne à '+mk+' kcal, soit +'+ec+' par jour. Sur une semaine ça fait '+Math.round(ec*7/77)*10+'0 kcal de surplus — resserre un peu.';col='var(--warn)';}
+      else{phrase='Moyenne à '+mk+' kcal, '+(-ec)+' sous ta cible. Le déficit est là ; veille juste à ne pas creuser trop vite.';col='var(--green)';}
+      if(mp<T.prot*0.9)phrase+=' Attention aux protéines : '+mp+' g/jour en moyenne pour '+T.prot+' visés.';
+      else phrase+=' Protéines tenues à '+mp+' g/jour, c\'est ce qui protège ton muscle.';
+    }
+    if(nb>=3&&brule)phrase+=' Dépense suivie sur '+nb+' jour'+(nb>1?'s':'')+' : ta balance du jour est de '+(bal>0?'+':'')+bal+' kcal.';
+    else if(!nb)phrase+=' Pense à saisir tes pas et séances : sans eux, la balance reste théorique.';
+
+    return '<div style="background:var(--bg2);border:0.5px solid var(--border);border-left:3px solid '+col+';border-radius:12px;padding:13px;margin-bottom:16px;">'
+      +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;">\ud83d\udcac Le point du coach</div>'
+      +'<div style="display:flex;gap:6px;margin-bottom:10px;">'
+      +tuile('Auj. mangé',Math.round(m.kcal),'kcal','var(--gold)')
+      +tuile('Auj. dépensé',brule||'—','kcal',brule?'var(--orange)':'var(--text3)')
+      +tuile('Balance',(bal>0?'+':'')+bal,'kcal',(bulk?bal>0:bal<0)?'var(--green)':'var(--text2)')
+      +tuile('Moy. 7 j',mk||'—','kcal','var(--text)')
+      +'</div>'
+      +'<div style="font-size:11.5px;color:var(--text2);line-height:1.55;">'+phrase+'</div>'
+      +(n?'<div style="font-size:10px;color:var(--text3);margin-top:7px;">Protéines atteintes '+jours+' jour'+(jours>1?'s':'')+' sur '+n+'.</div>':'')
+      +'</div>';
+  }catch(e){return '';}
+}
 function renderCockpit(){
   var avg=avgMacrosOverDays(7);
-  var html='<div style="margin-bottom:18px;">';
+  var html=renderCoachSummary()+'<div style="margin-bottom:18px;">';
   html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📊 Pilotage de la sèche</div>';
   if(!avg){
     html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:16px;text-align:center;color:var(--text3);font-size:13px;line-height:1.5;">Logue tes repas quelques jours pour voir ta moyenne hebdomadaire et piloter ta sèche.</div>';
@@ -3860,7 +3925,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-04 00h51</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-04 00h58</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
