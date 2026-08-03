@@ -2638,6 +2638,69 @@ function renderInvCats(){
   const waitSection=(S.waiting&&S.waiting.length)?`<div style="background:rgba(192,87,70,.07);border:0.5px solid rgba(192,87,70,.25);border-radius:12px;padding:12px;margin-bottom:14px;"><div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:2px;">\ud83d\uded2 Salle d'attente \u00b7 ${S.waiting.length}</div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Articles achet\u00e9s \u00e0 ranger. Tape un article pour le placer ; \u2715 pour le retirer.</div>${S.waiting.map(w=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;"><span onclick="openWaitingItem('${w.id}')" style="flex:1;font-size:13px;color:var(--text);cursor:pointer;">${w.name}</span><span onclick="openWaitingItem('${w.id}')" style="font-size:15px;color:var(--accent);cursor:pointer;">\u2192</span><button onclick="deleteWaiting('${w.id}')" style="background:none;border:0;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:2px 6px;">\u2715</button></div>`).join('')}</div>`:'';
   return waitSection+cats+bottomAdd+histSection;
 }
+// ─── 🛒 Complétion automatique de la liste de courses ───────────────────────
+function _stockBas(it){
+  if(!it||it.qty===null)return null;                 // illimité : jamais
+  var q=+it.qty||0;
+  if(q<=0)return 'épuisé';
+  var seuil;
+  if(it.pkg&&it.pkg.size>0)seuil=it.pkg.size;        // moins d'un emballage
+  else if(it.unit==='g'||it.unit==='ml')seuil=60;
+  else seuil=1;
+  return q<=seuil?'presque fini':null;
+}
+function shopSuggestions(){
+  var deja={};
+  (S.shop&&S.shop.list||[]).forEach(function(x){deja[_normNom(x.name)]=1;});
+  var out=[];
+  Object.keys(S.inv||{}).forEach(function(cat){
+    (S.inv[cat]||[]).forEach(function(it){
+      if(!it||!it.name)return;
+      var etat=_stockBas(it);
+      if(!etat)return;
+      if(deja[_normNom(it.name)])return;
+      out.push({name:it.name,etat:etat,rayon:_guessRayon(it.name),qty:it.qty,unit:it.unit||''});
+    });
+  });
+  return out.sort(function(a,b){
+    if(a.etat!==b.etat)return a.etat==='épuisé'?-1:1;
+    return (a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'});
+  });
+}
+function renderShopAuto(){
+  var s=shopSuggestions();
+  if(!s.length)return '';
+  if(!S.shopAutoOpen){
+    return '<button onclick="S.shopAutoOpen=1;render()" style="width:100%;margin-bottom:12px;padding:10px;background:var(--accent-bg);border:0.5px solid rgba(192,87,70,.45);border-radius:10px;color:var(--accent2);font-size:12.5px;font-weight:600;cursor:pointer;">\u2728 '+s.length+' article'+(s.length>1?'s':'')+' \u00e0 racheter d\'apr\u00e8s ton stock</button>';
+  }
+  var h='<div style="margin-bottom:12px;padding:12px;background:var(--bg2);border:0.5px solid rgba(192,87,70,.4);border-radius:12px;">'
+   +'<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">'
+   +'<span style="font-size:12.5px;font-weight:600;color:var(--accent2);">\u2728 \u00c0 racheter ('+s.length+')</span>'
+   +'<button onclick="S.shopAutoOpen=0;render()" style="background:none;border:0;color:var(--text3);font-size:17px;cursor:pointer;line-height:1;">\u00d7</button></div>';
+  h+=s.map(function(x,i){
+    var col=x.etat==='épuisé'?'var(--red)':'var(--warn)';
+    return '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);cursor:pointer;">'
+      +'<input type="checkbox" id="sa-'+i+'" checked style="width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto;">'
+      +'<span style="flex:1;min-width:0;font-size:12px;color:var(--text2);">'+x.name+'</span>'
+      +'<span style="font-size:10px;color:'+col+';white-space:nowrap;">'+x.etat+'</span></label>';
+  }).join('');
+  h+='<button onclick="applyShopSuggestions()" style="width:100%;margin-top:9px;padding:9px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">\u2713 Ajouter \u00e0 ma liste</button>';
+  h+='<div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.45;">\u00ab \u00e9puis\u00e9 \u00bb = stock \u00e0 0 \u00b7 \u00ab presque fini \u00bb = moins d\'un emballage restant.</div>';
+  return h+'</div>';
+}
+function applyShopSuggestions(){
+  var s=shopSuggestions(),n=0;
+  S.shop=S.shop||{list:[],graveyard:[]};S.shop.list=S.shop.list||[];
+  s.forEach(function(x,i){
+    var cb=document.getElementById('sa-'+i);
+    if(cb&&!cb.checked)return;
+    S.shop.list.push({id:'sh_'+Date.now().toString(36)+'_'+i,name:x.name,rayon:x.rayon,checked:false});
+    n++;
+  });
+  S.shopAutoOpen=0;
+  saveState();render();
+  if(n)alert('\u2713 '+n+' article'+(n>1?'s ajout\u00e9s':' ajout\u00e9')+' \u00e0 ta liste de courses.');
+}
 function renderCoursesHTML(){
   const byR={};SHOP_CATS.forEach(c=>byR[c.k]=[]);
   (S.shop.list||[]).forEach(it=>{(byR[it.rayon]||byR['divers']).push(it);});
@@ -2645,6 +2708,7 @@ function renderCoursesHTML(){
   const checkedN=(S.shop.list||[]).filter(i=>i.checked).length;
   const waitN=(S.waiting||[]).length;const graveN=(S.shop.graveyard||[]).length;
   let html='<div style="margin-bottom:14px;">';
+  html+=renderShopAuto();
   html+='<div style="display:flex;gap:6px;margin-bottom:14px;"><input id="shop-add-name" placeholder="Ajouter un article\u2026" style="flex:1;min-width:0;padding:9px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><select id="shop-add-rayon" style="padding:9px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:11px;max-width:120px;">'+SHOP_CATS.map(c=>`<option value="${c.k}">${c.label}</option>`).join('')+'</select><button onclick="addShopItem()" style="padding:9px 13px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:15px;cursor:pointer;">+</button><button onclick="openScanner(\'shop\')" title="Scanner un code-barres" style="padding:9px 12px;background:transparent;border:0.5px solid rgba(192,87,70,.5);border-radius:8px;color:var(--accent2);font-size:15px;cursor:pointer;">\ud83d\udcf7</button></div>';
   if(waitN)html+=`<div style="background:rgba(233,161,59,.08);border:0.5px solid rgba(233,161,59,.25);border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12px;color:var(--orange);">\u23f3 ${waitN} article(s) en salle d'attente (onglet Inventaire) \u00e0 placer.</div>`;
   SHOP_CATS.forEach(c=>{
@@ -3039,8 +3103,6 @@ function renderCockpit(){
   return html;
 }
 function renderBudgetSuggestions(){
-  var meals=S.dayMeals[S.today];
-  if(!meals||!meals.length)return '';
   var eaten=getDayMacros(S.today);
   var remK=Math.round(TARGETS.kcal-eaten.kcal),remP=Math.round(TARGETS.prot-eaten.prot);
   if(remK<=120)return '';
@@ -3060,8 +3122,10 @@ function renderBudgetSuggestions(){
     cands.sort(function(a,b){return _dens(b)-_dens(a);});
   }
   cands=cands.slice(0,4);
+  var _b=getBurn(S.today);
   var html='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:13px;margin-bottom:14px;">';
-  html+='<div style="font-size:11px;color:var(--text2);margin-bottom:9px;">🎯 Il te reste <strong style="color:var(--orange);">'+remK+' kcal</strong>'+(remP>0?' · <strong style="color:var(--green);">'+remP+' g</strong> de protéines':'')+' — ça rentre :</div>';
+  html+='<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">🎯 Il te reste <strong style="color:var(--orange);">'+remK+' kcal</strong>'+(remP>0?' · <strong style="color:var(--green);">'+remP+' g</strong> de protéines':'')+' — ça rentre :</div>';
+  html+=(_b&&_b.total)?'<div style="font-size:10px;color:var(--text3);margin-bottom:9px;">Tu as dépensé '+_b.total+' kcal aujourd\'hui — ta cible reste la même, c\'est ton déficit qui s\'élargit.</div>':'<div style="margin-bottom:9px;"></div>';
   cands.forEach(function(r){
     html+='<button data-action="goto-recipe" data-rid="'+r.id+'" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:var(--bg3);border:0.5px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:6px;cursor:pointer;"><span style="flex:1;font-size:13px;color:var(--text);">'+r.name+'</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">'+r.kcal+' kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;">'+r.prot+'g P</span></button>';
   });
@@ -3925,7 +3989,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-04 00h58</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-04 01h12</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
