@@ -191,6 +191,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <button onclick="saveApiKey()" style="width:100%;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">Enregistrer la clé</button>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">💾 Sauvegardes automatiques</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.45;">Un instantané par jour, les 14 derniers conservés.</div>
+    <button onclick="forceBackup()" style="width:100%;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:9px;">💾 Sauvegarder maintenant</button>
     <div id="set-backups"></div>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">📤 Export</div>
     <div id="set-export"></div>
@@ -1796,13 +1797,68 @@ function _applyState(d){
 function showSyncErr(){alert(_lastSyncErr||'Aucun detail enregistre pour le moment. Declenche une sauvegarde (ajoute un repas) puis retape.');}
 function _syncBadge(){
   if(_syncStatus==='ok') return '<span style="font-size:10px;color:var(--green);">☁ sync</span>';
+  if(_syncStatus==='conflict') return '<span onclick="_reloadFromServer(false)" style="font-size:10px;color:var(--red);cursor:pointer;">\u26a0 conflit \u2014 recharger</span>';
   if(_syncStatus==='offline') return '<span onclick="showSyncErr()" style="font-size:10px;color:var(--orange);cursor:pointer;">⚠ hors ligne ⓘ</span>';
   return '<span style="font-size:10px;color:var(--text3);">💾 auto</span>';
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// ─── 🔒 Protection contre l'écrasement mutuel ───────────────────────────────
+let _stateRev=0;                                   // révision chargée depuis le serveur
+const _sessionId=Math.random().toString(36).slice(2,10);
+let _conflictBusy=false;
+async function _remoteRev(){
+  try{
+    const c=new AbortController();const t=setTimeout(()=>c.abort(),4500);
+    const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state/rev'),{signal:c.signal});
+    clearTimeout(t);
+    if(!r.ok)return null;
+    const v=await r.json();
+    return (typeof v==='number')?v:0;
+  }catch(e){return null;}                          // réseau indisponible : on ne bloque pas
+}
+async function _reloadFromServer(silencieux){
+  _loaded=false;
+  await loadState();
+  render();
+  if(!silencieux)_infoToast('\ud83d\udd04 Donn\u00e9es recharg\u00e9es','Elles avaient \u00e9t\u00e9 modifi\u00e9es depuis un autre appareil. Ta version locale, plus ancienne, n\'a pas \u00e9t\u00e9 envoy\u00e9e.');
+}
+async function _onSaveConflict(){
+  if(_conflictBusy)return;
+  _conflictBusy=true;
+  _syncStatus='conflict';
+  const b=document.getElementById('sync-badge');if(b)b.innerHTML=_syncBadge();
+  var ok=confirm("\u26a0 Ces donn\u00e9es ont \u00e9t\u00e9 modifi\u00e9es ailleurs entre-temps.\n\nEnregistrer maintenant \u00e9craserait ces modifications. L'app peut recharger la version la plus r\u00e9cente \u00e0 la place.\n\nRecharger ? (Annuler = ne rien enregistrer pour l'instant)");
+  _conflictBusy=false;
+  if(ok)await _reloadFromServer(true);
+}
+// Retour au premier plan : on vérifie AVANT de pouvoir écrire quoi que ce soit
+let _wasHidden=false;
+async function _checkFresherOnResume(){
+  if(!_loaded)return;
+  const rr=await _remoteRev();
+  if(rr!==null&&rr>_stateRev)await _reloadFromServer(false);
+}
+function _infoToast(titre,corps){
+  try{
+    var el=document.getElementById('coach-toast');
+    if(!el){el=document.createElement('div');el.id='coach-toast';document.body.appendChild(el);
+      el.addEventListener('click',function(){hideCoachToast();});}
+    el.className='coach-in';
+    el.style.borderLeftColor='var(--blue)';
+    el.innerHTML='<div style="font-size:13px;font-weight:600;color:var(--text);margin-bottom:3px;">'+titre+'</div>'
+      +'<div style="font-size:11.5px;color:var(--text2);line-height:1.5;">'+corps+'</div>';
+    el.style.display='block';
+    if(_coachTid)clearTimeout(_coachTid);
+    _coachTid=setTimeout(hideCoachToast,9000);
+  }catch(e){}
+}
 async function saveState(){
   if(!_loaded)return; // jamais sauvegarder l'état par défaut pendant le chargement initial
+  // Quelqu'un a-t-il écrit depuis notre chargement ? Si oui, on n'écrase pas.
+  const _rr=await _remoteRev();
+  if(_rr!==null&&_rr>_stateRev){await _onSaveConflict();return;}
+  const _newRev=(_rr===null?_stateRev:_rr)+1;
   const _invSafe={};for(const c in S.inv){_invSafe[c]=(S.inv[c]||[]).map(it=>Object.assign({},it,{qty:it.qty===null?-1:it.qty}));}
   const payload=JSON.stringify({
     dayMeals:S.dayMeals,
@@ -1824,7 +1880,10 @@ async function saveState(){
     todaySummary:(function(){try{var t=getDayMacros(S.today);return{date:S.today,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip};}catch(e){return null;}})(),
     shopSeeded:S.shopSeeded||false,
     groqKey:localStorage.getItem('anthropic_key')||'',
-    _profile:ACTIVE_PROFILE
+    _profile:ACTIVE_PROFILE,
+    rev:_newRev,
+    savedAt:new Date().toISOString(),
+    savedBy:_sessionId
   });
   try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
   try{
@@ -1836,6 +1895,7 @@ async function saveState(){
       signal:_sc.signal
     });
     clearTimeout(_stid);
+    if(r.ok)_stateRev=_newRev;
     _syncStatus=r.ok?'ok':'offline';
     _lastSyncErr=r.ok?'':('Ecriture refusee — HTTP '+r.status+' '+r.statusText);
   }catch(e){_syncStatus='offline';_lastSyncErr='Ecriture — '+e.name+': '+e.message;}
@@ -1852,6 +1912,7 @@ async function loadState(){
       const d=await r.json();
       if(d&&(d.inv||d.dayMeals)){
         _applyState(d);
+        _stateRev=(typeof d.rev==='number')?d.rev:0;
         _loaded=true;
         try{localStorage.setItem(ACTIVE_PROFILE+'_st',JSON.stringify(d));}catch(e){}
         _syncStatus='ok';
@@ -1871,7 +1932,11 @@ async function loadState(){
   _syncStatus='offline';
 }
 
-document.addEventListener('visibilitychange',()=>{if(document.hidden)saveState();});
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){_wasHidden=true;saveState();return;}
+  if(_wasHidden){_wasHidden=false;_checkFresherOnResume();}
+});
+window.addEventListener('focus',()=>{if(_wasHidden){_wasHidden=false;_checkFresherOnResume();}});
 window.addEventListener('online',()=>{if(_loaded)saveState();});
 window.addEventListener('offline',()=>{_syncStatus='offline';const _b=document.getElementById('sync-badge');if(_b)_b.innerHTML=_syncBadge();});
 
@@ -3822,6 +3887,12 @@ async function autoBackup(){
     saveState();
   }catch(e){}
 }
+async function forceBackup(){
+  S.lastBackup=null;
+  await autoBackup();
+  await renderBackupList();
+  alert('\u2713 Sauvegarde effectu\u00e9e.');
+}
 async function listBackups(){
   try{
     var u=await fbUrl(ACTIVE_PROFILE+'/backups');
@@ -3989,7 +4060,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-04 02h07</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-17 05h39</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4542,7 +4613,7 @@ setTimeout(()=>{try{render();}catch(e){}},9000);
 if('serviceWorker' in navigator){
   if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('controllerchange',function(){if(window.__swReloaded)return;window.__swReloaded=true;location.reload();});window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').then(function(reg){function chk(){try{reg.update();}catch(e){}}document.addEventListener('visibilitychange',function(){if(!document.hidden)chk();});window.addEventListener('focus',chk);setInterval(chk,60000);}).catch(function(){});});}
 }
-document.addEventListener('visibilitychange',()=>{if(document.hidden)saveState();});
+
 
 
 // ─── MATCHING INGRÉDIENTS ↔ INVENTAIRE ───────────────────────────────────────
