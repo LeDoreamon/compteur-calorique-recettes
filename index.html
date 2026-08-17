@@ -406,6 +406,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <input id="burn-steps" type="number" min="0" placeholder="ex. 8500" oninput="updateBurnTotals()" style="width:100%;box-sizing:border-box;padding:9px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px;">
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">🏃 Activités</div>
     <div id="burn-acts-list"></div>
+    <div id="burn-act-hist" style="display:none;margin-top:8px;"></div>
     <div style="display:flex;gap:8px;margin-top:8px;align-items:center;">
       <input id="burn-act-name" type="text" placeholder="course, vélo, muscu…" style="flex:1;min-width:0;padding:8px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;">
       <input id="burn-act-min" type="number" min="1" placeholder="min" style="width:64px;padding:8px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;text-align:center;">
@@ -1600,7 +1601,7 @@ function _burnLoadDay(day){
   document.getElementById('burn-steps').value=d.steps||'';
   document.getElementById('burn-act-name').value='';
   document.getElementById('burn-act-min').value='';
-  renderBurnActs();updateBurnTotals();
+  renderBurnActs();updateBurnTotals();renderActHistory();
 }
 function burnDateChanged(){var de=document.getElementById('burn-date');if(de&&de.value)_burnLoadDay(de.value);}
 function _burnCurDay(){var de=document.getElementById('burn-date');return (de&&de.value)||S.today;}
@@ -1618,6 +1619,50 @@ function updateBurnTotals(){
   var ak=_burnActs.reduce(function(s,a){return s+(+a.kcal||0);},0);
   var el=document.getElementById('burn-total');
   if(el)el.innerHTML='Estimation dépense : <span style="color:var(--orange);font-weight:600;">'+Math.round(sk+ak)+' kcal</span> <span style="color:var(--text3);font-size:11px;">('+steps+' pas → '+sk+' · activités → '+Math.round(ak)+')</span>';
+}
+// ─── 🕘 Activités récentes (raccourcis de saisie) ───────────────────────────
+function actHistory(){
+  var stats={};
+  try{
+    Object.keys(_burnData||{}).forEach(function(d){
+      ((_burnData[d]||{}).activities||[]).forEach(function(a){
+        if(!a||!a.name)return;
+        var cle=_normNom(a.name);
+        if(!cle)return;
+        if(!stats[cle])stats[cle]={name:a.name,n:0,min:a.min||0,kcal:a.kcal||0,last:d};
+        var s=stats[cle];
+        s.n++;
+        if(d>=s.last){s.last=d;s.min=a.min||s.min;s.kcal=a.kcal||s.kcal;s.name=a.name;}
+      });
+    });
+  }catch(e){}
+  return Object.keys(stats).map(function(k){return stats[k];})
+    .sort(function(a,b){return b.n-a.n || (b.last>a.last?1:-1);})
+    .slice(0,6);
+}
+function renderActHistory(){
+  var el=document.getElementById('burn-act-hist');if(!el)return;
+  var l=actHistory();
+  if(!l.length){el.innerHTML='';el.style.display='none';return;}
+  el.style.display='block';
+  el.innerHTML='<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">R\u00e9cent \u2014 touche pour remplir</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+    +l.map(function(a,i){
+      return '<button onclick="useActHistory('+i+')" style="padding:5px 10px;background:var(--bg);border:0.5px solid var(--border);border-radius:99px;color:var(--text2);font-size:11px;cursor:pointer;white-space:nowrap;">'
+        +a.name+' <span style="color:var(--text3);">'+a.min+'\u2032</span></button>';
+    }).join('')+'</div>';
+}
+function useActHistory(i){
+  var a=actHistory()[i];if(!a)return;
+  var n=document.getElementById('burn-act-name'),m=document.getElementById('burn-act-min');
+  if(n)n.value=a.name;
+  if(m)m.value=a.min||'';
+  // Même activité, même durée : on réutilise l'estimation déjà faite, sans rappeler l'IA
+  if(a.kcal>0&&a.min>0){
+    _burnActs.push({name:a.name,min:a.min,kcal:a.kcal});
+    if(n)n.value='';if(m)m.value='';
+    renderBurnActs();updateBurnTotals();renderActHistory();
+  }
 }
 async function burnEstimateActivity(){
   var name=(document.getElementById('burn-act-name').value||'').trim();
@@ -1643,7 +1688,7 @@ async function burnEstimateActivity(){
   _burnActs.push({name:name,min:min,kcal:kcal});
   document.getElementById('burn-act-name').value='';
   document.getElementById('burn-act-min').value='';
-  renderBurnActs();updateBurnTotals();
+  renderBurnActs();updateBurnTotals();renderActHistory();
 }
 function _burnFallbackKcal(name,min){
   var w=(S.weights&&S.weights.length)?(S.weights[S.weights.length-1].w||75):75;
@@ -4060,7 +4105,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-17 05h39</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-17 18h09</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
