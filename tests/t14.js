@@ -117,37 +117,53 @@ t('balises equilibrees',()=>{
   eq((h.match(/<button/g)||[]).length,(h.match(/<\/button>/g)||[]).length,'button');
 });
 
-console.log('\n=== AV. Onglet DLC retire ===');
-t('MEAL_TABS ne contient plus urgent',()=>{
+console.log('\n=== AV. Onglet DLC ===');
+t('MEAL_TABS contient bien les 7 onglets',()=>{
   const src=require('fs').readFileSync('index.html','utf8');
   const m=src.match(/const MEAL_TABS=\[[^\]]+\]/)[0];
-  if(m.includes("k:'urgent'"))throw new Error('encore present');
-  eq((m.match(/\{k:/g)||[]).length,6,'6 onglets');
+  if(!m.includes("k:'urgent'"))throw new Error('onglet DLC absent');
+  eq((m.match(/\{k:/g)||[]).length,7,'7 onglets');
 });
-t('*** un etat enregistre sur DLC retombe sur un onglet valide ***',()=>{
-  S.mealTab='urgent';S.mainTab='recipes';
+t('le style rouge de l\'onglet DLC actif existe',()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  if(!/\.mtab\.urg\.on \{ background: var\(--red\)/.test(src))throw new Error('regle CSS absente');
+});
+t('renderDLCSection est de nouveau appelee',()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  if(!src.includes("S.mealTab==='urgent'?renderDLCSection()"))throw new Error('non rebranchee');
+});
+t('l\'onglet DLC ne liste que des recettes urgentes realisables',()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  if(!src.includes("if(S.mealTab==='urgent')return r.urgent===1&&canCook(r,1);"))throw new Error('filtre absent');
+});
+t('les 7 onglets rendent sans erreur',()=>{
   S.inv={frigo:[],placards:[],congelateur:[],epices:[]};
-  sb.render();
-  if(S.mealTab==='urgent')throw new Error('toujours sur un onglet inexistant');
-  if(!['breakfast','lunch','snack','dinner','perso','favs'].includes(S.mealTab))throw new Error(S.mealTab);
-});
-t('les onglets restants rendent sans erreur',()=>{
-  ['breakfast','lunch','snack','dinner','perso','favs'].forEach(m=>{
+  S.mainTab='recipes';
+  ['breakfast','lunch','snack','dinner','perso','urgent','favs'].forEach(m=>{
     S.mealTab=m;sb.render();
     if(!docEl('root').innerHTML)throw new Error('vide sur '+m);
   });
 });
 t('le trieur est masque dans l\'onglet Favoris',()=>{
   S.mealTab='favs';sb.render();
+  if(/class="rec-tris"/.test(docEl('root').innerHTML))throw new Error('trieur affiche dans Favoris');
+});
+t('*** le trieur se place sous la section DLC, pas au-dessus ***',()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  const a=src.indexOf("S.mealTab==='urgent'?renderDLCSection()");
+  const b=src.indexOf('renderRecTri()+shown.map');
+  if(a<0||b<0)throw new Error('reperes introuvables');
+  if(b<a)throw new Error('le trieur surplombe la liste d articles DLC');
+});
+t('pas de trieur quand la liste est vide',()=>{
+  S.inv={frigo:[],placards:[],congelateur:[],epices:[]};
+  S.mealTab='urgent';sb.render();
   const h=docEl('root').innerHTML;
-  if(/class="rec-tris"/.test(h))throw new Error('trieur affiche dans Favoris');
+  if(/class="rec-tris"/.test(h)&&/Aucune recette disponible/.test(h))
+    throw new Error('trieur affiche sur une liste vide');
 });
-t('le trieur est present dans les autres onglets',()=>{
-  S.mealTab='lunch';sb.render();
-  if(!/class="rec-tris"/.test(docEl('root').innerHTML))throw new Error('trieur absent');
-});
-t('balises equilibrees apres rendu complet',()=>{
-  S.mealTab='dinner';S.recTri='dens';sb.render();
+t('balises equilibrees sur l\'onglet DLC',()=>{
+  S.mealTab='urgent';S.recTri='dens';sb.render();
   const h=docEl('root').innerHTML;
   eq((h.match(/<div/g)||[]).length,(h.match(/<\/div>/g)||[]).length,'div');
 });
