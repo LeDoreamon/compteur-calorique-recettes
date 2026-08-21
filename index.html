@@ -258,7 +258,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;padding:9px 11px;background:rgba(192,87,70,.06);border:0.5px solid rgba(192,87,70,.2);border-radius:8px;"><span style="flex:1;font-size:12px;color:var(--accent2);">Stock de l'inventaire utilisé ?</span><button id="ms-yes" onclick="setMealStock(true)" style="padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:var(--accent);border:0;color:#fff;">Oui</button><button id="ms-no" onclick="setMealStock(false)" style="padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;border:0.5px solid rgba(246,237,227,.15);color:var(--text2);">Non</button></div>
       <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">Décris ce que tu as mangé</label>
       <textarea id="addmeal-textarea" placeholder="Ex: 200g de poulet grillé avec 100g de riz basmati, légumes sautés à l'huile d'olive..." style="width:100%;height:90px;padding:10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;margin-bottom:10px;"></textarea>
-      <button onclick="startAddMealAnalysis('text')" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;">✦ Analyser par IA</button>
+      <button onclick="startAddMealAnalysis('text')" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">✦ Analyser par IA</button>
+      <button onclick="invAddMeal()" style="width:100%;padding:12px;background:rgba(192,87,70,.14);border:0.5px solid rgba(192,87,70,.45);border-radius:10px;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;">📦 Composer depuis mon inventaire</button>
       <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Ou autrement</div>
       <div class="am-methods">
         <button onclick="openScanner('meal')" class="am-m"><span class="am-i">▥</span><span>Code-barres</span></button>
@@ -4118,7 +4119,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-21 11h17</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-21 14h05</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4143,13 +4144,7 @@ function render(){
           <span style="font-size:18px;">➕</span><span>Ajouter un repas libre (texte ou photo)</span>
         </button>
       </div>
-      <div style="margin:4px 0 20px;">
-        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;padding-top:12px;border-top:0.5px solid var(--border);">Ajouter un repas libre</div>
-        <div style="display:flex;gap:8px;">
-          <button onclick="openAddMeal('text')" style="flex:1;padding:11px 8px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">✍ Description</button>
-          <button onclick="openAddMeal('photo')" style="flex:1;padding:11px 8px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;">📷 Photo</button>
-        </div>
-      </div>
+      <div style="margin-bottom:20px;"></div>
     `:(S.mainTab==='inventory'?renderInv():'')}
     </div>
     <nav class="bnav">
@@ -4279,6 +4274,7 @@ function itemMealMacros(it,qty,gramsHint){
   if(u==='g'||u==='ml'||!u)grams=qty;
   else if(gramsHint&&gramsHint>0)grams=gramsHint;
   else if(it.pkg&&it.pkg.size>0)grams=qty*it.pkg.size;
+  else if(it.pieceG>0)grams=qty*it.pieceG;
   else grams=0;
   const f=grams/100;
   return {kcal:mac.kcal*f,prot:mac.prot*f,gluc:mac.gluc*f,lip:mac.lip*f};
@@ -4289,9 +4285,8 @@ function recalcAddMealMacros(){
   (_addMealInvSuggestions||[]).forEach((s,i)=>{
     const cb=document.getElementById('inv-cb-'+i);if(cb&&!cb.checked)return;
     const qi=document.getElementById('inv-qty-'+i);const q=qi?parseFloat(qi.value)||0:(s.baseQty||0);
-    const it=findItem(s.id);let mk,mp,mg,ml;
-    if(it&&it.macPiece){const p=it.macPiece;mk=p.kcal*q;mp=p.prot*q;mg=p.gluc*q;ml=p.lip*q;}
-    else{const m100=(it&&it.mac100)||null;const f=q/100;mk=m100?m100.kcal*f:0;mp=m100?m100.prot*f:0;mg=m100?m100.gluc*f:0;ml=m100?m100.lip*f:0;}
+    const it=findItem(s.id);const _mm=itemMealMacros(it,q,(s.unit==='g'||s.unit==='ml')?q:undefined);
+    const mk=_mm.kcal,mp=_mm.prot,mg=_mm.gluc,ml=_mm.lip;
     t.kcal+=mk;t.prot+=mp;t.gluc+=mg;t.lip+=ml;
     const ke=document.getElementById('inv-k-'+i);if(ke)ke.textContent=Math.round(mk)+'k';
   });
@@ -4333,6 +4328,7 @@ function buildInvContext() {
 
 // ─── 📦 Sélection manuelle dans l'inventaire ────────────────────────────────
 var _invPick={};                                    // id -> quantité saisie
+var _invPickFromInput=false;                        // ouvert directement depuis l'écran d'entrée
 function openInvPick(){
   _invPick={};
   (_addMealInvSuggestions||[]).forEach(function(s,i){
@@ -4345,7 +4341,16 @@ function openInvPick(){
   renderInvPick();
   document.getElementById('invpick-overlay').style.display='flex';
 }
-function closeInvPick(){document.getElementById('invpick-overlay').style.display='none';}
+function closeInvPick(){
+  document.getElementById('invpick-overlay').style.display='none';
+  if(_invPickFromInput){
+    _invPickFromInput=false;
+    if(!(_addMealInvSuggestions||[]).length){
+      var c=document.getElementById('addmeal-confirm');if(c)c.style.display='none';
+      var i=document.getElementById('addmeal-input');if(i)i.style.display='block';
+    }
+  }
+}
 function invPickQty(id,v){
   var q=parseFloat(v)||0;
   if(q>0)_invPick[id]=q;else delete _invPick[id];
@@ -4394,7 +4399,7 @@ function applyInvPick(){
   Object.keys(_invPick).forEach(function(id){
     var it=findItem(id);if(!it)return;
     var q=_invPick[id];if(!(q>0))return;
-    out.push({id:id,name:it.name,qty:q,baseQty:q});
+    out.push({id:id,name:it.name,qty:q,baseQty:q,src:'pick',unit:(it.macPiece?(it.unit||'pc'):(it.unit||'g'))});
   });
   _addMealInvSuggestions=out;
   closeInvPick();
@@ -4516,6 +4521,15 @@ function renderAmSlots(){
     var on=_amSlot===s;
     return '<button onclick="setAmSlot(\''+s+'\')" style="padding:6px 9px;border-radius:8px;font-size:11px;cursor:pointer;'+(on?'background:rgba(111,191,115,.15);border:0.5px solid rgba(111,191,115,.5);color:var(--green);font-weight:600;':'background:transparent;border:0.5px solid rgba(246,237,227,.12);color:var(--text3);')+'">'+L[s]+'</button>';
   }).join('');
+}
+function invAddMeal(){_scanBase=null;
+  _pendingMeal={name:'',kcal:0,prot:0,gluc:0,lip:0,items:[]};
+  applyPendingMealToConfirm();
+  var n=document.getElementById('addmeal-name');
+  if(n){n.value='';n.placeholder='Ex : Bowl poulet riz';}
+  setInvMode(true);
+  _invPickFromInput=true;
+  openInvPick();
 }
 function manualAddMeal(){_scanBase=null;
   _pendingMeal={name:'',kcal:0,prot:0,gluc:0,lip:0,items:[]};
@@ -4690,10 +4704,10 @@ function confirmAddMealFinal() {
         if (qty > 0) {
           Object.values(S.inv).forEach(arr => {
             const it = arr.find(x=>x.id===s.id);
-            if (it && it.qty!==null && (it.macPiece||it.unit==='g'||it.unit==='ml')) it.qty = Math.max(0, it.qty - qty);
+            if (it && it.qty!==null && (s.src==='pick'||it.macPiece||it.unit==='g'||it.unit==='ml')) it.qty = Math.max(0, it.qty - qty);
           });
           const _it=findItem(s.id);let _m=null;
-          if(_it&&(_it.mac100||_it.macPiece))_m=itemMealMacros(_it,qty);
+          if(_it&&(_it.mac100||_it.macPiece))_m=itemMealMacros(_it,qty,(s.unit==='g'||s.unit==='ml')?qty:undefined);
           else if(s.m&&s.baseQty>0)_m={kcal:s.m.kcal*qty/s.baseQty,prot:s.m.prot*qty/s.baseQty,gluc:s.m.gluc*qty/s.baseQty,lip:s.m.lip*qty/s.baseQty};
           _ings.push({id:s.id,name:s.name,qty:qty,unit:s.unit||'',kcal:Math.round((_m&&_m.kcal)||0),prot:Math.round(((_m&&_m.prot)||0)*10)/10,gluc:Math.round(((_m&&_m.gluc)||0)*10)/10,lip:Math.round(((_m&&_m.lip)||0)*10)/10});
         }
