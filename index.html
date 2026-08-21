@@ -201,16 +201,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.45;">Sert à l'analyse des repas et à la génération de recettes. Gratuite sur <a href="https://console.groq.com" target="_blank" style="color:var(--blue);">console.groq.com</a>.</div>
     <input type="password" id="api-key-input" placeholder="gsk_..." style="width:100%;padding:10px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
     <button onclick="saveApiKey()" style="width:100%;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">Enregistrer la clé</button>
+    <button onclick="clearApiKey()" style="width:100%;margin-top:8px;padding:9px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;">Supprimer la clé</button>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">💾 Sauvegardes automatiques</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.45;">Un instantané par jour, les 14 derniers conservés.</div>
     <button onclick="forceBackup()" style="width:100%;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:9px;">💾 Sauvegarder maintenant</button>
-    <div id="set-backups"></div>
+    <button id="set-backups-toggle" onclick="toggleBackupList()" style="width:100%;padding:9px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;">Voir les sauvegardes</button>
+    <div id="set-backups" style="display:none;margin-top:4px;"></div>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">📤 Export</div>
     <div id="set-export"></div>
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <button onclick="clearApiKey()" style="margin-top:10px;background:none;border:none;color:var(--red);font-size:12px;cursor:pointer;width:100%;text-align:center;">Supprimer la clé</button>
   </div>
 </div>
 
@@ -409,6 +410,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
   </div>
 </div>
 <script>
+const TDEE_SEUIL_JOUR=0.5;   // en deca de 50 % de la cible, la journee est jugee incomplete
 const LIAM_TARGETS={kcal:2600,prot:175,gluc:280,lip:80};
 const MAUREEN_TARGETS={kcal:2700,prot:145,gluc:305,lip:100};
 let TARGETS=LIAM_TARGETS;
@@ -1996,7 +1998,10 @@ function saveApiKey(){
   if(v){localStorage.setItem('anthropic_key',v);closeSettings();render();}
 }
 function clearApiKey(){
-  if(confirm('Supprimer la clé API ?')){localStorage.removeItem('anthropic_key');closeSettings();render();}
+  if(!confirm('Supprimer la clé API ?\n\nElle sera retirée de cet appareil et de tes autres appareils à la prochaine synchronisation. Il faudra la ressaisir pour utiliser l\'analyse de repas et la génération de recettes.'))return;
+  localStorage.removeItem('anthropic_key');
+  saveState();                 // sinon la clé est réinjectée depuis Firebase au rechargement
+  closeSettings();render();
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -3000,12 +3005,23 @@ function estimateTDEE(){
   if(days<14)return {ok:false,reason:'span',span:days};
   var wStart=_wMA(arr,startIdx,7),wEnd=_wMA(arr,endIdx,7);
   var deltaW=wStart-wEnd;
-  var sum=0,n=0;
-  for(var k=0;k<=days;k++){var day=shiftDate(arr[startIdx].d,k);var meals=S.dayMeals[day];if(meals&&meals.length){sum+=getDayMacros(day).kcal;n++;}}
-  if(n<10)return {ok:false,reason:'logs',logs:n,need:10};
+  // Une journee ou seul le petit-dejeuner a ete saisi n'est pas une journee a
+  // 400 kcal : c'est une saisie incomplete. La compter tire la moyenne vers le
+  // bas et fait sous-estimer le TDEE. On ecarte ce qui est sous le seuil.
+  var seuil=(TARGETS&&TARGETS.kcal?TARGETS.kcal:2000)*TDEE_SEUIL_JOUR;
+  var sum=0,n=0,ecartes=[];
+  for(var k=0;k<=days;k++){
+    var day=shiftDate(arr[startIdx].d,k);
+    var meals=S.dayMeals[day];
+    if(!meals||!meals.length)continue;                 // journee non saisie
+    var kc=getDayMacros(day).kcal;
+    if(kc<seuil){ecartes.push(day);continue;}          // saisie manifestement partielle
+    sum+=kc;n++;
+  }
+  if(n<10)return {ok:false,reason:'logs',logs:n,need:10,ecartes:ecartes,seuil:Math.round(seuil)};
   var avgCal=sum/n;
   var deficitPerDay=deltaW*7700/days;
-  return {ok:true,tdee:Math.round(avgCal+deficitPerDay),avgCal:Math.round(avgCal),deltaW:deltaW,days:days,logs:n,perWeek:deltaW/days*7};
+  return {ok:true,tdee:Math.round(avgCal+deficitPerDay),avgCal:Math.round(avgCal),deltaW:deltaW,days:days,logs:n,perWeek:deltaW/days*7,ecartes:ecartes,seuil:Math.round(seuil)};
 }
 function _statBox(lbl,val,tgt,unit,col){
   return '<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;">'+lbl+'</div><div style="font-size:16px;font-weight:600;color:'+col+';margin-top:3px;">'+val+'</div><div style="font-size:9px;color:var(--text3);">cible '+tgt+unit+'</div></div>';
@@ -3015,7 +3031,10 @@ function renderTDEEBlock(t){
     var msg='Pèse-toi régulièrement et logue tes repas pour estimer ta dépense réelle';
     if(t.reason==='weights')msg='Ajoute des pesées régulières pour débloquer l\'estimation de ta dépense';
     else if(t.reason==='span')msg='Il faut ~2 semaines de pesées pour estimer ta dépense (tu en as '+(t.span||0)+' j)';
-    else if(t.reason==='logs')msg='Logue plus de repas sur la période ('+(t.logs||0)+'/'+(t.need||10)+' jours) pour estimer ta dépense';
+    else if(t.reason==='logs'){
+      msg='Logue plus de repas sur la période ('+(t.logs||0)+'/'+(t.need||10)+' jours complets) pour estimer ta dépense';
+      if(t.ecartes&&t.ecartes.length)msg+='. '+t.ecartes.length+' journée'+(t.ecartes.length>1?'s':'')+' écartée'+(t.ecartes.length>1?'s':'')+' car sous '+t.seuil+' kcal — probablement des saisies incomplètes';
+    }
     return '<div style="background:var(--bg2);border:0.5px dashed var(--border);border-radius:12px;padding:14px;font-size:12px;color:var(--text3);line-height:1.5;"><strong style="color:var(--text2);">⚙ Dépense énergétique (TDEE)</strong><br>'+msg+'.</div>';
   }
   var rec=Math.round((t.tdee-550)/10)*10;
@@ -3028,7 +3047,8 @@ function renderTDEEBlock(t){
   return '<div style="background:linear-gradient(135deg,rgba(192,87,70,.13),rgba(99,102,241,.05));border:0.5px solid rgba(192,87,70,.35);border-radius:12px;padding:14px;">'+
     '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Dépense estimée (TDEE)</div>'+
     '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:27px;font-weight:700;color:var(--text);">'+t.tdee+'</span><span style="font-size:12px;color:var(--text3);">kcal/j</span></div>'+
-    '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+t.days+' j : ~'+t.avgCal+' kcal/j en moyenne · '+perWeekTxt+'</div>'+
+    '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+t.days+' j : ~'+t.avgCal+' kcal/j sur '+t.logs+' journée'+(t.logs>1?'s':'')+' complète'+(t.logs>1?'s':'')+' · '+perWeekTxt+'</div>'+
+    ((t.ecartes&&t.ecartes.length)?'<div style="font-size:10px;color:var(--gold);margin-top:5px;line-height:1.4;">'+t.ecartes.length+' journée'+(t.ecartes.length>1?'s':'')+' écartée'+(t.ecartes.length>1?'s':'')+' (sous '+t.seuil+' kcal, saisie probablement incomplète) : '+t.ecartes.slice(0,6).join(', ')+(t.ecartes.length>6?'…':'')+'</div>':'')+
     '<div style="font-size:12px;color:var(--accent2);margin-top:9px;line-height:1.45;">💡 '+tip+'</div></div>';
 }
 function renderBurnBlock(){
@@ -3863,18 +3883,60 @@ async function restoreBackup(day){
     var b=await r.json();
     if(!b||!b.state)throw new Error('sauvegarde vide');
     var st=JSON.parse(b.state);
+    // Filet : l'etat courant est mis de cote avant d'etre remplace.
+    try{
+      var snapAvant=localStorage.getItem(ACTIVE_PROFILE+'_st');
+      if(snapAvant&&snapAvant.length>200){
+        var uf=await fbUrl(ACTIVE_PROFILE+'/filet');
+        await fetch(uf,{method:'PUT',headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({at:new Date().toISOString(),remplacePar:day,state:snapAvant})});
+      }
+    }catch(e){}
     _applyState(st);
     S.lastBackup=null;
     saveState();closeSettings();render();
     alert('✓ Sauvegarde du '+day+' restaurée.');
   }catch(e){alert('⚠ Restauration impossible : '+(e.message||e));}
 }
+async function annulerRestauration(){
+  if(!confirm('Revenir a l\'etat qui precedait la derniere restauration ?\n\nLes donnees actuelles seront remplacees.'))return;
+  try{
+    var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'));
+    if(!r.ok)throw new Error('lecture impossible');
+    var b=await r.json();
+    if(!b||!b.state)throw new Error('rien a restaurer');
+    _applyState(JSON.parse(b.state));
+    S.lastBackup=null;
+    saveState();closeSettings();render();
+    alert('\u2713 Etat precedent retabli.');
+  }catch(e){alert('\u26a0 Impossible : '+(e.message||e));}
+}
+function toggleBackupList(){
+  var el=document.getElementById('set-backups'),bt=document.getElementById('set-backups-toggle');
+  if(!el)return;
+  var ouvert=(el.style.display!=='none');
+  el.style.display=ouvert?'none':'block';
+  if(bt)bt.textContent=(ouvert?'Voir les sauvegardes':'Masquer les sauvegardes')+(el.dataset.n?' ('+el.dataset.n+')':'');
+}
 async function renderBackupList(){
   var el=document.getElementById('set-backups');if(!el)return;
   el.innerHTML='<div style="font-size:11px;color:var(--text3);">Chargement…</div>';
   var l=await listBackups();
   if(!l.length){el.innerHTML='<div style="font-size:11px;color:var(--text3);">Aucune sauvegarde pour l\'instant — elle se crée à la première ouverture du jour.</div>';return;}
-  el.innerHTML=l.slice(0,BACKUP_KEEP).map(function(d){
+  var _filet='';
+  try{
+    var rf=await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'));
+    if(rf.ok){var fj=await rf.json();
+      if(fj&&fj.state)_filet='<div style="padding:8px 10px;background:rgba(233,161,59,.12);border:0.5px solid rgba(233,161,59,.4);border-radius:8px;margin-bottom:8px;">'
+        +'<div style="font-size:11px;color:var(--gold);margin-bottom:6px;">Etat mis de cote avant la restauration du '+(fj.remplacePar||'?')+'</div>'
+        +'<button onclick="annulerRestauration()" style="width:100%;padding:7px;background:transparent;border:0.5px solid rgba(233,161,59,.5);border-radius:7px;color:var(--gold);font-size:11px;cursor:pointer;">Revenir a cet etat</button></div>';
+    }
+  }catch(e){}
+  var _n=Math.min(l.length,BACKUP_KEEP);
+  el.dataset.n=_n;
+  var _bt=document.getElementById('set-backups-toggle');
+  if(_bt)_bt.textContent=(el.style.display==='none'?'Voir les sauvegardes':'Masquer les sauvegardes')+' ('+_n+')';
+  el.innerHTML=_filet+l.slice(0,BACKUP_KEEP).map(function(d){
     return '<div style="display:flex;justify-content:space-between;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);">'
       +'<span style="font-size:12px;color:var(--text2);">'+d+'</span>'
       +'<button onclick="restoreBackup(\''+d+'\')" style="padding:4px 10px;background:transparent;border:0.5px solid var(--border);border-radius:7px;color:var(--blue);font-size:11px;cursor:pointer;">Restaurer</button></div>';
@@ -4013,7 +4075,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-21 16h02</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-21 18h21</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
