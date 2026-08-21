@@ -27,6 +27,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t9.js` | Synchronisation : réseau et `localStorage` simulés, récupération hors ligne, écritures concurrentes |
 | `t10.js` | Filtre des journées partielles du TDEE, Réglages, filet de restauration |
 | `t11.js` | Fiche article : emballage, poids par pièce, diagnostic des quantités douteuses |
+| `t12.js` | Noms de repli des ingrédients : apprentissage, `resolveInv`, survie à une fusion |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

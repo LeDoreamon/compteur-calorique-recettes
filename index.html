@@ -723,6 +723,7 @@ function mergeDuplicates(){
   return {count:removed.length,summary:summary};
 }
 function runMergeDuplicates(){
+  try{apprendNomsIngredients();}catch(e){}   // capte les noms avant que les id changent
   const n=countDuplicates();
   if(!n){alert('Aucun doublon détecté.');return;}
   if(!confirm(n+' doublon(s) détecté(s).\n\nLes quantités seront additionnées (conversion pièces/grammes incluse) et les macros manuelles gardées comme référence. Les entrées en double iront dans « Récemment supprimés » (récupérables 24 h).\n\nFusionner ?'))return;
@@ -1794,6 +1795,11 @@ function _applyState(d){
   if(d.customRecipes&&Array.isArray(d.customRecipes)){S.customRecipes=d.customRecipes;S.customRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
   // Historique suppressions
   if(d.deletedItems&&Array.isArray(d.deletedItems))S.deletedItems=d.deletedItems;
+  // Noms de repli des ingredients. Appris AVANT la fusion ci-dessous, qui
+  // change les identifiants : c'est le seul moment ou ils pointent encore
+  // sur des articles existants.
+  S.ingNames=(d.ingNames&&typeof d.ingNames==='object')?d.ingNames:(S.ingNames||{});
+  try{apprendNomsIngredients();}catch(e){}
   // Fusion one-shot des doublons d'inventaire (Liam) : macros manuelles, somme des quantites, retires au cimetiere
   if(ACTIVE_PROFILE==='liam'){if(!d.dupMerged){if(_mergeDuplicates())_mzJustFixed=true;S.dupMerged=true;}else{S.dupMerged=true;}}
 }
@@ -1902,6 +1908,7 @@ async function _saveStateNow(){
     weights:S.weights||[],favs:S.favs||[],weightGoal:(S.weightGoal||null),
     todaySummary:(function(){try{var t=getDayMacros(S.today);return{date:S.today,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip};}catch(e){return null;}})(),
     shopSeeded:S.shopSeeded||false,
+    ingNames:S.ingNames||{},
     groqKey:localStorage.getItem('anthropic_key')||'',
     _profile:ACTIVE_PROFILE,
     rev:_newRev,
@@ -2275,7 +2282,36 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
 
 function findItem(id){for(const arr of Object.values(S.inv)){const it=arr.find(i=>i.id===id);if(it)return it;}return null;}
 function findItemByName(name){if(!name)return null;const k=normMac(name);for(const arr of Object.values(S.inv)){const it=arr.find(i=>normMac(i.name)===k);if(it)return it;}return null;}
-function resolveInv(id,name){return findItem(id)||findItemByName(name);}
+// Les recettes designent leurs ingredients par identifiant. La fusion de
+// doublons change ces identifiants : sans nom de repli, l'ingredient devient
+// introuvable et la recette perd ses macros en silence. On memorise donc le
+// nom de chaque ingredient tant que son identifiant pointe encore quelque part.
+function apprendNomsIngredients(){
+  if(!S.ingNames||typeof S.ingNames!=='object')S.ingNames={};
+  var listes=[RCP,S.customRecipes,S.aiRecipes],vus=0;
+  listes.forEach(function(L){
+    (L||[]).forEach(function(r){
+      (r&&r.used||[]).forEach(function(u){
+        if(!u||!u.id)return;
+        var it=findItem(u.id);
+        if(!it||!it.name)return;
+        if(S.ingNames[u.id]!==it.name){
+          if(Object.keys(S.ingNames).length>=600&&!(u.id in S.ingNames))return;
+          S.ingNames[u.id]=it.name;vus++;
+        }
+      });
+    });
+  });
+  return vus;   // nombre d'entrees ajoutees ou mises a jour
+}
+function resolveInv(id,name){
+  var it=findItem(id);
+  if(it)return it;
+  if(name){var byName=findItemByName(name);if(byName)return byName;}
+  // Dernier recours : le nom appris quand l'identifiant etait encore valide
+  var appris=(S.ingNames||{})[id];
+  return appris?findItemByName(appris):null;
+}
 function canCook(r,m=1){return(r.used||[]).every(({id,qty,n,flex})=>{if(flex)return true;const it=resolveInv(id,n);return it&&(it.qty===null||it.qty>=qty*m);});}
 function dessertDeductQty(it,d){if(!it)return 0;if(it.unit==='g'||it.unit==='ml'){var per=(it.pkg&&it.pkg.size)||it.pieceG||0;return per?d.qty*per:d.qty;}return d.qty;}
 function canTakeDessert(d){if(d.id==='none'||d.id==='autre')return true;if(!d.inv)return true;var it=resolveInv(d.inv,d.n);if(!it)return false;if(it.qty===null)return true;return it.qty>=dessertDeductQty(it,d);}
@@ -4104,7 +4140,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-21 18h36</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-21 18h40</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
