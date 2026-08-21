@@ -2,7 +2,7 @@ const vm=require('vm');const fs=require('fs');
 let js=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
 js+='\n;try{globalThis.S=S;globalThis.RCP=RCP;globalThis.TARGETS=TARGETS;}catch(e){}';
 js+='\n;try{globalThis.INV_DEFAULT=INV_DEFAULT;}catch(e){}';
-js+='\n;["_refreshToday","_burnSave","estimateTDEE","renderTDEEBlock","toggleBackupList","annulerRestauration","clearApiKey"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
+js+='\n;["_refreshToday","_burnSave","estimateTDEE","renderTDEEBlock","toggleBackupList","annulerRestauration","clearApiKey","openItemDetail","saveItemDetail","stepInvPkg","renderInvDiag","invIssues","itemMealMacros","findItem"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
 js+='\n;["getDayMacros","_reconcileMacros","findItemByName","invIssues","countDuplicates","recipeMacros","canCook","findRecipe","copyMealTo","burnStepKcal","burnDayTotal","extractJSON","extractJSONArray","_parseQty","_normNom","_applyState","getToday","resolveInv","mergeDuplicates","matchIngToInventory","getM100","effDlc","normMac","calorieRing","missingIngredients","shopSuggestions","_stockBas","coachAdvice","estimateTDEE","avgMacrosOverDays","weightTrendPerWeek"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
 js+='\n;["openAddMeal","manualAddMeal","setInvMode","openInvPick","invPickQty","applyInvPick","renderInvSuggestions","recalcAddMealMacros","itemMealMacros","findItem","renderInvPick","_invPickSum","confirmAddMealFinal","openFreeOverlay","fillFreeReview","confirmFreeEntry","renderFreeInv","toggleFreeInv","updateFreeTotals"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
 js+='\n;try{globalThis.__getInvPick=function(){return _invPick;};}catch(e){}';
