@@ -32,6 +32,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t14.js` | Trieur de recettes : critères, favoris épinglés, retrait de l’onglet DLC |
 | `t15.js` | Titre automatique d’un repas composé depuis l’inventaire |
 | `t16.js` | Œil sur les macros, lignes estimées hors inventaire, cloisonnement du stock |
+| `t17.js` | Coach : phase de la journée, suggestion de recette, ton |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
