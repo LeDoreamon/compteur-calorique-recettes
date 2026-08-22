@@ -654,9 +654,14 @@ const MEAL_TABS=[{k:'breakfast',l:'Petit-déj'},{k:'lunch',l:'Déjeuner'},{k:'sn
 const REC_TRIS=[{k:'az',l:'A-Z',d:1},{k:'kcal',l:'kcal',d:1},{k:'prot',l:'Prot.',d:-1},{k:'dens',l:'P/100kcal',d:-1}];
 function _densProt(r){var k=r&&r.kcal||0;return k>0?(r.prot||0)*100/k:0;}
 function _triRecettes(a,b){
-  var fa=(S.favs||[]).indexOf(a.id)>=0?0:1,fb=(S.favs||[]).indexOf(b.id)>=0?0:1;
-  if(fa!==fb)return fa-fb;                      // favoris toujours en haut
   var by=S.recTri||'',dir=(S.recTriDir===-1?-1:1);
+  // Les favoris ne sont epingles que lorsque le classement ne dit rien du
+  // contenu : ordre d'origine et tri alphabetique. Sur kcal, proteines ou
+  // densite, un favori hors rang fausserait la lecture du classement.
+  if(by===''||by==='az'){
+    var fa=(S.favs||[]).indexOf(a.id)>=0?0:1,fb=(S.favs||[]).indexOf(b.id)>=0?0:1;
+    if(fa!==fb)return fa-fb;
+  }
   if(by==='az')return dir*String(a.name||'').localeCompare(String(b.name||''),'fr',{sensitivity:'base'});
   if(by==='kcal')return dir*((a.kcal||0)-(b.kcal||0));
   if(by==='prot')return dir*((a.prot||0)-(b.prot||0));
@@ -4208,7 +4213,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-21 19h14</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-22 11h57</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>

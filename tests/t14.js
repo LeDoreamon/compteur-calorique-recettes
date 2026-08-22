@@ -13,22 +13,43 @@ const R=[
 ];
 const ordre=()=>R.slice().sort(tri).map(r=>r.id).join('');
 
-console.log('\n=== AR. Tri : les favoris restent en haut ===');
-t('*** un favori passe devant, meme avec le pire score ***',()=>{
-  S.favs=['c'];S.recTri='prot';S.recTriDir=-1;
-  eq(ordre()[0],'c','le favori doit etre premier');
+console.log('\n=== AR. Favoris : epingles en A-Z, tries ailleurs ===');
+t('*** A-Z : un favori passe devant malgre son nom ***',()=>{
+  S.favs=['a'];S.recTri='az';S.recTriDir=1;   // 'Zebre' est dernier alphabetiquement
+  eq(ordre()[0],'a','favori epingle');
 });
-t('*** le tri s\'applique quand meme entre les non-favoris ***',()=>{
-  S.favs=['c'];S.recTri='prot';S.recTriDir=-1;
-  eq(ordre(),'cbad','favori puis prot decroissantes');
+t('A-Z : les non-favoris suivent dans l\'ordre alphabetique',()=>{
+  S.favs=['a'];S.recTri='az';S.recTriDir=1;
+  eq(ordre(),'abdc','Zebre (fav), puis Avocat, Epinards, Muffin');
 });
-t('plusieurs favoris sont tries entre eux',()=>{
-  S.favs=['c','a'];S.recTri='prot';S.recTriDir=-1;
-  eq(ordre().slice(0,2),'ac','a (30P) avant c (10P)');
+t('A-Z : plusieurs favoris sont tries entre eux',()=>{
+  S.favs=['a','c'];S.recTri='az';S.recTriDir=1;
+  eq(ordre().slice(0,2),'ca','Muffin avant Zebre');
 });
-t('aucun favori : tri pur',()=>{
-  S.favs=[];S.recTri='prot';S.recTriDir=-1;
-  eq(ordre(),'bacd');
+t('A-Z decroissant : les favoris restent quand meme en haut',()=>{
+  S.favs=['b'];S.recTri='az';S.recTriDir=-1;  // 'Avocat' est premier en A-Z
+  eq(ordre()[0],'b','toujours epingle');
+});
+t('*** proteines : le favori n\'est plus epingle ***',()=>{
+  S.favs=['c'];S.recTri='prot';S.recTriDir=-1;  // Muffin, 10P, le plus faible
+  eq(ordre(),'bacd','classement pur : 40,30,10,5');
+});
+t('*** kcal : le favori n\'est plus epingle ***',()=>{
+  S.favs=['a'];S.recTri='kcal';S.recTriDir=1;   // Zebre, 900 kcal, le plus lourd
+  eq(ordre(),'dbca','100,200,500,900');
+});
+t('*** densite : le favori n\'est plus epingle ***',()=>{
+  S.favs=['c'];S.recTri='dens';S.recTriDir=-1;  // Muffin, densite la plus faible
+  eq(ordre(),'bdac');
+});
+t('sans critere : les favoris restent en haut',()=>{
+  S.favs=['d'];S.recTri='';S.recTriDir=1;
+  eq(ordre()[0],'d','comportement d\'origine conserve');
+});
+t('aucun favori : le tri est identique dans tous les cas',()=>{
+  S.favs=[];
+  S.recTri='prot';S.recTriDir=-1;eq(ordre(),'bacd','prot');
+  S.recTri='az';S.recTriDir=1;eq(ordre(),'bdca','az');
 });
 
 console.log('\n=== AS. Les quatre criteres ===');
