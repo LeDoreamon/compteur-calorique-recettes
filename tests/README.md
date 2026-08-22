@@ -30,6 +30,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t12.js` | Noms de repli des ingrédients : apprentissage, `resolveInv`, survie à une fusion |
 | `t13.js` | Catalogue de recettes : macros, faisabilité, cloisonnement des profils |
 | `t14.js` | Trieur de recettes : critères, favoris épinglés, retrait de l’onglet DLC |
+| `t15.js` | Titre automatique d’un repas composé depuis l’inventaire |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

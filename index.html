@@ -4213,7 +4213,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-22 11h57</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-22 12h04</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4503,6 +4503,55 @@ function renderInvPick(){
   el.innerHTML=html||'<div style="font-size:12px;color:var(--text3);padding:12px 0;text-align:center;">Aucun article ne correspond.</div>';
   _invPickSum();
 }
+// ─── Titre automatique d'un repas composé depuis l'inventaire ─────────────
+// Genere localement : instantane, fonctionne hors ligne, resultat previsible.
+function _catDeLArticle(id){
+  var trouve=null;
+  Object.keys(S.inv||{}).forEach(function(cat){
+    (S.inv[cat]||[]).forEach(function(it){if(it&&it.id===id)trouve=cat;});
+  });
+  return trouve;
+}
+// Ingredients qui assaisonnent sans faire le plat : ils n'entrent pas au titre
+var _MOTS_ASSAISON=/^(huile|sauce|vinaigre|bouillon|sel|poivre|epice|épice|curry|paprika|curcuma|muscade|gingembre|ail|sesame|sésame|miel|sucre|panure|oignons frits)\b/i;
+function _nomCourt(n){
+  var s=String(n||'').trim();
+  s=s.replace(/\([^)]*\)/g,' ');          // "(450g à 5% MG)"
+  s=s.replace(/\s+ou\s+.*$/i,'');          // "nature ou parfumé"
+  s=s.replace(/\s*[-–]\s*/g,' ');          // "Soupe - Potiron"
+  s=s.replace(/\s{2,}/g,' ').trim();
+  if(s.length>26){                          // coupe sur un mot entier
+    var m=s.slice(0,26),i=m.lastIndexOf(' ');
+    s=(i>10?m.slice(0,i):m).trim();
+  }
+  return s;
+}
+function titreDepuisInventaire(lignes){
+  var l=(lignes||[]).map(function(s){
+    var it=findItem(s.id);
+    var m=it?itemMealMacros(it,s.qty,(s.unit==='g'||s.unit==='ml')?s.qty:undefined):null;
+    return {nom:_nomCourt(s.name||(it&&it.name)||''),kcal:(m&&m.kcal)||0,
+            cat:_catDeLArticle(s.id)};
+  }).filter(function(x){return x.nom;});
+  if(!l.length)return '';
+  var tot=l.reduce(function(a,x){return a+x.kcal;},0);
+  var forts=l.filter(function(x){
+    if(x.cat==='epices')return false;
+    if(_MOTS_ASSAISON.test(x.nom)&&tot>0&&x.kcal<tot*0.35)return false;
+    return tot<=0||x.kcal>=tot*0.08;
+  });
+  if(!forts.length)forts=l.slice();
+  forts.sort(function(a,b){return b.kcal-a.kcal;});
+  var noms=forts.slice(0,3).map(function(x){return x.nom;});
+  // Deux ingredients suffisent si le titre a trois deborderait
+  if(noms.length===3&&(noms[0]+', '+noms[1]+' & '+noms[2]).length>52)noms=noms.slice(0,2);
+  var t;
+  if(noms.length===1)t=noms[0];
+  else if(noms.length===2)t=noms[0]+' & '+noms[1].charAt(0).toLowerCase()+noms[1].slice(1);
+  else t=noms[0]+', '+noms[1].charAt(0).toLowerCase()+noms[1].slice(1)+' & '+noms[2].charAt(0).toLowerCase()+noms[2].slice(1);
+  return t.charAt(0).toUpperCase()+t.slice(1);
+}
+var _titreAutoPose='';   // pour ne jamais ecraser un titre saisi a la main
 function applyInvPick(){
   var out=[];
   Object.keys(_invPick).forEach(function(id){
@@ -4514,6 +4563,12 @@ function applyInvPick(){
   closeInvPick();
   renderInvSuggestions(_addMealInvSuggestions);
   recalcAddMealMacros();
+  // Pre-remplit le nom, sauf si l'utilisateur en a deja saisi un
+  var n=document.getElementById('addmeal-name');
+  if(n&&(!n.value.trim()||n.value.trim()===_titreAutoPose)){
+    var t=titreDepuisInventaire(out);
+    if(t){n.value=t;_titreAutoPose=t;}
+  }
 }
 function renderInvSuggestions(suggestions) {
   const sec = document.getElementById('inv-items-section');
@@ -4631,7 +4686,7 @@ function renderAmSlots(){
     return '<button onclick="setAmSlot(\''+s+'\')" style="padding:6px 9px;border-radius:8px;font-size:11px;cursor:pointer;'+(on?'background:rgba(111,191,115,.15);border:0.5px solid rgba(111,191,115,.5);color:var(--green);font-weight:600;':'background:transparent;border:0.5px solid rgba(246,237,227,.12);color:var(--text3);')+'">'+L[s]+'</button>';
   }).join('');
 }
-function invAddMeal(){_scanBase=null;
+function invAddMeal(){_scanBase=null;_titreAutoPose='';
   _pendingMeal={name:'',kcal:0,prot:0,gluc:0,lip:0,items:[]};
   applyPendingMealToConfirm();
   var n=document.getElementById('addmeal-name');
