@@ -3674,7 +3674,7 @@ function _emRowMacros(row,qty){
 function _emMkRow(g){
   var q=g.qty||0;
   var pu=q>0&&(g.kcal||g.prot||g.gluc||g.lip)?{kcal:(g.kcal||0)/q,prot:(g.prot||0)/q,gluc:(g.gluc||0)/q,lip:(g.lip||0)/q}:null;
-  return{id:g.id,n:g.n,name:g.name||g.n||g.id,qty:q,unit:g.unit||'',_pu:pu};
+  return{id:g.id,n:g.n,name:g.name||g.n||g.id,qty:q,unit:g.unit||'',src:g.src||'inv',_pu:pu};
 }
 function openEditMeal(day,idx){
   var list=S.dayMeals[day];if(!list||!list[idx])return;
@@ -3723,12 +3723,29 @@ function renderEmIngs(){
     html+='<button onclick="emDetailBase()" style="width:100%;margin:4px 0 2px;padding:8px;background:transparent;border:0.5px dashed rgba(233,161,59,.5);border-radius:8px;color:var(--orange);font-size:12px;cursor:pointer;">✏️ Corriger la base : la détailler en ingrédients</button>';
   }
   if(_emConvert){html+='<div style="font-size:11px;color:var(--orange);padding:6px 0;line-height:1.45;">Base remise à zéro — compose le repas ci-dessous. Le stock ne sera pas modifié pour ce détaillage.</div>';}
+  if(_emRows.length){
+    html+='<div style="display:flex;justify-content:space-between;align-items:center;padding-top:6px;">'
+      +'<span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Ingrédients</span>'
+      +'<button onclick="toggleEmMacros()" title="Afficher le détail des macros" style="background:none;border:none;color:'+(S.voirMacrosIng?'var(--gold)':'var(--text3)')+';font-size:14px;cursor:pointer;padding:0 4px;line-height:1;">\u{1F441}</button></div>';
+  }
   html+=_emRows.map(function(g,i){
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);"><span style="flex:1;min-width:0;font-size:13px;color:var(--text2);">'+g.name+'</span><input type="number" id="em-ing-'+i+'" value="'+g.qty+'" min="0" oninput="updateEmTotals()" style="width:64px;padding:5px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:22px;">'+g.unit+'</span><span id="em-ingk-'+i+'" style="font-size:11px;color:var(--orange);min-width:34px;text-align:right;">0k</span><button onclick="emRemoveIng('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button></div>';
+    var est=(g.src==='ia');
+    var col=est?'var(--blue)':'var(--text2)';
+    var bord=est?'rgba(95,168,201,.25)':'rgba(246,237,227,.12)';
+    var m=_emRowMacros(g,g.qty)||{};
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0 '+(S.voirMacrosIng?'2px':'6px')+';border-top:0.5px solid rgba(246,237,227,.06);">'
+      +(est?'<span style="color:var(--blue);font-size:11px;flex-shrink:0;" title="Estimé, hors inventaire">\u25C7</span>':'')
+      +'<span style="flex:1;min-width:0;font-size:13px;color:'+col+';">'+g.name+'</span>'
+      +'<input type="number" id="em-ing-'+i+'" value="'+g.qty+'" min="0" oninput="updateEmTotals()" style="width:64px;padding:5px 6px;background:var(--bg);border:0.5px solid '+bord+';border-radius:6px;color:'+(est?'var(--blue)':'var(--text)')+';font-size:13px;outline:none;text-align:center;">'
+      +'<span style="font-size:11px;color:var(--text3);min-width:22px;">'+g.unit+'</span>'
+      +'<span id="em-ingk-'+i+'" style="font-size:11px;color:var(--orange);min-width:34px;text-align:right;">0k</span>'
+      +'<button onclick="emRemoveIng('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">\u2715</button></div>'
+      +_ligneMacros(m,est);
   }).join('');
   if(!_emRows.length&&!(_emBase&&_emBase.kcal))html+='<div style="font-size:12px;color:var(--text3);padding:8px 0;">Aucun ingrédient — ajoute-en ci-dessous.</div>';
   el.innerHTML=html;
 }
+function toggleEmMacros(){S.voirMacrosIng=!S.voirMacrosIng;syncEmRows();renderEmIngs();updateEmTotals();saveState();}
 function emDetailBase(){syncEmRows();_emConvert=true;_emBase={kcal:0,prot:0,gluc:0,lip:0};renderEmIngs();updateEmTotals();}
 function emSaveAsRecipe(){
   if(!_editMeal)return;
@@ -3785,8 +3802,10 @@ function updateEmTotals(){
 }
 function _emApplyStockDelta(orig,rows){
   var o={},n={};
-  orig.forEach(function(r){o[r.id]=(o[r.id]||0)+(r.oq||0);});
-  rows.forEach(function(r){n[r.id]=(n[r.id]||0)+(r.qty||0);});
+  // Une ligne estimee (hors inventaire) n'a pas d'identifiant d'article :
+  // elle ne doit jamais entrainer de mouvement de stock.
+  orig.filter(function(r){return r.id;}).forEach(function(r){o[r.id]=(o[r.id]||0)+(r.oq||0);});
+  rows.filter(function(r){return r.id&&r.src!=='ia';}).forEach(function(r){n[r.id]=(n[r.id]||0)+(r.qty||0);});
   var ids={};Object.keys(o).forEach(function(k){ids[k]=1;});Object.keys(n).forEach(function(k){ids[k]=1;});
   Object.keys(ids).forEach(function(id){
     var d=(n[id]||0)-(o[id]||0);if(!d)return;
@@ -4213,7 +4232,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-22 12h04</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-22 12h17</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4396,6 +4415,14 @@ function recalcAddMealMacros(){
     t.kcal+=m.kcal;t.prot+=m.prot;t.gluc+=m.gluc;t.lip+=m.lip;
     const ke=document.getElementById('inv-k-'+idx);if(ke)ke.textContent=Math.round(m.kcal)+'k';
   });
+  // Lignes estimees hors inventaire : la quantite saisie pilote leurs macros
+  (_addMealFreeItems||[]).forEach(function(f,i){
+    var qi=document.getElementById('free-qty-'+i);
+    if(qi&&f.pu){var nv=parseFloat(qi.value);if(!isNaN(nv)&&nv>=0)f.qty=nv;}
+    var m=f.pu?{kcal:f.pu.kcal*f.qty,prot:f.pu.prot*f.qty,gluc:f.pu.gluc*f.qty,lip:f.pu.lip*f.qty}
+              :(f.m||{kcal:0,prot:0,gluc:0,lip:0});
+    t.kcal+=m.kcal||0;t.prot+=m.prot||0;t.gluc+=m.gluc||0;t.lip+=m.lip||0;
+  });
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=Math.max(0,Math.round(v));};
   set('addmeal-kcal',t.kcal);set('addmeal-prot',t.prot);set('addmeal-gluc',t.gluc);set('addmeal-lip',t.lip);
 }
@@ -4423,6 +4450,7 @@ function buildInvContext() {
 }
 
 // ─── 📦 Sélection manuelle dans l'inventaire ────────────────────────────────
+var _addMealFreeItems=[];                           // lignes estimées par l'IA, hors inventaire
 var _invPick={};                                    // id -> quantité saisie
 var _invPickFromInput=false;                        // ouvert directement depuis l'écran d'entrée
 function openInvPick(){
@@ -4570,29 +4598,57 @@ function applyInvPick(){
     if(t){n.value=t;_titreAutoPose=t;}
   }
 }
+function toggleIngMacros(){S.voirMacrosIng=!S.voirMacrosIng;renderInvSuggestions(_addMealInvSuggestions);recalcAddMealMacros();saveState();}
+function _ligneMacros(m,estime){
+  if(!S.voirMacrosIng)return '';
+  var c=estime?'var(--blue)':'var(--text3)';
+  return '<div style="display:flex;gap:10px;font-size:10px;padding:0 0 5px 24px;color:'+c+';">'
+    +'<span style="color:var(--green);">P '+(Math.round((m.prot||0)*10)/10)+'</span>'
+    +'<span style="color:var(--blue);">G '+(Math.round((m.gluc||0)*10)/10)+'</span>'
+    +'<span style="color:var(--red);">L '+(Math.round((m.lip||0)*10)/10)+'</span></div>';
+}
 function renderInvSuggestions(suggestions) {
   const sec = document.getElementById('inv-items-section');
   if (!sec) return;
+  const oeil = '<button onclick="toggleIngMacros()" title="Afficher le détail des macros" style="background:none;border:none;color:'+(S.voirMacrosIng?'var(--gold)':'var(--text3)')+';font-size:14px;cursor:pointer;padding:0 4px;line-height:1;">'+(S.voirMacrosIng?'\u{1F441}':'\u{1F441}\u200D\u{1F5E8}')+'</button>';
   let html = '';
   if (suggestions.length === 0) {
     html = '<div style="font-size:12px;color:var(--text3);padding:4px 0 8px;">Aucun ingrédient identifié — ajoute-les manuellement si besoin.</div>';
   } else {
-    html = suggestions.map((s, i) => {
+    html = '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:2px;"><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Depuis l\'inventaire</span>'+oeil+'</div>';
+    html += suggestions.map((s, i) => {
       const it = findItem(s.id);
       if (!it) return '';
-      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(246,237,227,.05);">
+      // Les macros sont recalculees ici : applyInvPick ne pose pas de champ m,
+      // ce qui affichait "0k" sur toutes les lignes venant du selecteur.
+      const mm = itemMealMacros(it, s.qty, (s.unit==='g'||s.unit==='ml')?s.qty:undefined);
+      return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0 ${S.voirMacrosIng?'2px':'6px'};border-bottom:${S.voirMacrosIng?'none':'0.5px solid rgba(246,237,227,.05)'};">
         <input type="checkbox" id="inv-cb-${i}" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
         <span style="flex:1;font-size:13px;color:var(--text);">${it.name}</span>
         <input type="number" id="inv-qty-${i}" value="${s.qty}" min="0" style="width:62px;padding:4px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--text2);font-size:12px;outline:none;text-align:right;">
         <span style="font-size:11px;color:var(--text3);min-width:22px;">${s.unit}</span>
-        <span id="inv-k-${i}" style="font-size:11px;color:var(--orange);min-width:34px;text-align:right;">${s.m?s.m.kcal:0}k</span>
-      </div>`;
+        <span id="inv-k-${i}" style="font-size:11px;color:var(--orange);min-width:34px;text-align:right;">${Math.round(mm.kcal)}k</span>
+      </div>${_ligneMacros(mm,false)}`;
     }).filter(Boolean).join('');
+  }
+  // Lignes estimees par l'IA : jamais melangees a l'inventaire, jamais deduites du stock
+  if((_addMealFreeItems||[]).length){
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:0.5px solid rgba(95,168,201,.25);"><span style="font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;">Estimé — hors inventaire</span>'+(suggestions.length?'':oeil)+'</div>';
+    html += _addMealFreeItems.map(function(f,i){
+      var m=f.pu?{kcal:f.pu.kcal*f.qty,prot:f.pu.prot*f.qty,gluc:f.pu.gluc*f.qty,lip:f.pu.lip*f.qty}:f.m;
+      return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0 '+(S.voirMacrosIng?'2px':'6px')+';border-bottom:'+(S.voirMacrosIng?'none':'0.5px solid rgba(95,168,201,.12)')+';">'
+        +'<span style="width:16px;flex-shrink:0;color:var(--blue);font-size:11px;text-align:center;">\u25C7</span>'
+        +'<span style="flex:1;font-size:13px;color:var(--blue);">'+(f.n||'?')+'</span>'
+        +'<input type="number" id="free-qty-'+i+'" value="'+f.qty+'" min="0" '+(f.pu?'':'disabled ')+'style="width:62px;padding:4px 6px;background:var(--bg);border:0.5px solid rgba(95,168,201,.25);border-radius:6px;color:var(--blue);font-size:12px;outline:none;text-align:right;">'
+        +'<span style="font-size:11px;color:var(--text3);min-width:22px;">'+(f.unit||'')+'</span>'
+        +'<span style="font-size:11px;color:var(--orange);min-width:34px;text-align:right;">'+Math.round(m.kcal)+'k</span>'
+        +'</div>'+_ligneMacros(m,true);
+    }).join('');
   }
   html += `<div id="inv-custom-items"></div>
   <button onclick="addCustomInvItem()" style="width:100%;padding:7px;margin-top:8px;background:transparent;border:0.5px dashed rgba(246,237,227,.1);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">+ Ajouter manuellement</button>`;
   sec.innerHTML = html;
-  if(!sec.dataset.boundMacros){sec.dataset.boundMacros='1';['input','change'].forEach(ev=>sec.addEventListener(ev,e=>{if(e.target&&e.target.id&&(e.target.id.indexOf('inv-qty-')===0||e.target.id.indexOf('inv-cb-')===0))recalcAddMealMacros();}));}
+  if(!sec.dataset.boundMacros){sec.dataset.boundMacros='1';['input','change'].forEach(ev=>sec.addEventListener(ev,e=>{if(e.target&&e.target.id&&(e.target.id.indexOf('inv-qty-')===0||e.target.id.indexOf('inv-cb-')===0||e.target.id.indexOf('free-qty-')===0))recalcAddMealMacros();}));}
 }
 
 function addCustomInvItem() {
@@ -4686,7 +4742,7 @@ function renderAmSlots(){
     return '<button onclick="setAmSlot(\''+s+'\')" style="padding:6px 9px;border-radius:8px;font-size:11px;cursor:pointer;'+(on?'background:rgba(111,191,115,.15);border:0.5px solid rgba(111,191,115,.5);color:var(--green);font-weight:600;':'background:transparent;border:0.5px solid rgba(246,237,227,.12);color:var(--text3);')+'">'+L[s]+'</button>';
   }).join('');
 }
-function invAddMeal(){_scanBase=null;_titreAutoPose='';
+function invAddMeal(){_scanBase=null;_titreAutoPose='';_addMealFreeItems=[];
   _pendingMeal={name:'',kcal:0,prot:0,gluc:0,lip:0,items:[]};
   applyPendingMealToConfirm();
   var n=document.getElementById('addmeal-name');
@@ -4695,7 +4751,7 @@ function invAddMeal(){_scanBase=null;_titreAutoPose='';
   _invPickFromInput=true;
   openInvPick();
 }
-function manualAddMeal(){_scanBase=null;
+function manualAddMeal(){_scanBase=null;_addMealFreeItems=[];
   _pendingMeal={name:'',kcal:0,prot:0,gluc:0,lip:0,items:[]};
   applyPendingMealToConfirm();
   var n=document.getElementById('addmeal-name');
@@ -4709,7 +4765,12 @@ function applyPendingMealToConfirm(){
   document.getElementById('addmeal-gluc').value=_pendingMeal.gluc;
   document.getElementById('addmeal-lip').value=_pendingMeal.lip;
   _addMealInvSuggestions=[];
-  _addMealBase={kcal:_pendingMeal.kcal,prot:_pendingMeal.prot,gluc:_pendingMeal.gluc,lip:_pendingMeal.lip};
+  // Si le detail existe, ce sont les lignes qui portent le total : la base
+  // repart de zero, sans quoi tout serait compte deux fois.
+  _addMealBase=(_addMealFreeItems&&_addMealFreeItems.length)
+    ?{kcal:0,prot:0,gluc:0,lip:0}
+    :{kcal:_pendingMeal.kcal,prot:_pendingMeal.prot,gluc:_pendingMeal.gluc,lip:_pendingMeal.lip};
+  renderInvSuggestions(_addMealInvSuggestions);
   var qr=document.getElementById('addmeal-qty-row');
   if(qr){
     if(_scanBase){
@@ -4790,10 +4851,12 @@ Sois légèrement pessimiste sur les quantités.
     sys = `Tu analyses un repas (l'inventaire n'est PAS utilisé). Le repas est décrit en texte (parfois avec des FAUTES de frappe ou d'orthographe à corriger) ou montré en photo.
 Corrige les fautes et interprète le plat le plus probable (ex. "poulet fris" -> "poulet frit", "cacahouète" -> "cacahuète").
 Réponds UNIQUEMENT en JSON sans markdown:
-{"corrected":string,"ok":boolean,"items":[{"n":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}],"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}
+{"corrected":string,"ok":boolean,"items":[{"n":string,"q":number,"u":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}],"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}
 - "corrected" = le nom du repas corrigé, propre et lisible.
 - "ok" = true si tu reconnais un/des aliment(s) réel(s) et peux estimer; false seulement si c'est vraiment incompréhensible.
 - "items" = OBLIGATOIRE : une ligne par aliment cité (respecte les quantités : « 8 gyozas » = une ligne pour les 8). Estime CHAQUE ligne séparément, ne raisonne jamais sur le repas en bloc.
+- "q" et "u" = OBLIGATOIRES sur chaque ligne : la quantité estimée et son unité. u vaut "g", "ml" ou "pc". Pour un aliment dénombrable, u="pc" et q = le nombre (8 gyozas -> q=8, u="pc"). Sinon estime le poids réel (une portion de pâtes -> q=200, u="g").
+- Les kcal/prot/gluc/lip de la ligne correspondent à CETTE quantité q, pas à 100 g.
 - Les totaux kcal/prot/gluc/lip = somme EXACTE des items.
 - COHÉRENCE obligatoire : kcal ≈ 4×prot + 4×gluc + 9×lip (±5 %). Vérifie ce calcul avant de répondre.
 - FRITURE (tempura, beignet, corn dog, nuggets, gyoza poêlé, frites, panure) : l'huile absorbée ajoute 30 à 50 % de kcal et beaucoup de lipides. N'estime JAMAIS un aliment frit comme sa version nature.
@@ -4830,6 +4893,13 @@ Réponds UNIQUEMENT en JSON sans markdown:
     } else {
       const corrected=p.corrected||p.name||'Repas';
       const _items=Array.isArray(p.items)?p.items.filter(function(x){return x&&(x.kcal||x.prot||x.gluc||x.lip);}):[];
+      // Lignes estimees par l'IA : editables ensuite, quantite par quantite
+      _addMealFreeItems=_items.map(function(x){
+        var q=parseFloat(x.q)||0,u=(x.u==='ml'||x.u==='pc'||x.u==='pcs')?x.u:'g';
+        var m={kcal:+x.kcal||0,prot:+x.prot||0,gluc:+x.gluc||0,lip:+x.lip||0};
+        return {n:x.n||'?',qty:q,baseQty:q,unit:(q>0?u:''),m:m,
+                pu:(q>0?{kcal:m.kcal/q,prot:m.prot/q,gluc:m.gluc/q,lip:m.lip/q}:null)};
+      });
       const _sum=_macrosFromItems(_items);
       const _base=_sum||{kcal:+p.kcal||0,prot:+p.prot||0,gluc:+p.gluc||0,lip:+p.lip||0};
       const macros=_reconcileMacros(_base);
@@ -4873,7 +4943,7 @@ function confirmAddMealFinal() {
           const _it=findItem(s.id);let _m=null;
           if(_it&&(_it.mac100||_it.macPiece))_m=itemMealMacros(_it,qty,(s.unit==='g'||s.unit==='ml')?qty:undefined);
           else if(s.m&&s.baseQty>0)_m={kcal:s.m.kcal*qty/s.baseQty,prot:s.m.prot*qty/s.baseQty,gluc:s.m.gluc*qty/s.baseQty,lip:s.m.lip*qty/s.baseQty};
-          _ings.push({id:s.id,name:s.name,qty:qty,unit:s.unit||'',kcal:Math.round((_m&&_m.kcal)||0),prot:Math.round(((_m&&_m.prot)||0)*10)/10,gluc:Math.round(((_m&&_m.gluc)||0)*10)/10,lip:Math.round(((_m&&_m.lip)||0)*10)/10});
+          _ings.push({id:s.id,name:s.name,qty:qty,unit:s.unit||'',src:'inv',kcal:Math.round((_m&&_m.kcal)||0),prot:Math.round(((_m&&_m.prot)||0)*10)/10,gluc:Math.round(((_m&&_m.gluc)||0)*10)/10,lip:Math.round(((_m&&_m.lip)||0)*10)/10});
         }
       }
     });
@@ -4903,7 +4973,15 @@ function confirmAddMealFinal() {
   RCP.push(freeRecipe);
   if(!S.customRecipes)S.customRecipes=[];
   S.customRecipes.push(freeRecipe);
-  const _meal={rid:id, mult:1, dessert:null, customDessert:null, macros:{kcal,prot,gluc,lip}, name};if(_addMealInvMode&&_ings.length)_meal.ings=_ings;
+  (_addMealFreeItems||[]).forEach(function(f){
+    var m=f.pu?{kcal:f.pu.kcal*f.qty,prot:f.pu.prot*f.qty,gluc:f.pu.gluc*f.qty,lip:f.pu.lip*f.qty}:(f.m||{});
+    if(!(f.qty>0)&&!(m.kcal>0))return;
+    _ings.push({id:null,n:f.n,name:f.n,qty:f.qty,unit:f.unit||'',src:'ia',
+      kcal:Math.round(m.kcal||0),prot:Math.round((m.prot||0)*10)/10,
+      gluc:Math.round((m.gluc||0)*10)/10,lip:Math.round((m.lip||0)*10)/10});
+  });
+  const _meal={rid:id, mult:1, dessert:null, customDessert:null, macros:{kcal,prot,gluc,lip}, name};
+  if(_ings.length)_meal.ings=_ings;
   if(new Date().getHours()<4){
     S.pendingFreeMeal=_meal;saveState();closeAddMeal();render();return;
   }
