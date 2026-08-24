@@ -35,6 +35,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t17.js` | Coach : phase de la journée, suggestion de recette, ton |
 | `t18.js` | Tolérance DLC par famille de produits, garde bœuf/œuf |
 | `t19.js` | Zones sûres iOS : scanner sous l’encoche, stabilité de la barre basse |
+| `t20.js` | Lignes d’ingrédients : débordement flexbox, bouton de suppression |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
