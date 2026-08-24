@@ -34,6 +34,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t16.js` | Œil sur les macros, lignes estimées hors inventaire, cloisonnement du stock |
 | `t17.js` | Coach : phase de la journée, suggestion de recette, ton |
 | `t18.js` | Tolérance DLC par famille de produits, garde bœuf/œuf |
+| `t19.js` | Zones sûres iOS : scanner sous l’encoche, stabilité de la barre basse |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
