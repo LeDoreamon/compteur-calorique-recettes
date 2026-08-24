@@ -80,7 +80,8 @@ body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; 
 @keyframes ovIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes modalIn { from { opacity: 0; transform: translateY(16px) scale(.975); } to { opacity: 1; transform: none; } }
 div[id$="-overlay"] { animation: ovIn .4s ease both; -webkit-backdrop-filter: blur(7px); backdrop-filter: blur(7px); }
-div[id$="-overlay"] > div { animation: modalIn .68s var(--ease) both; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
+#scan-overlay { -webkit-backdrop-filter: none; backdrop-filter: none; }
+div[id$="-overlay"]:not(#scan-overlay) > div { animation: modalIn .68s var(--ease) both; box-shadow: 0 24px 60px rgba(0,0,0,.5); }
 
 /* Boutons : retour tactile */
 button { transition: transform .13s var(--ease), background .18s ease, border-color .18s ease, color .18s ease, box-shadow .18s ease; user-select: none; }
@@ -169,7 +170,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .pane-r { animation: paneR .6s var(--ease) both; }
 .pane-l { animation: paneL .6s var(--ease) both; }
 @media (prefers-reduced-motion: reduce) {
-  .pane-r, .pane-l, #profile-screen img, div[id$="-overlay"] > div { animation: none !important; }
+  .pane-r, .pane-l, #profile-screen img, div[id$="-overlay"]:not(#scan-overlay) > div { animation: none !important; }
 }
 
 
@@ -4311,7 +4312,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-24 18h21</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-24 22h14</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>

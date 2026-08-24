@@ -75,3 +75,35 @@ t('overscroll-behavior-y conserve sur le body',()=>{
   if(!/overscroll-behavior-y: contain/.test(src))throw new Error('perdu');
 });
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== BU. Cadre de visee du scanner ===');
+t('*** le scanner est exclu de l\'animation des modales ***',()=>{
+  if(!/div\[id\$="-overlay"\]:not\(#scan-overlay\) > div \{ animation: modalIn/.test(src))
+    throw new Error('exclusion absente : le transform du cadre serait ecrase');
+});
+t('l\'exclusion vaut aussi en mouvement reduit',()=>{
+  const i=src.indexOf('prefers-reduced-motion');
+  const bloc=src.slice(i,i+400);
+  if(!/:not\(#scan-overlay\) > div \{ animation: none/.test(bloc))
+    throw new Error('non exclu en mouvement reduit');
+});
+t('le cadre garde son centrage inline',()=>{
+  const i=src.indexOf('id="scan-overlay"');
+  const s=src.slice(i,i+2400);
+  if(!/transform:translate\(-50%,-50%\)/.test(s))throw new Error('centrage perdu');
+});
+t('les vraies modales gardent leur animation',()=>{
+  if(!/animation: modalIn \.68s/.test(src))throw new Error('animation supprimee');
+  ['invpick-overlay','set-overlay','addmeal-overlay','cc-overlay'].forEach(function(id){
+    if(!src.includes('id="'+id+'"'))throw new Error(id+' introuvable');
+  });
+});
+t('pas de flou d\'arriere-plan sur le flux camera',()=>{
+  if(!/#scan-overlay \{ -webkit-backdrop-filter: none; backdrop-filter: none; \}/.test(src))
+    throw new Error('flou non neutralise');
+});
+t('un seul overlay porte l\'exception',()=>{
+  const n=(src.match(/:not\(#scan-overlay\)/g)||[]).length;
+  if(n!==2)throw new Error(n+' exclusions au lieu de 2');
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
