@@ -33,6 +33,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t15.js` | Titre automatique d’un repas composé depuis l’inventaire |
 | `t16.js` | Œil sur les macros, lignes estimées hors inventaire, cloisonnement du stock |
 | `t17.js` | Coach : phase de la journée, suggestion de recette, ton |
+| `t18.js` | Tolérance DLC par famille de produits, garde bœuf/œuf |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

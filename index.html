@@ -812,10 +812,42 @@ function updateInvDlc(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(
 // ─── DLC ─────────────────────────────────
 function effDlc(it){
   if(!it||!it.dlc)return null;
+  const _s=(it.id||'')+' '+(it.name||'');
+  // « bœuf » contient « œuf » : sans cette garde, la viande hachée héritait
+  // des 14 jours de tolérance accordés aux œufs.
+  if(/b(oe|œ)uf/i.test(_s))return it.dlc;
   // Œufs, yaourts, fromages blancs : tiennent généralement ~2 semaines après la date → +14j de marge
-  const long=/oeuf|œuf|yaourt|fromage\s*blanc|fb[_\s]|skyr|petit\s*suisse/i.test((it.id||'')+' '+(it.name||''));
+  const long=/oeuf|œuf|yaourt|fromage\s*blanc|fb[_\s]|skyr|petit\s*suisse/i.test(_s);
   if(!long)return it.dlc;
   const d=new Date(it.dlc);d.setDate(d.getDate()+14);
+  return d.toISOString().slice(0,10);
+}
+// Une date depassee d'un jour n'est pas une anomalie de fiche. La tolerance
+// depend du produit : sur de la viande hachee ou du poisson, la DLC est une
+// vraie limite sanitaire ; sur des pates seches, la date n'est qu'indicative.
+// N'est utilisee QUE par le diagnostic — les alertes et les badges continuent
+// de se fonder sur la date reelle.
+function _toleranceDlc(it){
+  var s=((it&&it.id||'')+' '+(it&&it.name||'')).toLowerCase();
+  if(/b(oe|œ)uf/.test(s))return 0;   // viande : la date fait foi
+  // Deja majores de 14 jours par effDlc : pas de rallonge supplementaire
+  if(/oeuf|œuf|yaourt|fromage\s*blanc|fb[_\s]|skyr|petit\s*suisse/.test(s))return 0;
+  // Risque microbiologique reel : la date fait foi
+  if(/hach|viande|volaille|poulet|dinde|poisson|saumon|cabillaud|crevette|fruits de mer|tartare|lardon|bacon|jambon|charcut|chorizo|rillette|surimi|steak/.test(s))return 0;
+  // Cremes, pates fraiches, plats traiteur
+  if(/cr[eè]me|gnocchi|ravioli|tortellini|p[aâ]tes? fra[iî]|traiteur|plat cuisin|houmous|tarama/.test(s))return 5;
+  // Fromages affines : la moisissure se voit bien avant tout risque
+  if(/fromage|parmesan|mozzarel|raclette|comt[eé]|emmental|gruy[eè]re|ch[eè]vre|feta/.test(s))return 21;
+  // Sec, conserve, surgele : date de durabilite minimale, purement indicative
+  if(/conserve|bo[iî]te|surgel|congel|riz|farine|sucre|biscuit|c[eé]r[eé]ale|chips|bocal|pâtes compl|pates compl|pâtes blanch|flocons|panure|huile|vinaigre|sauce soja|miel|[eé]pice/.test(s))return 60;
+  return 7;
+}
+function dlcAnomalie(it){
+  var base=(typeof effDlc==='function')?effDlc(it):(it&&it.dlc);
+  if(!base)return null;
+  var d=new Date(base);
+  if(isNaN(d.getTime()))return base;
+  d.setDate(d.getDate()+_toleranceDlc(it));
   return d.toISOString().slice(0,10);
 }
 function getDlcStatus(dlc){
@@ -2703,7 +2735,7 @@ function invIssues(){
       if(vus[n])dupes[n]=(dupes[n]||[vus[n]]).concat([{cat:cat,it:it}]);
       else vus[n]={cat:cat,it:it};
       // 3. DLC depassee
-      if(actif&&it.dlc){var e=(typeof effDlc==='function')?effDlc(it):it.dlc;if(e&&e<getToday())expires.push({cat:cat,it:it});}
+      if(actif&&it.dlc){var e=dlcAnomalie(it);if(e&&e<getToday())expires.push({cat:cat,it:it});}
     });
   });
   var dl=Object.keys(dupes).map(function(n){return dupes[n];});
@@ -4273,7 +4305,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-22 12h29</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-24 12h13</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
