@@ -20,8 +20,8 @@ t('*** une ligne du selecteur affiche ses vraies calories ***',()=>{
   sb.openAddMeal('text');G('invAddMeal')();
   sb.invPickQty('p',200);sb.applyInvPick();
   const h=docEl('inv-items-section').innerHTML;
-  if(/>0k</.test(h))throw new Error('affiche 0k');
-  if(!h.includes('240k'))throw new Error('240k attendu : '+h.slice(0,400));
+  if(/>0 kcal</.test(h))throw new Error('affiche 0 kcal');
+  if(!h.includes('240 kcal'))throw new Error('240 kcal attendu : '+h.slice(0,400));
 });
 
 console.log('\n=== BD. Icone oeil ===');
