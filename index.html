@@ -4312,7 +4312,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-27 16h34</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-27 21h41</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4437,9 +4437,10 @@ function openAddMeal(type) {_scanBase=null;
   document.getElementById('addmeal-title').textContent = 'Ajouter un repas';
   _addMealInvSuggestions = [];
   _addMealBase = null;
-  _addMealUseStock = true;
   _addMealInvMode = false;
-  setMealStock(true);
+  // Maureen ne tient pas son inventaire : par défaut, un repas hors recette ne
+  // s'y adosse pas — ni pour la déduction, ni pour l'analyse IA.
+  setMealStock(ACTIVE_PROFILE!=='maureen');
   if (type === 'photo') {
     document.getElementById('addmeal-photo-input').value = '';
     document.getElementById('addmeal-photo-input').click();
@@ -4823,6 +4824,7 @@ function renderAmSlots(){
   }).join('');
 }
 function invAddMeal(){_scanBase=null;_titreAutoPose='';_addMealFreeItems=[];
+  setMealStock(true);   // choisir l'inventaire, c'est vouloir le déduire
   _pendingMeal={name:'',kcal:0,prot:0,gluc:0,lip:0,items:[]};
   applyPendingMealToConfirm();
   var n=document.getElementById('addmeal-name');

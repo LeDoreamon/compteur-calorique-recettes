@@ -37,6 +37,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t19.js` | Zones sûres iOS : scanner sous l’encoche, stabilité de la barre basse |
 | `t20.js` | Lignes d’ingrédients : débordement flexbox, bouton de suppression |
 | `t21.js` | Format des calories par ingrédient (« N kcal ») |
+| `t22.js` | Déduction d’inventaire : défaut par profil (Non pour Maureen) |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
