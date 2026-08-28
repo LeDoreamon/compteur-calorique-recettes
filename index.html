@@ -244,6 +244,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
       <div id="addmeal-title" style="font-size:15px;font-weight:600;color:var(--text);">Ajouter un repas</div>
       <button onclick="closeAddMeal()" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;">✕</button>
     </div>
+    <div id="addmeal-daynote" style="display:none;margin:-8px 0 14px;padding:8px 11px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.4);border-radius:8px;font-size:12px;color:var(--blue);"></div>
     <img id="addmeal-photo-preview" style="display:none;width:100%;border-radius:8px;margin-bottom:12px;max-height:200px;object-fit:cover;">
     <!-- Input state -->
     <div id="addmeal-input">
@@ -4312,7 +4313,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-27 21h41</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-28 13h47</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4417,6 +4418,20 @@ let _addMealInvSuggestions = [];
 let _addMealInvMode = false;
 
 let _addMealBase=null;
+// Jour auquel le repas sera rattache. Fige a l'ouverture du modal : si le
+// tracker change de jour pendant la saisie, le repas ne part pas ailleurs.
+let _addMealDay=null;
+function _majBandeauJour(){
+  var el=document.getElementById('addmeal-daynote');
+  if(!el)return;
+  if(!_addMealDay||_addMealDay===S.today){el.style.display='none';el.textContent='';return;}
+  var p=_addMealDay.split('-');
+  var lib=(p.length===3)?(p[2]+'/'+p[1]):_addMealDay;
+  var hier=(typeof shiftDate==='function')?shiftDate(S.today,-1):null;
+  var quand=(_addMealDay===hier)?'hier':((_addMealDay>S.today)?'demain':'le '+lib);
+  el.textContent='Ce repas sera enregistré '+quand+' ('+lib+'), pas aujourd\'hui.';
+  el.style.display='block';
+}
 let _addMealUseStock=true;
 function setMealStock(yes){
   _addMealUseStock=yes;
@@ -4438,6 +4453,8 @@ function openAddMeal(type) {_scanBase=null;
   _addMealInvSuggestions = [];
   _addMealBase = null;
   _addMealInvMode = false;
+  _addMealDay = S.displayDate || S.today;
+  _majBandeauJour();
   // Maureen ne tient pas son inventaire : par défaut, un repas hors recette ne
   // s'y adosse pas — ni pour la déduction, ni pour l'analyse IA.
   setMealStock(ACTIVE_PROFILE!=='maureen');
@@ -5064,15 +5081,18 @@ function confirmAddMealFinal() {
   });
   const _meal={rid:id, mult:1, dessert:null, customDessert:null, macros:{kcal,prot,gluc,lip}, name};
   if(_ings.length)_meal.ings=_ings;
-  if(new Date().getHours()<4){
+  var _jour=_addMealDay||S.today;
+  // La question « c'est pour hier ou aujourd'hui ? » n'a de sens que si le jour
+  // n'a pas deja ete choisi explicitement dans le tracker.
+  if(_jour===S.today&&new Date().getHours()<4){
     S.pendingFreeMeal=_meal;saveState();closeAddMeal();render();return;
   }
-  if (!S.dayMeals[S.today]) S.dayMeals[S.today] = [];
-  S.dayMeals[S.today].push(_meal);
+  if (!S.dayMeals[_jour]) S.dayMeals[_jour] = [];
+  S.dayMeals[_jour].push(_meal);
   saveState();
   closeAddMeal();
   render();
-  showCoachToast(S.today);
+  showCoachToast(_jour);
 }
 // ─────────────────────────────────────────────────────────────────────────────
 

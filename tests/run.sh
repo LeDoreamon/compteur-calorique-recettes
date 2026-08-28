@@ -10,7 +10,7 @@ open('/tmp/c.js','w',encoding='utf-8').write(m.group(1))" || exit 1
 node --check /tmp/c.js || { echo "SYNTAXE KO"; exit 1; }
 echo "syntaxe ok"
 tot=0; ko=0
-for f in t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21 t22; do
+for f in t2 t3 t4 t5 t6 t7 t8 t9 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23; do
   [ -f "$f.js" ] || continue
   out=$(node "$f.js" 2>&1 | grep -oP "^---- .*" | tail -1)
   echo "$f : $out"
