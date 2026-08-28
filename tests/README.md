@@ -42,6 +42,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t24.js` | Fuseau horaire par profil, conflits de synchro, appels sans définition |
 | `t25.js` | Coach après saisie d’activité : message de dépense, pas de bilan alimentaire |
 | `t26.js` | Libellé de quantité, emballages orphelins, jours DLC, tableaux troués Firebase |
+| `t27.js` | Suggestions de rachat : écarter un article, levée automatique |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
