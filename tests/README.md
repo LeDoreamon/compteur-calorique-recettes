@@ -39,6 +39,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t21.js` | Format des calories par ingrédient (« N kcal ») |
 | `t22.js` | Déduction d’inventaire : défaut par profil (Non pour Maureen) |
 | `t23.js` | Saisie rétroactive : le repas suit le jour affiché, bandeau d’avertissement |
+| `t24.js` | Fuseau horaire par profil, conflits de synchro, appels sans définition |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

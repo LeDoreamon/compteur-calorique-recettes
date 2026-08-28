@@ -695,7 +695,34 @@ function renderRecTri(){
   return '<div class="rec-tris"><span class="rtri-lbl">Trier</span>'+puces+fleche+'</div>';
 }
 
-function getToday(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
+// La date et l'heure d'un profil suivent le lieu de vie de la personne, pas le
+// reglage de l'appareil qui saisit : ouvrir le profil de Maureen depuis la
+// France ne doit pas decaler ses journees d'un cran.
+const PROFILE_TZ={liam:'Europe/Paris',maureen:'America/Vancouver'};
+function _tzProfil(){
+  try{
+    var t=(typeof S!=='undefined'&&S&&S.tz)||PROFILE_TZ[(typeof ACTIVE_PROFILE!=='undefined')?ACTIVE_PROFILE:''];
+    return t||null;
+  }catch(e){return null;}
+}
+// Renvoie {y,m,d,h} dans le fuseau du profil, ou l'heure de l'appareil en repli
+function _partsProfil(dt){
+  var n=dt||new Date(),tz=_tzProfil();
+  if(tz){
+    try{
+      var f=new Intl.DateTimeFormat('en-CA',{timeZone:tz,year:'numeric',month:'2-digit',
+        day:'2-digit',hour:'2-digit',hour12:false});
+      var o={};f.formatToParts(n).forEach(function(p){o[p.type]=p.value;});
+      if(o.year&&o.month&&o.day)
+        return {y:o.year,m:o.month,d:o.day,h:parseInt(o.hour,10)||0};
+    }catch(e){}
+  }
+  return {y:String(n.getFullYear()),m:String(n.getMonth()+1).padStart(2,'0'),
+          d:String(n.getDate()).padStart(2,'0'),h:n.getHours()};
+}
+function getToday(){var p=_partsProfil();return p.y+'-'+p.m+'-'+p.d;}
+// Heure locale du profil : garde nocturne et phase de journee du coach
+function heureProfil(){return _partsProfil().h;}
 function shiftDate(d,days){const dt=new Date(d+'T00:00:00');dt.setDate(dt.getDate()+days);return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
 const TODAY=getToday();const TOMORROW=shiftDate(TODAY,1);
 
@@ -1939,6 +1966,20 @@ async function _remoteRev(){
     return (typeof v==='number')?v:0;
   }catch(e){return null;}                          // réseau indisponible : on ne bloque pas
 }
+// Empreinte de ce qui compte dans l'etat : sert a savoir si l'utilisateur a
+// modifie quelque chose depuis son dernier chargement. Si ce n'est pas le cas,
+// une ecriture venue d'un autre appareil ne menace rien et il est inutile de
+// poser la question.
+var _empreinteRef=null;
+function _empreinteEtat(){
+  try{
+    var p=JSON.stringify([S.inv,S.dayMeals,S.weights,S.customRecipes,
+                          S.aiRecipes,S.favs,S.shop,S.recipeDesserts,S.customDesserts]);
+    var x=0;
+    for(var i=0;i<p.length;i++){x=((x<<5)-x+p.charCodeAt(i))|0;}
+    return x+':'+p.length;
+  }catch(e){return null;}
+}
 async function _reloadFromServer(silencieux){
   _loaded=false;
   await loadState();
@@ -1999,7 +2040,13 @@ async function _saveStateNow(){
   if(!_loaded)return; // jamais sauvegarder l'état par défaut pendant le chargement initial
   // Quelqu'un a-t-il écrit depuis notre chargement ? Si oui, on n'écrase pas.
   const _rr=await _remoteRev();
-  if(_rr!==null&&_rr>_stateRev){await _onSaveConflict();return;}
+  if(_rr!==null&&_rr>_stateRev){
+    // L'autre appareil a ecrit. Si rien n'a bouge de notre cote, on prend sa
+    // version sans rien demander : aucune donnee locale n'est en jeu.
+    var _emp=_empreinteEtat();
+    if(_emp&&_empreinteRef&&_emp===_empreinteRef){await _reloadFromServer(true);return;}
+    await _onSaveConflict();return;
+  }
   const _newRev=(_rr===null?_stateRev:_rr)+1;
   const _invSafe={};for(const c in S.inv){_invSafe[c]=(S.inv[c]||[]).map(it=>Object.assign({},it,{qty:it.qty===null?-1:it.qty}));}
   const payload=JSON.stringify({
@@ -2030,6 +2077,7 @@ async function _saveStateNow(){
     savedBy:_sessionId
   });
   try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
+  _empreinteRef=_empreinteEtat();   // reference : etat sauvegarde, rien a perdre
   try{
     const _sc=new AbortController();const _stid=setTimeout(()=>_sc.abort(),8000);
     const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'),{
@@ -2076,6 +2124,7 @@ async function loadState(){
         _applyState(d);
         _stateRev=_dRev;
         _loaded=true;
+        _empreinteRef=_empreinteEtat();
         try{localStorage.setItem(ACTIVE_PROFILE+'_st',JSON.stringify(d));}catch(e){}
         _syncStatus='ok';
         try{const rb=await fetch(await fbUrl(ACTIVE_PROFILE+'/burn'));if(rb.ok){const bd=await rb.json();_burnData=(bd&&typeof bd==='object')?bd:{};}}catch(e){}
@@ -2090,6 +2139,7 @@ async function loadState(){
     _applyState(d);
     _stateRev=(d&&typeof d.rev==='number')?d.rev:0;   // sinon on repartait de zero
     _loaded=true;
+    _empreinteRef=_empreinteEtat();
     if(_mzJustFixed){_mzJustFixed=false;saveState();}
   }catch(e){}
   _syncStatus='offline';
@@ -2480,7 +2530,7 @@ function renderSpiceCheck(){
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-function handleCook(rid,mult,subst,again){const r=RCP.find(x=>x.id===rid);if(!r||(!subst&&!canCook(r,mult))||(!again&&cookedToday(rid)))return;const h=new Date().getHours();if(h<4){S.pendingCook={rid,mult,subst:!!subst};render();return;}openConfirmCook(rid,mult,S.today,subst);}
+function handleCook(rid,mult,subst,again){const r=RCP.find(x=>x.id===rid);if(!r||(!subst&&!canCook(r,mult))||(!again&&cookedToday(rid)))return;const h=heureProfil();if(h<4){S.pendingCook={rid,mult,subst:!!subst};render();return;}openConfirmCook(rid,mult,S.today,subst);}
 function confirmDay(day){if(!S.pendingCook)return;const{rid,mult,subst}=S.pendingCook;S.pendingCook=null;openConfirmCook(rid,mult,day,subst);}
   function confirmFreeMealDay(day){if(!S.pendingFreeMeal)return;const meal=S.pendingFreeMeal;S.pendingFreeMeal=null;if(!S.dayMeals[day])S.dayMeals[day]=[];S.dayMeals[day].push(meal);saveState();render();}
 
@@ -4155,7 +4205,7 @@ function _enPriseDeMasse(){
 // 22 h. On situe le moment avant de choisir le ton.
 function _phaseJournee(day){
   if(day&&day!==S.today)return 'close';
-  var h=new Date().getHours();
+  var h=heureProfil();
   if(h<4)return 'fin';          // garde nocturne : on est encore sur la veille
   if(h<14)return 'debut';
   if(h<20)return 'milieu';
@@ -4313,7 +4363,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-28 13h47</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-28 22h06</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -5084,7 +5134,7 @@ function confirmAddMealFinal() {
   var _jour=_addMealDay||S.today;
   // La question « c'est pour hier ou aujourd'hui ? » n'a de sens que si le jour
   // n'a pas deja ete choisi explicitement dans le tracker.
-  if(_jour===S.today&&new Date().getHours()<4){
+  if(_jour===S.today&&heureProfil()<4){
     S.pendingFreeMeal=_meal;saveState();closeAddMeal();render();return;
   }
   if (!S.dayMeals[_jour]) S.dayMeals[_jour] = [];

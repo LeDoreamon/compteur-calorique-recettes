@@ -5,6 +5,9 @@ function eq(a,b,m){if(String(a)!==String(b))throw new Error((m||'')+' attendu '+
 
 // Bac a sable avec une heure pilotable
 function monde(heure){
+  // heure = heure voulue a Paris. Intl lit l'instant reel, pas getHours(),
+  // donc on fabrique l'instant UTC correspondant (Paris = UTC+2 en aout).
+  const isoUTC=new Date(Date.UTC(2026,7,24,(heure+22)%24,0,0)).toISOString();
   let js=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
   js+='\n;["S","RCP","TARGETS","coachAdvice","_phaseJournee","_suggereRecette","getDayMacros","canCook","cookedToday","findItem"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
   const reg={};
@@ -14,8 +17,9 @@ function monde(heure){
     querySelectorAll(){return[];},addEventListener(){},files:[]};}
   const de=id=>{if(!reg[id])reg[id]=mk();return reg[id];};
   const RD=Date;
-  class FD extends RD{getHours(){return heure;}}
-  const sb={console:{log(){},warn(){},error(){}},Math,Date:FD,JSON,parseFloat,parseInt,isNaN,isFinite,
+  class FD extends RD{constructor(...a){if(!a.length)super(isoUTC);else super(...a);}
+    static now(){return new RD(isoUTC).getTime();}}
+  const sb={console:{log(){},warn(){},error(){}},Math,Date:FD,JSON,Intl,parseFloat,parseInt,isNaN,isFinite,
    Array,Object,String,Number,Boolean,RegExp,Promise,Map,Set,encodeURIComponent,decodeURIComponent,
    document:{getElementById:de,querySelector:()=>null,querySelectorAll:()=>[],createElement:()=>mk(),
      addEventListener(){},hidden:false,body:{appendChild(e){reg['coach-toast']=e;}},

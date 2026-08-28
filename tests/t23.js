@@ -109,7 +109,7 @@ t('pas de undefined dans le libelle',()=>{
 console.log('\n=== CF. Garde nocturne ===');
 t('*** la question hier/aujourd\'hui ne se pose plus si le jour est choisi ***',()=>{
   const src=require('fs').readFileSync('index.html','utf8');
-  if(!/_jour===S\.today&&new Date\(\)\.getHours\(\)<4/.test(src))
+  if(!/_jour===S\.today&&heureProfil\(\)<4/.test(src))
     throw new Error('la garde nocturne s\'applique encore a un jour choisi');
 });
 t('elle reste active quand on loggue aujourd\'hui',()=>{
