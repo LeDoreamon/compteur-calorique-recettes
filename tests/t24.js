@@ -155,3 +155,31 @@ t('*** toute fonction interne appelee est bien definie ***',()=>{
   if(manquants.size)throw new Error([...manquants].join(', ')+' appelée(s) sans définition');
 });
 console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== CX. Fuseau applique des le premier calcul ===');
+t('*** S.today et getToday() concordent au chargement ***',()=>{
+  const sb=monde('liam','2026-08-28T22:30:00Z');   // 00h30 a Paris le 29
+  eq(sb.S.today,sb.getToday(),'la date figee doit suivre le fuseau du profil');
+  eq(sb.S.today,'2026-08-29','fuseau Paris applique');
+});
+t('*** choisir Maureen recale la date sur son fuseau ***',()=>{
+  // ACTIVE_PROFILE vaut 'liam' au chargement : la date de depart est celle de
+  // Paris. selectProfile doit la recalculer.
+  const sb=monde('maureen','2026-08-28T22:30:00Z');  // 15h30 a Vancouver le 28
+  eq(sb.getToday(),'2026-08-28','fuseau Vancouver');
+  const src=fs.readFileSync('index.html','utf8');
+  const i=src.indexOf('function selectProfile');
+  const bloc=src.slice(i,i+700);
+  if(!/S\.today=getToday\(\);S\.displayDate=S\.today;/.test(bloc))
+    throw new Error('selectProfile ne recalcule pas la date');
+  if(/S\.displayDate=TODAY;/.test(bloc))
+    throw new Error('utilise encore la constante figee');
+});
+t('_tzProfil ne se laisse pas piper par la zone morte',()=>{
+  const src=fs.readFileSync('index.html','utf8');
+  const i=src.indexOf('function _tzProfil');
+  const bloc=src.slice(i,i+520);
+  if((bloc.match(/try\{/g)||[]).length<2)
+    throw new Error('un seul try : une erreur sur S masquerait PROFILE_TZ');
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');

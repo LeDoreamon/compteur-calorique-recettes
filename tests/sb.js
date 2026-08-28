@@ -19,8 +19,16 @@ function makeEl(){return{value:'',checked:false,textContent:'',innerHTML:'',clas
  focus(){},appendChild(){},setAttribute(){},getAttribute(){return null;},
  querySelector(){return null;},querySelectorAll(){return[];},addEventListener(){},files:[]};}
 const docEl=id=>{if(!reg[id])reg[id]=makeEl();return reg[id];};
-const RD=Date;class FD extends RD{getHours(){return 12;}}
-const sb={console,Math,Date:FD,JSON,parseFloat,parseInt,isNaN,isFinite,
+// Horloge figee a un midi : sans cela les suites basculent dans la garde
+// nocturne quand elles tournent entre minuit et 4 h, et les dates relatives
+// changent d'un jour a l'autre. Intl lit l'instant reel, pas getHours().
+const RD=Date;
+const INSTANT_TEST='2026-08-28T10:00:00Z';   // 12 h a Paris, 3 h a Vancouver
+class FD extends RD{
+  constructor(...a){if(!a.length)super(INSTANT_TEST);else super(...a);}
+  static now(){return new RD(INSTANT_TEST).getTime();}
+}
+const sb={console,Math,Date:FD,JSON,Intl,parseFloat,parseInt,isNaN,isFinite,
  Array,Object,String,Number,Boolean,RegExp,Promise,Map,Set,
  encodeURIComponent,decodeURIComponent,
  document:{getElementById:docEl,querySelector:()=>null,querySelectorAll:()=>[],
