@@ -887,7 +887,7 @@ function dlcAnomalie(it){
 }
 function getDlcStatus(dlc){
   if(!dlc)return null;
-  const d=Math.round((new Date(dlc)-new Date())/(864e5));
+  const d=Math.round((new Date(dlc)-new Date(getToday()))/(864e5));
   if(d<0)return{label:'Expir\u00e9',color:'var(--text3)',bg:'var(--bg3)'};
   if(d<7)return{label:d+'j \u26a0',color:'var(--red)',bg:'var(--red-bg)'};
   if(d<15)return{label:d+'j',color:'var(--orange)',bg:'var(--orange-bg)'};
@@ -1878,6 +1878,12 @@ function _applyState(d){
       placards:Array.isArray(d.inv.placards)?d.inv.placards:[],
       epices:Array.isArray(d.inv.epices)?d.inv.epices:[]
     };
+  // Firebase rend les tableaux troues avec des null : on les ecarte avant tout.
+  try{
+    Object.keys(S.inv||{}).forEach(function(cat){
+      if(Array.isArray(S.inv[cat]))S.inv[cat]=S.inv[cat].filter(function(x){return x&&x.id;});
+    });
+  }catch(e){}
   }
   // Firebase supprime les null : un item "présent" revient en qty:-1 (notre sentinel) ou sans qty (undefined). On rétablit qty=null.
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it){if(it.qty===undefined){it.qty=null;_mzJustFixed=true;}else if(it.qty===-1){it.qty=null;}}}));
@@ -1932,9 +1938,25 @@ function _applyState(d){
   if(d.aiRecipes&&Array.isArray(d.aiRecipes)){S.aiRecipes=d.aiRecipes;S.aiRecipes.forEach(r=>{r.profile=ACTIVE_PROFILE;if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
   else{S.aiRecipes=[];}
   // Recettes custom (repas texte/photo) → re-pousser dans RCP
-  if(d.customRecipes&&Array.isArray(d.customRecipes)){S.customRecipes=d.customRecipes;S.customRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
+  if(d.customRecipes&&Array.isArray(d.customRecipes)){
+    S.customRecipes=d.customRecipes.filter(function(r){return r&&r.id;});
+    S.customRecipes.forEach(function(r){if(Array.isArray(r.used))r.used=r.used.filter(Boolean);});
+    S.customRecipes=S.customRecipes;S.customRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
   // Historique suppressions
   if(d.deletedItems&&Array.isArray(d.deletedItems))S.deletedItems=d.deletedItems;
+  // Sequelle de l'ancien bug : des articles comptes a la piece portent encore un
+  // pkg, qui n'a de sens que pour un poids. On le convertit en pieceG si cette
+  // information manque, puis on le retire.
+  try{
+    Object.keys(S.inv||{}).forEach(function(cat){
+      (S.inv[cat]||[]).forEach(function(it){
+        if(!it||!it.pkg||!(it.pkg.size>0))return;
+        if(!it.unit||it.unit==='g'||it.unit==='ml')return;   // emballage legitime
+        if(!(it.pieceG>0))it.pieceG=it.pkg.size;
+        delete it.pkg;
+      });
+    });
+  }catch(e){}
   // Noms de repli des ingredients. Appris AVANT la fusion ci-dessous, qui
   // change les identifiants : c'est le seul moment ou ils pointent encore
   // sur des articles existants.
@@ -2048,7 +2070,7 @@ async function _saveStateNow(){
     await _onSaveConflict();return;
   }
   const _newRev=(_rr===null?_stateRev:_rr)+1;
-  const _invSafe={};for(const c in S.inv){_invSafe[c]=(S.inv[c]||[]).map(it=>Object.assign({},it,{qty:it.qty===null?-1:it.qty}));}
+  const _invSafe={};for(const c in S.inv){_invSafe[c]=(S.inv[c]||[]).filter(Boolean).map(it=>Object.assign({},it,{qty:it.qty===null?-1:it.qty}));}
   const payload=JSON.stringify({
     dayMeals:S.dayMeals,
     inv:_invSafe,
@@ -2235,7 +2257,7 @@ async function generateStockRecipes(){
   if(btn){btn.disabled=true;btn.textContent='✨ Génération en cours… (15-30s)';}
   const invList=foodItems.map(i=>{let m='';if(i.macPiece){m=`, PAR PIÈCE: ${i.macPiece.kcal}kcal ${i.macPiece.prot}P ${i.macPiece.gluc}G ${i.macPiece.lip}L (pièces ENTIÈRES)`;}else if(i.mac100){m=`, pour 100${i.unit==='ml'?'ml':'g'}: ${i.mac100.kcal}kcal ${i.mac100.prot}P ${i.mac100.gluc}G ${i.mac100.lip}L`;}if(i.pkg&&i.pkg.size>0){m+=`, EMBALLAGE ${i.pkg.size}${i.unit} (multiples de ${i.pkg.size}${i.unit})`;}return `${i.id} = ${i.name} (${i.qty===null?'en stock':i.qty+i.unit+' dispo'}${m})`;}).join('\n');
   const spiceList=spices.length?spices.join(', '):'aucune';
-  const _soon=[];Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{const e=effDlc(it);if(!e)return;const dd=Math.round((new Date(e)-new Date())/864e5);if(dd>=0&&dd<14&&(it.qty===null||it.qty>0))_soon.push(it.name+' ('+dd+'j)');}));
+  const _soon=[];Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{const e=effDlc(it);if(!e)return;const dd=Math.round((new Date(e)-new Date(getToday()))/864e5);if(dd>=0&&dd<14&&(it.qty===null||it.qty>0))_soon.push(it.name+' ('+dd+'j)');}));
   const soonList=_soon.length?_soon.join(', '):null;
   const existingNames=RCP.filter(r=>Array.isArray(r.slots)&&r.slots.length&&(!r.profile||r.profile===ACTIVE_PROFILE)).map(r=>r.name).concat((S.aiRecipes||[]).map(r=>r.name));
   const existingList=existingNames.length?existingNames.join(' · '):'aucune';
@@ -2444,8 +2466,8 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
 
 // ─────────────────────────────────────────────────────────────────────────────
 
-function findItem(id){for(const arr of Object.values(S.inv)){const it=arr.find(i=>i.id===id);if(it)return it;}return null;}
-function findItemByName(name){if(!name)return null;const k=normMac(name);for(const arr of Object.values(S.inv)){const it=arr.find(i=>normMac(i.name)===k);if(it)return it;}return null;}
+function findItem(id){if(!id)return null;for(const arr of Object.values(S.inv||{})){if(!Array.isArray(arr))continue;const it=arr.find(i=>i&&i.id===id);if(it)return it;}return null;}
+function findItemByName(name){if(!name)return null;const k=normMac(name);for(const arr of Object.values(S.inv||{})){if(!Array.isArray(arr))continue;const it=arr.find(i=>i&&normMac(i.name)===k);if(it)return it;}return null;}
 // Les recettes designent leurs ingredients par identifiant. La fusion de
 // doublons change ces identifiants : sans nom de repli, l'ingredient devient
 // introuvable et la recette perd ses macros en silence. On memorise donc le
@@ -2476,7 +2498,7 @@ function resolveInv(id,name){
   var appris=(S.ingNames||{})[id];
   return appris?findItemByName(appris):null;
 }
-function canCook(r,m=1){return(r.used||[]).every(({id,qty,n,flex})=>{if(flex)return true;const it=resolveInv(id,n);return it&&(it.qty===null||it.qty>=qty*m);});}
+function canCook(r,m=1){return(r&&r.used||[]).filter(Boolean).every(({id,qty,n,flex})=>{if(flex)return true;const it=resolveInv(id,n);return it&&(it.qty===null||it.qty>=qty*m);});}
 function dessertDeductQty(it,d){if(!it)return 0;if(it.unit==='g'||it.unit==='ml'){var per=(it.pkg&&it.pkg.size)||it.pieceG||0;return per?d.qty*per:d.qty;}return d.qty;}
 function canTakeDessert(d){if(d.id==='none'||d.id==='autre')return true;if(!d.inv)return true;var it=resolveInv(d.inv,d.n);if(!it)return false;if(it.qty===null)return true;return it.qty>=dessertDeductQty(it,d);}
 function weekCount(rid){let n=0;for(let i=0;i<=6;i++){const day=shiftDate(S.today,-i);n+=(S.dayMeals[day]||[]).filter(m=>m.rid===rid).length;}return n;}
@@ -2766,7 +2788,10 @@ function renderCard(r){
 function qtyLabel(it){
   if(it.qty===null)return 'présent';
   let s=it.qty+' '+it.unit;
-  if(it.pkg&&it.pkg.size>0){const n=it.qty/it.pkg.size;s+=' · '+(Number.isInteger(n)?n:n.toFixed(1))+'×'+it.pkg.size+it.unit;}
+  // Un emballage se compte en poids. Sur un article denombrable, « 12 pc »
+  // divise par une taille de 100 donnait « 0.1 × 100pc », qui ne veut rien dire.
+  const auPoids=(!it.unit||it.unit==='g'||it.unit==='ml');
+  if(auPoids&&it.pkg&&it.pkg.size>0){const n=it.qty/it.pkg.size;s+=' · '+(Number.isInteger(n)?n:n.toFixed(1))+'×'+it.pkg.size+it.unit;}
   return s;
 }
 // ─── 🔎 Diagnostic + recherche d'inventaire ─────────────────────────────────
@@ -2867,7 +2892,8 @@ function renderInv(){
 }
 function renderInvCats(){
   const q=_normNom(S.invSearch||'');
-  const cats=Object.entries(S.inv).map(([cat,items])=>{
+  const cats=Object.entries(S.inv||{}).map(([cat,items])=>{
+    items=(Array.isArray(items)?items:[]).filter(Boolean);   // tableaux troues Firebase
     let base=(S.editMode?items.slice():items.filter(i=>i.qty===null||i.qty>0));
     if(q)base=base.filter(i=>_normNom(i.name).indexOf(q)>=0);
     const visible=base.sort((a,b)=>(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'}));
@@ -3179,7 +3205,7 @@ function renderDLCSection(){
   Object.values(S.inv).forEach(function(arr){(arr||[]).forEach(function(it){
     if(!it||(it.qty!==null&&!(it.qty>0)))return;
     var e=effDlc(it);if(!e)return;
-    items.push({it:it,e:e,dd:Math.round((new Date(e)-new Date())/864e5)});
+    items.push({it:it,e:e,dd:Math.round((new Date(e)-new Date(getToday()))/864e5)});
   });});
   items.sort(function(a,b){return a.dd-b.dd;});
   if(!items.length)return '<div style="text-align:center;color:var(--text3);font-size:13px;padding:16px 0;line-height:1.5;">Aucune date de péremption renseignée.<br>Ajoute des DLC depuis l\'onglet Inventaire (icône 📅 sur chaque article).</div>';
@@ -4371,7 +4397,7 @@ function hideCoachToast(){
   setTimeout(function(){if(el)el.style.display='none';},420);
 }
 function render(){
-  const urgTotal=Object.values(S.inv).flat().filter(i=>i.urgent&&(i.qty===null||i.qty>0)).length;
+  const urgTotal=Object.values(S.inv||{}).flat().filter(i=>i&&i.urgent&&(i.qty===null||i.qty>0)).length;
   const urgCount=RCP.filter(r=>(!r.profile||r.profile===ACTIVE_PROFILE)&&r.urgent===1&&r.slots&&r.slots.length>0&&canCook(r,1)).length;
   const shown=RCP.filter(r=>{
     if(r.profile&&r.profile!==ACTIVE_PROFILE)return false;
@@ -4386,7 +4412,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-28 22h18</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-28 23h57</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
