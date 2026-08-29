@@ -4,7 +4,9 @@ function t(n,f){try{f();console.log('  ok  '+n);pass++;}catch(e){console.log('  
 function eq(a,b,m){if(String(a)!==String(b))throw new Error((m||'')+' attendu '+b+' obtenu '+a);}
 const S=sb.S,G=n=>sb[n]||sb.window[n];
 const tol=G('_toleranceDlc'),anom=G('dlcAnomalie');
-const jour=n=>{const d=new Date();d.setDate(d.getDate()+n);return d.toISOString().slice(0,10);};
+// Les dates se calculent depuis getToday() du bac a sable, dont l'horloge est
+// figee : partir de new Date() ferait deriver les tests d'un jour.
+const jour=n=>sb.shiftDate(sb.getToday(),n);
 function art(name,depuis){return{id:'x',name:name,unit:'g',qty:100,dlc:jour(-depuis),mac100:{kcal:100,prot:5,gluc:5,lip:5}};}
 function estAnomalie(name,depuis){
   S.inv={frigo:[art(name,depuis)],placards:[],congelateur:[],epices:[]};

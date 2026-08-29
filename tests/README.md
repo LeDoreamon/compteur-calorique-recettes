@@ -43,6 +43,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t25.js` | Coach après saisie d’activité : message de dépense, pas de bilan alimentaire |
 | `t26.js` | Libellé de quantité, emballages orphelins, jours DLC, tableaux troués Firebase |
 | `t27.js` | Suggestions de rachat : écarter un article, levée automatique |
+| `t28.js` | Base de saisie des macros (« valeurs pour N g ») |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
