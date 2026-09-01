@@ -1682,6 +1682,10 @@ function toggleInvPresent(cat,id){
 }
 // ─── SYNC FIREBASE + LOCALSTORAGE ───────────────────────────────────────────
 const FB = 'https://bouffe-frigo-default-rtdb.europe-west1.firebasedatabase.app';
+// Modèle multimodal (analyse photo d'un repas). Groq renouvelle sa gamme
+// régulièrement : qwen3.6-27b est décommissionné le 14/09/2026, remplacé par
+// qwen3.8-27b. Un seul endroit à changer la prochaine fois.
+const MODELE_VISION='qwen/qwen3.8-27b';
 // ─── Auth anonyme Firebase (REST) — s'active dès que _FBK.key est renseignée ─
 const _FBK={key:'AIzaSyBKAKZ4iGE9-t7rIseyJhXOCj2KbehU7iI'};
 let _fbTok=null,_fbTokExp=0;
@@ -2454,7 +2458,7 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   if(!key){openSettings();throw new Error('NO_KEY');}
   // Détecte si la requête contient une image
   const hasImg=messages.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'));
-  const model=modelOverride||(hasImg?'qwen/qwen3.6-27b':'openai/gpt-oss-20b');
+  const model=modelOverride||(hasImg?MODELE_VISION:'openai/gpt-oss-20b');
   // Construire les messages au format OpenAI (compatible Groq)
   const msgs=[];
   if(system)msgs.push({role:'system',content:system});
@@ -2472,7 +2476,7 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   });
   let resp,data;
   const _body={model,messages:msgs,max_tokens:maxTokens,temperature};
-  if(model.indexOf('qwen3.6')>=0){_body.reasoning_effort='none';}
+  if(model.indexOf('qwen')>=0){_body.reasoning_effort='none';}   // seul qwen accepte 'none'
   else if(model.indexOf('gpt-oss')>=0){
     // gpt-oss n'accepte que 'low' | 'medium' | 'high' ('none' est refuse par l'API)
     var _re=(opts&&opts.reasoning)||'low';
@@ -4491,7 +4495,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-08-30 00h16</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-01 18h37</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
