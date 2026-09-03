@@ -4511,7 +4511,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-03 10h24</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-03 16h44</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4544,7 +4544,7 @@ function render(){
   _animateTabs();
 }
 
-ROOT.addEventListener('click',e=>{
+function _onActionClick(e){
   const el=e.target.closest('[data-action]');if(!el||el.dataset.disabled==='true')return;
   const{action,val}=el.dataset;
   if(action==='main-tab')S.mainTab=val;
@@ -4605,7 +4605,12 @@ ROOT.addEventListener('click',e=>{
   else if(action==='free-meal-day'){confirmFreeMealDay(el.dataset.day);return;}
   render();
   S._anim=null;
-});
+}
+// La barre vit hors de #root : elle a besoin du meme gestionnaire, sinon elle
+// s'affiche correctement mais ne repond plus.
+ROOT.addEventListener('click',_onActionClick);
+var _bnavEl=document.getElementById('bnav');
+if(_bnavEl)_bnavEl.addEventListener('click',_onActionClick);
 ROOT.addEventListener('input',e=>{const el=e.target.closest('[data-custom-input]');if(el)S.customInputs[el.dataset.customInput]=el.value;});
 
 

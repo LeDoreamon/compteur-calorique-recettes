@@ -102,3 +102,43 @@ t('balises equilibrees dans la barre',()=>{
   eq((h.match(/<span/g)||[]).length,(h.match(/<\/span>/g)||[]).length,'span');
 });
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== DJ. La barre doit rester cliquable ===');
+t('*** le gestionnaire est une fonction nommee, partageable ***',()=>{
+  if(!/function _onActionClick\(e\)\{/.test(src))
+    throw new Error('gestionnaire anonyme : impossible de le partager avec la barre');
+});
+t('*** il est attache a #root ET a #bnav ***',()=>{
+  if(!/ROOT\.addEventListener\('click',_onActionClick\)/.test(src))
+    throw new Error('non attache a #root');
+  if(!/_bnavEl\.addEventListener\('click',_onActionClick\)/.test(src))
+    throw new Error('non attache a #bnav : la barre serait inerte');
+});
+t('le nav est declare avant le script qui le cherche',()=>{
+  const iNav=src.indexOf('<nav class="bnav" id="bnav">');
+  const iScript=src.indexOf('<script>');
+  if(iScript<iNav)throw new Error('getElementById renverrait null au chargement');
+});
+t('un seul attachement par element, pas de doublon',()=>{
+  eq((src.match(/ROOT\.addEventListener\('click'/g)||[]).length,1,'#root');
+  eq((src.match(/_bnavEl\.addEventListener\('click'/g)||[]).length,1,'#bnav');
+});
+t('*** un clic sur un onglet change bien d\'onglet ***',()=>{
+  S.mainTab='recipes';sb.render();
+  const faux={target:{closest:function(sel){
+    return sel==='[data-action]'?{dataset:{action:'main-tab',val:'weight'}}:null;}},
+    preventDefault(){},stopPropagation(){}};
+  G('_onActionClick')(faux);
+  eq(S.mainTab,'weight','onglet non change');
+});
+t('les quatre onglets repondent',()=>{
+  ['recipes','inventory','courses','weight'].forEach(function(tab){
+    S.mainTab='recipes';
+    const faux={target:{closest:function(sel){
+      return sel==='[data-action]'?{dataset:{action:'main-tab',val:tab}}:null;}},
+      preventDefault(){},stopPropagation(){}};
+    G('_onActionClick')(faux);
+    eq(S.mainTab,tab,tab+' ne repond pas');
+  });
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
