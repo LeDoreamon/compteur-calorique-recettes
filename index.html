@@ -413,6 +413,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
   </div>
 </div>
 <div id="profile-screen" style="position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;"><div style="text-align:center;width:100%;max-width:400px;"><img src="icon-192.png?v=3" alt="🥞" style="width:86px;height:86px;border-radius:22px;margin-bottom:12px;box-shadow:0 6px 18px rgba(0,0,0,.4);"><div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:26px;letter-spacing:.02em;">Dorayaki</div><div style="font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:32px;">Qui est là ?</div><div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;"><button onclick="selectProfile('liam')" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:12px;" onmouseover="this.style.background='rgba(111,191,115,.1)'" onmouseout="this.style.background='none'"><div style="width:100px;height:100px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--green));font-size:46px;display:flex;align-items:center;justify-content:center;margin:0 auto;">🏋️</div><div style="margin-top:10px;font-size:15px;font-weight:500;color:var(--text);">Liam</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Sèche · 2600 kcal</div></button><button onclick="selectProfile('maureen')" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:12px;" onmouseover="this.style.background='rgba(244,114,182,.1)'" onmouseout="this.style.background='none'"><div style="width:100px;height:100px;border-radius:10px;background:linear-gradient(135deg,#C86050,#A63F32);font-size:46px;display:flex;align-items:center;justify-content:center;margin:0 auto;">🌸</div><div style="margin-top:10px;font-size:15px;font-weight:500;color:var(--text);">Maureen</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Prise de masse · 2700 kcal</div></button></div></div></div>
+<nav class="bnav" id="bnav"></nav>
 <div id="root" class="container"><div style="padding:2rem;text-align:center;color:var(--text3);">Chargement...</div></div>
 <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:300;flex-direction:column;align-items:center;justify-content:center;">
   <div style="position:absolute;top:0;left:0;right:0;padding:calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) 16px calc(16px + env(safe-area-inset-left, 0px));display:flex;align-items:center;justify-content:space-between;background:linear-gradient(rgba(0,0,0,.85),rgba(0,0,0,.45) 70%,transparent);z-index:3;">
@@ -4173,11 +4174,26 @@ function _animateTabs(){
   }
   var dayChanged=_lastDay&&_lastDay!==S.displayDate;
   _lastMainTab=S.mainTab;_lastMealTab=S.mealTab;_lastDay=S.displayDate;
+  renderBnav();
   _fillRing(dayChanged);
   if(!cls||!pane)return;
   pane.classList.remove('pane-r','pane-l');
   void pane.offsetWidth;
   pane.classList.add(cls);
+}
+// La barre vivait dans le HTML regenere a chaque rendu : elle etait donc
+// detruite et recreee en permanence, et se repositionnait apres coup — d'ou
+// son apparition au milieu de l'ecran au chargement, corrigee au premier clic.
+// Elle est desormais posee une fois hors de #root ; on ne met a jour que
+// l'onglet actif.
+const _BNAV=[['recipes','\u2605','Recettes'],['inventory','\u2261','Inventaire'],
+             ['courses','\ud83d\uded2','Courses'],['weight','\ud83d\udcca','Bilan']];
+function renderBnav(){
+  var n=document.getElementById('bnav');if(!n)return;
+  n.innerHTML=_BNAV.map(function(t){
+    return '<button data-action="main-tab" data-val="'+t[0]+'" class="bnav-b'
+      +(S.mainTab===t[0]?' on':'')+'"><span class="bnav-i">'+t[1]+'</span><span>'+t[2]+'</span></button>';
+  }).join('');
 }
 function _fillRing(force){
   var arc=document.getElementById('ring-arc');if(!arc)return;
@@ -4495,7 +4511,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-01 18h37</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-03 10h24</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4523,9 +4539,7 @@ function render(){
       <div style="margin-bottom:20px;"></div>
     `:(S.mainTab==='inventory'?renderInv():'')}
     </div>
-    <nav class="bnav">
-      ${[['recipes','\u2605','Recettes'],['inventory','\u2261','Inventaire'],['courses','\ud83d\uded2','Courses'],['weight','\ud83d\udcca','Bilan']].map(t=>`<button data-action="main-tab" data-val="${t[0]}" class="bnav-b${S.mainTab===t[0]?' on':''}"><span class="bnav-i">${t[1]}</span><span>${t[2]}</span></button>`).join('')}
-    </nav>
+    
   </div>`;
   _animateTabs();
 }
