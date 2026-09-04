@@ -4570,7 +4570,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-04 13h48</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-04 14h07</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4976,6 +4976,8 @@ function _lireLignesEstimees(){
 function supprimerLigneEstimee(i){
   _lireLignesEstimees();
   if(!_addMealFreeItems||!_addMealFreeItems[i])return;
+  var f=_addMealFreeItems[i];
+  if(!confirm('Retirer « '+(f.n||'cette ligne')+' » du repas ?'))return;
   _addMealFreeItems.splice(i,1);
   renderInvSuggestions(_addMealInvSuggestions);
   recalcAddMealMacros();
@@ -4996,8 +4998,9 @@ async function reestimerLigne(i){
       +"n = le nom reformulé proprement. q et u = la quantité estimée pour une portion telle que décrite. "
       +"Les valeurs correspondent à CETTE quantité, pas à 100 g.";
     var dem='Aliment : '+nom+(f.qty>0?('\nQuantité indiquée : '+f.qty+' '+(f.unit||'g')):'');
-    var rep=await callAI([{role:'user',content:dem}],400,sys);
-    var p=extractJSON(rep);
+    var rep=await callAI([{role:'user',content:dem}],400,sys,null,0,7);
+    var txt=(rep&&rep.content)?rep.content.map(function(b){return (b&&b.text)||'';}).join(''):'';
+    var p=extractJSON(txt);
     if(!p||!(p.kcal||p.prot||p.gluc||p.lip))throw new Error('réponse inexploitable');
     var q=parseFloat(p.q)||f.qty||0;
     var u=(p.u==='ml'||p.u==='pc'||p.u==='pcs')?p.u:(f.unit||'g');
@@ -5058,8 +5061,8 @@ function renderInvSuggestions(suggestions) {
         +'<input type="number" id="free-qty-'+i+'" value="'+f.qty+'" min="0" '+(f.pu?'':'disabled ')+'style="width:54px;flex:0 0 auto;box-sizing:border-box;padding:4px 5px;background:var(--bg);border:0.5px solid rgba(95,168,201,.25);border-radius:6px;color:var(--blue);font-size:12px;outline:none;text-align:right;">'
         +'<span style="font-size:11px;color:var(--text3);min-width:20px;flex:0 0 auto;">'+(f.unit||'')+'</span>'
         +'<span style="font-size:11px;color:var(--orange);min-width:52px;flex-shrink:0;text-align:right;">'+Math.round(m.kcal)+' kcal</span>'
-        +'<button onclick="reestimerLigne('+i+')" '+(occupe?'disabled ':'')+'title="Recalculer cette ligne d\'après le nom corrigé" style="background:none;border:0;color:var('+(occupe?'--text3':'--green')+');font-size:13px;cursor:pointer;padding:0 2px;flex:0 0 auto;">'+(occupe?'\u2026':'\u2726')+'</button>'
-        +'<button onclick="supprimerLigneEstimee('+i+')" title="Retirer cette ligne" style="background:none;border:0;color:var(--red);font-size:14px;line-height:1;cursor:pointer;padding:0 2px;flex:0 0 auto;">\u00d7</button>'
+        +'<button onclick="reestimerLigne('+i+')" '+(occupe?'disabled ':'')+'title="Recalculer cette ligne d\'après le nom corrigé" style="background:'+(occupe?'transparent':'rgba(111,191,115,.14)')+';border:0.5px solid rgba(111,191,115,'+(occupe?'.2':'.45')+');border-radius:7px;color:var('+(occupe?'--text3':'--green')+');font-size:13px;cursor:pointer;padding:7px 9px;margin-left:4px;line-height:1;flex:0 0 auto;">'+(occupe?'\u2026':'\u2726')+'</button>'
+        +'<button onclick="supprimerLigneEstimee('+i+')" title="Retirer cette ligne" style="background:none;border:0;border-radius:7px;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:7px 8px;margin-left:14px;flex:0 0 auto;">\u00d7</button>'
         +'</div>'+_ligneMacros(m,true);
     }).join('');
   }

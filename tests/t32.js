@@ -146,3 +146,67 @@ t('le prompt reclame quantite et unite',()=>{
   if(!/"q":number/.test(b))throw new Error('quantite absente du schema');
 });
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== DT. Lecture de la reponse IA ===');
+t('*** la reponse de callAI est assemblee avant extraction ***',()=>{
+  const i=src.indexOf('async function reestimerLigne');
+  const b=src.slice(i,i+2200);
+  if(/extractJSON\(rep\)/.test(b))
+    throw new Error("l'objet de reponse est passe tel quel a extractJSON");
+  if(!/rep\.content\)\?rep\.content\.map/.test(b))
+    throw new Error('les blocs de la reponse ne sont pas assembles');
+  if(!/extractJSON\(txt\)/.test(b))throw new Error('extraction sur autre chose que le texte');
+});
+t('l\'appel suit la meme forme que les autres appels de l\'app',()=>{
+  const i=src.indexOf('async function reestimerLigne');
+  const b=src.slice(i,i+1900);
+  if(!/callAI\(\[\{role:'user',content:dem\}\],400,sys,null,0,7\)/.test(b))
+    throw new Error('signature differente des autres appels');
+});
+t('une reponse vide ne plante pas',()=>{
+  const i=src.indexOf('async function reestimerLigne');
+  const b=src.slice(i,i+2200);
+  if(!/rep&&rep\.content/.test(b))throw new Error('pas de garde sur la reponse');
+});
+
+console.log('\n=== DU. Zones tactiles ===');
+t('*** les deux boutons sont nettement ecartes ***',()=>{
+  poser(repas());
+  const h=docEl('inv-items-section').innerHTML;
+  const iSup=h.indexOf('supprimerLigneEstimee(0)');
+  const bloc=h.slice(iSup-200,iSup+400);
+  const m=bloc.match(/margin-left:(\d+)px/g)||[];
+  if(!/margin-left:14px/.test(bloc))throw new Error('ecart insuffisant entre recalcul et suppression');
+});
+t('*** les cibles sont assez grandes pour le doigt ***',()=>{
+  const h=docEl('inv-items-section').innerHTML;
+  const iRe=h.indexOf('reestimerLigne(0)');
+  const b1=h.slice(iRe,iRe+400);
+  if(!/padding:7px 9px/.test(b1))throw new Error('bouton de recalcul trop petit');
+  const iSu=h.indexOf('supprimerLigneEstimee(0)');
+  const b2=h.slice(iSu,iSu+400);
+  if(!/padding:7px 8px/.test(b2))throw new Error('bouton de suppression trop petit');
+});
+t('le bouton de recalcul est visuellement distinct',()=>{
+  const h=docEl('inv-items-section').innerHTML;
+  const i=h.indexOf('reestimerLigne(0)');
+  if(!/rgba\(111,191,115/.test(h.slice(i,i+400)))throw new Error('pas de fond distinctif');
+});
+t('*** la suppression demande confirmation ***',()=>{
+  const i=src.indexOf('function supprimerLigneEstimee');
+  const b=src.slice(i,i+420);
+  if(!/if\(!confirm\(/.test(b))throw new Error('aucune confirmation');
+  if(!/Retirer/.test(b))throw new Error('message peu explicite');
+});
+t('le nom de la ligne figure dans la confirmation',()=>{
+  const i=src.indexOf('function supprimerLigneEstimee');
+  if(!/f\.n\|\|'cette ligne'/.test(src.slice(i,i+420)))throw new Error('nom absent du message');
+});
+t('refuser la confirmation ne supprime rien',()=>{
+  poser(repas());
+  const vrai=sb.confirm;
+  sb.confirm=function(){return false;};
+  try{G('supprimerLigneEstimee')(1);}finally{sb.confirm=vrai;}
+  eq(G('__getFree')().length,3,'la ligne a ete supprimee malgre le refus');
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
