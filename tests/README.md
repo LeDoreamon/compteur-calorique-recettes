@@ -47,6 +47,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t29.js` | Modèle multimodal Groq : migration qwen3.6 → qwen3.8 |
 | `t30.js` | Barre de navigation sortie du contenu re-rendu |
 | `t31.js` | Fenêtre d’explication des macros : ventilation par repas + texte |
+| `t32.js` | Lignes estimées : nom corrigeable, recalcul par ligne, suppression |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

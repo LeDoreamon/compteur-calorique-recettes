@@ -3,10 +3,11 @@ let js=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/
 js+='\n;try{globalThis.S=S;globalThis.RCP=RCP;globalThis.TARGETS=TARGETS;}catch(e){}';
 js+='\n;try{globalThis.INV_DEFAULT=INV_DEFAULT;}catch(e){}';
 js+='\n;["_refreshToday","_burnSave","estimateTDEE","renderTDEEBlock","toggleBackupList","annulerRestauration","clearApiKey","openItemDetail","saveItemDetail","stepInvPkg","renderInvDiag","invIssues","itemMealMacros","findItem","apprendNomsIngredients","resolveInv","runMergeDuplicates","_triRecettes","_densProt","setRecTri","toggleRecTriDir","renderRecTri","canCook","cookedToday","titreDepuisInventaire","_nomCourt","_catDeLArticle","invPickQty","applyInvPick","openInvPick","invAddMeal","shiftDate","_majBandeauJour","coachActivite","getBurn","coachAdvice","_enPriseDeMasse","openAddMeal","toggleIngMacros","toggleEmMacros","_emMkRow","_emApplyStockDelta","renderInvSuggestions","manualAddMeal","confirmAddMealFinal","recalcAddMealMacros","_toleranceDlc","dlcAnomalie","effDlc","invIssues"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
-js+='\n;["getDayMacros","_reconcileMacros","findItemByName","invIssues","countDuplicates","recipeMacros","canCook","findRecipe","copyMealTo","burnStepKcal","burnDayTotal","extractJSON","extractJSONArray","_parseQty","_normNom","_applyState","getToday","resolveInv","mergeDuplicates","matchIngToInventory","getM100","effDlc","normMac","calorieRing","missingIngredients","shopSuggestions","baseMac","renderBnav","ouvrirInfoMacro","fermerInfoMacro","MACRO_INFOS","macroBar","_onActionClick","majApercuBase","setItemMacMode","_macVers100","_stockBas","coachAdvice","estimateTDEE","avgMacrosOverDays","weightTrendPerWeek"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
+js+='\n;["getDayMacros","_reconcileMacros","findItemByName","invIssues","countDuplicates","recipeMacros","canCook","findRecipe","copyMealTo","burnStepKcal","burnDayTotal","extractJSON","extractJSONArray","_parseQty","_normNom","_applyState","getToday","resolveInv","mergeDuplicates","matchIngToInventory","getM100","effDlc","normMac","calorieRing","missingIngredients","shopSuggestions","baseMac","renderBnav","reestimerLigne","supprimerLigneEstimee","_lireLignesEstimees","ouvrirInfoMacro","fermerInfoMacro","MACRO_INFOS","macroBar","_onActionClick","majApercuBase","setItemMacMode","_macVers100","_stockBas","coachAdvice","estimateTDEE","avgMacrosOverDays","weightTrendPerWeek"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
 js+='\n;["openAddMeal","toggleIngMacros","toggleEmMacros","_emMkRow","_emApplyStockDelta","renderInvSuggestions","manualAddMeal","confirmAddMealFinal","recalcAddMealMacros","_toleranceDlc","dlcAnomalie","effDlc","invIssues","manualAddMeal","setInvMode","openInvPick","invPickQty","applyInvPick","renderInvSuggestions","recalcAddMealMacros","_toleranceDlc","dlcAnomalie","effDlc","invIssues","itemMealMacros","findItem","apprendNomsIngredients","resolveInv","runMergeDuplicates","_triRecettes","_densProt","setRecTri","toggleRecTriDir","renderRecTri","canCook","cookedToday","titreDepuisInventaire","_nomCourt","_catDeLArticle","invPickQty","applyInvPick","openInvPick","invAddMeal","shiftDate","_majBandeauJour","coachActivite","getBurn","coachAdvice","_enPriseDeMasse","openAddMeal","toggleIngMacros","toggleEmMacros","_emMkRow","_emApplyStockDelta","renderInvSuggestions","manualAddMeal","confirmAddMealFinal","recalcAddMealMacros","_toleranceDlc","dlcAnomalie","effDlc","invIssues","renderInvPick","_invPickSum","confirmAddMealFinal","openFreeOverlay","fillFreeReview","confirmFreeEntry","renderFreeInv","toggleFreeInv","updateFreeTotals"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
 js+='\n;try{globalThis.__getInvPick=function(){return _invPick;};}catch(e){}';
 js+='\n;try{globalThis.__getSugg=function(){return _addMealInvSuggestions;};}catch(e){}';
+js+='\n;try{globalThis.__getFree=function(){return _addMealFreeItems;};}catch(e){}';
 js+='\n;try{globalThis.__setFree=function(v){_addMealFreeItems=v;};}catch(e){}';
 js+='\n;try{globalThis.__setBurn=function(v){_burnData=v;};}catch(e){}';
 js+='\n;try{globalThis.__setSugg=function(v){_addMealInvSuggestions=v;};}catch(e){}';
@@ -19,6 +20,25 @@ function makeEl(){return{value:'',checked:false,textContent:'',innerHTML:'',clas
  focus(){},appendChild(){},setAttribute(){},getAttribute(){return null;},
  querySelector(){return null;},querySelectorAll(){return[];},addEventListener(){},files:[]};}
 const docEl=id=>{if(!reg[id])reg[id]=makeEl();return reg[id];};
+// Un vrai navigateur detruit les elements quand on reecrit innerHTML d'un
+// conteneur : les champs disparus ne conservent pas leur valeur. Le faux DOM
+// les gardait, si bien qu'une valeur perimee pouvait etre relue comme une
+// saisie de l'utilisateur. On purge donc les ids absents du nouveau HTML.
+function _surveiller(id,prefixes){
+  const el=docEl(id);let _h='';
+  Object.defineProperty(el,'innerHTML',{
+    get(){return _h;},
+    set(v){
+      _h=String(v==null?'':v);
+      // Tous les champs du conteneur sont recrees, pas seulement les disparus :
+      // apres une reecriture, il faut re-hydrater depuis le HTML.
+      prefixes.forEach(function(p){
+        Object.keys(reg).forEach(function(k){if(k.indexOf(p)===0)delete reg[k];});
+      });
+    },
+    configurable:true
+  });
+}
 // Horloge figee a un midi : sans cela les suites basculent dans la garde
 // nocturne quand elles tournent entre minuit et 4 h, et les dates relatives
 // changent d'un jour a l'autre. Intl lit l'instant reel, pas getHours().
@@ -47,5 +67,7 @@ const sb={console,Math,Date:FD,JSON,Intl,parseFloat,parseInt,isNaN,isFinite,
  location:{href:''},history:{pushState(){}},addEventListener(){},removeEventListener(){},
  matchMedia:()=>({matches:false,addEventListener(){},addListener(){}})};
 sb.window=sb;sb.globalThis=sb;sb.self=sb;
+['inv-items-section','invpick-list','set-backups','macroinfo-body','cc-extras','bnav']
+  .forEach(function(id){_surveiller(id,['free-nom-','free-qty-','inv-cb-','inv-qty-','inv-k-','cc-ex']);});
 vm.createContext(sb);vm.runInContext(js,sb,{filename:'a.js'});
 module.exports={sb,reg,docEl,makeEl};
