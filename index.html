@@ -2050,6 +2050,16 @@ function _syncBadge(){
 let _stateRev=0;                                   // révision chargée depuis le serveur
 const _sessionId=Math.random().toString(36).slice(2,10);
 let _conflictBusy=false;
+async function _remoteVol(){
+  try{
+    const c=new AbortController();const t=setTimeout(()=>c.abort(),4500);
+    const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state/vol'),{signal:c.signal});
+    clearTimeout(t);
+    if(!r.ok)return null;
+    const v=await r.json();
+    return (typeof v==='number')?v:null;
+  }catch(e){return null;}
+}
 async function _remoteRev(){
   try{
     const c=new AbortController();const t=setTimeout(()=>c.abort(),4500);
@@ -2065,6 +2075,23 @@ async function _remoteRev(){
 // une ecriture venue d'un autre appareil ne menace rien et il est inutile de
 // poser la question.
 var _empreinteRef=null;
+// Ordre de grandeur du contenu d'un etat. Sert de garde-fou : on n'ecrase
+// jamais un etat nettement plus fourni sans le signaler.
+function _volumeEtat(d){
+  if(!d||typeof d!=='object')return 0;
+  var n=0;
+  try{
+    var dm=d.dayMeals||{};
+    Object.keys(dm).forEach(function(k){n+=((dm[k]||[]).length)*3;});
+    var iv=d.inv||{};
+    Object.keys(iv).forEach(function(c){n+=(iv[c]||[]).length;});
+    n+=(d.weights||[]).length;
+    n+=(d.customRecipes||[]).length*2;
+    n+=(d.aiRecipes||[]).length;
+    n+=((d.shop&&d.shop.list)||[]).length;
+  }catch(e){}
+  return n;
+}
 function _empreinteEtat(){
   try{
     var p=JSON.stringify([S.inv,S.dayMeals,S.weights,S.customRecipes,
@@ -2141,6 +2168,30 @@ async function _saveStateNow(){
     if(_emp&&_empreinteRef&&_emp===_empreinteRef){await _reloadFromServer(true);return;}
     await _onSaveConflict();return;
   }
+  // Dernier rempart : meme si les revisions concordent, on ne remplace pas un
+  // etat nettement plus fourni sans le dire. C'est ce qui manquait quand un
+  // poste reste hors ligne cinq jours a ecrase le travail fait ailleurs.
+  if(_rr!==null){
+    var _volLocal=_volumeEtat(S), _volDist=await _remoteVol();
+    if(_volDist!==null&&_volDist>20&&_volLocal<_volDist*0.6){
+      if(!confirm('\u26a0 Cet appareil s\'apprête à remplacer des données bien plus complètes.\n\n'
+        +'Ici : environ '+_volLocal+' éléments.\nSur le cloud : environ '+_volDist+' éléments.\n\n'
+        +'Cela ressemble à un appareil resté en retard. Annuler et recharger la version du cloud ?\n\n'
+        +'OK = recharger le cloud (recommandé)\nAnnuler = envoyer quand même ce qui est ici')){
+        // L'utilisateur choisit d'envoyer : on met l'etat distant de cote avant
+        try{
+          var _av=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'));
+          if(_av.ok){var _aj=await _av.json();
+            if(_aj)await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'),{method:'PUT',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({at:new Date().toISOString(),remplacePar:'écrasement volontaire',state:JSON.stringify(_aj)})});}
+        }catch(e){}
+      }else{
+        await _reloadFromServer(false);
+        return;
+      }
+    }
+  }
   const _newRev=(_rr===null?_stateRev:_rr)+1;
   const _invSafe={};for(const c in S.inv){_invSafe[c]=(S.inv[c]||[]).filter(Boolean).map(it=>Object.assign({},it,{qty:it.qty===null?-1:it.qty}));}
   const payload=JSON.stringify({
@@ -2168,6 +2219,7 @@ async function _saveStateNow(){
     groqKey:localStorage.getItem('anthropic_key')||'',
     _profile:ACTIVE_PROFILE,
     rev:_newRev,
+    vol:_volumeEtat(S),
     savedAt:new Date().toISOString(),
     savedBy:_sessionId
   });
@@ -2205,7 +2257,14 @@ async function loadState(){
         try{_loc=JSON.parse(localStorage.getItem(ACTIVE_PROFILE+'_st')||'null');}catch(e){}
         const _dRev=(typeof d.rev==='number')?d.rev:0;
         const _lRev=(_loc&&typeof _loc.rev==='number')?_loc.rev:-1;
-        if(_loc&&(_loc.inv||_loc.dayMeals)&&_lRev>_dRev){
+        // La revision n'est pas un ordre total entre appareils : un poste reste
+        // longtemps hors ligne peut afficher un compteur eleve avec un contenu
+        // perime. On exige donc que le local soit AUSSI plus recent dans le
+        // temps, et qu'il ne soit pas nettement plus pauvre que le serveur.
+        var _plusRecent=(_loc&&_loc.savedAt&&d.savedAt)?(_loc.savedAt>d.savedAt):false;
+        var _volLoc=_volumeEtat(_loc),_volDist=_volumeEtat(d);
+        var _pasAppauvri=(_volLoc>=_volDist*0.75);
+        if(_loc&&(_loc.inv||_loc.dayMeals)&&_lRev>_dRev&&_plusRecent&&_pasAppauvri){
           _applyState(_loc);
           _stateRev=_dRev;                 // la revision du serveur reste la reference
           _loaded=true;
@@ -4581,7 +4640,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-05 21h18</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-05 21h26</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>

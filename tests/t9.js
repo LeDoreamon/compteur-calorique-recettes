@@ -176,6 +176,61 @@ await t('saveState detecte une revision distante superieure',async()=>{
   if(e.serveur.state.dayMeals['moi'])throw new Error('la version distante a ete ecrasee');
 });
 
+
+console.log('\n=== Z5. Un appareil en retard n ecrase plus le cloud ===');
+await t('*** revision locale plus haute mais contenu perime : le cloud gagne ***',async()=>{
+  // Le poste a accumule des revisions hors ligne il y a 5 jours ; le cloud a
+  // avance depuis, avec beaucoup plus de contenu.
+  const cloud={rev:40,savedAt:'2026-09-05T10:00:00Z',inv:{frigo:[{id:'a'},{id:'b'},{id:'c'}]},
+    dayMeals:{j1:[{rid:1},{rid:2}],j2:[{rid:3}],j3:[{rid:4}],j4:[{rid:5}],j5:[{rid:6}]},weights:[1,2,3,4,5]};
+  const e=build({serveur:cloud});
+  e.local['liam_st']=JSON.stringify({rev:95,savedAt:'2026-08-31T09:00:00Z',
+    inv:{frigo:[{id:'a'}]},dayMeals:{j1:[{rid:1}]},weights:[1]});
+  await e.sb.loadState();
+  if(!e.sb.S.dayMeals.j5)throw new Error('les donnees recentes du cloud ont ete perdues');
+});
+await t('*** une vraie saisie hors ligne est toujours recuperee ***',async()=>{
+  const cloud={rev:10,savedAt:'2026-09-05T08:00:00Z',inv:{frigo:[{id:'a'},{id:'b'}]},
+    dayMeals:{j1:[{rid:1}],j2:[{rid:2}]},weights:[1,2]};
+  const e=build({serveur:cloud});
+  // meme contenu, plus un repas, et plus recent
+  e.local['liam_st']=JSON.stringify({rev:11,savedAt:'2026-09-05T12:00:00Z',
+    inv:{frigo:[{id:'a'},{id:'b'}]},dayMeals:{j1:[{rid:1}],j2:[{rid:2}],j3:[{rid:9}]},weights:[1,2]});
+  await e.sb.loadState();
+  if(!e.sb.S.dayMeals.j3)throw new Error('la saisie hors ligne a ete perdue');
+});
+await t('local plus recent mais nettement appauvri : le cloud gagne',async()=>{
+  const cloud={rev:10,savedAt:'2026-09-05T08:00:00Z',inv:{frigo:[{id:'a'},{id:'b'},{id:'c'},{id:'d'}]},
+    dayMeals:{j1:[{rid:1}],j2:[{rid:2}],j3:[{rid:3}],j4:[{rid:4}]},weights:[1,2,3]};
+  const e=build({serveur:cloud});
+  e.local['liam_st']=JSON.stringify({rev:11,savedAt:'2026-09-05T12:00:00Z',
+    inv:{frigo:[{id:'a'}]},dayMeals:{j1:[{rid:1}]},weights:[]});
+  await e.sb.loadState();
+  if(!e.sb.S.dayMeals.j4)throw new Error('un etat appauvri a ete applique');
+});
+await t('le volume part avec l etat enregistre',async()=>{
+  const e=build({serveur:{rev:1,savedAt:'2026-09-05T08:00:00Z',inv:{frigo:[]},dayMeals:{}}});
+  await e.sb.loadState();
+  e.sb.S.dayMeals['2026-09-05']=[{rid:'a',name:'X',mult:1,macros:{kcal:1,prot:1,gluc:1,lip:1}}];
+  await e.sb.saveState();
+  await attendre(30);
+  if(typeof e.serveur.state.vol!=='number')throw new Error('champ vol absent de l etat');
+});
+await t('*** un ecrasement appauvrissant demande confirmation ***',async()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  const i=src.indexOf('const _newRev=(_rr===null?_stateRev:_rr)+1;');
+  const b=src.slice(i-1600,i);
+  if(!/_volLocal<_volDist\*0\.6/.test(b))throw new Error('aucun seuil de garde');
+  if(!/confirm\(/.test(b))throw new Error('aucune confirmation');
+  if(!/_reloadFromServer\(false\)/.test(b))throw new Error('pas de rechargement propose');
+});
+await t('l etat distant est mis de cote si l utilisateur force',async()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  const i=src.indexOf('const _newRev=(_rr===null?_stateRev:_rr)+1;');
+  const b=src.slice(i-1600,i);
+  if(!/'\/filet'/.test(b))throw new Error('aucune mise de cote avant ecrasement force');
+});
+
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
 process.exit(fail?1:0);
 })();
