@@ -82,35 +82,38 @@ t('le bouton du bas est conserve',()=>{
 });
 
 console.log('\n=== DX. Choix de la destination ===');
-t('*** le formulaire propose les quatre categories ***',()=>{
-  const i=src.indexOf('id="ai-cat"');
-  if(i<0)throw new Error('selecteur absent');
-  const bloc=src.slice(i,i+420);
+t('*** un seul mecanisme de choix de categorie ***',()=>{
+  if(/id="ai-cat"/.test(src))throw new Error('le selecteur fait doublon avec les boutons');
+  const n=(src.match(/setAICat\('/g)||[]).length;
+  if(n<4)throw new Error('les quatre boutons de categorie sont attendus, trouve '+n);
+});
+t('les quatre categories restent proposees',()=>{
   ['frigo','congelateur','placards','epices'].forEach(function(c){
-    if(!new RegExp('value="'+c+'"').test(bloc))throw new Error(c+' absent');
+    if(!new RegExp("setAICat\\('"+c+"'\\)").test(src))throw new Error(c+' absent');
   });
 });
-t('changer le selecteur change la destination',()=>{
-  if(!/onchange="_aic=this\.value"/.test(src))throw new Error('non relie a _aic');
+t('*** ouvrir depuis une categorie la selectionne visuellement ***',()=>{
+  G('openAddItem')('placards');
+  eq(docEl('aicat-placards').style.borderColor,'var(--blue)','bouton non surligne');
+  eq(docEl('aicat-frigo').style.borderColor,'rgba(246,237,227,.12)','autre bouton surligne a tort');
 });
-t('*** ouvrir depuis une categorie pre-selectionne la bonne ***',()=>{
+t('la destination interne suit le bouton',()=>{
   G('openAddItem')('epices');
-  eq(docEl('ai-cat').value,'epices');
-  G('openAddItem')('congelateur');
-  eq(docEl('ai-cat').value,'congelateur');
+  G('setAICat')('congelateur');
+  eq(docEl('aicat-congelateur').style.borderColor,'var(--blue)');
+});
+t('*** les epices masquent la quantite ***',()=>{
+  G('openAddItem')('epices');
+  eq(docEl('ai-qtyrow').style.display,'none','la quantite devrait etre masquee');
+  G('openAddItem')('frigo');
+  eq(docEl('ai-qtyrow').style.display,'grid','la quantite devrait revenir');
 });
 t('ouvrir sans categorie retombe sur le frigo',()=>{
   G('openAddItem')();
-  eq(docEl('ai-cat').value,'frigo');
+  eq(docEl('aicat-frigo').style.borderColor,'var(--blue)');
 });
 t('le scan reste accessible depuis le formulaire',()=>{
   const i=src.indexOf('id="ai-overlay"');
   if(!/openScanner\(\)/.test(src.slice(i,i+1400)))throw new Error('bouton scanner perdu');
-});
-t('le selecteur ne deborde pas',()=>{
-  const i=src.indexOf('id="ai-cat"');
-  const b=src.slice(i,i+320);
-  if(!/min-width:0/.test(b))throw new Error('min-width:0 absent');
-  if(!/box-sizing:border-box/.test(b))throw new Error('box-sizing absent');
 });
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
