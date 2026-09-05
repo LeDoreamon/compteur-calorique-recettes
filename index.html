@@ -1237,7 +1237,14 @@ function _addOrMergeInv(cat,item){
   // Article deja present : on complete au lieu de creer un doublon
   if(ex.qty===null||item.qty===null)ex.qty=null;                 // stock illimite (epices)
   else ex.qty=Math.round(((+ex.qty||0)+(+item.qty||0))*10)/10;
-  if(item.dlc&&(!ex.dlc||item.dlc<ex.dlc))ex.dlc=item.dlc;        // on garde la date la plus proche
+  if(item.dlc){
+    var _auj=getToday();
+    var _exPerimee=(ex.dlc&&ex.dlc<_auj);
+    // On garde la date la plus proche, sauf si l'ancienne est deja depassee :
+    // elle ne correspond plus a rien de present et ferait passer un article
+    // qu'on vient de ranger pour perime.
+    if(!ex.dlc||_exPerimee||item.dlc<ex.dlc)ex.dlc=item.dlc;
+  }
   if(item.macSource==='manual'&&item.mac100){                     // macros saisies : elles priment
     ex.mac100=item.mac100;ex.macSource='manual';
     if(item.macManual)ex.macManual=item.macManual;
@@ -4640,7 +4647,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-05 21h26</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-05 21h52</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>

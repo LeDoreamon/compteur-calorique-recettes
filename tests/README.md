@@ -49,6 +49,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t31.js` | Fenêtre d’explication des macros : ventilation par repas + texte |
 | `t32.js` | Lignes estimées : nom corrigeable, recalcul par ligne, suppression |
 | `t33.js` | Modaux défilables et zones sûres, ajout d’article depuis le haut |
+| `t34.js` | Fusion à l’ajout : dates de péremption, quantités, doublons |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
