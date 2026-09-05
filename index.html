@@ -4647,7 +4647,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-05 21h52</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-05 22h27</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -5092,6 +5092,44 @@ async function reestimerLigne(i){
     recalcAddMealMacros();
   }
 }
+// Mots vides ou trop generiques : « lait sans lactose » et « lait chocolate »
+// doivent se rapprocher par « lait », pas par « sans ».
+var _MOTS_VIDES=['avec','sans','pour','type','nature','light','frais','maison','extra',
+                 'entier','demi','petit','grand','grande','petite','bio','vert','noir'];
+function _motsCles(nom){
+  return _normNom(nom||'').split(/[^a-z0-9]+/).filter(function(m){
+    return m.length>3 && _MOTS_VIDES.indexOf(m)<0;
+  });
+}
+// Articles en stock dont le nom partage un mot-cle avec celui-ci
+function articlesProches(id){
+  var it=findItem(id);
+  if(!it)return [];
+  var mots=_motsCles(it.name);
+  if(!mots.length)return [];
+  var out=[];
+  Object.keys(S.inv||{}).forEach(function(cat){
+    (S.inv[cat]||[]).forEach(function(x){
+      if(!x||!x.id||x.id===id)return;
+      if(!(x.qty===null||x.qty>0))return;              // seulement ce qu'on a
+      var m2=_motsCles(x.name);
+      if(m2.some(function(w){return mots.indexOf(w)>=0;}))out.push(x);
+    });
+  });
+  return out;
+}
+// L'utilisateur a tranche : on remplace l'article de la ligne
+function changerArticleLigne(i,nouvelId){
+  var s=(_addMealInvSuggestions||[])[i];
+  if(!s||!nouvelId)return;
+  var it=findItem(nouvelId);
+  if(!it)return;
+  s.id=nouvelId;s.name=it.name;
+  s.unit=(it.macPiece?(it.unit||'pc'):(it.unit||'g'));
+  s.leve=true;                                          // ambiguite tranchee
+  renderInvSuggestions(_addMealInvSuggestions);
+  recalcAddMealMacros();
+}
 function toggleIngMacros(){S.voirMacrosIng=!S.voirMacrosIng;renderInvSuggestions(_addMealInvSuggestions);recalcAddMealMacros();saveState();}
 function _ligneMacros(m,estime){
   if(!S.voirMacrosIng)return '';
@@ -5110,6 +5148,11 @@ function renderInvSuggestions(suggestions) {
     html = '<div style="font-size:12px;color:var(--text3);padding:4px 0 8px;">Aucun ingrédient identifié — ajoute-les manuellement si besoin.</div>';
   } else {
     html = '<div style="display:flex;justify-content:space-between;align-items:center;padding-bottom:2px;"><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Depuis l\'inventaire</span>'+oeil+'</div>';
+    var _amb=suggestions.filter(function(s){
+      return s&&s.src!=='pick'&&!s.leve&&articlesProches(s.id).length;
+    }).length;
+    if(_amb)html+='<div style="font-size:10.5px;color:var(--gold);background:rgba(233,161,59,.1);border:0.5px solid rgba(233,161,59,.3);border-radius:7px;padding:6px 9px;margin:2px 0 6px;line-height:1.4;">'
+      +(_amb>1?(_amb+' lignes correspondent'):'Une ligne correspond')+' à plusieurs articles au nom voisin. Vérifie le choix dans les listes ci-dessous.</div>';
     html += suggestions.map((s, i) => {
       const it = findItem(s.id);
       if (!it) return '';
@@ -5118,7 +5161,15 @@ function renderInvSuggestions(suggestions) {
       const mm = itemMealMacros(it, s.qty, (s.unit==='g'||s.unit==='ml')?s.qty:undefined);
       return `<div style="display:flex;align-items:center;gap:8px;padding:6px 0 ${S.voirMacrosIng?'2px':'6px'};border-bottom:${S.voirMacrosIng?'none':'0.5px solid rgba(246,237,227,.05)'};">
         <input type="checkbox" id="inv-cb-${i}" checked style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
-        <span style="flex:1;font-size:13px;color:var(--text);">${it.name}</span>
+        ${(function(){
+          // Une correspondance proposee par l'IA entre plusieurs articles au nom
+          // voisin est le genre d'erreur qui passe inapercue : on la met en
+          // choix explicite plutot qu'en texte fige.
+          const prox=(s.src==='pick'||s.leve)?[]:articlesProches(s.id);
+          if(!prox.length)return `<span style="flex:1;min-width:0;font-size:13px;color:var(--text);">${it.name}</span>`;
+          const opts=[it].concat(prox).map(o=>`<option value="${o.id}"${o.id===s.id?' selected':''}>${o.name}</option>`).join('');
+          return `<select onchange="changerArticleLigne(${i},this.value)" title="Plusieurs articles portent un nom voisin — vérifie lequel tu as pris" style="flex:1;min-width:0;padding:3px 5px;background:var(--bg);border:0.5px solid rgba(233,161,59,.5);border-radius:6px;color:var(--gold);font-size:12.5px;outline:none;">${opts}</select>`;
+        })()}
         <input type="number" id="inv-qty-${i}" value="${s.qty}" min="0" style="width:62px;padding:4px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--text2);font-size:12px;outline:none;text-align:right;">
         <span style="font-size:11px;color:var(--text3);min-width:22px;">${s.unit}</span>
         <span id="inv-k-${i}" style="font-size:11px;color:var(--orange);min-width:52px;flex-shrink:0;text-align:right;">${Math.round(mm.kcal)} kcal</span>
