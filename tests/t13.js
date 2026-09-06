@@ -13,13 +13,14 @@ Object.keys(INV).forEach(k=>{
            mac100:it.m?{kcal:it.m[0],prot:it.m[1],gluc:it.m[2],lip:it.m[3]}:null};
   if(it.piece)o.macPiece={kcal:it.piece[0],prot:it.piece[1],gluc:it.piece[2],lip:it.piece[3]};
   if(it.pkg)o.pkg={size:it.pkg};
+  if(it.pieceG)o.pieceG=it.pieceG;
   frigo.push(o);
 });
 S.inv={frigo:frigo,placards:[],congelateur:[],epices:[]};
 const liam=(sb.RCP||[]).filter(r=>r.profile==='liam'&&r.slots&&r.slots.length);
 
 console.log('\n=== AM. Le catalogue colle a l\'inventaire ===');
-t('22 recettes visibles pour Liam',()=>eq(liam.length,22));
+t('30 recettes visibles pour Liam',()=>eq(liam.length,30));
 t('*** chaque ingredient existe dans l\'inventaire ***',()=>{
   const manque=[];
   liam.forEach(r=>(r.used||[]).forEach(u=>{
@@ -73,10 +74,10 @@ t('au moins 4 encas',()=>{
   if(n<4)throw new Error(n);
 });
 t('une journee type atteint la cible proteique',()=>{
-  const pdj=liam.find(r=>r.id==='liam_v5_avoine_fb');
-  const midi=liam.find(r=>r.id==='liam_v5_poulet_riz_soja');
-  const soir=liam.find(r=>r.id==='liam_v5_bolo_completes');
-  const snack=liam.find(r=>r.id==='liam_v5_fb_framboises');
+  const pdj=liam.find(r=>r.id==='liam_v6_avoine_fraises');
+  const midi=liam.find(r=>r.id==='liam_v6_poulet_riz_soja');
+  const soir=liam.find(r=>r.id==='liam_v6_bolo_completes');
+  const snack=liam.find(r=>r.id==='liam_v6_fb_fraises');
   const P=pdj.prot+midi.prot+soir.prot+snack.prot;
   const K=pdj.kcal+midi.kcal+soir.kcal+snack.kcal;
   if(P<160)throw new Error('proteines : '+P);
@@ -115,15 +116,16 @@ t('les 2 recettes communes sont conservees',()=>{
   eq(c.length,2);
 });
 t('*** les anciennes recettes de Liam restent resolvables ***',()=>{
-  ['liam_v4_bowl_avoine','liam_v4_poulet_coco','liam_v4_saumon_riz'].forEach(id=>{
+  ['liam_v4_bowl_avoine','liam_v5_poulet_riz_soja','liam_v5_shaker_whey'].forEach(id=>{
     const r=sb.findRecipe(id);
     if(!r)throw new Error(id+' introuvable : historique casse');
     if(!r.kcal)throw new Error(id+' a perdu ses macros');
   });
 });
 t('les anciennes n\'apparaissent plus dans les onglets',()=>{
-  const v4=(sb.RCP||[]).filter(r=>/^liam_v4_/.test(r.id));
-  eq(v4.filter(r=>r.slots&&r.slots.length).length,0);
+  const anc=(sb.RCP||[]).filter(r=>/^liam_v[45]_/.test(r.id));
+  if(!anc.length)throw new Error('aucune ancienne conservee');
+  eq(anc.filter(r=>r.slots&&r.slots.length).length,0);
 });
 t('aucun identifiant en double',()=>{
   const vu={},d=[];
