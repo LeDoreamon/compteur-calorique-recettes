@@ -52,6 +52,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t34.js` | Fusion à l’ajout : dates de péremption, quantités, doublons |
 | `t35.js` | Levée d’ambiguïté entre articles aux noms voisins |
 | `t36.js` | Noms voisins dont un seul est en stock |
+| `t37.js` | Confirmation de fermeture seulement après une saisie réelle |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

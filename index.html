@@ -4730,7 +4730,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-06 10h48</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-09 22h14</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -4884,17 +4884,39 @@ function openAddMeal(type) {_scanBase=null;
     document.getElementById('addmeal-photo-input').click();
   }
 }
+// Une fiche existante arrive avec tous ses champs remplis : chercher du texte
+// dedans revenait a demander confirmation a chaque fois, y compris sans la
+// moindre modification. On suit donc les frappes reelles.
+function _marquerTouche(e){
+  try{
+    var n=e&&e.target;
+    while(n&&n!==document.body){
+      if(n.id&&/-overlay$/.test(n.id)){n.dataset.touche='1';return;}
+      n=n.parentNode;
+    }
+  }catch(err){}
+}
+document.addEventListener('input',_marquerTouche,true);
+document.addEventListener('change',_marquerTouche,true);
+// Rouvrir une fenetre repart d'une ardoise vierge
+try{
+  var _obsOv=new MutationObserver(function(muts){
+    muts.forEach(function(m){
+      var el=m.target;
+      if(el&&el.id&&/-overlay$/.test(el.id)&&el.style&&el.style.display!=='none')
+        el.dataset.touche='';
+    });
+  });
+  document.querySelectorAll('div[id$="-overlay"]').forEach(function(el){
+    _obsOv.observe(el,{attributes:true,attributeFilter:['style']});
+  });
+}catch(e){}
 function overlayBackdrop(ev,el,closeFn){
   if(ev.target!==el)return;
-  var dirty=false;
-  try{
-    var f=el.querySelectorAll('input[type=text],input[type=number],input[type=date],textarea');
-    for(var i=0;i<f.length;i++){
-      var v=String(f[i].value||'').trim();
-      if(v&&v!=='0'){dirty=true;break;}
-    }
-  }catch(e){}
-  if(dirty&&!confirm('Fermer sans enregistrer ? La saisie en cours sera perdue.'))return;
+  var touche=false;
+  try{touche=(el.dataset&&el.dataset.touche==='1');}catch(e){}
+  if(touche&&!confirm('Fermer sans enregistrer ? La saisie en cours sera perdue.'))return;
+  try{if(el.dataset)el.dataset.touche='';}catch(e){}
   closeFn();
 }
 function closeAddMeal() { document.getElementById('addmeal-overlay').style.display = 'none'; }
