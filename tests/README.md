@@ -54,6 +54,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t36.js` | Noms voisins dont un seul est en stock |
 | `t37.js` | Confirmation de fermeture seulement après une saisie réelle |
 | `t38.js` | Renommage d’un article : cohérence des références et collisions |
+| `t39.js` | Mode « par pièce » : conflit d’identifiants, écrasement par l’unité |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

@@ -1327,6 +1327,12 @@ function renderItemMacToggle(){
   // La base n'a de sens que pour une saisie au poids
   var wrapB=document.getElementById('item-mac-base'),unitB=document.getElementById('item-mac-unit');
   var pc=(_itemMacMode==='piece');
+  // Le sélecteur d'unité suit : des macros par pièce impliquent un article
+  // dénombrable, et l'écran ne doit pas annoncer autre chose.
+  try{
+    var _u=document.getElementById('item-unit');
+    if(_u&&pc&&(_u.value==='g'||_u.value==='ml'))_u.value='pcs';
+  }catch(e){}
   if(wrapB)wrapB.style.display=pc?'none':'';
   if(unitB)unitB.style.display=pc?'none':'';
   if(pc){var ap=document.getElementById('item-mac-apercu');if(ap)ap.style.display='none';}
@@ -1392,7 +1398,7 @@ function renderItemCond(){
   const ttl='font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;';
   if(_itemMacMode==='piece'){
     const pg=(it&&it.pieceG)||'';
-    c.innerHTML='<div style="'+ttl+'">Poids moyen par pièce</div><div style="display:flex;align-items:center;gap:6px;"><input id="item-pieceg" type="number" value="'+pg+'" placeholder="ex. 55" style="flex:1;'+inp+'"><span style="font-size:12px;color:var(--text3);">g</span></div>';
+    c.innerHTML='<div style="'+ttl+'">Poids moyen par pièce</div><div style="display:flex;align-items:center;gap:6px;"><input id="item-mac-pieceg" type="number" value="'+pg+'" placeholder="ex. 55" style="flex:1;'+inp+'"><span style="font-size:12px;color:var(--text3);">g</span></div>';
   } else {
     const sz=(it&&it.pkg&&it.pkg.size)||'';
     const ct=(it&&it.pkg&&it.pkg.size&&it.qty)?(Math.round((it.qty/it.pkg.size)*10)/10):'';
@@ -1532,7 +1538,10 @@ function updateItemDessertKcal(){
   var qEl=document.getElementById('item-dessert-qty');
   var out=document.getElementById('item-dessert-kcal');
   var un=document.getElementById('item-dessert-unit');
-  if(un&&it)un.textContent=it.macPiece?(it.unit||'pc'):(it.unit||'g');
+  if(un&&it){
+    var _auPoids=(it.unit==='g'||it.unit==='ml'||!it.unit);
+    un.textContent=it.macPiece?((_auPoids?'pc':it.unit)):(it.unit||'g');
+  }
   if(!it||!qEl||!out)return;
   var q=parseFloat(qEl.value)||0;
   var m=itemMealMacros(it,q)||{kcal:0};
@@ -1576,7 +1585,8 @@ function saveItemDetail(){
     }
     if(_itemMacMode==='piece'){
       it.macPiece=mm;
-      const pgEl=document.getElementById('item-pieceg');const pgv=pgEl?parseFloat(pgEl.value):NaN;
+      var pgEl=document.getElementById('item-mac-pieceg')||document.getElementById('item-pieceg');
+      var pgv=pgEl?parseFloat(pgEl.value):NaN;
       const pg=(pgv>=1)?pgv:(it.pieceG||100);it.pieceG=pg;
       it.mac100={kcal:+(mm.kcal*100/pg).toFixed(1),prot:+(mm.prot*100/pg).toFixed(1),gluc:+(mm.gluc*100/pg).toFixed(1),lip:+(mm.lip*100/pg).toFixed(1)};
       if(['g','ml','kg','l','cl'].indexOf(it.unit)>=0){if(typeof it.qty==='number'&&it.qty>0)it.qty=Math.max(1,Math.round(it.qty/pg));it.unit='pc';}
@@ -1599,7 +1609,10 @@ function saveItemDetail(){
     var _dl=document.getElementById('item-dlc');
     if(_dl){if(_dl.value){it.dlc=_dl.value;it.dlcAuto=false;}else{delete it.dlc;delete it.dlcAuto;}}
     var _uEl=document.getElementById('item-unit');
-    if(_uEl&&_uEl.value){
+    // En mode « Par pièce », c'est le bloc macros qui fait autorité : il a déjà
+    // posé pieceG et bascule l'unité. Laisser le sélecteur, resté sur
+    // « grammes », repasser derrière annulait tout.
+    if(_uEl&&_uEl.value&&!(_itemMacMode==='piece'&&(_uEl.value==='g'||_uEl.value==='ml'))){
       it.unit=_uEl.value;
       if(it.unit==='g'||it.unit==='ml'){delete it.pieceG;}
       else{
@@ -3076,6 +3089,10 @@ function invIssues(){
       var k=(it.mac100&&it.mac100.kcal)||0;
       var convertible=(it.unit==='g'||it.unit==='ml'||!it.unit)||it.macPiece||it.pieceG||(it.pkg&&it.pkg.size>0);
       if(actif&&k>0&&!convertible)zero.push({cat:cat,it:it});
+      // 1 ter. macros par piece sur un article compte au poids : la quantite
+      // saisie est alors multipliee par les macros d'une piece entiere.
+      if(actif&&it.macPiece&&(it.unit==='g'||it.unit==='ml'))
+        suspects.push({cat:cat,it:it,incoherent:true});
       // 1 bis. quantite qui ressemble a un poids etiquete en pieces
       // (sequelle du calcul "taille x nombre" applique a une unite denombrable)
       var _pg2=it.pieceG||(it.pkg&&it.pkg.size)||0;
@@ -3117,9 +3134,12 @@ function renderInvDiag(){
   if(d.suspects&&d.suspects.length){
     h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 5px;">Quantite douteuse</div>';
     h+=d.suspects.map(function(x){
+      var _det=x.incoherent
+        ? ('macros par pièce, unité en '+(x.it.unit||'g'))
+        : (x.it.qty+' '+(x.it.unit||'')+' \u2192 plutot '+x.paquets+' ?');
       return '<div onclick="openItemDetail(\''+x.cat+'\',\''+x.it.id+'\')" style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);cursor:pointer;">'
         +'<span style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'+x.it.name+'</span>'
-        +'<span style="font-size:10.5px;color:var(--warn);white-space:nowrap;">'+x.it.qty+' '+(x.it.unit||'')+' \u2192 plutot '+x.paquets+' ?</span></div>';
+        +'<span style="font-size:10.5px;color:var(--warn);white-space:nowrap;">'+_det+'</span></div>';
     }).join('');
     h+='<div style="font-size:10px;color:var(--text3);margin-top:5px;line-height:1.4;">Ces quantites valent exactement le poids d\'une unite multiplie par un petit nombre : c\'est probablement un poids saisi comme un nombre de pieces.</div>';
   }
@@ -4747,7 +4767,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-09 22h17</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-12 21h22</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
