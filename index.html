@@ -433,6 +433,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div id="macroinfo-body"></div>
   </div>
 </div>
+<input id="photo-recette-input" type="file" accept="image/*" style="display:none;">
 <nav class="bnav" id="bnav"></nav>
 <div id="root" class="container"><div style="padding:2rem;text-align:center;color:var(--text3);">Chargement...</div></div>
 <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:300;flex-direction:column;align-items:center;justify-content:center;">
@@ -2374,6 +2375,7 @@ async function loadState(){
     _applyState(d);
     _stateRev=(d&&typeof d.rev==='number')?d.rev:0;   // sinon on repartait de zero
     _loaded=true;
+    if(!_photosChargees)chargerPhotos();
     _empreinteRef=_empreinteEtat();
     if(_mzJustFixed){_mzJustFixed=false;saveState();}
   }catch(e){}
@@ -3034,7 +3036,12 @@ function renderCard(r){
   const rm=recipeMacros(r);
   const bc=done?'var(--green)':'var(--border)';
   const wb=wc>0?`<span class="chip" style="background:var(--green-bg);color:var(--green);">↺ ×${wc}/sem.</span>`:'';
+  const _ph=photoRecette(r.id);
+  const _vig=`<div style="width:52px;height:52px;border-radius:10px;overflow:hidden;flex-shrink:0;border:0.5px solid var(--border);">`
+    +(_ph?`<img src="${_ph}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`:_vignetteDefaut(r,22))
+    +`</div>`;
   return`<div class="rcard" style="border-color:${bc};"><div class="rhead" data-action="toggle-recipe" data-val="${r.id}">
+    ${_vig}
     <div style="flex:1;min-width:0;">
       <div style="font-weight:500;font-size:14px;color:var(--text);">${favStar(r.id)}${(r.custom&&S.mealTab==='perso')?`<span data-action="edit-custrec" data-val="${r.id}" style="cursor:pointer;font-size:12px;margin-right:5px;opacity:.7;">✎</span>`:''}${r.ai?'✨ ':''}${r.name}</div>
       <div style="display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;">${r.urgent?`<span class="chip" style="background:var(--red-bg);color:var(--red);">⚠ ${r.ur}</span>`:''}${wb}</div>
@@ -3047,7 +3054,15 @@ function renderCard(r){
       </div>
     </div>
     <span class="chev" style="font-size:14px;color:var(--text3);flex-shrink:0;margin-top:2px;transform:rotate(${open?'90deg':'0deg'});">▸</span>
-  </div>${open?`<div class="rbody${S._anim==='r:'+r.id?' unfold':''}" data-rec="${r.id}" style="padding:0 15px 14px;border-top:0.5px solid var(--border);">${renderIngredients(r)}<div style="padding-top:12px;">${(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${s}</span></div>`).join('')}</div>${renderCardBottom(r)}</div>`:''}</div>`;
+  </div>${open?`<div class="rbody${S._anim==='r:'+r.id?' unfold':''}" data-rec="${r.id}" style="padding:0 15px 14px;border-top:0.5px solid var(--border);">${(function(){
+    const p=photoRecette(r.id);
+    return `<div style="margin:12px 0 4px;border-radius:12px;overflow:hidden;position:relative;height:${p?'170px':'96px'};border:0.5px solid var(--border);">`
+      +(p?`<img src="${p}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`:_vignetteDefaut(r,40))
+      +`<div style="position:absolute;right:7px;bottom:7px;display:flex;gap:6px;">`
+      +`<button onclick="event.stopPropagation();choisirPhotoRecette('${r.id}')" style="padding:6px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;backdrop-filter:blur(4px);">\ud83d\udcf7 ${p?'Changer':'Ajouter une photo'}</button>`
+      +(p?`<button onclick="event.stopPropagation();retirerPhotoRecette('${r.id}')" title="Retirer la photo" style="padding:6px 9px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;">\u00d7</button>`:'')
+      +`</div></div>`;
+  })()}${renderIngredients(r)}<div style="padding-top:12px;">${(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${s}</span></div>`).join('')}</div>${renderCardBottom(r)}</div>`:''}</div>`;
 }
 
 function qtyLabel(it){
@@ -4812,7 +4827,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-15 00h04</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-15 00h07</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -5462,6 +5477,95 @@ const MOMENTS=[
 ];
 function moment(id){return MOMENTS.find(function(m){return m.id===id;})||null;}
 function couleurMoment(id){var m=moment(id);return m?m.couleur:'transparent';}
+// Les photos vivent dans leur propre noeud : les joindre a l'etat ferait
+// repartir des centaines de kilo-octets a chaque enregistrement.
+var PHOTOS={},_photosChargees=false;
+function photoRecette(id){return PHOTOS[_cleFB(id)]||null;}
+async function chargerPhotos(){
+  try{
+    var c=localStorage.getItem(ACTIVE_PROFILE+'_photos');
+    if(c)PHOTOS=JSON.parse(c)||{};
+  }catch(e){}
+  try{
+    var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/photos'));
+    if(r.ok){var d=await r.json();if(d&&typeof d==='object'){PHOTOS=d;
+      try{localStorage.setItem(ACTIVE_PROFILE+'_photos',JSON.stringify(d));}catch(e){}}}
+  }catch(e){}
+  _photosChargees=true;
+  render();
+}
+async function _enregistrerPhoto(id,dataUrl){
+  var k=_cleFB(id);
+  if(dataUrl)PHOTOS[k]=dataUrl; else delete PHOTOS[k];
+  try{localStorage.setItem(ACTIVE_PROFILE+'_photos',JSON.stringify(PHOTOS));}catch(e){}
+  render();
+  try{
+    await fetch(await fbUrl(ACTIVE_PROFILE+'/photos/'+k),{
+      method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify(dataUrl||null)});
+  }catch(e){_infoToast('Photo enregistrée ici','Elle partira sur le cloud au retour du réseau.');}
+}
+// Redimensionne avant stockage : une photo de telephone pese plusieurs Mo,
+// on n'a besoin que d'une vignette.
+function _photoVersDataUrl(file,cb){
+  var fr=new FileReader();
+  fr.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      try{
+        var L=480,l=img.width,ht=img.height;
+        var f=Math.min(1,L/Math.max(l,ht));
+        var cv=document.createElement('canvas');
+        cv.width=Math.round(l*f);cv.height=Math.round(ht*f);
+        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+        cb(cv.toDataURL('image/jpeg',0.72));
+      }catch(e){cb(null);}
+    };
+    img.onerror=function(){cb(null);};
+    img.src=fr.result;
+  };
+  fr.onerror=function(){cb(null);};
+  fr.readAsDataURL(file);
+}
+function choisirPhotoRecette(id){
+  var inp=document.getElementById('photo-recette-input');
+  if(!inp)return;
+  inp.onchange=function(){
+    var f=inp.files&&inp.files[0];
+    inp.value='';
+    if(!f)return;
+    _photoVersDataUrl(f,function(d){
+      if(!d){alert('Image illisible.');return;}
+      _enregistrerPhoto(id,d);
+    });
+  };
+  inp.click();
+}
+function retirerPhotoRecette(id){
+  if(!confirm('Retirer la photo de cette recette ?'))return;
+  _enregistrerPhoto(id,null);
+}
+// A defaut de photo : une pastille coloree tiree du nom, stable dans le temps
+function _vignetteDefaut(r,taille){
+  var n=(r&&r.name)||'?';
+  var t=0;for(var i=0;i<n.length;i++)t=(t*31+n.charCodeAt(i))|0;
+  var teinte=Math.abs(t)%360;
+  var em=/p\u00e2tes|pates|nouille|tortellini|gnocchi|ramen|carbonara|bolognaise/i.test(n)?'\ud83c\udf5d'
+        :/riz/i.test(n)?'\ud83c\udf5a'
+        :/salade|tomate|concombre|carotte/i.test(n)?'\ud83e\udd57'
+        :/poulet|aiguillette|karaage|panko/i.test(n)?'\ud83c\udf57'
+        :/boeuf|steak|boulette/i.test(n)?'\ud83e\udd69'
+        :/saumon|thon|poisson/i.test(n)?'\ud83d\udc1f'
+        :/oeuf|omelette/i.test(n)?'\ud83c\udf73'
+        :/avoine|porridge|flocons/i.test(n)?'\ud83e\udd63'
+        :/fromage blanc|yaourt|fraise|framboise|compote|pomme/i.test(n)?'\ud83c\udf53'
+        :/shaker|whey/i.test(n)?'\ud83e\udd64'
+        :/soupe/i.test(n)?'\ud83c\udf72'
+        :/frite|pizza/i.test(n)?'\ud83c\udf5f':'\ud83c\udf7d\ufe0f';
+  return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;'
+    +'background:linear-gradient(135deg,hsl('+teinte+',32%,26%),hsl('+((teinte+40)%360)+',28%,18%));'
+    +'font-size:'+(taille||22)+'px;">'+em+'</div>';
+}
 var _amSlot=null,_amBaseName='';
 function _amLc(s){return s?s.charAt(0).toLowerCase()+s.slice(1):s;}
 function setAmSlot(s){

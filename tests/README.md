@@ -57,6 +57,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t39.js` | Mode « par pièce » : conflit d’identifiants, écrasement par l’unité |
 | `t40.js` | Clés Firebase : caractères interdits, assainissement du payload |
 | `t41.js` | Moments de la journée : liseré, correction après coup, icônes |
+| `t42.js` | Photos de recettes : stockage séparé, vignette, ajout manuel |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
