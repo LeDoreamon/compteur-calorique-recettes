@@ -2035,8 +2035,8 @@ function _applyState(d){
   S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
   S.shopSeeded=d.shopSeeded||false;
   S.recTri=d.recTri||'';S.recTriDir=(d.recTriDir===-1?-1:1);
-  S.pasRacheter=(d.pasRacheter&&typeof d.pasRacheter==='object')?d.pasRacheter:{};
-  S.paires0k=(d.paires0k&&typeof d.paires0k==='object')?d.paires0k:{};
+  S.pasRacheter=(d.pasRacheter&&typeof d.pasRacheter==='object')?_assainirCles(d.pasRacheter):{};
+  S.paires0k=(d.paires0k&&typeof d.paires0k==='object')?_assainirCles(d.paires0k):{};
   if(!S.shopSeeded&&ACTIVE_PROFILE==='liam'){S.shop.list=seedShopList();S.shopSeeded=true;_mzJustFixed=true;}
   // Maureen : conversion UNIQUE de son inventaire ACTUEL en "pr\u00e9sent" (tout item sans quantit\u00e9 positive). N'affecte PAS ses ajouts futurs.
   if(ACTIVE_PROFILE==='maureen'){
@@ -2099,7 +2099,7 @@ function _applyState(d){
   // Noms de repli des ingredients. Appris AVANT la fusion ci-dessous, qui
   // change les identifiants : c'est le seul moment ou ils pointent encore
   // sur des articles existants.
-  S.ingNames=(d.ingNames&&typeof d.ingNames==='object')?d.ingNames:(S.ingNames||{});
+  S.ingNames=(d.ingNames&&typeof d.ingNames==='object')?_assainirCles(d.ingNames):(S.ingNames||{});
   try{apprendNomsIngredients();}catch(e){}
   // Fusion one-shot des doublons d'inventaire (Liam) : macros manuelles, somme des quantites, retires au cimetiere
   if(ACTIVE_PROFILE==='liam'){if(!d.dupMerged){if(_mergeDuplicates())_mzJustFixed=true;S.dupMerged=true;}else{S.dupMerged=true;}}
@@ -2261,7 +2261,7 @@ async function _saveStateNow(){
   }
   const _newRev=(_rr===null?_stateRev:_rr)+1;
   const _invSafe={};for(const c in S.inv){_invSafe[c]=(S.inv[c]||[]).filter(Boolean).map(it=>Object.assign({},it,{qty:it.qty===null?-1:it.qty}));}
-  const payload=JSON.stringify({
+  var payload=JSON.stringify({
     dayMeals:S.dayMeals,
     inv:_invSafe,
     aiRecipes:S.aiRecipes||[],
@@ -2291,8 +2291,10 @@ async function _saveStateNow(){
     savedAt:new Date().toISOString(),
     savedBy:_sessionId
   });
+  /* Une seule cle invalide fait refuser tout l'etat par Firebase (HTTP 400) */
+  try{payload=JSON.stringify(_assainirCles(JSON.parse(payload)));}catch(e){}
   try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
-  _empreinteRef=_empreinteEtat();   // reference : etat sauvegarde, rien a perdre
+  _empreinteRef=_empreinteEtat();
   try{
     const _sc=new AbortController();const _stid=setTimeout(()=>_sc.abort(),8000);
     const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'),{
@@ -2304,7 +2306,8 @@ async function _saveStateNow(){
     clearTimeout(_stid);
     if(r.ok)_stateRev=_newRev;
     _syncStatus=r.ok?'ok':'offline';
-    _lastSyncErr=r.ok?'':('Ecriture refusee — HTTP '+r.status+' '+r.statusText);
+    _lastSyncErr=r.ok?'':('Ecriture refusee — HTTP '+r.status+' '+r.statusText
+      +(r.status===400?" (donnee non enregistrable : un nom contient sans doute un caractere interdit comme / ou .)":''));
   }catch(e){_syncStatus='offline';_lastSyncErr='Ecriture — '+e.name+': '+e.message;}
   const badge=document.getElementById('sync-badge');
   if(badge)badge.innerHTML=_syncBadge();
@@ -3045,9 +3048,26 @@ function qtyLabel(it){
   return s;
 }
 // ─── 🔎 Diagnostic + recherche d'inventaire ─────────────────────────────────
+function _cleFB(s){
+  return String(s||'').replace(/[.#$\/\[\]]/g,'_').replace(/[\x00-\x1f\x7f]/g,'');
+}
+// Retire recursivement les cles impossibles a enregistrer. Filet general :
+// une seule cle invalide fait refuser tout l'etat.
+function _assainirCles(v,prof){
+  prof=prof||0;
+  if(!v||typeof v!=='object'||prof>6)return v;
+  if(Array.isArray(v))return v.map(function(x){return _assainirCles(x,prof+1);});
+  var out={};
+  Object.keys(v).forEach(function(k){
+    var nk=_cleFB(k);
+    if(!nk)return;
+    out[nk]=_assainirCles(v[k],prof+1);
+  });
+  return out;
+}
 function _normNom(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();}
 // Cle stable d'une paire, quel que soit l'ordre
-function _clePaire(a,b){var x=[_normNom(a),_normNom(b)].sort();return x[0]+'|'+x[1];}
+function _clePaire(a,b){var x=[_normNom(a),_normNom(b)].sort();return _cleFB(x[0]+'|'+x[1]);}
 function ignorerVoisins(na,nb){
   S.paires0k=S.paires0k||{};
   S.paires0k[_clePaire(na,nb)]=1;
@@ -3262,7 +3282,7 @@ function shopSuggestions(){
       if(deja[_normNom(it.name)])return;
       // Ecarte a la demande : plus propose tant qu'il reste a zero. Rachete un
       // jour, il redevient proposable tout seul.
-      if((S.pasRacheter||{})[_normNom(it.name)])return;
+      if((S.pasRacheter||{})[_cleFB(_normNom(it.name))])return;
       out.push({name:it.name,etat:etat,rayon:_guessRayon(it.name),qty:it.qty,unit:it.unit||''});
     });
   });
@@ -3303,7 +3323,7 @@ function renderShopAuto(){
 function exclureDuRachat(nom){
   if(!nom)return;
   S.pasRacheter=S.pasRacheter||{};
-  S.pasRacheter[_normNom(nom)]=1;
+  S.pasRacheter[_cleFB(_normNom(nom))]=1;
   saveState();render();
 }
 function reprendreLesSuggestions(){S.pasRacheter={};saveState();render();}
@@ -3313,7 +3333,7 @@ function _purgeExclusionsRachat(){
   var revenus={};
   Object.keys(S.inv||{}).forEach(function(cat){
     (S.inv[cat]||[]).forEach(function(it){
-      if(it&&it.name&&!_stockBas(it))revenus[_normNom(it.name)]=1;
+      if(it&&it.name&&!_stockBas(it))revenus[_cleFB(_normNom(it.name))]=1;
     });
   });
   Object.keys(S.pasRacheter).forEach(function(k){if(revenus[k])delete S.pasRacheter[k];});
@@ -4767,7 +4787,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-12 21h22</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-14 22h58</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
