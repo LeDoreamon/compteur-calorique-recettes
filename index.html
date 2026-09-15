@@ -2117,6 +2117,14 @@ function _applyState(d){
   if(ACTIVE_PROFILE==='liam'){if(!d.dupMerged){if(_mergeDuplicates())_mzJustFixed=true;S.dupMerged=true;}else{S.dupMerged=true;}}
 }
 function showSyncErr(){alert(_lastSyncErr||'Aucun detail enregistre pour le moment. Declenche une sauvegarde (ajoute un repas) puis retape.');}
+// Le badge existe a deux endroits : en tete de page et sur l'accueil. Un seul
+// point de rafraichissement evite qu'un des deux reste fige.
+function _majBadgesSync(){
+  ['sync-badge','sync-badge-accueil'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.innerHTML=_syncBadge();
+  });
+}
 function _syncBadge(){
   if(_syncStatus==='ok') return '<span style="font-size:10px;color:var(--green);">☁ sync</span>';
   if(_syncStatus==='conflict') return '<span onclick="_reloadFromServer(false)" style="font-size:10px;color:var(--red);cursor:pointer;">\u26a0 conflit \u2014 recharger</span>';
@@ -2190,7 +2198,7 @@ async function _onSaveConflict(){
   if(_conflictBusy)return;
   _conflictBusy=true;
   _syncStatus='conflict';
-  const b=document.getElementById('sync-badge');if(b)b.innerHTML=_syncBadge();
+  _majBadgesSync();
   var ok=confirm("\u26a0 Ces donn\u00e9es ont \u00e9t\u00e9 modifi\u00e9es ailleurs entre-temps.\n\nEnregistrer maintenant \u00e9craserait ces modifications. L'app peut recharger la version la plus r\u00e9cente \u00e0 la place.\n\nRecharger ? (Annuler = ne rien enregistrer pour l'instant)");
   _conflictBusy=false;
   if(ok)await _reloadFromServer(true);
@@ -2321,8 +2329,7 @@ async function _saveStateNow(){
     _lastSyncErr=r.ok?'':('Ecriture refusee — HTTP '+r.status+' '+r.statusText
       +(r.status===400?" (donnee non enregistrable : un nom contient sans doute un caractere interdit comme / ou .)":''));
   }catch(e){_syncStatus='offline';_lastSyncErr='Ecriture — '+e.name+': '+e.message;}
-  const badge=document.getElementById('sync-badge');
-  if(badge)badge.innerHTML=_syncBadge();
+  _majBadgesSync();
 }
 
 async function loadState(){
@@ -2394,7 +2401,8 @@ window.addEventListener('focus',()=>{
 });
 setInterval(function(){try{if(_refreshToday())render();}catch(e){}},60000);
 window.addEventListener('online',()=>{if(_loaded)saveState();});
-window.addEventListener('offline',()=>{_syncStatus='offline';const _b=document.getElementById('sync-badge');if(_b)_b.innerHTML=_syncBadge();});
+window.addEventListener('offline',()=>{_syncStatus='offline';_majBadgesSync();});
+window.addEventListener('online',function(){_liensVerifies=false;try{verifierLiens();}catch(e){}});
 
 // ─── API KEY ──────────────────────────────────────────────────────────────────
 function getApiKey(){return localStorage.getItem('anthropic_key')||'';}
@@ -4496,7 +4504,9 @@ function renderAccueil(){
       +macroBar('Glucides',r.pris.gluc,TARGETS.gluc,'g','--blue','gluc')
       +macroBar('Lipides',r.pris.lip,TARGETS.lip,'g','--text2','lip')
     +'</div>';
-  if(dep>0)h+='<div style="margin-top:11px;padding-top:10px;border-top:0.5px solid var(--border);font-size:11.5px;color:var(--text3);">'
+  h+='<div style="margin-top:11px;padding-top:10px;border-top:0.5px solid var(--border);display:flex;justify-content:flex-end;">'
+    +'<span id="sync-badge-accueil">'+_syncBadge()+'</span></div>';
+  if(dep>0)h+='<div style="margin-top:9px;font-size:11.5px;color:var(--text3);">'
     +'\ud83d\udd25 <span style="color:var(--orange);">'+dep+' kcal</span> dépensés'
     +(b&&b.steps>0?(' \u00b7 '+b.steps.toLocaleString('fr-FR')+' pas'):'')
     +(((b&&b.activities)||[]).length?(' \u00b7 '+b.activities.length+' activité'+(b.activities.length>1?'s':'')):'')
@@ -4906,7 +4916,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-15 09h55</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-15 10h06</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -5568,7 +5578,58 @@ function couleurMoment(id){var m=moment(id);return m?m.couleur:'transparent';}
 // Les photos vivent dans leur propre noeud : les joindre a l'etat ferait
 // repartir des centaines de kilo-octets a chaque enregistrement.
 var PHOTOS={},_photosChargees=false;
-function photoRecette(id){return PHOTOS[_cleFB(id)]||null;}
+// Liens vers des images libres, verifies au demarrage. Un lien casse est
+// ecarte jusqu'a la prochaine verification : on ne montre jamais une image
+// morte, on retombe sur la vignette.
+// Images libres de Wikimedia Commons. Special:FilePath donne une adresse
+// stable sans avoir a connaitre le chemin interne du fichier. Les liens non
+// verifies sont ecartes au demarrage et remplaces par la vignette, donc en
+// ajouter un qui n'existe pas ne casse rien.
+function _wm(fichier,largeur){
+  return 'https://commons.wikimedia.org/wiki/Special:FilePath/'
+    +encodeURIComponent(fichier)+'?width='+(largeur||400);
+}
+var LIENS_IMAGES={
+  liam_v6_porridge_whey:_wm('Porridge.jpg'),
+  liam_v6_omelette_jambon:_wm('An omelette.jpg')
+};
+var _liensCasses={},_liensVerifies=false;
+// Ordre de priorite : ta photo, puis le lien, puis la vignette dessinee.
+function photoRecette(id){
+  var k=_cleFB(id);
+  if(PHOTOS[k])return PHOTOS[k];                       // 1. la tienne
+  var l=LIENS_IMAGES[id]||LIENS_IMAGES[k];
+  if(l&&!_liensCasses[l])return l;                     // 2. le lien, s'il repond
+  return null;                                          // 3. vignette dessinee
+}
+function photoEstDeToi(id){return !!PHOTOS[_cleFB(id)];}
+// Teste chaque lien par un chargement reel : pas de requete reseau bloquee par
+// les regles d'origine, et le navigateur met l'image en cache au passage.
+function verifierLiens(){
+  if(_liensVerifies||!navigator.onLine)return;
+  _liensVerifies=true;
+  var urls={};
+  Object.keys(LIENS_IMAGES).forEach(function(k){
+    var u=LIENS_IMAGES[k];
+    if(u&&!PHOTOS[_cleFB(k)])urls[u]=1;                // inutile de tester ce qui est masque
+  });
+  var restants=Object.keys(urls);
+  if(!restants.length)return;
+  var fini=0,change=false;
+  restants.forEach(function(u){
+    var img=new Image();
+    var t=setTimeout(function(){img.onload=img.onerror=null;marque(true);},6000);
+    function marque(casse){
+      clearTimeout(t);
+      if(casse&&!_liensCasses[u]){_liensCasses[u]=1;change=true;}
+      else if(!casse&&_liensCasses[u]){delete _liensCasses[u];change=true;}
+      if(++fini===restants.length&&change)render();
+    }
+    img.onload=function(){marque(false);};
+    img.onerror=function(){marque(true);};
+    img.src=u;
+  });
+}
 async function chargerPhotos(){
   try{
     var c=localStorage.getItem(ACTIVE_PROFILE+'_photos');
@@ -5581,6 +5642,7 @@ async function chargerPhotos(){
   }catch(e){}
   _photosChargees=true;
   render();
+  try{verifierLiens();}catch(e){}
 }
 async function _enregistrerPhoto(id,dataUrl){
   var k=_cleFB(id);

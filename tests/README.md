@@ -59,6 +59,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t41.js` | Moments de la journée : liseré, correction après coup, icônes |
 | `t42.js` | Photos de recettes : stockage séparé, vignette, ajout manuel |
 | `t43.js` | Page d’accueil : ordre des repas, suggestions, activité du jour |
+| `t44.js` | Cascade d’images, vérification des liens, badge de synchro |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
