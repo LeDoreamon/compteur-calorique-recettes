@@ -183,3 +183,18 @@ t('ouvrir une suggestion mene a la recette',()=>{
   if(!/S\.openRec=/.test(b))throw new Error('ne deplie pas la recette');
 });
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== FM. Pas de clignotement au demarrage ===');
+t('*** l\'etat par defaut pointe deja sur l\'accueil ***',()=>{
+  if(!/mainTab:'accueil'/.test(src))
+    throw new Error('un premier rendu aurait lieu sur un autre onglet');
+  if(/mainTab:'recipes'/.test(src))throw new Error('valeur par defaut encore sur les recettes');
+});
+t('le choix de profil confirme l\'accueil',()=>{
+  const i=src.indexOf('function selectProfile');
+  if(!/S\.mainTab='accueil'/.test(src.slice(i,i+700)))throw new Error('selectProfile pointe ailleurs');
+});
+t('l\'onglet initial du bac a sable est bien l\'accueil',()=>{
+  eq(sb.S.mainTab,'accueil');
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
