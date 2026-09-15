@@ -127,7 +127,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .bnav-b { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center;
   gap: 3px; padding: 7px 2px 5px; color: var(--text3); font-size: 10px; font-weight: 500; border-radius: 12px;
   transition: color .22s ease; }
-.bnav-i { font-size: 19px; line-height: 1; transition: transform .3s var(--ease); }
+.bnav-i { font-size: 19px; line-height: 1; transition: transform .3s var(--ease);
+  display: inline-flex; align-items: center; justify-content: center; height: 19px; }
 .bnav-b.on { color: var(--gold); }
 /* Halo doux derriere l'onglet actif : on voit ou l'on est sans lire */
 .bnav-b.on::before { content: ''; position: absolute; inset: 2px 6px 2px; border-radius: 12px;
@@ -816,7 +817,7 @@ function selectProfile(n){
   S.inv=JSON.parse(JSON.stringify(n==='maureen'?INV_EMPTY:INV_DEFAULT));
   S.dayMeals=JSON.parse(JSON.stringify(n==='maureen'?{}:MEALS_DEFAULT));
   S.today=getToday();S.displayDate=S.today;
-  S.editMode=false;S.mealTab='breakfast';S.mainTab='recipes';
+  S.editMode=false;S.mealTab='breakfast';S.mainTab='accueil';
   document.getElementById('profile-screen').style.display='none';
   loadState().then(()=>render());
 }
@@ -4470,7 +4471,78 @@ function renderCustHeader(){
   return b;
 }
 
-const _NAVORDER=['recipes','inventory','courses','weight'];
+function renderAccueil(){
+  var jour=S.today;
+  var r=resteDuJour(jour);
+  var sug=suggestionsAccueil(jour,3);
+  var b=(typeof getBurn==='function')?getBurn(jour):null;
+  var dep=(b&&b.total)||0;
+  var h='';
+
+  // ── Objectif du jour ──
+  var pct=TARGETS.kcal>0?Math.min(1,r.pris.kcal/TARGETS.kcal):0;
+  var over=r.pris.kcal>TARGETS.kcal;
+  h+='<div class="rcard" style="padding:16px 15px;margin-bottom:12px;">'
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">'
+      +'<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">Aujourd\'hui</div>'
+      +'<div style="font-size:16px;font-weight:600;color:var(--text);margin-top:2px;">Objectif du jour</div></div>'
+      +'<div style="text-align:right;"><div style="font-size:22px;font-weight:600;color:var('+(over?'--red':'--gold')+');">'
+      +Math.round(r.pris.kcal)+'</div><div style="font-size:10px;color:var(--text3);">/ '+TARGETS.kcal+' kcal</div></div>'
+    +'</div>'
+    +'<div style="height:7px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-bottom:12px;">'
+      +'<div style="width:'+Math.round(pct*100)+'%;height:100%;background:var('+(over?'--red':'--gold')+');border-radius:99px;transition:width 1s var(--ease);"></div></div>'
+    +'<div style="display:grid;grid-template-columns:62px 1fr 76px;align-items:center;gap:5px;row-gap:7px;">'
+      +macroBar('Protéines',r.pris.prot,TARGETS.prot,'g','--green','prot')
+      +macroBar('Glucides',r.pris.gluc,TARGETS.gluc,'g','--blue','gluc')
+      +macroBar('Lipides',r.pris.lip,TARGETS.lip,'g','--text2','lip')
+    +'</div>';
+  if(dep>0)h+='<div style="margin-top:11px;padding-top:10px;border-top:0.5px solid var(--border);font-size:11.5px;color:var(--text3);">'
+    +'\ud83d\udd25 <span style="color:var(--orange);">'+dep+' kcal</span> dépensés'
+    +(b&&b.steps>0?(' \u00b7 '+b.steps.toLocaleString('fr-FR')+' pas'):'')
+    +(((b&&b.activities)||[]).length?(' \u00b7 '+b.activities.length+' activité'+(b.activities.length>1?'s':'')):'')
+    +'</div>';
+  h+='</div>';
+
+  // ── Prochain repas ──
+  if(sug.moment){
+    h+='<div class="rcard" style="padding:13px 15px;margin-bottom:12px;border-left:3px solid '+sug.moment.couleur+';">'
+      +'<div style="font-size:10px;color:'+sug.moment.couleur+';text-transform:uppercase;letter-spacing:.07em;">Prochain repas</div>'
+      +'<div style="font-size:15px;font-weight:600;color:var(--text);margin-top:3px;">'+sug.moment.nom+'</div>'
+      +'<div style="font-size:11.5px;color:var(--text3);margin-top:4px;line-height:1.45;">'
+      +(r.kcal>0?('Il te reste <span style="color:var(--gold);">'+r.kcal+' kcal</span> et <span style="color:var(--green);">'+r.prot+' g</span> de protéines.')
+               :'Ta cible calorique est atteinte.')
+      +'</div></div>';
+  }else{
+    h+='<div class="rcard" style="padding:13px 15px;margin-bottom:12px;">'
+      +'<div style="font-size:13px;color:var(--text2);">Les quatre moments de la journée sont enregistrés.</div></div>';
+  }
+
+  // ── Ce qui rentre encore ──
+  if(sug.recettes&&sug.recettes.length){
+    h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:2px 0 7px 2px;">Ça rentre dans ce qu\'il te reste</div>';
+    h+=sug.recettes.map(function(x){
+      var p=photoRecette(x.r.id);
+      return '<div class="rcard" data-action="go-recipe" data-val="'+x.r.id+'" style="display:flex;align-items:center;gap:11px;padding:10px 12px;margin-bottom:8px;cursor:pointer;">'
+        +'<div style="width:46px;height:46px;border-radius:9px;overflow:hidden;flex-shrink:0;border:0.5px solid var(--border);">'
+        +(p?'<img src="'+p+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">':_vignetteDefaut(x.r,20))
+        +'</div>'
+        +'<div style="flex:1;min-width:0;">'
+          +'<div style="font-size:13.5px;color:var(--text);line-height:1.3;">'+x.r.name+'</div>'
+          +'<div style="font-size:11px;color:var(--text3);margin-top:3px;">'
+            +'<span style="color:var(--orange);">'+x.m.kcal+' kcal</span> \u00b7 '
+            +'<span style="color:var(--green);">'+x.m.prot+' g prot.</span> \u00b7 \u23f1 '+x.r.time+' min</div>'
+        +'</div><span style="color:var(--text3);font-size:14px;">\u203a</span></div>';
+    }).join('');
+  }
+
+  // ── Activité du jour ──
+  h+='<button data-action="open-burn" style="width:100%;padding:12px;margin-top:4px;background:rgba(233,161,59,.1);'
+    +'border:0.5px solid rgba(233,161,59,.35);border-radius:11px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">'
+    +'\ud83d\udc5f '+(dep>0?'Modifier mon activité du jour':'Ajouter mes pas et activités')+'</button>';
+  return h;
+}
+
+const _NAVORDER=['accueil','recipes','inventory','courses','weight'];
 let _lastMainTab='',_lastMealTab='',_lastDay='',_lastRingKey='';
 function _animateTabs(){
   var cls='',pane=null;
@@ -4502,8 +4574,15 @@ function _animateTabs(){
 // son apparition au milieu de l'ecran au chargement, corrigee au premier clic.
 // Elle est desormais posee une fois hors de #root ; on ne met a jour que
 // l'onglet actif.
-const _BNAV=[['recipes','\ud83d\udcd6','Recettes'],['inventory','\ud83e\uddca','Inventaire'],
-             ['courses','\ud83d\uded2','Courses'],['weight','\ud83d\udcca','Bilan']];
+const ICONE_FRIGO='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '
+  +'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;">'
+  +'<rect x="5.5" y="2.5" width="13" height="19" rx="2.2"/>'
+  +'<line x1="5.5" y1="9.5" x2="18.5" y2="9.5"/>'
+  +'<line x1="8.6" y1="5.4" x2="8.6" y2="7.4"/>'
+  +'<line x1="8.6" y1="12.4" x2="8.6" y2="15.4"/></svg>';
+const _BNAV=[['accueil','\ud83c\udfe0','Accueil'],['recipes','\ud83d\udcd6','Recettes'],
+             ['inventory',ICONE_FRIGO,'Inventaire'],['courses','\ud83d\uded2','Courses'],
+             ['weight','\ud83d\udcca','Bilan']];
 function renderBnav(){
   var n=document.getElementById('bnav');if(!n)return;
   n.innerHTML=_BNAV.map(function(t){
@@ -4827,11 +4906,12 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-15 00h07</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-15 09h55</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
     <div id="tabpane">
+    ${S.mainTab==='accueil'?renderAccueil():''}
     ${S.mainTab==='courses'?renderCoursesHTML():''}
     ${S.mainTab==='weight'?renderCockpit()+renderMacroTrend()+renderGoalBlock()+renderWeightHTML()+renderDataExport():''}
     ${S.mainTab==='recipes'?`
@@ -4866,6 +4946,14 @@ function _onActionClick(e){
   if(action==='main-tab')S.mainTab=val;
   else if(action==='toggle-fav'){S.favs=S.favs||[];var _fi=S.favs.indexOf(val);if(_fi>=0)S.favs.splice(_fi,1);else S.favs.push(val);saveState();}
   else if(action==='macro-info'){ouvrirInfoMacro(el.dataset.val);}
+  else if(action==='go-recipe'){
+    var _r=findRecipe(el.dataset.val);
+    S.mainTab='recipes';
+    if(_r&&_r.slots&&_r.slots.length)S.mealTab=_r.slots[0];
+    S.openRec=el.dataset.val;   /* deplie la recette a l'arrivee */
+    render();
+  }
+  else if(action==='open-burn'){openBurnLog(S.today);}
   else if(action==='rec-tri'){setRecTri(el.dataset.val);}
   else if(action==='rec-tri-dir'){toggleRecTriDir();}
   else if(action==='goto-recipe'){var _r=findRecipe(el.dataset.rid);if(_r){var _sl=(_r.slots&&_r.slots.filter(function(s){return s!=='dessert'&&s!=='urgent';})[0])||(_r.slots&&_r.slots[0])||'breakfast';S.mealTab=_sl;S.openRec=el.dataset.rid;render();}}
@@ -5565,6 +5653,58 @@ function _vignetteDefaut(r,taille){
   return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;'
     +'background:linear-gradient(135deg,hsl('+teinte+',32%,26%),hsl('+((teinte+40)%360)+',28%,18%));'
     +'font-size:'+(taille||22)+'px;">'+em+'</div>';
+}
+// ─── PAGE D'ACCUEIL ─────────────────────────────────────────────────────
+// Le prochain repas suit l'ordre reel de la journee et saute ce qui est deja
+// enregistre, quel que soit l'ordre dans lequel les repas ont ete saisis.
+function momentsPris(jour){
+  var pris={};
+  (S.dayMeals[jour]||[]).forEach(function(m){if(m&&m.slot)pris[m.slot]=true;});
+  return pris;
+}
+function prochainMoment(jour){
+  var pris=momentsPris(jour);
+  for(var i=0;i<MOMENTS.length;i++){
+    if(!pris[MOMENTS[i].id])return MOMENTS[i];
+  }
+  return null;   // les quatre sont couverts
+}
+// Ce qu'il reste a couvrir aujourd'hui
+function resteDuJour(jour){
+  var m=getDayMacros(jour)||{kcal:0,prot:0,gluc:0,lip:0};
+  return {
+    kcal:Math.max(0,Math.round(TARGETS.kcal-m.kcal)),
+    prot:Math.max(0,Math.round(TARGETS.prot-m.prot)),
+    gluc:Math.max(0,Math.round(TARGETS.gluc-m.gluc)),
+    lip :Math.max(0,Math.round(TARGETS.lip -m.lip)),
+    pris:m
+  };
+}
+// Recettes qui tiennent dans ce qu'il reste, pour le moment concerne.
+// On accepte un léger depassement : une recette a 520 kcal pour 500 restantes
+// reste un bon choix, alors qu'a 900 non.
+function suggestionsAccueil(jour,nb){
+  var mo=prochainMoment(jour);
+  if(!mo)return {moment:null,recettes:[]};
+  var r=resteDuJour(jour);
+  var dispo=(RCP||[]).filter(function(x){
+    if(!x||!x.slots||!x.slots.length)return false;
+    if(x.profile&&x.profile!==ACTIVE_PROFILE)return false;
+    if(x.slots.indexOf(mo.id)<0)return false;
+    if(typeof canCook==='function'&&!canCook(x))return false;
+    return true;
+  });
+  var notees=dispo.map(function(x){
+    var mm=recipeMacros(x)||{kcal:0,prot:0};
+    var depasse=mm.kcal-r.kcal;
+    var note=0;
+    // Penalise surtout ce qui fait exploser le budget
+    note+=(depasse>0)?(depasse*(depasse>r.kcal*0.25?4:1.4)):(Math.abs(depasse)*0.35);
+    // Favorise les proteines tant qu'elles manquent
+    if(r.prot>0)note-=Math.min(mm.prot,r.prot)*3.2;
+    return {r:x,m:mm,note:note};
+  }).sort(function(a,b){return a.note-b.note;});
+  return {moment:mo,reste:r,recettes:notees.slice(0,nb||3)};
 }
 var _amSlot=null,_amBaseName='';
 function _amLc(s){return s?s.charAt(0).toLowerCase()+s.slice(1):s;}

@@ -87,8 +87,10 @@ console.log('\n=== EY. Icones et aura ===');
 t('*** l\'icone des recettes est un livre ouvert ***',()=>{
   if(!/'recipes','\\ud83d\\udcd6'/.test(src))throw new Error('icone inchangee');
 });
-t('*** l\'icone de l\'inventaire evoque le frigo ***',()=>{
-  if(!/'inventory','\\ud83e\\uddca'/.test(src))throw new Error('icone inchangee');
+t('*** l\'icone de l\'inventaire est un frigo dessine ***',()=>{
+  if(!/ICONE_FRIGO/.test(src))throw new Error('icone absente');
+  if(!/'inventory',ICONE_FRIGO/.test(src))throw new Error('non reliee a l\'onglet');
+  if(/'inventory','\\ud83e\\uddca'/.test(src))throw new Error('glacon encore utilise');
 });
 t('les deux autres onglets sont inchanges',()=>{
   if(!/'courses','\\ud83d\\uded2'/.test(src))throw new Error('courses modifie');

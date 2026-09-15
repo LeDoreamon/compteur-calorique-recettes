@@ -58,6 +58,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t40.js` | Clés Firebase : caractères interdits, assainissement du payload |
 | `t41.js` | Moments de la journée : liseré, correction après coup, icônes |
 | `t42.js` | Photos de recettes : stockage séparé, vignette, ajout manuel |
+| `t43.js` | Page d’accueil : ordre des repas, suggestions, activité du jour |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

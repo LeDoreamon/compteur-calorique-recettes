@@ -15,7 +15,7 @@ t('*** elle est declaree dans le HTML statique, avant #root ***',()=>{
   if(iNav>iRoot)throw new Error('declaree apres #root');
 });
 t('*** elle n\'est plus generee dans le contenu ***',()=>{
-  ['recipes','inventory','courses','weight'].forEach(function(tab){
+  ['accueil','recipes','inventory','courses','weight'].forEach(function(tab){
     S.mainTab=tab;sb.render();
     if(/class="bnav"/.test(docEl('root').innerHTML))
       throw new Error('la barre est encore dans #root sur l\'onglet '+tab);
@@ -29,16 +29,16 @@ t('la barre n\'est plus reconstruite par le template de rendu',()=>{
 });
 
 console.log('\n=== DG. Contenu de la barre ===');
-t('les quatre onglets sont presents',()=>{
+t('les cinq onglets sont presents',()=>{
   S.mainTab='recipes';sb.render();
   const h=docEl('bnav').innerHTML;
-  ['Recettes','Inventaire','Courses','Bilan'].forEach(function(l){
+  ['Accueil','Recettes','Inventaire','Courses','Bilan'].forEach(function(l){
     if(!h.includes(l))throw new Error(l+' absent');
   });
-  eq((h.match(/data-action="main-tab"/g)||[]).length,4);
+  eq((h.match(/data-action="main-tab"/g)||[]).length,5);
 });
 t('*** un seul onglet actif a la fois ***',()=>{
-  ['recipes','inventory','courses','weight'].forEach(function(tab){
+  ['accueil','recipes','inventory','courses','weight'].forEach(function(tab){
     S.mainTab=tab;sb.render();
     const h=docEl('bnav').innerHTML;
     eq((h.match(/bnav-b on/g)||[]).length,1,tab);
@@ -86,7 +86,7 @@ t('la marge pour la barre home est conservee',()=>{
 
 console.log('\n=== DI. Non-regression du rendu ===');
 t('les quatre onglets rendent sans erreur',()=>{
-  ['recipes','inventory','courses','weight'].forEach(function(tab){
+  ['accueil','recipes','inventory','courses','weight'].forEach(function(tab){
     S.mainTab=tab;sb.render();
     if(!docEl('root').innerHTML)throw new Error('vide sur '+tab);
   });
@@ -132,7 +132,7 @@ t('*** un clic sur un onglet change bien d\'onglet ***',()=>{
   eq(S.mainTab,'weight','onglet non change');
 });
 t('les quatre onglets repondent',()=>{
-  ['recipes','inventory','courses','weight'].forEach(function(tab){
+  ['accueil','recipes','inventory','courses','weight'].forEach(function(tab){
     S.mainTab='recipes';
     const faux={target:{closest:function(sel){
       return sel==='[data-action]'?{dataset:{action:'main-tab',val:tab}}:null;}},
