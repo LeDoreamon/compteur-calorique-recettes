@@ -198,3 +198,42 @@ t('l\'onglet initial du bac a sable est bien l\'accueil',()=>{
   eq(sb.S.mainTab,'accueil');
 });
 console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== FM. Arrivee sur l\'accueil, sans clignotement ===');
+t('*** l\'accueil est rendu avant que le calque ne se leve ***',()=>{
+  const i=src.indexOf('function selectProfile');
+  const b=src.slice(i,i+700);
+  const iRender=b.indexOf('render();');
+  const iCalque=b.indexOf("profile-screen').style.display='none'");
+  if(iRender<0)throw new Error('aucun rendu avant');
+  if(iCalque<0)throw new Error('calque introuvable');
+  if(iRender>iCalque)throw new Error('le calque se leve avant le rendu : l\'onglet precedent se voit');
+});
+t('l\'onglet vise est bien l\'accueil',()=>{
+  const i=src.indexOf('function selectProfile');
+  const b=src.slice(i,i+700);
+  if(b.indexOf("S.mainTab='accueil'")<0)throw new Error('mainTab non pose');
+  if(b.indexOf("S.mainTab='accueil'")>b.indexOf('render();'))
+    throw new Error('rendu avant que l\'onglet soit choisi');
+});
+t('*** aucune animation de transition a l\'arrivee ***',()=>{
+  const i=src.indexOf('function selectProfile');
+  if(!/_lastMainTab='';_lastMealTab='';_lastDay='';/.test(src.slice(i,i+700)))
+    throw new Error('les reperes d\'animation ne sont pas remis a zero');
+});
+t('le rendu final suit le chargement des donnees',()=>{
+  const i=src.indexOf('function selectProfile');
+  if(!/loadState\(\)\.then\(\(\)=>render\(\)\)/.test(src.slice(i,i+700)))
+    throw new Error('pas de rendu apres chargement');
+});
+t('*** un seul onglet est rendu, l\'accueil ***',()=>{
+  const vus=[];
+  const vrai=sb.window.render;
+  sb.window.render=function(){vus.push(S.mainTab);return vrai.apply(null,arguments);};
+  S.inv={frigo:[],placards:[],congelateur:[],epices:[]};
+  try{G('selectProfile')('liam');}finally{sb.window.render=vrai;}
+  if(!vus.length)throw new Error('aucun rendu');
+  const autres=vus.filter(function(x){return x!=='accueil';});
+  if(autres.length)throw new Error('onglets intermediaires : '+autres.join(', '));
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
