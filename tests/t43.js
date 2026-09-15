@@ -172,6 +172,7 @@ t('l\'ordre de navigation inclut l\'accueil',()=>{
 t('*** l\'icone de l\'inventaire est un frigo dessine ***',()=>{
   if(!/ICONE_FRIGO/.test(src))throw new Error('icone absente');
   if(!/<rect x="5.5" y="2.5"/.test(src))throw new Error('trace absent');
+  if(!/fill="#8FA8B8"/.test(src))throw new Error('frigo non colore');
   if(/'inventory','\\ud83e\\uddca'/.test(src))throw new Error('glacon encore utilise');
 });
 t('ouvrir une suggestion mene a la recette',()=>{

@@ -4584,12 +4584,12 @@ function _animateTabs(){
 // son apparition au milieu de l'ecran au chargement, corrigee au premier clic.
 // Elle est desormais posee une fois hors de #root ; on ne met a jour que
 // l'onglet actif.
-const ICONE_FRIGO='<svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" '
-  +'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" style="display:block;">'
-  +'<rect x="5.5" y="2.5" width="13" height="19" rx="2.2"/>'
-  +'<line x1="5.5" y1="9.5" x2="18.5" y2="9.5"/>'
-  +'<line x1="8.6" y1="5.4" x2="8.6" y2="7.4"/>'
-  +'<line x1="8.6" y1="12.4" x2="8.6" y2="15.4"/></svg>';
+const ICONE_FRIGO='<svg viewBox="0 0 24 24" width="19" height="19" style="display:block;">'
+  +'<rect x="5.5" y="2.5" width="13" height="19" rx="2.4" fill="#8FA8B8" stroke="#6E8698" stroke-width="1.1"/>'
+  +'<rect x="5.5" y="2.5" width="13" height="7" rx="2.4" fill="#A6BDCB"/>'
+  +'<rect x="5.5" y="7.6" width="13" height="1.9" fill="#6E8698"/>'
+  +'<rect x="7.6" y="4.6" width="1.5" height="2.4" rx="0.75" fill="#48606F"/>'
+  +'<rect x="7.6" y="11.4" width="1.5" height="3.4" rx="0.75" fill="#48606F"/></svg>';
 const _BNAV=[['accueil','\ud83c\udfe0','Accueil'],['recipes','\ud83d\udcd6','Recettes'],
              ['inventory',ICONE_FRIGO,'Inventaire'],['courses','\ud83d\uded2','Courses'],
              ['weight','\ud83d\udcca','Bilan']];
@@ -4916,7 +4916,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-15 10h06</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-15 10h09</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
