@@ -256,6 +256,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <!-- Input state -->
     <div id="addmeal-input">
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;padding:9px 11px;background:rgba(192,87,70,.06);border:0.5px solid rgba(192,87,70,.2);border-radius:8px;"><span style="flex:1;font-size:12px;color:var(--accent2);">Stock de l'inventaire utilisé ?</span><button id="ms-yes" onclick="setMealStock(true)" style="padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:var(--accent);border:0;color:#fff;">Oui</button><button id="ms-no" onclick="setMealStock(false)" style="padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;border:0.5px solid rgba(246,237,227,.15);color:var(--text2);">Non</button></div>
+      <div style="margin-bottom:12px;">
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Moment de la journée</div>
+        <div id="am-slots-entree" style="display:flex;gap:6px;"></div>
+      </div>
       <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">Décris ce que tu as mangé</label>
       <textarea id="addmeal-textarea" placeholder="Ex: 200g de poulet grillé avec 100g de riz basmati, légumes sautés à l'huile d'olive..." style="width:100%;height:90px;padding:10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;margin-bottom:10px;"></textarea>
       <button onclick="startAddMealAnalysis('text')" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">✦ Analyser par IA</button>
@@ -4955,7 +4959,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-16 23h12</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-16 23h23</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -5110,6 +5114,7 @@ function openAddMeal(type) {_scanBase=null;
   _addMealInvMode = false;
   _addMealDay = S.displayDate || S.today;
   _majBandeauJour();
+  _amBaseName='';   // sinon le nom du repas precedent servirait de base au suivant
   try{
     var _pm=prochainMoment(_addMealDay);
     _amSlot=_pm?_pm.id:null;      // pose sans passer par setAmSlot, qui renommerait le repas
@@ -5815,11 +5820,16 @@ function suggestionsAccueil(jour,nb){
 var _amSlot=null,_amBaseName='';
 function _amLc(s){return s?s.charAt(0).toLowerCase()+s.slice(1):s;}
 function setAmSlot(s){
-  if(_amSlot===null){var e0=document.getElementById('addmeal-name');if(e0&&e0.value.trim())_amBaseName=e0.value.trim();}
+  // Le moment etant desormais pre-rempli, _amSlot n'est plus null a
+  // l'ouverture : sans la seconde condition, le nom de base n'etait jamais
+  // capture et le renommage ne se declenchait plus.
+  if(_amSlot===null||!_amBaseName){var e0=document.getElementById('addmeal-name');if(e0&&e0.value.trim())_amBaseName=e0.value.trim();}
   _amSlot=(_amSlot===s)?null:s;
   var L={breakfast:'Petit d\u00e9jeuner',lunch:'D\u00e9jeuner',snack:'Collation',dinner:'D\u00eener'};
   var el=document.getElementById('addmeal-name');
-  if(el)el.value=_amSlot?(L[_amSlot]+' \u00e0 base de '+_amLc(_amBaseName)):_amBaseName;
+  // Sans nom de base, il n'y a rien a prefixer : « Dejeuner a base de » tout
+  // seul n'aurait aucun sens.
+  if(el&&_amBaseName)el.value=_amSlot?(L[_amSlot]+' \u00e0 base de '+_amLc(_amBaseName)):_amBaseName;
   renderAmSlots();
 }
 function renderMealBreakdown(){
@@ -5831,13 +5841,18 @@ function renderMealBreakdown(){
   el.style.display='block';
 }
 function renderAmSlots(){
-  var el=document.getElementById('am-slots');if(!el)return;
-  el.innerHTML=MOMENTS.map(function(m){
+  // Le choix existe a deux endroits : l'ecran de saisie et celui de
+  // confirmation. Les deux refletent le meme etat.
+  var html=MOMENTS.map(function(m){
     var s=m.id,on=(_amSlot===s);
-    return '<button onclick="setAmSlot(\''+s+'\')" style="padding:6px 9px;border-radius:8px;font-size:11px;cursor:pointer;'
+    return '<button onclick="setAmSlot(\''+s+'\')" style="flex:1;min-width:0;padding:6px 4px;border-radius:8px;font-size:11px;cursor:pointer;'
       +'background:'+(on?m.couleur+'22':'transparent')+';border:0.5px solid '+(on?m.couleur:'rgba(246,237,227,.14)')+';'
       +'color:'+(on?m.couleur:'var(--text3)')+';">'+m.court+'</button>';
   }).join('');
+  ['am-slots','am-slots-entree'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.innerHTML=html;
+  });
 }
 function invAddMeal(){_scanBase=null;_titreAutoPose='';_addMealFreeItems=[];
   setMealStock(true);   // choisir l'inventaire, c'est vouloir le déduire

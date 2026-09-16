@@ -250,3 +250,53 @@ t('plus aucune fonction morte de rendu des moments',()=>{
   if(/_renderAmSlotsAncien/.test(src))throw new Error('fonction morte conservee');
 });
 console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== FQ. Moment des l\'ecran de saisie ===');
+t('*** le choix est propose avant l\'analyse ***',()=>{
+  if(!/id="am-slots-entree"/.test(src))throw new Error('bloc absent de l\'ecran de saisie');
+  const iEntree=src.indexOf('id="am-slots-entree"');
+  const iInput=src.indexOf('id="addmeal-input"');
+  const iVerify=src.indexOf('id="addmeal-verify"');
+  if(iEntree<iInput)throw new Error('place avant l\'ecran de saisie');
+  if(iVerify>0&&iEntree>iVerify)throw new Error('place sur l\'ecran de confirmation');
+});
+t('*** les deux ecrans montrent le meme etat ***',()=>{
+  S.inv={frigo:[],placards:[],congelateur:[],epices:[]};S.dayMeals[S.today]=[];
+  sb.openAddMeal('text');
+  const a=docEl('am-slots-entree').innerHTML;
+  const b=docEl('am-slots').innerHTML;
+  if(!a)throw new Error('ecran de saisie vide');
+  eq(a,b,'les deux selecteurs divergent');
+});
+t('le moment y est deja pre-rempli',()=>{
+  S.dayMeals[S.today]=[];
+  sb.openAddMeal('text');
+  const h=docEl('am-slots-entree').innerHTML;
+  const i=h.indexOf("setAmSlot('breakfast')");
+  if(!/#E9A13B/.test(h.slice(i,i+240)))throw new Error('non pre-rempli');
+});
+t('*** changer de moment sur la saisie se voit sur la confirmation ***',()=>{
+  S.dayMeals[S.today]=[];
+  sb.openAddMeal('text');
+  G('setAmSlot')('dinner');
+  const b=docEl('am-slots').innerHTML;
+  const i=b.indexOf("setAmSlot('dinner')");
+  if(!/#8B7DD8/.test(b.slice(i,i+240)))throw new Error('non repercute');
+});
+t('*** sans nom saisi, rien n\'est renomme ***',()=>{
+  S.dayMeals[S.today]=[];
+  sb.openAddMeal('text');
+  docEl('addmeal-name').value='';
+  G('setAmSlot')('lunch');
+  const n=docEl('addmeal-name').value||'';
+  if(/à base de/.test(n))throw new Error('nom fabrique a vide : '+n);
+});
+t('avec un nom, le renommage fonctionne toujours',()=>{
+  S.dayMeals[S.today]=[];
+  sb.openAddMeal('text');
+  docEl('addmeal-name').value='pâtes au thon';
+  G('setAmSlot')('dinner');
+  if(!/Dîner à base de/.test(docEl('addmeal-name').value))
+    throw new Error('renommage perdu : '+docEl('addmeal-name').value);
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
