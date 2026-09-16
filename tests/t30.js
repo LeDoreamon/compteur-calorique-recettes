@@ -38,12 +38,14 @@ t('les cinq onglets sont presents',()=>{
   eq((h.match(/data-action="main-tab"/g)||[]).length,5);
 });
 t('*** un seul onglet actif a la fois ***',()=>{
-  ['accueil','recipes','inventory','courses','weight'].forEach(function(tab){
+  // La barre n'est plus reconstruite : on lit la classe de chaque bouton,
+  // pas le HTML pose au premier rendu.
+  const tabs=['accueil','recipes','inventory','courses','weight'];
+  tabs.forEach(function(tab){
     S.mainTab=tab;sb.render();
-    const h=docEl('bnav').innerHTML;
-    eq((h.match(/bnav-b on/g)||[]).length,1,tab);
-    if(!new RegExp('data-val="'+tab+'" class="bnav-b on"').test(h))
-      throw new Error(tab+' non marque actif');
+    const actifs=tabs.filter(function(x){return docEl('bnav-b-'+x).className==='bnav-b on';});
+    eq(actifs.length,1,tab+' : '+actifs.length+' onglets actifs');
+    eq(actifs[0],tab,tab+' non marque actif');
   });
 });
 t('les libelles restent inchanges',()=>{
@@ -52,11 +54,10 @@ t('les libelles restent inchanges',()=>{
 });
 t('changer d\'onglet met bien la barre a jour',()=>{
   S.mainTab='recipes';sb.render();
-  const a=docEl('bnav').innerHTML;
+  eq(docEl('bnav-b-recipes').className,'bnav-b on');
   S.mainTab='weight';sb.render();
-  const b=docEl('bnav').innerHTML;
-  if(a===b)throw new Error('barre non actualisee');
-  if(!/data-val="weight" class="bnav-b on"/.test(b))throw new Error('mauvais onglet actif');
+  eq(docEl('bnav-b-recipes').className,'bnav-b','l\'ancien onglet reste marque');
+  eq(docEl('bnav-b-weight').className,'bnav-b on','le nouvel onglet n\'est pas marque');
 });
 t('renderBnav tolere l\'absence du conteneur',()=>{
   const vrai=sb.document.getElementById;
