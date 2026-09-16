@@ -197,3 +197,56 @@ t('chaque bouton porte un identifiant stable',()=>{
   if(!/id="bnav-b-'\+t\[0\]\+'"/.test(src))throw new Error('identifiants absents');
 });
 console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== FP. Moment a l\'ajout d\'un repas ===');
+t('*** les boutons suivent l\'ordre reel de la journee ***',()=>{
+  S.inv={frigo:[],placards:[],congelateur:[],epices:[]};S.dayMeals[S.today]=[];
+  sb.openAddMeal('text');
+  const h=docEl('am-slots').innerHTML;
+  const pos=['breakfast','lunch','dinner','snack'].map(x=>h.indexOf("setAmSlot('"+x+"')"));
+  pos.forEach(function(p,i){if(p<0)throw new Error('moment '+i+' absent');});
+  for(var i=1;i<pos.length;i++)if(pos[i]<pos[i-1])throw new Error('collation avant diner');
+});
+t('*** chaque bouton porte la couleur de son moment ***',()=>{
+  S.dayMeals[S.today]=[];
+  sb.openAddMeal('text');
+  const h=docEl('am-slots').innerHTML;
+  const i=h.indexOf("setAmSlot('breakfast')");
+  if(!/#E9A13B/.test(h.slice(i,i+240)))throw new Error('couleur du petit-dejeuner absente');
+});
+t('*** le moment est pre-rempli d\'apres ce qui manque ***',()=>{
+  S.dayMeals[S.today]=[];
+  sb.openAddMeal('text');
+  eq(G('__amSlot')(),'breakfast','journee vierge : petit-dejeuner attendu');
+});
+t('il suit l\'ordre quand des repas sont deja loggés',()=>{
+  S.dayMeals[S.today]=[{rid:'a',name:'Pdj',mult:1,slot:'breakfast',macros:{kcal:400,prot:30,gluc:40,lip:10}}];
+  sb.openAddMeal('text');
+  eq(G('__amSlot')(),'lunch');
+});
+t('*** pre-remplir ne renomme pas le repas ***',()=>{
+  S.dayMeals[S.today]=[];
+  docEl('addmeal-name').value='';
+  sb.openAddMeal('text');
+  const n=docEl('addmeal-name').value||'';
+  if(/à base de/.test(n))throw new Error('le nom a ete prefixe : '+n);
+});
+t('les quatre moments couverts : aucun pre-remplissage',()=>{
+  S.dayMeals[S.today]=['breakfast','lunch','dinner','snack'].map(function(s){
+    return {rid:s,name:s,mult:1,slot:s,macros:{kcal:300,prot:20,gluc:30,lip:8}};
+  });
+  sb.openAddMeal('text');
+  eq(G('__amSlot')(),null);
+});
+t('choisir un moment a la main renomme toujours le repas',()=>{
+  S.dayMeals[S.today]=[];
+  sb.openAddMeal('text');
+  docEl('addmeal-name').value='pâtes au thon';
+  G('setAmSlot')('dinner');
+  if(!/Dîner à base de/.test(docEl('addmeal-name').value))
+    throw new Error('renommage perdu : '+docEl('addmeal-name').value);
+});
+t('plus aucune fonction morte de rendu des moments',()=>{
+  if(/_renderAmSlotsAncien/.test(src))throw new Error('fonction morte conservee');
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
