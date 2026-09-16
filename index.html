@@ -379,6 +379,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <input id="burn-date" type="date" onchange="burnDateChanged()" style="width:100%;box-sizing:border-box;padding:9px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px;">
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">👟 Nombre de pas</div>
     <input id="burn-steps" type="number" min="0" placeholder="ex. 8500" oninput="updateBurnTotals()" style="width:100%;box-sizing:border-box;padding:9px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px;">
+    <div id="burn-base-info" style="font-size:10.5px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;"></div>
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <span style="flex:1;font-size:11px;color:var(--text3);">Pas d'une journée ordinaire</span>
+      <input id="burn-base" type="number" min="0" placeholder="0" oninput="majPasBase()" style="width:86px;box-sizing:border-box;padding:6px 8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:12px;text-align:right;outline:none;">
+    </div>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">🏃 Activités</div>
     <div id="burn-acts-list"></div>
     <div id="burn-act-hist" style="display:none;margin-top:8px;"></div>
@@ -1855,7 +1860,15 @@ function _burnSave(day){
     try{fetch(u,{method:'PUT',headers:{'Content-Type':'application/json'},body:_body});}catch(e){}
   },function(){});
 }
-function burnStepKcal(steps){return Math.round((+steps||0)*0.04);}
+const PAS_BASE_DEFAUT={liam:9679,maureen:0};
+function pasBase(){
+  var v=(S&&typeof S.pasBase==='number')?S.pasBase:PAS_BASE_DEFAUT[ACTIVE_PROFILE];
+  return (typeof v==='number'&&v>=0)?v:0;
+}
+function burnStepKcal(steps){
+  var n=(+steps||0)-pasBase();
+  return Math.round(Math.max(0,n)*0.04);
+}
 function burnDayTotal(day){
   var d=_burnData[day];if(!d)return null;
   var a=+(d.active||0),r=+(d.rest||0);
@@ -1870,6 +1883,9 @@ function openBurnLog(day){
   var de=document.getElementById('burn-date');
   if(de){de.max=S.today;de.value=d0;}
   _burnLoadDay(d0);
+  var _bb=document.getElementById('burn-base');
+  if(_bb)_bb.value=pasBase()||'';
+  try{majInfoPasBase();}catch(e){}
   document.getElementById('burn-overlay').style.display='flex';
 }
 function _burnLoadDay(day){
@@ -1879,6 +1895,28 @@ function _burnLoadDay(day){
   document.getElementById('burn-act-name').value='';
   document.getElementById('burn-act-min').value='';
   renderBurnActs();updateBurnTotals();renderActHistory();
+}
+function majPasBase(){
+  var el=document.getElementById('burn-base');
+  if(!el)return;
+  var v=parseFloat(el.value);
+  S.pasBase=(isNaN(v)||v<0)?0:Math.round(v);
+  saveState();
+  if(typeof updateBurnTotals==='function')updateBurnTotals();
+  majInfoPasBase();
+}
+function majInfoPasBase(){
+  var el=document.getElementById('burn-base-info');if(!el)return;
+  var b=pasBase();
+  var se=document.getElementById('burn-steps');
+  var pas=se?(parseFloat(se.value)||0):0;
+  if(!b){el.textContent='Tous les pas sont comptés.';return;}
+  var sup=Math.max(0,pas-b);
+  el.textContent=pas>0
+    ? (sup>0
+        ? (sup.toLocaleString('fr-FR')+' pas au-dessus de ta routine, soit '+Math.round(sup*0.04)+' kcal.')
+        : ('Sous ta routine de '+b.toLocaleString('fr-FR')+' pas : déjà compris dans ta cible.'))
+    : ('Seuls les pas au-dessus de '+b.toLocaleString('fr-FR')+' comptent — les autres sont déjà dans ta cible.');
 }
 function burnDateChanged(){var de=document.getElementById('burn-date');if(de&&de.value)_burnLoadDay(de.value);}
 function _burnCurDay(){var de=document.getElementById('burn-date');return (de&&de.value)||S.today;}
@@ -1891,6 +1929,7 @@ function renderBurnActs(){
 }
 function burnRemoveAct(i){_burnActs.splice(i,1);renderBurnActs();updateBurnTotals();}
 function updateBurnTotals(){
+  try{majInfoPasBase();}catch(e){}
   var steps=parseInt(document.getElementById('burn-steps').value,10)||0;
   var sk=burnStepKcal(steps);
   var ak=_burnActs.reduce(function(s,a){return s+(+a.kcal||0);},0);
@@ -2078,6 +2117,7 @@ function _applyState(d){
   S.shopSeeded=d.shopSeeded||false;
   S.recTri=d.recTri||'';S.recTriDir=(d.recTriDir===-1?-1:1);
   S.pasRacheter=(d.pasRacheter&&typeof d.pasRacheter==='object')?_assainirCles(d.pasRacheter):{};
+  if(typeof d.pasBase==='number'&&d.pasBase>=0)S.pasBase=d.pasBase;
   S.paires0k=(d.paires0k&&typeof d.paires0k==='object')?_assainirCles(d.paires0k):{};
   if(!S.shopSeeded&&ACTIVE_PROFILE==='liam'){S.shop.list=seedShopList();S.shopSeeded=true;_mzJustFixed=true;}
   // Maureen : conversion UNIQUE de son inventaire ACTUEL en "pr\u00e9sent" (tout item sans quantit\u00e9 positive). N'affecte PAS ses ajouts futurs.
@@ -2331,6 +2371,7 @@ async function _saveStateNow(){
     todaySummary:(function(){try{var t=getDayMacros(S.today);return{date:S.today,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip};}catch(e){return null;}})(),
     shopSeeded:S.shopSeeded||false,
     recTri:S.recTri||'',recTriDir:S.recTriDir||1,
+    pasBase:(typeof S.pasBase==='number')?S.pasBase:null,
     pasRacheter:S.pasRacheter||{},
     paires0k:S.paires0k||{},
     ingNames:S.ingNames||{},
@@ -4545,9 +4586,17 @@ function renderAccueil(){
       +'<div style="display:flex;justify-content:space-between;align-items:baseline;">'
         +'<span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Activité du jour</span>'
         +'<span style="font-size:13px;font-weight:600;color:var(--orange);">'+dep+' kcal</span></div>';
-    if(b&&b.steps>0)h+='<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-top:6px;">'
-      +'<span>\ud83d\udc5f '+b.steps.toLocaleString('fr-FR')+' pas</span>'
-      +(_kcalPas?'<span style="color:var(--text3);">'+_kcalPas+' kcal</span>':'')+'</div>';
+    if(b&&b.steps>0){
+      var _base=(typeof pasBase==='function')?pasBase():0;
+      var _sup=Math.max(0,b.steps-_base);
+      h+='<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-top:6px;">'
+        +'<span>\ud83d\udc5f '+b.steps.toLocaleString('fr-FR')+' pas</span>'
+        +'<span style="color:var(--text3);">'+_kcalPas+' kcal</span></div>';
+      if(_base>0)h+='<div style="font-size:10.5px;color:var(--text3);margin-top:2px;line-height:1.4;">'
+        +(_sup>0?('dont '+_sup.toLocaleString('fr-FR')+' au-dessus de ta routine de '+_base.toLocaleString('fr-FR'))
+                :('sous ta routine de '+_base.toLocaleString('fr-FR')+', déjà comptée dans ta cible'))
+        +'</div>';
+    }
     _acts.forEach(function(a){
       h+='<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-top:4px;">'
         +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">\ud83c\udfcb '+((a&&a.n)||'Activité')+'</span>'
@@ -4976,7 +5025,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-16 23h29</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-16 23h41</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>

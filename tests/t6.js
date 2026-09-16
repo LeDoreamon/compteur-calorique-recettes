@@ -145,8 +145,12 @@ t('getDayMacros apres copie',()=>{
 
 console.log('\n=== F. DEPENSE ===');
 t('burnStepKcal sur valeurs limites',()=>{
-  eq(sb.burnStepKcal(0),0);eq(sb.burnStepKcal(10000),400);
-  if(isNaN(sb.burnStepKcal(null))||isNaN(sb.burnStepKcal(undefined)))throw new Error('NaN');
+  // Seuls les pas au-dessus de la routine comptent desormais
+  const base=(sb.pasBase||sb.window.pasBase)();
+  eq(sb.burnStepKcal(0),0);
+  eq(sb.burnStepKcal(base),0,'pile a la routine');
+  eq(sb.burnStepKcal(base+1000),40,'1000 pas de plus');
+  eq(sb.burnStepKcal(base-2000),0,'sous la routine');
 });
 t('burnDayTotal sur jour sans donnee',()=>{
   const r=sb.burnDayTotal('2026-01-01');

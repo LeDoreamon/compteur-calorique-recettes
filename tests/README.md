@@ -60,6 +60,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t42.js` | Photos de recettes : stockage séparé, vignette, ajout manuel |
 | `t43.js` | Page d’accueil : ordre des repas, suggestions, activité du jour |
 | `t44.js` | Cascade d’images, vérification des liens, badge de synchro |
+| `t45.js` | Seuil de pas habituels : seul l’écart au-dessus de la routine compte |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

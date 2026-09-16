@@ -10,6 +10,9 @@ function jour(kcal,prot){
   S.dayMeals[S.today]=kcal?[{rid:'x',name:'J',mult:1,macros:{kcal:kcal,prot:prot||0,gluc:50,lip:20}}]:[];
 }
 function depense(day,steps,acts){
+  // Ces tests portent sur le message du coach, pas sur le seuil de pas :
+  // on le neutralise pour que les pas indiques comptent tels quels.
+  S.pasBase=0;
   G('__setBurn')({[day]:{steps:steps||0,activities:acts||[]}});
 }
 
