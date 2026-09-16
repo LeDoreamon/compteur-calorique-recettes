@@ -147,8 +147,9 @@ t('la depense s\'affiche une fois enregistree',()=>{
   stock();
   G('__setBurn')({[S.today]:{steps:12000,activities:[{kcal:300,n:'Muscu'}]}});
   const h=G('renderAccueil')();
-  if(!/kcal<\/span> dépensés/.test(h))throw new Error('depense non affichee');
+  if(!/Activité du jour/.test(h))throw new Error('section absente');
   if(!/12\s?000 pas/.test(h.replace(/\u202f|\u00a0/g,' ')))throw new Error('pas non affiches');
+  if(!/Muscu/.test(h))throw new Error('activite non listee');
   G('__setBurn')({});
 });
 t('aucune ligne de depense si rien n\'est enregistre',()=>{
@@ -235,5 +236,73 @@ t('*** un seul onglet est rendu, l\'accueil ***',()=>{
   if(!vus.length)throw new Error('aucun rendu');
   const autres=vus.filter(function(x){return x!=='accueil';});
   if(autres.length)throw new Error('onglets intermediaires : '+autres.join(', '));
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== FR. Activite detaillee sur l\'accueil ===');
+function poseJour(kcal,steps,acts){
+  S.inv={frigo:[],placards:[],congelateur:[],epices:[]};
+  S.dayMeals[S.today]=kcal?[{rid:'x',name:'Repas',mult:1,slot:'lunch',
+    macros:{kcal:kcal,prot:60,gluc:100,lip:30}}]:[];
+  G('__setBurn')(steps||acts?{[S.today]:{steps:steps||0,activities:acts||[]}}:{});
+}
+t('*** les pas sont affiches avec leur apport ***',()=>{
+  poseJour(2226,12400,[]);
+  const h=G('renderAccueil')();
+  if(!/12\s?400 pas/.test(h.replace(/\u202f|\u00a0/g,' ')))throw new Error('pas absents');
+  if(!/Activité du jour/.test(h))throw new Error('section absente');
+});
+t('*** chaque activite est listee par son nom ***',()=>{
+  poseJour(2226,8000,[{kcal:300,n:'Muscu'},{kcal:180,n:'Vélo'}]);
+  const h=G('renderAccueil')();
+  if(!/Muscu/.test(h))throw new Error('Muscu absente');
+  if(!/Vélo/.test(h))throw new Error('Vélo absente');
+  if(!/300 kcal/.test(h))throw new Error('calories de l\'activite absentes');
+});
+t('une activite sans nom reste lisible',()=>{
+  poseJour(2000,0,[{kcal:250}]);
+  const h=G('renderAccueil')();
+  if(/undefined/.test(h))throw new Error('nom manquant mal gere');
+  if(!/Activité<\/span>/.test(h))throw new Error('libelle de repli absent');
+});
+t('aucune section sans activite enregistree',()=>{
+  poseJour(2000,0,[]);
+  const h=G('renderAccueil')();
+  if(/Activité du jour/.test(h))throw new Error('section affichee a tort');
+});
+
+console.log('\n=== FS. Marge avec l\'activite ===');
+t('*** la marge vaut cible plus depense moins consomme ***',()=>{
+  poseJour(2226,12400,[{kcal:300,n:'Muscu'}]);
+  const dep=G('__getBurn')?0:0;
+  const b=sb.getBurn(S.today);
+  const attendu=Math.round(sb.TARGETS.kcal+b.total-2226);
+  const h=G('renderAccueil')();
+  if(h.indexOf(attendu+' kcal')<0)
+    throw new Error('marge attendue '+attendu+' absente du rendu');
+});
+t('*** un depassement est annonce comme tel ***',()=>{
+  poseJour(4000,0,[{kcal:100,n:'Marche'}]);
+  const h=G('renderAccueil')();
+  if(!/−\d+ kcal/.test(h))throw new Error('depassement non signale');
+});
+t('*** le tracker n\'affiche plus de « Balance » ***',()=>{
+  if(/Balance : /.test(src))throw new Error('l\'ancienne balance subsiste');
+});
+t('*** il affiche la marge avec l\'activite ***',()=>{
+  if(!/Avec l'activité/.test(src))throw new Error('libelle absent');
+  const i=src.indexOf("Avec l'activité");
+  const b=src.slice(i-400,i);
+  if(!/TARGETS\.kcal\+b\.total-m\.kcal/.test(b))throw new Error('formule incorrecte');
+});
+t('la marge du tracker et celle de l\'accueil concordent',()=>{
+  const iT=src.indexOf('TARGETS.kcal+b.total-m.kcal');
+  const iA=src.indexOf('TARGETS.kcal+dep-r.pris.kcal');
+  if(iT<0||iA<0)throw new Error('une des deux formules est absente');
+});
+t('rien ne s\'affiche sans depense',()=>{
+  poseJour(2000,0,[]);
+  const i=src.indexOf("if(!b||!b.total)return ''");
+  if(i<0)throw new Error('garde absente : la ligne s\'afficherait a vide');
 });
 console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
