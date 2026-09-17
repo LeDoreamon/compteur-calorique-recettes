@@ -61,8 +61,15 @@ t('une journee calme ne compte que les seances',()=>{
   G('__setBurn')({[S.today]:{steps:6000,activities:[{kcal:300,n:'Muscu'}]}});
   eq(sb.getBurn(S.today).total,300);
 });
-t('aucune depense du tout : rien a afficher',()=>{
+t('*** une journee a 5000 pas n\'est plus ignoree ***',()=>{
   G('__setBurn')({[S.today]:{steps:5000,activities:[]}});
+  const b=sb.getBurn(S.today);
+  if(!b)throw new Error('journee effacee alors qu\'on a marche');
+  eq(b.brut,200,'compte dans le bilan');
+  eq(b.total,0,'mais ne donne aucune marge');
+});
+t('journee vraiment vide : rien a afficher',()=>{
+  G('__setBurn')({[S.today]:{steps:0,activities:[]}});
   eq(sb.getBurn(S.today),null);
 });
 
@@ -124,3 +131,61 @@ t('une valeur invalide n\'ecrase pas le seuil',()=>{
   eq(S.pasBase,9679);
 });
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== FX. Depense reelle dans le bilan ===');
+t('*** le total brut compte tous les pas ***',()=>{
+  delete S.pasBase;
+  G('__setBurn')({[S.today]:{steps:12400,activities:[{kcal:300,n:'Muscu'}]}});
+  const b=sb.getBurn(S.today);
+  eq(b.brut,796,'496 + 300');
+  eq(b.total,409,'109 + 300 pour la marge');
+});
+t('*** une journee sous la routine n\'est plus vide ***',()=>{
+  G('__setBurn')({[S.today]:{steps:8000,activities:[]}});
+  const b=sb.getBurn(S.today);
+  if(!b)throw new Error('journee effacee alors qu\'on a marche');
+  eq(b.brut,320,'8000 pas comptent dans le bilan');
+  eq(b.total,0,'mais rien pour la marge');
+});
+t('le detail des pas donne les deux chiffres',()=>{
+  G('__setBurn')({[S.today]:{steps:12400,activities:[]}});
+  const b=sb.getBurn(S.today);
+  eq(b.stepKcalBrut,496);
+  eq(b.stepKcal,109);
+});
+t('aucune donnee du tout : toujours rien',()=>{
+  G('__setBurn')({[S.today]:{steps:0,activities:[]}});
+  eq(sb.getBurn(S.today),null);
+});
+t('*** le bilan affiche le brut, pas le net ***',()=>{
+  if(!/\(on\?\(bb\.brut\|\|bb\.total\):'\\u2014'\)/.test(src))
+    throw new Error('les pastilles affichent encore le net');
+});
+t('la moyenne porte sur la depense reelle',()=>{
+  if(!/tot\+=\(b\.brut\|\|b\.total\)/.test(src))throw new Error('moyenne sur le net');
+});
+t('le detail precise la part au-dessus de la routine',()=>{
+  if(!/au-dessus de ta routine/.test(src))throw new Error('precision absente');
+});
+
+console.log('\n=== FY. Marge sur tous les jours ===');
+t('*** la synthese ne depend plus du jour courant ***',()=>{
+  if(/const rem=isToday&&meals\.length>0/.test(src))
+    throw new Error('encore limitee a aujourd\'hui');
+  if(!/const rem=meals\.length>0/.test(src))throw new Error('condition inattendue');
+});
+t('*** la marge lit le jour affiche ***',()=>{
+  if(/const b=getBurn\(S\.today\);if\(!b\|\|!b\.total\)/.test(src))
+    throw new Error('lit toujours aujourd\'hui');
+  if(!/const b=getBurn\(dd\);if\(!b\|\|!b\.total\)/.test(src))throw new Error('jour affiche non utilise');
+});
+t('le vocabulaire s\'adapte au jour passe',()=>{
+  if(!/\$\{isToday\?'Reste':'Écart'\}/.test(src))throw new Error('libelle fige');
+  if(!/isToday\?"Avec l'activité":"Marge"/.test(src))throw new Error('libelle de marge fige');
+});
+t('un jour passe montre l\'ecart a la cible',()=>{
+  const i=src.indexOf("${isToday?'Reste':'Écart'}");
+  const b=src.slice(i,i+340);
+  if(!/m\.kcal-TARGETS\.kcal/.test(b))throw new Error('ecart non calcule');
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');

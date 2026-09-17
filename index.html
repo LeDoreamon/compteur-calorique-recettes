@@ -1872,10 +1872,15 @@ function burnStepKcal(steps){
 function burnDayTotal(day){
   var d=_burnData[day];if(!d)return null;
   var a=+(d.active||0),r=+(d.rest||0);
-  var st=burnStepKcal(d.steps);
+  var st=burnStepKcal(d.steps);                         // net : au-dessus de la routine
+  var stBrut=Math.round((+d.steps||0)*0.04);            // brut : tous les pas
   var act=(d.activities||[]).reduce(function(s,x){return s+(+x.kcal||0);},0);
   var t=Math.round(a+r+st+act);
-  return t>0?{active:Math.round(a),rest:Math.round(r),steps:+d.steps||0,stepKcal:st,activities:d.activities||[],actKcal:Math.round(act),total:t}:null;
+  var tBrut=Math.round(a+r+stBrut+act);
+  return (tBrut>0||(+d.steps||0)>0)
+    ? {active:Math.round(a),rest:Math.round(r),steps:+d.steps||0,stepKcal:st,stepKcalBrut:stBrut,
+       activities:d.activities||[],actKcal:Math.round(act),total:t,brut:tBrut}
+    : null;
 }
 var _burnActs=[];
 function openBurnLog(day){
@@ -3038,9 +3043,10 @@ function renderMacros(){
   const list=meals.map(({rid,dessert,customDessert,extras,macros,name},idx)=>{const r=findRecipe(rid);const base=macros||r;if(!base)return'';const _nm=name||(r&&r.name)||'Repas';let dl='';if(dessert&&dessert!=='none'){if(dessert==='autre'&&customDessert)dl=` + ${customDessert.name}`;else{const d=allDesserts().find(x=>x.id===dessert);if(d)dl=` + ${d.name}`;}}const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0)}),{kcal:0,prot:0});if(extras&&extras.length)dl+=' + '+extras.map(e=>e.name).join(', ');const _mo=moment(meals[idx]&&meals[idx].slot);
     const _lis=_mo?`border-left:3px solid ${_mo.couleur};padding-left:7px;`:'border-left:3px solid transparent;padding-left:7px;';
     return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);${_lis}"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(base.kcal+dm.kcal+ex.kcal)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round((base.prot+dm.prot+ex.prot)*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:1px 6px;flex-shrink:0;line-height:1;">✕</button></div>`;}).filter(Boolean).join('');
-  const rem=isToday&&meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text2);">Reste : <strong style="color:var(--text);">${Math.round(Math.max(0,TARGETS.kcal-m.kcal))} kcal</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10}g</strong></span>${(()=>{const b=getBurn(S.today);if(!b||!b.total)return '';
+  const rem=meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text2);">${isToday?'Reste':'Écart'} : <strong style="color:var(--text);">${isToday?(Math.round(Math.max(0,TARGETS.kcal-m.kcal))+' kcal'):((m.kcal>TARGETS.kcal?'+':'')+Math.round(m.kcal-TARGETS.kcal)+' kcal')}</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${isToday?(Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10+'g'):(Math.round(m.prot*10)/10+'/'+TARGETS.prot+'g')}</strong></span>${(()=>{const b=getBurn(dd);if(!b||!b.total)return '';
     const marge=Math.round(TARGETS.kcal+b.total-m.kcal);
-    return `<span style="font-size:11px;color:var(--text2);">🔥 <strong style="color:var(--text);">${b.total} kcal</strong> · Avec l'activité : <strong style="color:${marge>=0?'var(--green)':'var(--red)'};">${marge>=0?marge+' kcal':'dépassement de '+Math.abs(marge)+' kcal'}</strong></span>`;})()}</div>`:'';
+    const lib=isToday?"Avec l'activité":"Marge";
+    return `<span style="font-size:11px;color:var(--text2);">🔥 <strong style="color:var(--text);">${b.total} kcal</strong> · ${lib} : <strong style="color:${marge>=0?'var(--green)':'var(--red)'};">${marge>=0?marge+' kcal':'dépassement de '+Math.abs(marge)+' kcal'}</strong></span>`;})()}</div>`:'';
   const ICNAV={'chevron-left':'←','chevron-right':'→'};
   const navBtn=(a,icon,en)=>`<button data-action="${a}" ${!en?'data-disabled="true"':''} style="background:none;border:0.5px solid var(--border);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:${en?'pointer':'default'};color:${en?'var(--text2)':'var(--border)'};flex-shrink:0;font-size:16px;">${ICNAV[icon]||icon}</button>`;
   return`<div id="daypane" style="background:var(--bg2);border:0.5px solid ${isTomorrow?'var(--blue)':'var(--border)'};border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;">
@@ -3779,7 +3785,7 @@ function renderBurnBlock(){
   try{
     var days=Object.keys(_burnData||{}).sort();
     var last=days.slice(-7);var tot=0,n=0;
-    last.forEach(function(d){var b=getBurn(d);if(b){tot+=b.total;n++;}});
+    last.forEach(function(d){var b=getBurn(d);if(b){tot+=(b.brut||b.total);n++;}});
     var avg=n?Math.round(tot/n):0;var tb=getBurn(S.today);
     var est=null;try{est=estimateTDEE();}catch(e){}
     var estV=(typeof est==='number')?est:(est&&(est.tdee||est.value||est.kcal));
@@ -3791,11 +3797,13 @@ function renderBurnBlock(){
       +'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">Moy. '+n+' j</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:3px;">'+avg+'</div><div style="font-size:9px;color:var(--text3);">kcal</div></div>'
       +(estK?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">TDEE estim\u00e9</div><div style="font-size:16px;font-weight:600;color:var(--text2);margin-top:3px;">'+estK+'</div><div style="font-size:9px;color:var(--text3);">kcal (poids)</div></div>':'')
       +'</div>'
-      +(tb&&(tb.steps||tb.activities.length)?'<div style="margin-top:9px;padding-top:8px;border-top:0.5px solid rgba(246,237,227,.06);font-size:11px;color:var(--text3);line-height:1.6;">'+(tb.steps?'\ud83d\udc5f '+tb.steps+' pas \u2192 '+tb.stepKcal+' kcal<br>':'')+(tb.activities||[]).map(function(a){return '\ud83c\udfc3 '+a.name+' ('+a.min+' min) \u2192 '+a.kcal+' kcal';}).join('<br>')+'</div>':'')
+      +(tb&&(tb.steps||tb.activities.length)?'<div style="margin-top:9px;padding-top:8px;border-top:0.5px solid rgba(246,237,227,.06);font-size:11px;color:var(--text3);line-height:1.6;">'+(tb.steps?('\ud83d\udc5f '+tb.steps.toLocaleString('fr-FR')+' pas \u2192 '+(tb.stepKcalBrut||tb.stepKcal)+' kcal'
+      +((tb.stepKcalBrut&&tb.stepKcal!==tb.stepKcalBrut)?(' <span style="color:var(--text3);opacity:.75;">('+tb.stepKcal+' au-dessus de ta routine)</span>'):'')
+      +'<br>'):'')+(tb.activities||[]).map(function(a){return '\ud83c\udfc3 '+a.name+' ('+a.min+' min) \u2192 '+a.kcal+' kcal';}).join('<br>')+'</div>':'')
       +'<div style="display:flex;gap:5px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;">'
         +_burnDays(7).reverse().map(function(x){
           var bb=getBurn(x.d);var on=!!bb;
-          return '<button data-action="log-burn" data-day="'+x.d+'" style="flex:1;min-width:44px;padding:6px 3px;border-radius:8px;cursor:pointer;border:0.5px solid '+(on?'rgba(233,161,59,.45)':'rgba(246,237,227,.10)')+';background:'+(on?'rgba(233,161,59,.10)':'transparent')+';color:'+(on?'var(--orange)':'var(--text3)')+';font-size:10px;line-height:1.35;">'+x.lbl+'<br><strong style="font-size:11px;">'+(on?bb.total:'\u2014')+'</strong></button>';
+          return '<button data-action="log-burn" data-day="'+x.d+'" style="flex:1;min-width:44px;padding:6px 3px;border-radius:8px;cursor:pointer;border:0.5px solid '+(on?'rgba(233,161,59,.45)':'rgba(246,237,227,.10)')+';background:'+(on?'rgba(233,161,59,.10)':'transparent')+';color:'+(on?'var(--orange)':'var(--text3)')+';font-size:10px;line-height:1.35;">'+x.lbl+'<br><strong style="font-size:11px;">'+(on?(bb.brut||bb.total):'\u2014')+'</strong></button>';
         }).join('')
       +'</div>'
       +'<div style="font-size:10px;color:var(--text3);margin-top:6px;">Touche un jour pour compl\u00e9ter un oubli.</div>'
@@ -5025,7 +5033,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-16 23h41</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-18 00h22</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
