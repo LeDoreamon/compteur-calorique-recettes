@@ -448,6 +448,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
   </div>
 </div>
 <input id="photo-recette-input" type="file" accept="image/*" style="display:none;">
+<input id="backup-file-input" type="file" accept="application/json,.json" style="display:none;">
 <nav class="bnav" id="bnav"></nav>
 <div id="root" class="container"><div style="padding:2rem;text-align:center;color:var(--text3);">Chargement...</div></div>
 <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:300;flex-direction:column;align-items:center;justify-content:center;">
@@ -4015,14 +4016,70 @@ async function _exportFile(filename,mime,content){
   try{prompt('Copie tes données ('+filename+') :',content);}catch(e3){alert('Export impossible sur cet appareil.');}
 }
 
+// Sauvegarde complete. La depense et les photos vivent dans leurs propres
+// noeuds : l'ancien export ne contenait que l'etat principal, et rien ne
+// permettait de le reimporter.
 async function exportBackup(){
   try{await saveState();}catch(e){}
   var raw=localStorage.getItem(ACTIVE_PROFILE+'_st')||'{}';
-  var obj;try{obj=JSON.parse(raw);}catch(e){obj={};}
-  delete obj.groqKey;
-  obj._exportedAt=new Date().toISOString();
-  obj._profile=ACTIVE_PROFILE;
-  _exportFile('sauvegarde-bouffe-'+ACTIVE_PROFILE+'-'+getToday()+'.json','application/json',JSON.stringify(obj,null,2));
+  var st;try{st=JSON.parse(raw);}catch(e){st={};}
+  delete st.groqKey;                       // la cle d'API ne quitte jamais l'app
+  var obj={_format:2,_exportedAt:new Date().toISOString(),_profile:ACTIVE_PROFILE,
+           state:st,burn:_burnData||{},photos:PHOTOS||{}};
+  _exportFile('sauvegarde-dorayaki-'+ACTIVE_PROFILE+'-'+getToday()+'.json','application/json',JSON.stringify(obj));
+}
+// Lecture d'une sauvegarde : format complet (2) ou ancien export d'etat seul
+function _lireSauvegarde(txt){
+  var o=JSON.parse(txt);
+  if(!o||typeof o!=='object')throw new Error('fichier illisible');
+  var st=(o._format===2)?o.state:o;
+  if(!st||typeof st!=='object'||!(st.inv||st.dayMeals))throw new Error('ce fichier ne ressemble pas a une sauvegarde Dorayaki');
+  return {state:st,burn:(o._format===2&&o.burn&&typeof o.burn==='object')?o.burn:null,
+          photos:(o._format===2&&o.photos&&typeof o.photos==='object')?_photosSures(o.photos):null};
+}
+function importBackup(){
+  var inp=document.getElementById('backup-file-input');if(!inp)return;
+  inp.onchange=function(){
+    var f=inp.files&&inp.files[0];inp.value='';
+    if(!f)return;
+    var fr=new FileReader();
+    fr.onload=async function(){
+      var sv;
+      try{sv=_lireSauvegarde(fr.result);}catch(e){alert('Import impossible : '+e.message);return;}
+      var nbJ=Object.keys(sv.state.dayMeals||{}).length;
+      if(!confirm('Restaurer cette sauvegarde ?\n\n'+nbJ+' journées de repas'
+        +(sv.burn?', '+Object.keys(sv.burn).length+' journées d\'activité':'')
+        +(sv.photos?', '+Object.keys(sv.photos).length+' photos':'')
+        +'.\n\nTon état actuel sera d\'abord mis de côté et restera récupérable.'))return;
+      await _restaurerSauvegarde(sv);
+    };
+    fr.onerror=function(){alert('Fichier illisible.');};
+    fr.readAsText(f);
+  };
+  inp.click();
+}
+async function _restaurerSauvegarde(sv){
+  // Filet : l'etat courant est copie avant d'etre remplace
+  try{
+    var cur=localStorage.getItem(ACTIVE_PROFILE+'_st');
+    if(cur)await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'),{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({at:new Date().toISOString(),remplacePar:'import de sauvegarde',state:cur})});
+  }catch(e){}
+  _applyState(sv.state);            // passe par la neutralisation des entrees
+  if(sv.burn){
+    _burnData=_neutre(sv.burn);
+    Object.keys(_burnData).forEach(function(d){try{_burnSave(d);}catch(e){}});
+  }
+  if(sv.photos){
+    _photosGen++;           /* tout chargement en cours devient perime */
+    PHOTOS=sv.photos;
+    _photosChargees=true;
+    try{localStorage.setItem(ACTIVE_PROFILE+'_photos',JSON.stringify(PHOTOS));}catch(e){}
+    try{await fetch(await fbUrl(ACTIVE_PROFILE+'/photos'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(PHOTOS)});}catch(e){}
+  }
+  try{await saveState();}catch(e){}
+  render();
+  _infoToast('\u2705 Sauvegarde restaurée','L\'état précédent reste récupérable depuis les Réglages.');
 }
 
 function exportWeightCSV(){
@@ -4038,6 +4095,7 @@ function renderDataExport(){
     '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">💾 Sauvegarde de tes données</div>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
     '<button onclick="exportBackup()" style="flex:1;min-width:140px;padding:10px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">⬇ Sauvegarde complète (.json)</button>'+
+    '<button onclick="importBackup()" style="flex:1;min-width:140px;padding:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;">\u21a9\ufe0f Restaurer une sauvegarde</button>'+
     '<button onclick="exportWeightCSV()" style="flex:1;min-width:140px;padding:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;">📊 Poids (.csv)</button>'+
     '</div>'+
     '<div style="font-size:10px;color:var(--text3);margin-top:8px;font-style:italic;line-height:1.4;">Le .json contient tout (repas, inventaire, recettes, poids), sauf ta clé API. La feuille de partage iOS te laisse l\'enregistrer dans Fichiers, Notes ou l\'envoyer par mail.</div>'+
@@ -5025,7 +5083,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">🏋️ Liam</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-23 01h07</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">🏋️ Liam</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-23 01h32</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -5700,7 +5758,7 @@ function _ordreRepas(meals){
 function moment(id){return MOMENTS.find(function(m){return m.id===id;})||null;}
 // Les photos vivent dans leur propre noeud : les joindre a l'etat ferait
 // repartir des centaines de kilo-octets a chaque enregistrement.
-var PHOTOS={},_photosChargees=false;
+var PHOTOS={},_photosChargees=false,_photosGen=0;   // _photosGen : invalide un chargement devenu perime
 // Liens vers des images libres, verifies au demarrage. Un lien casse est
 // ecarte jusqu'a la prochaine verification : on ne montre jamais une image
 // morte, on retombe sur la vignette.
@@ -5763,13 +5821,14 @@ function _photosSures(o){
   return out;
 }
 async function chargerPhotos(){
+  var gen=_photosGen;
   try{
     var c=localStorage.getItem(ACTIVE_PROFILE+'_photos');
     if(c)PHOTOS=_photosSures(JSON.parse(c)||{});
   }catch(e){}
   try{
     var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/photos'));
-    if(r.ok){var d=await r.json();if(d&&typeof d==='object'){PHOTOS=_photosSures(d);
+    if(r.ok&&gen===_photosGen){var d=await r.json();if(gen===_photosGen&&d&&typeof d==='object'){PHOTOS=_photosSures(d);
       try{localStorage.setItem(ACTIVE_PROFILE+'_photos',JSON.stringify(d));}catch(e){}}}
   }catch(e){}
   _photosChargees=true;

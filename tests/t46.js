@@ -52,7 +52,7 @@ t('*** seule une vraie image est acceptee ***',()=>{
   eq(Object.keys(r).join(','),'a');
 });
 t('la neutralisation est cablee au chargement des photos',()=>{
-  eq((src.match(/_photosSures\(/g)||[]).length,3,'definition + deux usages');
+  if((src.match(/_photosSures\(/g)||[]).length<3)throw new Error('filtre non cable');
 });
 
 console.log('\n=== GC. Hygiene du code ===');

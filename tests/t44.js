@@ -33,8 +33,9 @@ t('sans photo ni lien : rien, donc vignette',()=>{
 console.log('\n=== FJ. Verification des liens ===');
 t('*** la verification existe et se declenche au demarrage ***',()=>{
   if(!/function verifierLiens/.test(src))throw new Error('absente');
-  const i=src.indexOf('_photosChargees=true;');
-  if(!/verifierLiens\(\)/.test(src.slice(i,i+180)))throw new Error('non appelee au demarrage');
+  const i=src.indexOf('async function chargerPhotos');
+  const j=src.indexOf('\n}\n',i);
+  if(!/verifierLiens\(\)/.test(src.slice(i,j)))throw new Error('non appelee au demarrage');
 });
 t('elle ne tourne pas hors ligne',()=>{
   const i=src.indexOf('function verifierLiens');
