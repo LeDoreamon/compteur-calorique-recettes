@@ -2089,6 +2089,7 @@ function _mergeDuplicates(){
 }
 function _applyState(d){
   if(!d)return;
+  d=_neutre(d);   // tout ce qui vient de Firebase ou du cache passe par ici
   // Si le tag profil existe et ne correspond pas → données de l'autre profil, ignorer
   if(d._profile && d._profile!==ACTIVE_PROFILE)return;
   // Inventaire
@@ -2515,13 +2516,29 @@ function clearApiKey(){
 // ─── ANTHROPIC HELPER (avec clé utilisateur) ─────────────────────────────────
 // callAI — Groq (gratuit, 14 400 req/jour, vision incluse)
 
+// Les textes stockes (noms d'articles, de repas, etapes de recettes) sont
+// injectes tels quels dans la page. Or la base accepte l'inscription anonyme :
+// un tiers pourrait y ecrire un nom contenant du HTML, execute a l'ouverture
+// de l'app. On neutralise donc tout ce qui entre — Firebase, cache local,
+// reponses d'IA — en remplacant les caracteres qui ouvrent une balise ou
+// ferment un attribut par leurs equivalents typographiques, sans effet a
+// l'ecran pour un nom legitime.
+function _neutre(v,prof){
+  prof=prof||0;
+  if(typeof v==='string')return v.replace(/</g,'\u2039').replace(/>/g,'\u203a').replace(/"/g,'\u201d');
+  if(!v||typeof v!=='object'||prof>12)return v;
+  if(Array.isArray(v))return v.map(function(x){return _neutre(x,prof+1);});
+  var o={};Object.keys(v).forEach(function(k){o[k]=_neutre(v[k],prof+1);});
+  return o;
+}
 function extractJSON(text){
   let t=text.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json/gi,'').replace(/```/g,'').trim();
   const s=t.indexOf('{'),e=t.lastIndexOf('}');
   if(s>=0&&e>s)t=t.slice(s,e+1);
-  return JSON.parse(t);
+  return _neutre(JSON.parse(t));
 }
-function extractJSONArray(text){
+function extractJSONArray(text){return _neutre(_extractJSONArrayBrut(text));}
+function _extractJSONArrayBrut(text){
   const t=text.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json/gi,'').replace(/```/g,'').trim();
   const s=t.indexOf('[');
   if(s<0)throw new Error('Aucun tableau JSON');
@@ -5033,7 +5050,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-22 11h04</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-23 00h55</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -5708,7 +5725,6 @@ function _ordreRepas(meals){
   });
 }
 function moment(id){return MOMENTS.find(function(m){return m.id===id;})||null;}
-function couleurMoment(id){var m=moment(id);return m?m.couleur:'transparent';}
 // Les photos vivent dans leur propre noeud : les joindre a l'etat ferait
 // repartir des centaines de kilo-octets a chaque enregistrement.
 var PHOTOS={},_photosChargees=false;
@@ -5736,7 +5752,6 @@ function photoRecette(id){
   if(l&&!_liensCasses[l])return l;                     // 2. le lien, s'il repond
   return null;                                          // 3. vignette dessinee
 }
-function photoEstDeToi(id){return !!PHOTOS[_cleFB(id)];}
 // Teste chaque lien par un chargement reel : pas de requete reseau bloquee par
 // les regles d'origine, et le navigateur met l'image en cache au passage.
 function verifierLiens(){
@@ -5764,14 +5779,24 @@ function verifierLiens(){
     img.src=u;
   });
 }
+// Une photo est inseree dans un attribut src : n'importe quelle chaine y
+// passerait. On n'accepte que de vraies images encodees, sans guillemet.
+function _photosSures(o){
+  var out={};
+  Object.keys(o||{}).forEach(function(k){
+    var v=o[k];
+    if(typeof v==='string'&&/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/.test(v))out[k]=v;
+  });
+  return out;
+}
 async function chargerPhotos(){
   try{
     var c=localStorage.getItem(ACTIVE_PROFILE+'_photos');
-    if(c)PHOTOS=JSON.parse(c)||{};
+    if(c)PHOTOS=_photosSures(JSON.parse(c)||{});
   }catch(e){}
   try{
     var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/photos'));
-    if(r.ok){var d=await r.json();if(d&&typeof d==='object'){PHOTOS=d;
+    if(r.ok){var d=await r.json();if(d&&typeof d==='object'){PHOTOS=_photosSures(d);
       try{localStorage.setItem(ACTIVE_PROFILE+'_photos',JSON.stringify(d));}catch(e){}}}
   }catch(e){}
   _photosChargees=true;

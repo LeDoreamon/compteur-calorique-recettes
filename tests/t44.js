@@ -30,17 +30,6 @@ t('sans photo ni lien : rien, donc vignette',()=>{
   W.PHOTOS={};W.LIENS_IMAGES={};W._liensCasses={};
   eq(G('photoRecette')('test_r'),null);
 });
-t('ta photo prime meme si le lien est valide',()=>{
-  W.PHOTOS={'test_r':'data:image/jpeg;base64,MIENNE'};
-  W.LIENS_IMAGES={'test_r':'https://exemple/photo.jpg'};
-  W._liensCasses={};
-  eq(G('photoEstDeToi')('test_r'),true);
-});
-t('photoEstDeToi ne repond pas vrai pour un lien',()=>{
-  W.PHOTOS={};W.LIENS_IMAGES={'test_r':'https://exemple/x.jpg'};
-  eq(G('photoEstDeToi')('test_r'),false);
-});
-
 console.log('\n=== FJ. Verification des liens ===');
 t('*** la verification existe et se declenche au demarrage ***',()=>{
   if(!/function verifierLiens/.test(src))throw new Error('absente');

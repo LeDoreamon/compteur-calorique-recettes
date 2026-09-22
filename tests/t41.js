@@ -17,14 +17,11 @@ t('chacun a une couleur distincte',()=>{
   eq(new Set(c).size,4,'couleurs en double');
   c.forEach(function(x){if(!/^#[0-9A-Fa-f]{6}$/.test(x))throw new Error('couleur invalide : '+x);});
 });
-t('couleurMoment repond pour chaque identifiant',()=>{
+t('moment() repond pour chaque identifiant, null sinon',()=>{
   ['breakfast','lunch','dinner','snack'].forEach(function(id){
-    if(G('couleurMoment')(id)==='transparent')throw new Error(id+' sans couleur');
+    if(!G('moment')(id)||!G('moment')(id).couleur)throw new Error(id+' sans couleur');
   });
-});
-t('un identifiant inconnu ne casse rien',()=>{
-  eq(G('couleurMoment')('nimportequoi'),'transparent');
-  eq(G('couleurMoment')(null),'transparent');
+  eq(G('moment')('nimportequoi'),null);eq(G('moment')(null),null);
 });
 
 console.log('\n=== EW. Le repas retient son moment ===');

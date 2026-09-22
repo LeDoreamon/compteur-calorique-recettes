@@ -61,6 +61,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t43.js` | Page d’accueil : ordre des repas, suggestions, activité du jour |
 | `t44.js` | Cascade d’images, vérification des liens, badge de synchro |
 | `t45.js` | Seuil de pas habituels : seul l’écart au-dessus de la routine compte |
+| `t46.js` | Audit : neutralisation des entrées, code mort, secrets, rendu de tous les écrans |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
