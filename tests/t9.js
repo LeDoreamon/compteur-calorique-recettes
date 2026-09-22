@@ -134,13 +134,13 @@ await t('la saisie recuperee est renvoyee au serveur',async()=>{
   if(!e2.serveur.state.dayMeals['jx'])throw new Error('non renvoye au serveur');
 });
 await t('*** un autre appareil plus recent gagne (pas de retour en arriere) ***',async()=>{
-  // local ancien (rev 2), serveur plus recent (rev 7, ecrit par Maureen)
+  // local ancien (rev 2), serveur plus recent (rev 7, ecrit depuis un autre appareil)
   const e=build({serveur:{rev:7,savedAt:'2026-08-20T10:00:00Z',inv:{frigo:[]},
-                          dayMeals:{'maureen':[{rid:'m',name:'Sien',mult:1,macros:{kcal:1,prot:1,gluc:1,lip:1}}]}}});
+                          dayMeals:{'autre_appareil':[{rid:'m',name:'Sien',mult:1,macros:{kcal:1,prot:1,gluc:1,lip:1}}]}}});
   e.local['liam_st']=JSON.stringify({rev:2,savedAt:'2026-08-01T10:00:00Z',inv:{frigo:[]},
                           dayMeals:{'vieux':[{rid:'v',name:'Vieux',mult:1,macros:{kcal:9,prot:1,gluc:1,lip:1}}]}});
   await e.sb.loadState();
-  if(!e.sb.S.dayMeals['maureen'])throw new Error('la version serveur aurait du gagner');
+  if(!e.sb.S.dayMeals['autre_appareil'])throw new Error('la version serveur aurait du gagner');
   if(e.sb.S.dayMeals['vieux'])throw new Error('vieille version locale appliquee a tort');
 });
 await t('local et serveur a egalite : le serveur fait foi',async()=>{

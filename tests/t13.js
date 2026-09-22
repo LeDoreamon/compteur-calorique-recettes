@@ -107,9 +107,9 @@ t('les recettes aux tomates cerises precisent qu\'elles sont crues',()=>{
 });
 
 console.log('\n=== AP. Les autres profils sont intacts ===');
-t('les 10 recettes de Maureen sont inchangees',()=>{
-  const mo=(sb.RCP||[]).filter(r=>r.profile==='maureen'&&r.slots&&r.slots.length);
-  eq(mo.length,10);
+t('*** plus aucune recette rattachee a un autre profil ***',()=>{
+  const autres=(sb.RCP||[]).filter(r=>r.profile&&r.profile!=='liam');
+  eq(autres.length,0,'recettes d\'un autre profil');
 });
 t('les 2 recettes communes sont conservees',()=>{
   const c=(sb.RCP||[]).filter(r=>!r.profile&&r.slots&&r.slots.length);

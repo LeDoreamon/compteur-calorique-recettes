@@ -4,6 +4,9 @@ function t(n,f){try{f();console.log('  ok  '+n);pass++;}catch(e){console.log('  
 function eq(a,b,m){if(String(a)!==String(b))throw new Error((m||'')+' attendu '+b+' obtenu '+a);}
 
 // Bac a sable : profil + horloge machine pilotables
+// Un profil dans un autre fuseau, obtenu en imposant S.tz : le mecanisme
+// servira aux futurs comptes, meme s'il n'y a plus qu'un profil aujourd'hui.
+function ailleurs(isoUTC){const sb=monde('liam',isoUTC);sb.S.tz='America/Vancouver';return sb;}
 function monde(profil,isoUTC){
   let js=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
   js+='\n;try{ACTIVE_PROFILE="'+profil+'";}catch(e){}';
@@ -40,33 +43,33 @@ console.log('\n=== CG. La date suit le profil, pas l\'appareil ===');
 // 28 aout 2026, 03h00 UTC = 05h00 a Paris (28) mais 20h00 a Vancouver le 27
 const T='2026-08-28T03:00:00Z';
 t('*** Liam : 28 aout ***',()=>eq(monde('liam',T).getToday(),'2026-08-28'));
-t('*** Maureen : encore le 27 aout ***',()=>eq(monde('maureen',T).getToday(),'2026-08-27'));
-t('les deux profils ont bien un fuseau declare',()=>{
+t('*** un profil a Vancouver est encore le 27 aout ***',()=>eq(ailleurs(T).getToday(),'2026-08-27'));
+t('le profil a bien un fuseau declare',()=>{
   const p=monde('liam',T).PROFILE_TZ;
-  eq(p.liam,'Europe/Paris');eq(p.maureen,'America/Vancouver');
+  eq(p.liam,'Europe/Paris');
 });
 // 28 aout 15h00 UTC = 17h Paris (28) et 08h Vancouver (28) : meme jour
 t('meme jour quand les fuseaux concordent',()=>{
   const U='2026-08-28T15:00:00Z';
   eq(monde('liam',U).getToday(),'2026-08-28');
-  eq(monde('maureen',U).getToday(),'2026-08-28');
+  eq(ailleurs(U).getToday(),'2026-08-28');
 });
 
 console.log('\n=== CH. L\'heure aussi ===');
-t('*** Maureen : 20 h chez elle quand il est 5 h a Paris ***',()=>{
-  eq(monde('maureen',T).heureProfil(),20);
+t('*** 20 h a Vancouver quand il est 5 h a Paris ***',()=>{
+  eq(ailleurs(T).heureProfil(),20);
 });
 t('Liam : 5 h du matin au meme instant',()=>{
   eq(monde('liam',T).heureProfil(),5);
 });
-t('*** la garde nocturne suit l\'heure de Maureen ***',()=>{
+t('*** la garde nocturne suit l\'heure du profil ***',()=>{
   // 5 h Paris est dans la garde (<4 h ? non, 5 h) — testons 02h Paris
   const N='2026-08-28T00:30:00Z';   // 02h30 Paris, 17h30 Vancouver la veille
   eq(monde('liam',N).heureProfil(),2,'Liam en pleine nuit');
-  eq(monde('maureen',N).heureProfil(),17,'Maureen en fin d\'apres-midi');
+  eq(ailleurs(N).heureProfil(),17,'fin d\'apres-midi a Vancouver');
 });
-t('*** le coach ne prend pas le diner de Maureen pour un petit-dejeuner ***',()=>{
-  const sb=monde('maureen',T);      // 20 h chez elle
+t('*** le coach suit l\'heure du profil, pas celle de l\'appareil ***',()=>{
+  const sb=ailleurs(T);      // 20 h a Vancouver
   sb.S.today=sb.getToday();
   eq(sb._phaseJournee(),'fin','journee finie chez elle');
 });
@@ -92,7 +95,7 @@ t('changement d\'heure d\'ete gere par Intl',()=>{
   // 1er janvier : Vancouver est a UTC-8, Paris a UTC+1
   const H='2026-01-01T05:00:00Z';   // 06h Paris (1er), 21h Vancouver (31 dec)
   eq(monde('liam',H).getToday(),'2026-01-01');
-  eq(monde('maureen',H).getToday(),'2025-12-31');
+  eq(ailleurs(H).getToday(),'2025-12-31');
 });
 
 console.log('\n=== CJ. Conflit : ne deranger que si necessaire ===');
@@ -162,18 +165,12 @@ t('*** S.today et getToday() concordent au chargement ***',()=>{
   eq(sb.S.today,sb.getToday(),'la date figee doit suivre le fuseau du profil');
   eq(sb.S.today,'2026-08-29','fuseau Paris applique');
 });
-t('*** choisir Maureen recale la date sur son fuseau ***',()=>{
-  // ACTIVE_PROFILE vaut 'liam' au chargement : la date de depart est celle de
-  // Paris. selectProfile doit la recalculer.
-  const sb=monde('maureen','2026-08-28T22:30:00Z');  // 15h30 a Vancouver le 28
-  eq(sb.getToday(),'2026-08-28','fuseau Vancouver');
+t('*** choisir un profil recalcule la date ***',()=>{
   const src=fs.readFileSync('index.html','utf8');
   const i=src.indexOf('function selectProfile');
-  const bloc=src.slice(i,i+700);
-  if(!/S\.today=getToday\(\);S\.displayDate=S\.today;/.test(bloc))
+  const b=src.slice(i,i+700);
+  if(!/S\.today=getToday\(\);S\.displayDate=S\.today;/.test(b))
     throw new Error('selectProfile ne recalcule pas la date');
-  if(/S\.displayDate=TODAY;/.test(bloc))
-    throw new Error('utilise encore la constante figee');
 });
 t('_tzProfil ne se laisse pas piper par la zone morte',()=>{
   const src=fs.readFileSync('index.html','utf8');

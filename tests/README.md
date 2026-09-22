@@ -37,7 +37,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t19.js` | Zones sûres iOS : scanner sous l’encoche, stabilité de la barre basse |
 | `t20.js` | Lignes d’ingrédients : débordement flexbox, bouton de suppression |
 | `t21.js` | Format des calories par ingrédient (« N kcal ») |
-| `t22.js` | Déduction d’inventaire : défaut par profil (Non pour Maureen) |
+| `t22.js` | Déduction d’inventaire à l’ajout d’un repas, démarrage sur le profil unique |
 | `t23.js` | Saisie rétroactive : le repas suit le jour affiché, bandeau d’avertissement |
 | `t24.js` | Fuseau horaire par profil, conflits de synchro, appels sans définition |
 | `t25.js` | Coach après saisie d’activité : message de dépense, pas de bilan alimentaire |

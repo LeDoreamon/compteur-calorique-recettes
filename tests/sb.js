@@ -8,6 +8,7 @@ js+='\n;["openAddMeal","toggleIngMacros","toggleEmMacros","_emMkRow","_emApplySt
 js+='\n;try{globalThis.__getInvPick=function(){return _invPick;};}catch(e){}';
 js+='\n;try{globalThis.__getSugg=function(){return _addMealInvSuggestions;};}catch(e){}';
 js+='\n;try{globalThis.__amSlot=function(){return _amSlot;};}catch(e){}';
+js+='\n;try{globalThis.__useStock=function(){return _addMealUseStock;};}catch(e){}';
 js+='\n;try{globalThis.__getFree=function(){return _addMealFreeItems;};}catch(e){}';
 js+='\n;try{globalThis.__setFree=function(v){_addMealFreeItems=v;};}catch(e){}';
 js+='\n;try{globalThis.__setBurn=function(v){_burnData=v;};}catch(e){}';
@@ -18,7 +19,7 @@ const reg={};
 function makeEl(){return{value:'',checked:false,textContent:'',innerHTML:'',className:'',
  style:{},cssText:'',dataset:{},offsetWidth:100,placeholder:'',
  classList:{add(){},remove(){},contains:()=>false,toggle(){}},
- focus(){},appendChild(){},setAttribute(){},getAttribute(){return null;},
+ focus(){},click(){},appendChild(){},setAttribute(){},getAttribute(){return null;},
  querySelector(){return null;},querySelectorAll(){return[];},addEventListener(){},files:[]};}
 const docEl=id=>{if(!reg[id])reg[id]=makeEl();return reg[id];};
 // Un vrai navigateur detruit les elements quand on reecrit innerHTML d'un

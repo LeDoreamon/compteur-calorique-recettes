@@ -437,7 +437,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <button onclick="saveEditMeal()" style="width:100%;margin-top:14px;padding:12px;background:var(--green);border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">✓ Enregistrer</button>
   </div>
 </div>
-<div id="profile-screen" style="position:fixed;inset:0;background:var(--bg);z-index:300;display:flex;align-items:center;justify-content:center;padding:20px;"><div style="text-align:center;width:100%;max-width:400px;"><img src="icon-192.png?v=3" alt="🥞" style="width:86px;height:86px;border-radius:22px;margin-bottom:12px;box-shadow:0 6px 18px rgba(0,0,0,.4);"><div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:26px;letter-spacing:.02em;">Dorayaki</div><div style="font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:32px;">Qui est là ?</div><div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;"><button onclick="selectProfile('liam')" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:12px;" onmouseover="this.style.background='rgba(111,191,115,.1)'" onmouseout="this.style.background='none'"><div style="width:100px;height:100px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--green));font-size:46px;display:flex;align-items:center;justify-content:center;margin:0 auto;">🏋️</div><div style="margin-top:10px;font-size:15px;font-weight:500;color:var(--text);">Liam</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Sèche · 2600 kcal</div></button><button onclick="selectProfile('maureen')" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:12px;" onmouseover="this.style.background='rgba(244,114,182,.1)'" onmouseout="this.style.background='none'"><div style="width:100px;height:100px;border-radius:10px;background:linear-gradient(135deg,#C86050,#A63F32);font-size:46px;display:flex;align-items:center;justify-content:center;margin:0 auto;">🌸</div><div style="margin-top:10px;font-size:15px;font-weight:500;color:var(--text);">Maureen</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Prise de masse · 2700 kcal</div></button></div></div></div>
+<div id="profile-screen" style="position:fixed;inset:0;background:var(--bg);z-index:300;display:none;align-items:center;justify-content:center;padding:20px;"><div style="text-align:center;width:100%;max-width:400px;"><img src="icon-192.png?v=3" alt="🥞" style="width:86px;height:86px;border-radius:22px;margin-bottom:12px;box-shadow:0 6px 18px rgba(0,0,0,.4);"><div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:26px;letter-spacing:.02em;">Dorayaki</div><div style="font-size:11px;font-weight:600;letter-spacing:.15em;text-transform:uppercase;color:var(--text3);margin-bottom:32px;">Qui est là ?</div><div style="display:flex;gap:28px;justify-content:center;flex-wrap:wrap;"><button onclick="selectProfile('liam')" style="background:none;border:none;cursor:pointer;padding:8px;border-radius:12px;" onmouseover="this.style.background='rgba(111,191,115,.1)'" onmouseout="this.style.background='none'"><div style="width:100px;height:100px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--green));font-size:46px;display:flex;align-items:center;justify-content:center;margin:0 auto;">🏋️</div><div style="margin-top:10px;font-size:15px;font-weight:500;color:var(--text);">Liam</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">Sèche · 2600 kcal</div></button></div></div></div>
 <div id="macroinfo-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:400;align-items:flex-end;justify-content:center;" onclick="if(event.target===this)fermerInfoMacro()">
   <div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-top-left-radius:14px;border-top-right-radius:14px;padding:18px 18px calc(24px + env(safe-area-inset-bottom, 0px));width:100%;max-width:480px;max-height:82vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
@@ -466,7 +466,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 const TDEE_SEUIL_JOUR=0.5;   // en deca de 50 % de la cible, la journee est jugee incomplete
 const LIAM_TARGETS={kcal:2600,prot:175,gluc:280,lip:80};
-const MAUREEN_TARGETS={kcal:2700,prot:145,gluc:305,lip:100};
 let TARGETS=LIAM_TARGETS;
 let ACTIVE_PROFILE='liam';
 // Pas de stockage persistant — checkpoint via sendPrompt
@@ -692,17 +691,6 @@ const RCP=[
   // ── Shaker protéines (gardé en p'tit-déj & collation) ──
   {id:'shaker_whey',slots:['breakfast','snack'],name:'Shaker clear whey post-training',urgent:0,ur:null,time:1,kcal:110,prot:24,gluc:2,lip:0,steps:["30 g whey + 400-500 mL eau froide. Agiter."],used:[{id:'whey',qty:30}],extras:[]},
   {id:'shaker_whey_compote',slots:['breakfast','snack'],name:'Shaker whey fruité & compote',urgent:0,ur:null,time:2,kcal:160,prot:24,gluc:14,lip:0,steps:["Compote + 30 g whey + 300 mL eau froide."],used:[{id:'whey',qty:30},{id:'compotes',qty:1}],extras:[]},
-  // ── Recettes Maureen (profil maureen) ──
-  {id:'mz_bagel_oeufs',profile:'maureen',slots:['breakfast'],name:'Bagels œufs brouillés & Philadelphia',urgent:0,time:10,kcal:765,prot:38,gluc:88,lip:29,steps:["Brouiller 3 œufs.","Toaster 2 bagels, tartiner de Philadelphia.","Garnir avec les œufs brouillés."],used:[{id:'cx_mq65g9hj',qty:160},{id:'cx_mq65geen',qty:150},{id:'cx_mq659tdp',qty:40}],extras:[]},
-  {id:'mz_bagel_pb',profile:'maureen',slots:['breakfast','snack'],name:'Bagel au beurre de cacahuète',urgent:0,time:4,kcal:396,prot:16,gluc:48,lip:16,steps:["Toaster 1 bagel.","Tartiner généreusement de beurre de cacahuète."],used:[{id:'cx_mq65g9hj',qty:80},{id:'cx_mq8c0h6b',qty:30}],extras:[]},
-  {id:'mz_omelette_champi',profile:'maureen',slots:['breakfast','lunch'],name:'Omelette champignons & épinards',urgent:0,time:12,kcal:351,prot:23,gluc:6,lip:27,steps:["Faire revenir les champignons émincés et les jeunes pousses d'épinards à l'huile d'olive.","Ajouter 3 œufs battus et cuire l'omelette."],used:[{id:'cx_mq65geen',qty:150},{id:'cx_mq65syug',qty:100},{id:'cx_mq6591wo',qty:30},{id:'cx_mq65ojhq',qty:10}],extras:[]},
-  {id:'mz_spaghetti_tomate',profile:'maureen',slots:['lunch','dinner'],name:'Spaghettis sauce tomate & œuf',urgent:0,time:15,kcal:550,prot:23,gluc:96,lip:8,steps:["Cuire 120 g de spaghettis.","Réchauffer la sauce tomate avec l'ail.","Servir avec un œuf au plat dessus."],used:[{id:'cx_mq65dk1n',qty:120},{id:'cx_mq65a4bn',qty:150},{id:'cx_mq65geen',qty:50}],extras:[]},
-  {id:'mz_fusilli_pesto_thon',profile:'maureen',slots:['lunch','dinner'],name:'Fusilli au pesto & thon',urgent:0,time:14,kcal:710,prot:41,gluc:89,lip:21,steps:["Cuire 120 g de fusilli.","Mélanger avec la sauce pesto et le thon égoutté."],used:[{id:'cx_mq65dqr0',qty:120},{id:'cx_mq65a9xq',qty:40},{id:'cx_mq65gpae',qty:100}],extras:[]},
-  {id:'mz_riz_thon_pois',profile:'maureen',slots:['lunch','dinner'],name:'Riz basmati, thon & petits pois',urgent:0,time:18,kcal:652,prot:41,gluc:115,lip:3,steps:["Cuire 120 g de riz basmati.","Ajouter les petits pois et le thon égoutté.","Assaisonner d'un trait de sauce soja."],used:[{id:'cx_mq65husk',qty:120},{id:'cx_mq65gpae',qty:100},{id:'cx_mq65f8iq',qty:150}],extras:[{n:'Sauce soja',q:'',opt:true}]},
-  {id:'mz_nouilles_saute',profile:'maureen',slots:['lunch','dinner'],name:'Nouilles de blé sautées, œuf & légumes',urgent:0,time:16,kcal:602,prot:28,gluc:105,lip:8,steps:["Cuire les nouilles de blé.","Sauter haricots verts et petits pois à l'huile avec le gingembre.","Ajouter les nouilles, 1 œuf brouillé et la sauce soja."],used:[{id:'cx_mq65e0w9',qty:120},{id:'cx_mq65ferg',qty:100},{id:'cx_mq65f8iq',qty:80},{id:'cx_mq65geen',qty:50},{id:'cx_mq8c51la',qty:15}],extras:[]},
-  {id:'mz_dumplings',profile:'maureen',slots:['snack','lunch'],name:'Dumplings poêlés',urgent:0,time:12,kcal:445,prot:14,gluc:50,lip:21,steps:["Poêler les dumplings à l'huile jusqu'à ce qu'ils dorent.","Servir avec de la sauce soja."],used:[{id:'cx_mq8c6mhu',qty:200},{id:'cx_mq65ojhq',qty:5}],extras:[{n:'Sauce soja',q:'',opt:false}]},
-  {id:'mz_hotdogs',profile:'maureen',slots:['lunch','dinner'],name:'Hot dogs maison',urgent:0,time:10,kcal:702,prot:27,gluc:88,lip:26,steps:["Réchauffer 2 saucisses à hot dog.","Glisser dans 2 bagels ouverts.","Garnir de moutarde et mayonnaise."],used:[{id:'cx_mq65enh5',qty:100},{id:'cx_mq65g9hj',qty:160}],extras:[{n:'Moutarde',q:'',opt:false},{n:'Mayonnaise',q:'',opt:true}]},
-  {id:'mz_yaourt_pb',profile:'maureen',slots:['snack','dessert'],name:'Yaourt myrtille & beurre de cacahuète',urgent:0,time:2,kcal:233,prot:9,gluc:22,lip:13,steps:["1 yaourt à la myrtille, ajouter une cuillère de beurre de cacahuète."],used:[{id:'cx_mq659kyd',qty:125},{id:'cx_mq8c0h6b',qty:20}],extras:[]},
   // ── Repas masqués / références d'historique (slots:[]) ──
   {id:'poke_bowl',slots:[],name:'Poké bowl poulet karaage',kcal:870,prot:39,gluc:115,lip:26,steps:[],used:[],extras:[]},
   {id:'_nuggets_04',slots:[],name:'Nuggets au four (400g)',kcal:860,prot:60,gluc:80,lip:36,steps:[],used:[],extras:[]},
@@ -723,7 +711,6 @@ const RCP=[
   {id:'dess_yaourt_miel',slots:[],name:'Yaourt 0% & miel',kcal:100,prot:4,gluc:22,lip:0},
 ];
 
-const INV_EMPTY={frigo:[],congelateur:[],placards:[],epices:[]};
 const CINFO={frigo:{label:'Frigo',sym:'🌡'},congelateur:{label:'Congélateur',sym:'❄'},placards:{label:'Placards',sym:'▣'},epices:{label:'Épices',sym:'∿'}};
 const MEAL_TABS=[{k:'breakfast',l:'Petit-déj'},{k:'lunch',l:'Déjeuner'},{k:'snack',l:'Collation'},{k:'dinner',l:'Dîner'},{k:'perso',l:'👨‍🍳 Mes recettes'},{k:'urgent',l:'⚠ DLC'},{k:'favs',l:'⭐ Favoris'}];
 // Tri de la liste de recettes. Les favoris restent epingles en tete quel que
@@ -765,9 +752,9 @@ function renderRecTri(){
 }
 
 // La date et l'heure d'un profil suivent le lieu de vie de la personne, pas le
-// reglage de l'appareil qui saisit : ouvrir le profil de Maureen depuis la
+// reglage de l'appareil qui saisit : ouvrir un profil depuis un autre pays
 // France ne doit pas decaler ses journees d'un cran.
-const PROFILE_TZ={liam:'Europe/Paris',maureen:'America/Vancouver'};
+const PROFILE_TZ={liam:'Europe/Paris'};
 function _tzProfil(){
   // Deux try distincts : au tout premier appel (calcul de TODAY), S est encore
   // dans sa zone morte et « typeof S » leve malgre tout. Un try unique aurait
@@ -826,9 +813,9 @@ const ROOT=document.getElementById('root');
 
 // ─── PROFILS ─────────────────────────────
 function selectProfile(n){
-  _loaded=false;ACTIVE_PROFILE=n;TARGETS=n==='maureen'?MAUREEN_TARGETS:LIAM_TARGETS;
-  S.inv=JSON.parse(JSON.stringify(n==='maureen'?INV_EMPTY:INV_DEFAULT));
-  S.dayMeals=JSON.parse(JSON.stringify(n==='maureen'?{}:MEALS_DEFAULT));
+  _loaded=false;ACTIVE_PROFILE=n;TARGETS=LIAM_TARGETS;
+  S.inv=JSON.parse(JSON.stringify(INV_DEFAULT));
+  S.dayMeals=JSON.parse(JSON.stringify(MEALS_DEFAULT));
   S.today=getToday();S.displayDate=S.today;
   S.editMode=false;S.mealTab='breakfast';S.mainTab='accueil';
   _lastMainTab='';_lastMealTab='';_lastDay='';   // pas d'animation de transition a l'arrivee
@@ -1228,7 +1215,7 @@ function executeCook(){
 }
 // ─── ADD ITEM ────────────────────────────
 let _aic='frigo';
-let _mzJustFixed=false;
+let _etatCorrige=false;
 let _loaded=false;
 let _itemDetailRef=null;
 let _waitRef=null,_waitCat='placards',_waitMacMode='100';
@@ -1860,7 +1847,7 @@ function _burnSave(day){
     try{fetch(u,{method:'PUT',headers:{'Content-Type':'application/json'},body:_body});}catch(e){}
   },function(){});
 }
-const PAS_BASE_DEFAUT={liam:9679,maureen:0};
+const PAS_BASE_DEFAUT={liam:9679};
 function pasBase(){
   var v=(S&&typeof S.pasBase==='number')?S.pasBase:PAS_BASE_DEFAUT[ACTIVE_PROFILE];
   return (typeof v==='number'&&v>=0)?v:0;
@@ -2094,7 +2081,7 @@ function _applyState(d){
   if(d._profile && d._profile!==ACTIVE_PROFILE)return;
   // Inventaire
   if(d.inv){
-    // Données déjà séparées par profil (/liam/ vs /maureen/) → on charge directement, pas de garde anti-contamination.
+    // Données séparées par profil (un chemin par profil) → chargement direct.
     // Normaliser : TOUJOURS les 4 catégories (Firebase peut n'en avoir sauvegardé qu'une).
     S.inv={
       frigo:Array.isArray(d.inv.frigo)?d.inv.frigo:[],
@@ -2110,10 +2097,10 @@ function _applyState(d){
   }catch(e){}
   }
   // Firebase supprime les null : un item "présent" revient en qty:-1 (notre sentinel) ou sans qty (undefined). On rétablit qty=null.
-  Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it){if(it.qty===undefined){it.qty=null;_mzJustFixed=true;}else if(it.qty===-1){it.qty=null;}}}));
+  Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it){if(it.qty===undefined){it.qty=null;_etatCorrige=true;}else if(it.qty===-1){it.qty=null;}}}));
   // kg/L -> g/ml : conversion des unités
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it){if(it.unit==='kg'){if(typeof it.qty==='number')it.qty=Math.round(it.qty*1000);it.unit='g';}else if(it.unit==='L'||it.unit==='l'){if(typeof it.qty==='number')it.qty=Math.round(it.qty*1000);it.unit='ml';}else if(it.unit==='mL'){it.unit='ml';}}}));
-  // Macros/100g : compléter mac100 manquant (id pour Liam, nom pour Maureen)
+  // Macros/100g : compléter mac100 manquant (par id, puis par nom)
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it&&!it.mac100){const _mm=MACROS100[it.id]||MACROS_BY_NAME[normMac(it.name)];if(_mm)it.mac100={kcal:_mm.kcal,prot:_mm.prot,gluc:_mm.gluc,lip:_mm.lip};}}));
   // Macros par pièce (œufs/fruits/légumes frais) : macPiece + pieceG + mac100 dérivé
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it&&MACROS_PIECE[it.id]&&!it.macPiece){const _p=MACROS_PIECE[it.id];it.macPiece={kcal:_p.kcal,prot:_p.prot,gluc:_p.gluc,lip:_p.lip};it.pieceG=_p.g;it.mac100={kcal:+(_p.kcal*100/_p.g).toFixed(1),prot:+(_p.prot*100/_p.g).toFixed(1),gluc:+(_p.gluc*100/_p.g).toFixed(1),lip:+(_p.lip*100/_p.g).toFixed(1)};}}));
@@ -2125,13 +2112,7 @@ function _applyState(d){
   S.pasRacheter=(d.pasRacheter&&typeof d.pasRacheter==='object')?_assainirCles(d.pasRacheter):{};
   if(typeof d.pasBase==='number'&&d.pasBase>=0)S.pasBase=d.pasBase;
   S.paires0k=(d.paires0k&&typeof d.paires0k==='object')?_assainirCles(d.paires0k):{};
-  if(!S.shopSeeded&&ACTIVE_PROFILE==='liam'){S.shop.list=seedShopList();S.shopSeeded=true;_mzJustFixed=true;}
-  // Maureen : conversion UNIQUE de son inventaire ACTUEL en "pr\u00e9sent" (tout item sans quantit\u00e9 positive). N'affecte PAS ses ajouts futurs.
-  if(ACTIVE_PROFILE==='maureen'){
-    const _has=Object.values(S.inv).some(a=>(a||[]).length>0);
-    if(!d.mzFix5&&_has){Object.values(S.inv).forEach(arr=>(arr||[]).forEach(i=>{i.qty=null;}));_mzJustFixed=true;S.mzFix5=true;}
-    else if(d.mzFix5){S.mzFix5=true;}
-  }
+  if(!S.shopSeeded&&ACTIVE_PROFILE==='liam'){S.shop.list=seedShopList();S.shopSeeded=true;_etatCorrige=true;}
   // Restaurer les épices par défaut de Liam (staples toujours présents, ne disparaissent jamais)
   if(ACTIVE_PROFILE==='liam'){
     if(!S.inv.epices)S.inv.epices=[];
@@ -2150,9 +2131,9 @@ function _applyState(d){
     S.fbBootstrap=true;
   }
   // Repas : Firebase est source de vérité pour les jours qu'il contient
-  // Les jours absents de Firebase utilisent MEALS_DEFAULT (pour Liam) ou {} (pour Maureen)
+  // Les jours absents de Firebase utilisent MEALS_DEFAULT
   if(d.dayMeals){
-    S.dayMeals=ACTIVE_PROFILE==='maureen'?{}:JSON.parse(JSON.stringify(MEALS_DEFAULT));
+    S.dayMeals=JSON.parse(JSON.stringify(MEALS_DEFAULT));
     Object.keys(d.dayMeals).forEach(day=>{
       // Firebase remplace complètement le jour (permet suppression + ajout)
       S.dayMeals[day]=d.dayMeals[day];
@@ -2190,7 +2171,7 @@ function _applyState(d){
   S.ingNames=(d.ingNames&&typeof d.ingNames==='object')?_assainirCles(d.ingNames):(S.ingNames||{});
   try{apprendNomsIngredients();}catch(e){}
   // Fusion one-shot des doublons d'inventaire (Liam) : macros manuelles, somme des quantites, retires au cimetiere
-  if(ACTIVE_PROFILE==='liam'){if(!d.dupMerged){if(_mergeDuplicates())_mzJustFixed=true;S.dupMerged=true;}else{S.dupMerged=true;}}
+  if(ACTIVE_PROFILE==='liam'){if(!d.dupMerged){if(_mergeDuplicates())_etatCorrige=true;S.dupMerged=true;}else{S.dupMerged=true;}}
 }
 function showSyncErr(){alert(_lastSyncErr||'Aucun detail enregistre pour le moment. Declenche une sauvegarde (ajoute un repas) puis retape.');}
 // Le badge existe a deux endroits : en tete de page et sur l'accueil. Un seul
@@ -2368,7 +2349,6 @@ async function _saveStateNow(){
     mzFix2:S.mzFix2||false,
     mzFix3:S.mzFix3||false,
     mzFix4:S.mzFix4||false,
-    mzFix5:S.mzFix5||false,
     dupMerged:S.dupMerged||false,
     removedSpices:S.removedSpices||[],
     shop:S.shop||{list:[],graveyard:[]},
@@ -2449,7 +2429,7 @@ async function loadState(){
         try{localStorage.setItem(ACTIVE_PROFILE+'_st',JSON.stringify(d));}catch(e){}
         _syncStatus='ok';
         try{const rb=await fetch(await fbUrl(ACTIVE_PROFILE+'/burn'));if(rb.ok){const bd=await rb.json();_burnData=(bd&&typeof bd==='object')?bd:{};}}catch(e){}
-        if(_mzJustFixed){_mzJustFixed=false;saveState();}
+        if(_etatCorrige){_etatCorrige=false;saveState();}
         setTimeout(function(){autoBackup();},4000);   // sauvegarde du jour, sans retarder l'affichage
         return;
       }
@@ -2462,7 +2442,7 @@ async function loadState(){
     _loaded=true;
     if(!_photosChargees)chargerPhotos();
     _empreinteRef=_empreinteEtat();
-    if(_mzJustFixed){_mzJustFixed=false;saveState();}
+    if(_etatCorrige){_etatCorrige=false;saveState();}
   }catch(e){}
   _syncStatus='offline';
 }
@@ -2492,7 +2472,7 @@ function openSettings(){
     var but=_enPriseDeMasse()?'Prise de masse':'S\u00e8che';
     var bd=(document.querySelector&&0)||'';
     p.innerHTML='<div style="font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:3px;">'
-      +(ACTIVE_PROFILE==='maureen'?'\ud83c\udf38 Maureen':'\ud83c\udfcb\ufe0f Liam')+' \u00b7 '+but+'</div>'
+      +'\ud83c\udfcb\ufe0f Liam \u00b7 '+but+'</div>'
       +'<div style="font-size:11px;color:var(--text3);line-height:1.5;">'
       +TARGETS.kcal+' kcal \u00b7 '+TARGETS.prot+' g prot. \u00b7 '+TARGETS.gluc+' g gluc. \u00b7 '+TARGETS.lip+' g lip.</div>';
   }
@@ -2578,9 +2558,9 @@ async function generateStockRecipes(){
   const soonList=_soon.length?_soon.join(', '):null;
   const existingNames=RCP.filter(r=>Array.isArray(r.slots)&&r.slots.length&&(!r.profile||r.profile===ACTIVE_PROFILE)).map(r=>r.name).concat((S.aiRecipes||[]).map(r=>r.name));
   const existingList=existingNames.length?existingNames.join(' · '):'aucune';
-  const diet=ACTIVE_PROFILE==='maureen'
-    ?'PRISE DE MASSE : repas caloriques et rassasiants, ~2700 kcal/jour, 145g prot\u00e9ines. Portions g\u00e9n\u00e9reuses, glucides et lipides sains.'
-    :'S\u00c8CHE / RECOMPOSITION : repas riches en prot\u00e9ines, mod\u00e9r\u00e9s en calories, ~2600 kcal/jour, 175g prot\u00e9ines. Prot\u00e9ines maigres, lipides limit\u00e9s. IMPORTANT: les tomates cerises se mangent UNIQUEMENT crues/fra\u00eeches, JAMAIS cuites, po\u00eal\u00e9es ou r\u00f4ties.';
+  // Objectif decrit a partir des cibles reelles, plus de texte fige par profil
+  const diet=(_enPriseDeMasse()?'PRISE DE MASSE : repas caloriques et rassasiants':'S\u00c8CHE / RECOMPOSITION : repas riches en prot\u00e9ines, mod\u00e9r\u00e9s en calories')
+    +', ~'+TARGETS.kcal+' kcal/jour, '+TARGETS.prot+'g prot\u00e9ines.';
   const sys=`Tu es un chef nutritionniste. Génère un MAXIMUM de recettes RÉALISTES et VARIÉES (jusqu'à 4 par type de repas) en utilisant UNIQUEMENT les ingrédients ci-dessous. Régime: ${diet}
 
 INGRÉDIENTS DISPONIBLES (utilise EXACTEMENT l'identifiant avant le "="):
@@ -4094,11 +4074,6 @@ function addScannedToMeal(name,mac100,qtyStr){
 }
 
 
-function backToProfileSelect(){
-  try{saveState();}catch(e){}
-  var ps=document.getElementById('profile-screen');
-  if(ps)ps.style.display='flex';
-}
 
 // ─── ⭐ Repas rapides (favoris manuels) ─────────────────────────────────────
 function favStar(id){
@@ -4863,7 +4838,7 @@ function _enPriseDeMasse(){
     var lw=w?(typeof w==='number'?w:(w.w!=null?w.w:(w.kg!=null?w.kg:w.weight))):null;
     if(wg&&lw)return wg>lw;
   }catch(e){}
-  return ACTIVE_PROFILE==='maureen';
+  return false;
 }
 // Le meme "il te reste 1400 kcal" ne veut pas dire la meme chose a 8 h et a
 // 22 h. On situe le moment avant de choisir le ton.
@@ -5050,7 +5025,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-23 00h55</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">🏋️ Liam</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-23 01h07</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -5211,9 +5186,7 @@ function openAddMeal(type) {_scanBase=null;
     _amSlot=_pm?_pm.id:null;      // pose sans passer par setAmSlot, qui renommerait le repas
     renderAmSlots();
   }catch(e){}
-  // Maureen ne tient pas son inventaire : par défaut, un repas hors recette ne
-  // s'y adosse pas — ni pour la déduction, ni pour l'analyse IA.
-  setMealStock(ACTIVE_PROFILE!=='maureen');
+  setMealStock(true);
   if (type === 'photo') {
     document.getElementById('addmeal-photo-input').value = '';
     document.getElementById('addmeal-photo-input').click();
@@ -6266,6 +6239,10 @@ function matchIngToInventory(ingName){
 
 
 const FREE_SYS="Tu es nutritionniste. Analyse ce repas et retourne UNIQUEMENT un JSON sans markdown: {\"name\":string (max 60 chars, français), \"ingredients\":[{\"name\":string, \"qty\":number, \"unit\":string (g/mL/pcs), \"kcal\":integer, \"prot\":integer, \"gluc\":integer, \"lip\":integer}]}. Si ce n'est PAS un repas: {\"error\":\"non_alimentaire\"}. Sois légèrement pessimiste.";
+
+// Demarrage direct sur le profil. L'ecran de selection reste dans la page,
+// masque : il servira de base a la future connexion Google.
+try{selectProfile('liam');}catch(e){}
 
 
 
