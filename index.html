@@ -3040,7 +3040,7 @@ function renderMacros(){
   const dt=new Date(dd+'T00:00:00');
   const dateLabel=dt.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   const suffix=isToday?' <span style="font-size:10px;color:var(--text3);">· aujourd\'hui</span>':isTomorrow?' <span style="font-size:10px;color:var(--blue);">· demain</span>':'';
-  const list=meals.map(({rid,dessert,customDessert,extras,macros,name},idx)=>{const r=findRecipe(rid);const base=macros||r;if(!base)return'';const _nm=name||(r&&r.name)||'Repas';let dl='';if(dessert&&dessert!=='none'){if(dessert==='autre'&&customDessert)dl=` + ${customDessert.name}`;else{const d=allDesserts().find(x=>x.id===dessert);if(d)dl=` + ${d.name}`;}}const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0)}),{kcal:0,prot:0});if(extras&&extras.length)dl+=' + '+extras.map(e=>e.name).join(', ');const _mo=moment(meals[idx]&&meals[idx].slot);
+  const list=_ordreRepas(meals).map((idx)=>{const {rid,dessert,customDessert,extras,macros,name}=meals[idx];const r=findRecipe(rid);const base=macros||r;if(!base)return'';const _nm=name||(r&&r.name)||'Repas';let dl='';if(dessert&&dessert!=='none'){if(dessert==='autre'&&customDessert)dl=` + ${customDessert.name}`;else{const d=allDesserts().find(x=>x.id===dessert);if(d)dl=` + ${d.name}`;}}const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0)}),{kcal:0,prot:0});if(extras&&extras.length)dl+=' + '+extras.map(e=>e.name).join(', ');const _mo=moment(meals[idx]&&meals[idx].slot);
     const _lis=_mo?`border-left:3px solid ${_mo.couleur};padding-left:7px;`:'border-left:3px solid transparent;padding-left:7px;';
     return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);${_lis}"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(base.kcal+dm.kcal+ex.kcal)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round((base.prot+dm.prot+ex.prot)*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:1px 6px;flex-shrink:0;line-height:1;">✕</button></div>`;}).filter(Boolean).join('');
   const rem=meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text2);">${isToday?'Reste':'Écart'} : <strong style="color:var(--text);">${isToday?(Math.round(Math.max(0,TARGETS.kcal-m.kcal))+' kcal'):((m.kcal>TARGETS.kcal?'+':'')+Math.round(m.kcal-TARGETS.kcal)+' kcal')}</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${isToday?(Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10+'g'):(Math.round(m.prot*10)/10+'/'+TARGETS.prot+'g')}</strong></span>${(()=>{const b=getBurn(dd);if(!b||!b.total)return '';
@@ -5033,7 +5033,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-18 00h22</span></div></div>
+      <button onclick="backToProfileSelect()" title="Changer de profil" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;">👥</button><div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${ACTIVE_PROFILE==='maureen'?'🌸 Maureen':'🏋️ Liam'}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${ACTIVE_PROFILE==='maureen'?'Prise de masse · 2700 kcal':'Sèche · 2600 kcal'} <span style="opacity:.4;">· build 2026-09-22 11h04</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -5696,6 +5696,17 @@ const MOMENTS=[
   {id:'dinner',   nom:'Dîner',         court:'Dîner',    couleur:'#8B7DD8'},
   {id:'snack',    nom:'Collation',     court:'Collation',couleur:'#5FA8C9'}
 ];
+// Ordre d'affichage des repas d'une journee : par moment, puis les repas
+// sans moment a la fin. Renvoie des INDEX : l'edition et la suppression
+// s'appuient sur la position reelle dans S.dayMeals, qu'il ne faut pas toucher.
+function _ordreRepas(meals){
+  var rang={};MOMENTS.forEach(function(m,i){rang[m.id]=i;});
+  return (meals||[]).map(function(m,i){return i;}).sort(function(a,b){
+    var ra=(meals[a]&&rang[meals[a].slot]!==undefined)?rang[meals[a].slot]:99;
+    var rb=(meals[b]&&rang[meals[b].slot]!==undefined)?rang[meals[b].slot]:99;
+    return (ra-rb)||(a-b);            // a moment egal, l'ordre de saisie
+  });
+}
 function moment(id){return MOMENTS.find(function(m){return m.id===id;})||null;}
 function couleurMoment(id){var m=moment(id);return m?m.couleur:'transparent';}
 // Les photos vivent dans leur propre noeud : les joindre a l'etat ferait

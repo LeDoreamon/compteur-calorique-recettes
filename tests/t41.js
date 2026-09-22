@@ -300,3 +300,41 @@ t('avec un nom, le renommage fonctionne toujours',()=>{
     throw new Error('renommage perdu : '+docEl('addmeal-name').value);
 });
 console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
+
+console.log('\n=== FZ. Ordre des repas dans le tracker ===');
+const R=(slot,nom)=>({rid:'r_'+nom,name:nom,mult:1,slot:slot,macros:{kcal:300,prot:20,gluc:30,lip:10}});
+t('*** les repas suivent l\'ordre de la journee ***',()=>{
+  const m=[R('dinner','D'),R('snack','C'),R('breakfast','P'),R('lunch','L')];
+  eq(G('_ordreRepas')(m).map(i=>m[i].name).join(''),'PLDC');
+});
+t('*** les repas sans moment passent a la fin ***',()=>{
+  const m=[R(null,'X'),R('dinner','D'),R(undefined,'Y'),R('breakfast','P')];
+  eq(G('_ordreRepas')(m).map(i=>m[i].name).join(''),'PDXY');
+});
+t('a moment egal, l\'ordre de saisie est garde',()=>{
+  const m=[R('snack','C1'),R('lunch','L'),R('snack','C2')];
+  eq(G('_ordreRepas')(m).map(i=>m[i].name).join(','),'L,C1,C2');
+});
+t('un moment inconnu est traite comme absent',()=>{
+  const m=[R('brunch','B'),R('lunch','L')];
+  eq(G('_ordreRepas')(m).map(i=>m[i].name).join(''),'LB');
+});
+t('liste vide ou nulle',()=>{
+  eq(G('_ordreRepas')([]).length,0);eq(G('_ordreRepas')(null).length,0);
+});
+t('*** l\'edition vise toujours le bon repas ***',()=>{
+  S.inv={frigo:[],placards:[],congelateur:[],epices:[]};
+  S.displayDate=S.today;
+  S.dayMeals[S.today]=[R('dinner','Diner'),R('breakfast','Petit')];
+  S.mainTab='recipes';sb.render();
+  const h=docEl('root').innerHTML;
+  const iP=h.indexOf('>Petit'),iD=h.indexOf('>Diner');
+  if(iP<0||iD<0)throw new Error('repas absents du rendu');
+  if(iP>iD)throw new Error('le petit-dejeuner devrait s\'afficher en premier');
+  const seg=h.slice(h.lastIndexOf('data-action="edit-meal"',iP),iP);
+  if(!/data-idx="1"/.test(seg))throw new Error('le lien d\'edition pointe vers le mauvais repas');
+});
+t('les donnees ne sont pas reordonnees',()=>{
+  eq(S.dayMeals[S.today][0].name,'Diner','le tri ne doit toucher que l\'affichage');
+});
+console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
