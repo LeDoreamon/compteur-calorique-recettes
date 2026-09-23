@@ -24,7 +24,7 @@ const JETON={localId:'UID123',idToken:'tokA',refreshToken:'rtokA',expiresIn:'360
 console.log('\n=== GH. Identifiants ===');
 await t('*** identifiants valides et invalides ***',()=>{
   ['liam','liam.dorayaki','l_m-27'].forEach(x=>{if(!G('loginValide')(x))throw new Error(x+' refuse');});
-  ['','ab','a b','éric','-liam','x'.repeat(31),'liam@x'].forEach(x=>{if(G('loginValide')(x))throw new Error('"'+x+'" accepte');});
+  ['','ab','a b','éric','-liam','x'.repeat(31),'liam@x','@mail.fr'].forEach(x=>{if(G('loginValide')(x))throw new Error('"'+x+'" accepte');});
 });
 await t('l\'identifiant devient une adresse technique en minuscules',()=>eq(G('_emailDe')('  Liam '),'liam@dorayaki.app'));
 await t('*** les erreurs de Google sont traduites ***',()=>{
@@ -259,7 +259,76 @@ await t('*** le bouton de deconnexion remplace l\'ancien bouton de profil ***',(
   if(!/sessionActive\(\)\?'deconnexion\(\)':'quitterProfilHerite\(\)'/.test(src))throw new Error('bouton absent de l\'en-tete');
 });
 await t('le bouton Modifier le profil est en bas des reglages',()=>{
-  if(!/onclick="closeSettings\(\);ouvrirEditionProfil\(\)"/.test(src))throw new Error('absent');
+  if(!/closeSettings\(\);ouvrirEditionProfil\(\)/.test(src))throw new Error('absent');
+});
+
+console.log('\n=== GP. Adresse e-mail et recuperation ===');
+await t('*** une vraie adresse e-mail est acceptee telle quelle ***',()=>{
+  if(!G('loginValide')('Liam.D@Mail.fr'))throw new Error('refusee');
+  eq(G('_emailDe')(' Liam.D@Mail.fr '),'liam.d@mail.fr');
+  eq(G('_emailDe')('liam'),'liam@dorayaki.app','un identifiant simple garde l\'adresse technique');
+});
+await t('*** la reinitialisation part vers une vraie adresse ***',async()=>{
+  serveur([{m:/sendOobCode/,d:{email:'liam@mail.fr'}}]);
+  await G('motDePasseOublie')('liam@mail.fr');
+  const b=JSON.parse(appels[0].body);
+  eq(b.requestType,'PASSWORD_RESET');eq(b.email,'liam@mail.fr');
+});
+await t('*** sans adresse e-mail, aucune demande n\'est envoyee ***',async()=>{
+  serveur([]);
+  let msg='';try{await G('motDePasseOublie')('liam');}catch(e){msg=e.message;}
+  eq(msg,'RESET_SANS_EMAIL');eq(appels.length,0);
+  if(!/adresse e-mail/.test(G('_msgErreurAuth')(msg)))throw new Error('message peu clair');
+});
+await t('*** changer d\'identifiant met a jour le compte et la session ***',async()=>{
+  LS.dz_auth=JSON.stringify({uid:'UID123',rtok:'rtokA',login:'liam'});
+  G('__resetTok')();
+  serveur([{m:/securetoken/,d:{id_token:'tokX',expires_in:'3600'}},
+           {m:/accounts:update/,d:{localId:'UID123',email:'liam@mail.fr',idToken:'tokY',refreshToken:'rtokY',expiresIn:'3600'}}]);
+  S.profil={prenom:'Liam',login:'liam'};
+  await G('changerIdentifiant')('liam@mail.fr');
+  const u=appels.find(a=>/accounts:update/.test(a.url));
+  const b=JSON.parse(u.body);
+  eq(b.email,'liam@mail.fr');eq(b.idToken,'tokX');
+  const s=JSON.parse(LS.dz_auth);
+  eq(s.login,'liam@mail.fr');eq(s.rtok,'rtokY');eq(s.uid,'UID123','le compte ne change pas');
+  eq(S.profil.login,'liam@mail.fr');
+});
+await t('un identifiant invalide n\'est meme pas envoye',async()=>{
+  serveur([]);
+  let msg='';try{await G('changerIdentifiant')('a b');}catch(e){msg=e.message;}
+  eq(msg,'IDENTIFIANT_INVALIDE');
+  if(appels.some(a=>/accounts:update/.test(a.url)))throw new Error('envoye quand meme');
+});
+await t('le refus de Firebase donne la marche a suivre',()=>{
+  if(!/énumération des adresses e-mail/.test(src))throw new Error('explication absente');
+});
+await t('*** la section Connexion figure dans la modification du profil ***',()=>{
+  LS.dz_auth=JSON.stringify({uid:'UID123',rtok:'r',login:'liam'});
+  S.profil={prenom:'Liam'};
+  G('ouvrirEditionProfil')();
+  const h=docEl('profil-panneau').innerHTML;
+  if(!/Connecté en tant que/.test(h))throw new Error('identifiant courant absent');
+  if(!/modifierIdentifiant\(\)/.test(h))throw new Error('changement d\'identifiant absent');
+  if(!/modifierMotDePasse\(\)/.test(h))throw new Error('changement de mot de passe absent');
+  if(!/Sans adresse e-mail/.test(h))throw new Error('avertissement absent pour un identifiant simple');
+});
+await t('le lien Mot de passe oublie figure a la connexion',()=>{
+  G('afficherEcranConnexion')('accueil');G('_authMode')('connexion');
+  if(!/demanderReinitialisation\(\)/.test(docEl('profile-screen').innerHTML))throw new Error('absent');
+});
+
+console.log('\n=== GQ. Interface des reglages ===');
+await t('*** l\'infobulle du bouton dit Parametres ***',()=>{
+  if(/title="Clé API/.test(src))throw new Error('ancienne infobulle');
+  if(!/title="Paramètres\$\{/.test(src))throw new Error('infobulle absente');
+});
+await t('*** le bouton Modifier le profil est dans le bloc profil ***',()=>{
+  const i=src.indexOf("var p=document.getElementById('set-profile');");
+  const b=src.slice(i,i+1600);
+  if(!/ouvrirEditionProfil\(\)/.test(b))throw new Error('absent du bloc');
+  const j=src.indexOf('onclick="closeSettings()" style="flex:1');
+  if(/ouvrirEditionProfil/.test(src.slice(j,j+400)))throw new Error('doublon en bas des reglages');
 });
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
 })();

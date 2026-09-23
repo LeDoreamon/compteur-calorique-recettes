@@ -235,7 +235,6 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div id="set-export"></div>
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
-      <button onclick="closeSettings();ouvrirEditionProfil()" style="flex:1;padding:10px;background:rgba(233,161,59,.12);border:0.5px solid rgba(233,161,59,.45);border-radius:8px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">✏️ Modifier le profil</button>
     </div>
   </div>
 </div>
@@ -2498,7 +2497,9 @@ function openSettings(){
     p.innerHTML='<div style="font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:3px;">'
       +_nomAffiche()+' \u00b7 '+but+'</div>'
       +'<div style="font-size:11px;color:var(--text3);line-height:1.5;">'
-      +TARGETS.kcal+' kcal \u00b7 '+TARGETS.prot+' g prot. \u00b7 '+TARGETS.gluc+' g gluc. \u00b7 '+TARGETS.lip+' g lip.</div>';
+      +TARGETS.kcal+' kcal \u00b7 '+TARGETS.prot+' g prot. \u00b7 '+TARGETS.gluc+' g gluc. \u00b7 '+TARGETS.lip+' g lip.</div>'
+      +'<div style="display:flex;justify-content:flex-end;margin-top:9px;">'
+      +'<button onclick="closeSettings();ouvrirEditionProfil()" style="padding:7px 12px;background:rgba(233,161,59,.12);border:0.5px solid rgba(233,161,59,.45);border-radius:8px;color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;">\u270f\ufe0f Modifier le profil</button></div>';
   }
   var ex=document.getElementById('set-export');
   if(ex){try{ex.innerHTML=renderDataExport();}catch(e){ex.innerHTML='';}}
@@ -5107,10 +5108,10 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-23 10h39</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-23 10h50</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
-      <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
+      <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
     <div id="tabpane">
     ${S.mainTab==='accueil'?renderAccueil():''}
@@ -5954,8 +5955,11 @@ const ACTIVITES=[['1','Sédentaire (bureau, peu de marche)'],['2','Légèrement 
   ['3','Modérément actif (3-5 séances/sem.)'],['4','Très actif (6-7 séances/sem.)'],['5','Extrêmement actif (métier physique + sport)']];
 
 function _loginNorm(s){return String(s||'').trim().toLowerCase();}
-function loginValide(s){return /^[a-z0-9][a-z0-9._-]{2,29}$/.test(_loginNorm(s));}
-function _emailDe(login){return _loginNorm(login)+'@dorayaki.app';}
+// Une vraie adresse e-mail permet de recuperer un mot de passe oublie ; un
+// simple identifiant, non : il devient alors une adresse technique.
+function estEmail(s){return /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(_loginNorm(s));}
+function loginValide(s){return estEmail(s)||/^[a-z0-9][a-z0-9._-]{2,29}$/.test(_loginNorm(s));}
+function _emailDe(login){var l=_loginNorm(login);return estEmail(l)?l:(l+'@dorayaki.app');}
 function _msgErreurAuth(code){
   code=String(code||'');
   if(/EMAIL_EXISTS/.test(code))return 'Cet identifiant est déjà pris.';
@@ -5965,6 +5969,9 @@ function _msgErreurAuth(code){
   if(/OPERATION_NOT_ALLOWED/.test(code))return 'La connexion par mot de passe n\'est pas activée côté Firebase.';
   if(/USER_DISABLED/.test(code))return 'Ce compte est désactivé.';
   if(/CODE_INVALIDE/.test(code))return 'Code de rattachement incorrect.';
+  if(/IDENTIFIANT_INVALIDE/.test(code))return 'Identifiant invalide : 3 à 30 caractères (lettres, chiffres, point, tiret), ou une adresse e-mail.';
+  if(/RESET_SANS_EMAIL/.test(code))return 'La récupération n\'est possible qu\'avec une adresse e-mail. Avec un identifiant simple, le mot de passe ne peut pas être réinitialisé.';
+  if(/CREDENTIAL_TOO_OLD|TOKEN_EXPIRED/.test(code))return 'Pour cette modification, déconnecte-toi puis reconnecte-toi, et réessaie.';
   if(/Failed to fetch|NetworkError|network/i.test(code))return 'Pas de connexion réseau.';
   return 'Erreur : '+code;
 }
@@ -5992,6 +5999,18 @@ async function creerCompte(login,mdp){
   var d=await _appelAuth('signUp',{email:_emailDe(login),password:String(mdp||''),returnSecureToken:true});
   _poserSession(d,login);
   return d.localId;
+}
+async function changerIdentifiant(nouveau){
+  var s=sessionActive();if(!s)throw new Error('Non connecté');
+  if(!loginValide(nouveau))throw new Error('IDENTIFIANT_INVALIDE');
+  var tok=await fbAuthToken();
+  var d=await _appelAuth('update',{idToken:tok,email:_emailDe(nouveau),returnSecureToken:true});
+  _poserSession({localId:s.uid,refreshToken:d.refreshToken||s.rtok,idToken:d.idToken||tok,expiresIn:d.expiresIn},nouveau);
+  if(S.profil){S.profil.login=_loginNorm(nouveau);try{saveState();}catch(e){}}
+}
+async function motDePasseOublie(login){
+  if(!estEmail(login))throw new Error('RESET_SANS_EMAIL');
+  await _appelAuth('sendOobCode',{requestType:'PASSWORD_RESET',email:_emailDe(login)});
 }
 async function changerMotDePasse(nouveau){
   var s=sessionActive();if(!s)throw new Error('Non connecté');
@@ -6214,9 +6233,10 @@ function renderAuth(){
       +'<button onclick="_authMode(\'inscription\')" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.25);color:var(--text);">Créer un compte</button>'
       +'<button onclick="_authMode(\'herite\')" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;margin-top:22px;width:100%;text-decoration:underline;">Accéder à un ancien profil</button>';
   }else if(_auth.mode==='connexion'){
-    h=tete+err+_champ('Identifiant',_inp('au-login','text','','','autocomplete="username" autocapitalize="none"'))
+    h=tete+err+_champ('Identifiant ou e-mail',_inp('au-login','text','','','autocomplete="username" autocapitalize="none"'))
       +_champ('Mot de passe',_inp('au-mdp','password','','','autocomplete="current-password"'))
-      +'<button onclick="validerConnexion()"'+dis+' style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;">'+(_auth.occupe?'Connexion\u2026':'Se connecter')+'</button>'+retour;
+      +'<button onclick="validerConnexion()"'+dis+' style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;">'+(_auth.occupe?'Connexion\u2026':'Se connecter')+'</button>'
+      +'<button onclick="demanderReinitialisation()" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;margin-top:12px;width:100%;text-decoration:underline;">Mot de passe oublié ?</button>'+retour;
   }else if(_auth.mode==='herite'){
     h=tete+err+'<div style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:12px;">Entre ton code de rattachement pour ouvrir l\'ancien profil, sans compte. Solution de transition : crée plutôt un compte avec ce code pour y rapatrier tes données.</div>'
       +_champ('Code',_inp('au-code','text','','XXXX-XXXX-XXXX-XXXX','autocapitalize="characters"'))
@@ -6235,8 +6255,8 @@ function _renderInscription(err,dis,retour){
     +'<div style="font-size:19px;font-weight:600;color:var(--text);margin:3px 0 14px;">'+_ETAPES[e]+'</div>';
   var corps='';
   if(e===0){
-    corps=_champ('Identifiant',_inp('au-login','text',_ins.login,'3 à 30 caractères','autocomplete="username" autocapitalize="none"'))
-      +'<div style="font-size:10.5px;color:var(--text3);margin:-6px 0 12px;">Lettres, chiffres, point, tiret. C\'est lui qui te servira à te connecter.</div>'
+    corps=_champ('Identifiant ou e-mail',_inp('au-login','text',_ins.login,'ex. liam ou liam@mail.fr','autocomplete="username" autocapitalize="none"'))
+      +'<div style="font-size:10.5px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;">Avec une <strong style="color:var(--text2);">adresse e-mail</strong>, tu pourras récupérer ton mot de passe en cas d\'oubli. Avec un simple identifiant, ce ne sera pas possible.</div>'
       +_champ('Mot de passe',_inp('au-mdp','password',_ins.mdp,'6 caractères minimum','autocomplete="new-password"'))
       +_champ('Confirmation',_inp('au-mdp2','password',_ins.mdp,'','autocomplete="new-password"'))
       +(_ins.avecCode?_champ('Code de rattachement',_inp('au-code','text',_ins.code,'XXXX-XXXX-XXXX-XXXX','autocapitalize="characters"'))
@@ -6273,7 +6293,7 @@ async function etapeInscription(sens){
   if(sens>0){
     if(e===0){
       var m2=(document.getElementById('au-mdp2')||{}).value||'';
-      if(!loginValide(_ins.login)){_auth.err='Identifiant invalide : 3 à 30 caractères, lettres, chiffres, point ou tiret.';return renderAuth();}
+      if(!loginValide(_ins.login)){_auth.err=_msgErreurAuth('IDENTIFIANT_INVALIDE');return renderAuth();}
       if(String(_ins.mdp).length<6){_auth.err='Mot de passe trop court : 6 caractères minimum.';return renderAuth();}
       if(m2!==_ins.mdp){_auth.err='Les deux mots de passe ne correspondent pas.';return renderAuth();}
       if(_ins.avecCode&&_ins.code&&!(await codeRattachementValide(_ins.code))){_auth.err=_msgErreurAuth('CODE_INVALIDE');return renderAuth();}
@@ -6314,6 +6334,14 @@ async function validerConnexion(){
   try{await connexion(l,m);try{localStorage.removeItem('dz_herite');}catch(e){}try{location.reload();}catch(e){}}
   catch(e){_auth.occupe=false;_auth.err=_msgErreurAuth(e&&e.message);renderAuth();}
 }
+async function demanderReinitialisation(){
+  var l=_val('au-login');
+  if(!l){_auth.err='Entre d\'abord ton adresse e-mail dans le champ Identifiant.';return renderAuth();}
+  try{await motDePasseOublie(l);
+    _auth.err='';renderAuth();
+    alert('Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d\'être envoyé. Pense à regarder les indésirables.');}
+  catch(e){_auth.err=_msgErreurAuth(e&&e.message);renderAuth();}
+}
 async function accederAncienProfil(){
   if(!(await codeRattachementValide(_val('au-code')))){_auth.err=_msgErreurAuth('CODE_INVALIDE');return renderAuth();}
   try{localStorage.setItem('dz_herite','1');}catch(e){}
@@ -6341,7 +6369,12 @@ function ouvrirEditionProfil(){
     +'<button onclick="recalculerCiblesProfil()" style="background:none;border:0;color:var(--accent2);font-size:11.5px;cursor:pointer;text-decoration:underline;">Recalculer depuis mes infos</button></div>'
     +_secCibles(c,'');
   if(sessionActive()){
-    h+='<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Mot de passe</div>'
+    var _lg=(sessionActive()||{}).login||'';
+    h+='<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Connexion</div>'
+      +'<div style="font-size:11.5px;color:var(--text3);margin-bottom:8px;">Connecté en tant que <span style="color:var(--text);">'+_attr(_lg)+'</span></div>'
+      +(estEmail(_lg)?'':'<div style="font-size:11px;color:var(--gold);line-height:1.45;margin-bottom:10px;">Sans adresse e-mail, un mot de passe oublié ne peut pas être récupéré. Tu peux en ajouter une ci-dessous.</div>')
+      +_champ('Nouvel identifiant ou e-mail',_inp('pf-login','text','','','autocomplete="username" autocapitalize="none"'))
+      +'<button onclick="modifierIdentifiant()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:12px;">Changer l\'identifiant</button>'
       +_deux(_champ('Nouveau',_inp('pf-mdp1','password','','','autocomplete="new-password"')),_champ('Confirmation',_inp('pf-mdp2','password','','','autocomplete="new-password"')))
       +'<button onclick="modifierMotDePasse()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:6px;">Changer le mot de passe</button>';
     if(_catalogue()!==PROFIL_HERITE)h+='<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Rapatrier un ancien profil</div>'
@@ -6376,6 +6409,16 @@ function enregistrerProfil(){
   try{saveState();}catch(e){}
   fermerEditionProfil();
   render();
+}
+async function modifierIdentifiant(){
+  var n=_val('pf-login');
+  if(!loginValide(n)){_errProfil(_msgErreurAuth('IDENTIFIANT_INVALIDE'));return;}
+  try{await changerIdentifiant(n);_errProfil('Identifiant modifié : utilise désormais '+_attr(_loginNorm(n))+' pour te connecter.',true);
+    var e=document.getElementById('pf-login');if(e)e.value='';}
+  catch(e){var m=String(e&&e.message);
+    _errProfil(/OPERATION_NOT_ALLOWED/.test(m)
+      ?'Firebase refuse le changement direct d\'adresse. Console Firebase \u203a Authentication \u203a Paramètres : décoche « Protection contre l\'énumération des adresses e-mail », puis réessaie.'
+      :_msgErreurAuth(m));}
 }
 async function modifierMotDePasse(){
   var a=(document.getElementById('pf-mdp1')||{}).value||'',b=(document.getElementById('pf-mdp2')||{}).value||'';
