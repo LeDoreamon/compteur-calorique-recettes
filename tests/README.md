@@ -64,6 +64,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t46.js` | Audit : neutralisation des entrées, code mort, secrets, rendu de tous les écrans |
 | `t47.js` | Sauvegarde complète (état, dépense, photos) et restauration |
 | `t48.js` | Comptes : connexion, session, rattachement, inscription, profil, cibles |
+| `t49.js` | Séances du programme de musculation dans la saisie de dépense |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
