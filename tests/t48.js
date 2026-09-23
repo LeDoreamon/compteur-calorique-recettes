@@ -330,5 +330,11 @@ await t('*** le bouton Modifier le profil est dans le bloc profil ***',()=>{
   const j=src.indexOf('onclick="closeSettings()" style="flex:1');
   if(/ouvrirEditionProfil/.test(src.slice(j,j+400)))throw new Error('doublon en bas des reglages');
 });
+await t('*** l\'ecran de connexion est centre verticalement ***',()=>{
+  G('afficherEcranConnexion')('accueil');
+  const h=docEl('profile-screen').innerHTML;
+  if(!/max-width:420px;margin:auto;/.test(h))throw new Error('bloc non centre');
+  eq(docEl('profile-screen').style.display,'flex');
+});
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
 })();
