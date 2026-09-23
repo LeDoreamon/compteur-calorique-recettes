@@ -9,6 +9,8 @@ js+='\n;try{globalThis.__getInvPick=function(){return _invPick;};}catch(e){}';
 js+='\n;try{globalThis.__getSugg=function(){return _addMealInvSuggestions;};}catch(e){}';
 js+='\n;try{globalThis.__amSlot=function(){return _amSlot;};}catch(e){}';
 js+='\n;try{globalThis.__useStock=function(){return _addMealUseStock;};}catch(e){}';
+js+='\n;try{globalThis.__resetTok=function(){_fbTok=null;_fbTokExp=0;};}catch(e){}';
+js+='\n;try{globalThis.__profil=function(){return ACTIVE_PROFILE;};}catch(e){}';
 js+='\n;try{globalThis.__getFree=function(){return _addMealFreeItems;};}catch(e){}';
 js+='\n;try{globalThis.__setFree=function(v){_addMealFreeItems=v;};}catch(e){}';
 js+='\n;try{globalThis.__setBurn=function(v){_burnData=v;};}catch(e){}';
@@ -50,7 +52,7 @@ class FD extends RD{
   constructor(...a){if(!a.length)super(INSTANT_TEST);else super(...a);}
   static now(){return new RD(INSTANT_TEST).getTime();}
 }
-const sb={console,Math,Date:FD,JSON,Intl,parseFloat,parseInt,isNaN,isFinite,
+const sb={console,Math,Date:FD,JSON,TextEncoder,crypto:globalThis.crypto,Intl,parseFloat,parseInt,isNaN,isFinite,
  Array,Object,String,Number,Boolean,RegExp,Promise,Map,Set,
  encodeURIComponent,decodeURIComponent,
  document:{getElementById:docEl,querySelector:()=>null,querySelectorAll:()=>[],

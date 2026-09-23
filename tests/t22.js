@@ -61,8 +61,8 @@ t('l\'ecran de selection existe encore, masque',()=>{
   if(i<0)throw new Error('ecran supprime : il doit rester pour la future connexion');
   if(!/display:none;/.test(src.slice(i,i+160)))throw new Error('ecran encore affiche au demarrage');
 });
-t('*** l\'app demarre directement sur le profil ***',()=>{
-  if(!/try\{selectProfile\('liam'\);\}catch\(e\)\{\}/.test(src))throw new Error('aucun demarrage automatique');
+t('*** le demarrage passe par la session ***',()=>{
+  if(!/try\{demarrerApp\(\);\}catch\(e\)\{\}/.test(src))throw new Error('aucun demarrage par la session');
 });
 t('le bouton de changement de profil a disparu',()=>{
   if(/backToProfileSelect/.test(src))throw new Error('encore present');

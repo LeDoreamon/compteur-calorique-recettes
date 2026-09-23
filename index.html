@@ -235,6 +235,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div id="set-export"></div>
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
+      <button onclick="closeSettings();ouvrirEditionProfil()" style="flex:1;padding:10px;background:rgba(233,161,59,.12);border:0.5px solid rgba(233,161,59,.45);border-radius:8px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">✏️ Modifier le profil</button>
     </div>
   </div>
 </div>
@@ -449,6 +450,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 </div>
 <input id="photo-recette-input" type="file" accept="image/*" style="display:none;">
 <input id="backup-file-input" type="file" accept="application/json,.json" style="display:none;">
+<div id="profil-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:320;align-items:flex-end;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 0 0;" onclick="overlayBackdrop(event,this,fermerEditionProfil)">
+  <div id="profil-panneau" style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-top-left-radius:16px;border-top-right-radius:16px;padding:18px 18px calc(24px + env(safe-area-inset-bottom, 0px));width:100%;max-width:480px;max-height:calc(100vh - 16px - env(safe-area-inset-top, 0px));overflow-y:auto;box-sizing:border-box;"></div>
+</div>
 <nav class="bnav" id="bnav"></nav>
 <div id="root" class="container"><div style="padding:2rem;text-align:center;color:var(--text3);">Chargement...</div></div>
 <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:300;flex-direction:column;align-items:center;justify-content:center;">
@@ -814,9 +818,11 @@ const ROOT=document.getElementById('root');
 
 // ─── PROFILS ─────────────────────────────
 function selectProfile(n){
-  _loaded=false;ACTIVE_PROFILE=n;TARGETS=LIAM_TARGETS;
-  S.inv=JSON.parse(JSON.stringify(INV_DEFAULT));
-  S.dayMeals=JSON.parse(JSON.stringify(MEALS_DEFAULT));
+  _loaded=false;ACTIVE_PROFILE=n;
+  var _h=(n===PROFIL_HERITE);
+  TARGETS=_h?LIAM_TARGETS:CIBLES_PAR_DEFAUT;
+  S.inv=JSON.parse(JSON.stringify(_h?INV_DEFAULT:INV_VIDE));        // un compte ne recoit jamais les donnees de demo
+  S.dayMeals=JSON.parse(JSON.stringify(_h?MEALS_DEFAULT:{}));
   S.today=getToday();S.displayDate=S.today;
   S.editMode=false;S.mealTab='breakfast';S.mainTab='accueil';
   _lastMainTab='';_lastMealTab='';_lastDay='';   // pas d'animation de transition a l'arrivee
@@ -1813,6 +1819,18 @@ async function fbAuthToken(){
   if(!_FBK.key)return null;
   const now=Date.now();
   if(_fbTok&&now<_fbTokExp-60000)return _fbTok;
+  var _ses=(typeof sessionActive==='function')?sessionActive():null;
+  if(_ses){
+    try{
+      const rr=await fetch('https://securetoken.googleapis.com/v1/token?key='+_FBK.key,{method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(_ses.rtok)});
+      if(rr.ok){const dd=await rr.json();_fbTok=dd.id_token;_fbTokExp=now+(parseInt(dd.expires_in,10)||3600)*1000;
+        if(dd.refresh_token&&dd.refresh_token!==_ses.rtok){_ses.rtok=dd.refresh_token;try{localStorage.setItem('dz_auth',JSON.stringify(_ses));}catch(e){}}
+        return _fbTok;}
+    }catch(e){}
+    return null;      // jamais de repli anonyme pour un compte
+  }
   try{
     const rt=localStorage.getItem('fb_rtok');
     if(rt){
@@ -2112,10 +2130,14 @@ function _applyState(d){
   S.recTri=d.recTri||'';S.recTriDir=(d.recTriDir===-1?-1:1);
   S.pasRacheter=(d.pasRacheter&&typeof d.pasRacheter==='object')?_assainirCles(d.pasRacheter):{};
   if(typeof d.pasBase==='number'&&d.pasBase>=0)S.pasBase=d.pasBase;
+  S.profil=(d.profil&&typeof d.profil==='object')?d.profil:(S.profil||null);
+  S.catalogue=(typeof d.catalogue==='string'&&d.catalogue)?d.catalogue:(S.catalogue||null);
+  if(typeof d.tz==='string'&&d.tz)S.tz=d.tz;
+  TARGETS=_ciblesProfil();
   S.paires0k=(d.paires0k&&typeof d.paires0k==='object')?_assainirCles(d.paires0k):{};
-  if(!S.shopSeeded&&ACTIVE_PROFILE==='liam'){S.shop.list=seedShopList();S.shopSeeded=true;_etatCorrige=true;}
+  if(!S.shopSeeded&&_catalogue()===PROFIL_HERITE){S.shop.list=seedShopList();S.shopSeeded=true;_etatCorrige=true;}
   // Restaurer les épices par défaut de Liam (staples toujours présents, ne disparaissent jamais)
-  if(ACTIVE_PROFILE==='liam'){
+  if(_catalogue()===PROFIL_HERITE){
     if(!S.inv.epices)S.inv.epices=[];
     if(d.removedSpices&&Array.isArray(d.removedSpices))S.removedSpices=d.removedSpices;const rm=new Set(S.removedSpices||[]);const byId={};S.inv.epices.forEach(s=>{byId[s.id]=s;});
     INV_DEFAULT.epices.forEach(sp=>{if(rm.has(sp.id)){if(byId[sp.id])S.inv.epices=S.inv.epices.filter(x=>x.id!==sp.id);return;}
@@ -2134,7 +2156,7 @@ function _applyState(d){
   // Repas : Firebase est source de vérité pour les jours qu'il contient
   // Les jours absents de Firebase utilisent MEALS_DEFAULT
   if(d.dayMeals){
-    S.dayMeals=JSON.parse(JSON.stringify(MEALS_DEFAULT));
+    S.dayMeals=(ACTIVE_PROFILE===PROFIL_HERITE)?JSON.parse(JSON.stringify(MEALS_DEFAULT)):{};
     Object.keys(d.dayMeals).forEach(day=>{
       // Firebase remplace complètement le jour (permet suppression + ajout)
       S.dayMeals[day]=d.dayMeals[day];
@@ -2172,7 +2194,7 @@ function _applyState(d){
   S.ingNames=(d.ingNames&&typeof d.ingNames==='object')?_assainirCles(d.ingNames):(S.ingNames||{});
   try{apprendNomsIngredients();}catch(e){}
   // Fusion one-shot des doublons d'inventaire (Liam) : macros manuelles, somme des quantites, retires au cimetiere
-  if(ACTIVE_PROFILE==='liam'){if(!d.dupMerged){if(_mergeDuplicates())_etatCorrige=true;S.dupMerged=true;}else{S.dupMerged=true;}}
+  if(_catalogue()===PROFIL_HERITE){if(!d.dupMerged){if(_mergeDuplicates())_etatCorrige=true;S.dupMerged=true;}else{S.dupMerged=true;}}
 }
 function showSyncErr(){alert(_lastSyncErr||'Aucun detail enregistre pour le moment. Declenche une sauvegarde (ajoute un repas) puis retape.');}
 // Le badge existe a deux endroits : en tete de page et sur l'accueil. Un seul
@@ -2359,6 +2381,7 @@ async function _saveStateNow(){
     shopSeeded:S.shopSeeded||false,
     recTri:S.recTri||'',recTriDir:S.recTriDir||1,
     pasBase:(typeof S.pasBase==='number')?S.pasBase:null,
+    profil:S.profil||null,catalogue:S.catalogue||null,tz:S.tz||null,
     pasRacheter:S.pasRacheter||{},
     paires0k:S.paires0k||{},
     ingNames:S.ingNames||{},
@@ -2457,7 +2480,7 @@ window.addEventListener('focus',()=>{
   if(_refreshToday())render();
   if(_wasHidden){_wasHidden=false;_checkFresherOnResume();}
 });
-setInterval(function(){try{if(_refreshToday())render();}catch(e){}},60000);
+setInterval(function(){try{if(!_loaded)return;if(_refreshToday())render();}catch(e){}},60000);
 window.addEventListener('online',()=>{if(_loaded)saveState();});
 window.addEventListener('offline',()=>{_syncStatus='offline';_majBadgesSync();});
 window.addEventListener('online',function(){_liensVerifies=false;try{verifierLiens();}catch(e){}});
@@ -2473,7 +2496,7 @@ function openSettings(){
     var but=_enPriseDeMasse()?'Prise de masse':'S\u00e8che';
     var bd=(document.querySelector&&0)||'';
     p.innerHTML='<div style="font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:3px;">'
-      +'\ud83c\udfcb\ufe0f Liam \u00b7 '+but+'</div>'
+      +_nomAffiche()+' \u00b7 '+but+'</div>'
       +'<div style="font-size:11px;color:var(--text3);line-height:1.5;">'
       +TARGETS.kcal+' kcal \u00b7 '+TARGETS.prot+' g prot. \u00b7 '+TARGETS.gluc+' g gluc. \u00b7 '+TARGETS.lip+' g lip.</div>';
   }
@@ -2557,11 +2580,11 @@ async function generateStockRecipes(){
   const spiceList=spices.length?spices.join(', '):'aucune';
   const _soon=[];Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{const e=effDlc(it);if(!e)return;const dd=Math.round((new Date(e)-new Date(getToday()))/864e5);if(dd>=0&&dd<14&&(it.qty===null||it.qty>0))_soon.push(it.name+' ('+dd+'j)');}));
   const soonList=_soon.length?_soon.join(', '):null;
-  const existingNames=RCP.filter(r=>Array.isArray(r.slots)&&r.slots.length&&(!r.profile||r.profile===ACTIVE_PROFILE)).map(r=>r.name).concat((S.aiRecipes||[]).map(r=>r.name));
+  const existingNames=RCP.filter(r=>Array.isArray(r.slots)&&r.slots.length&&recetteVisible(r)).map(r=>r.name).concat((S.aiRecipes||[]).map(r=>r.name));
   const existingList=existingNames.length?existingNames.join(' · '):'aucune';
   // Objectif decrit a partir des cibles reelles, plus de texte fige par profil
   const diet=(_enPriseDeMasse()?'PRISE DE MASSE : repas caloriques et rassasiants':'S\u00c8CHE / RECOMPOSITION : repas riches en prot\u00e9ines, mod\u00e9r\u00e9s en calories')
-    +', ~'+TARGETS.kcal+' kcal/jour, '+TARGETS.prot+'g prot\u00e9ines.';
+    +', ~'+TARGETS.kcal+' kcal/jour, '+TARGETS.prot+'g prot\u00e9ines. '+_contexteProfil();
   const sys=`Tu es un chef nutritionniste. Génère un MAXIMUM de recettes RÉALISTES et VARIÉES (jusqu'à 4 par type de repas) en utilisant UNIQUEMENT les ingrédients ci-dessous. Régime: ${diet}
 
 INGRÉDIENTS DISPONIBLES (utilise EXACTEMENT l'identifiant avant le "="):
@@ -3665,7 +3688,7 @@ function renderWeightHTML(){
 function recipesUsingItem(it){
   return RCP.filter(function(r){
     if(!r.slots||!r.slots.length)return false;
-    if(r.profile&&r.profile!==ACTIVE_PROFILE)return false;
+    if(!recetteVisible(r))return false;
     return (r.used||[]).some(function(u){
       if(u.id===it.id)return true;
       if(u.n&&normMac(u.n)===normMac(it.name))return true;
@@ -3888,7 +3911,7 @@ function renderBudgetSuggestions(){
   if(remK<=120)return '';
   var cands=RCP.filter(function(r){
     if(!r.slots||!r.slots.length)return false;
-    if(r.profile&&r.profile!==ACTIVE_PROFILE)return false;
+    if(!recetteVisible(r))return false;
     if(!canCook(r,1))return false;
     return r.kcal>=80&&r.kcal<=remK+60;
   });
@@ -4604,7 +4627,7 @@ function deleteCustRec(){
   saveState();closeCustRec();render();
 }
 function renderCustHeader(){
-  var mine=(S.customRecipes||[]).filter(function(r){return r.custom===true&&(!r.profile||r.profile===ACTIVE_PROFILE);});
+  var mine=(S.customRecipes||[]).filter(function(r){return r.custom===true&&recetteVisible(r);});
   var b='<button onclick="openCustRec()" style="width:100%;margin-bottom:12px;padding:12px;background:rgba(111,191,115,.12);border:0.5px dashed rgba(111,191,115,.5);border-radius:10px;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;">➕ Créer une recette</button>';
   if(!mine.length)b+='<div style="font-size:12px;color:var(--text3);margin-bottom:10px;line-height:1.5;">Tes recettes maison vivront ici : ingrédients de ton inventaire, tes étapes, tes créneaux. Cuisinables comme les autres (et étoilables ⭐).</div>';
   return b;
@@ -4890,6 +4913,7 @@ async function renderBackupList(){
 // ─── 💬 Retour du coach apres un repas ──────────────────────────────────────
 // Objectif du profil : prise de masse ou seche (deduit du poids cible, sinon du profil)
 function _enPriseDeMasse(){
+  if(S&&S.profil&&S.profil.objectif)return S.profil.objectif==='prise';
   try{
     var wg=(typeof S.weightGoal==='number')?S.weightGoal:(S.weightGoal&&S.weightGoal.goal);
     var w=(S.weights&&S.weights.length)?S.weights[S.weights.length-1]:null;
@@ -4913,7 +4937,7 @@ function _suggereRecette(resteK,resteP){
   if(!(resteK>=250))return null;
   var c=(RCP||[]).filter(function(r){
     if(!r.slots||!r.slots.length)return false;
-    if(r.profile&&r.profile!==ACTIVE_PROFILE)return false;
+    if(!recetteVisible(r))return false;
     if(!(r.kcal>0)||r.kcal>resteK+80)return false;
     if(cookedToday(r.id))return false;
     try{return canCook(r,1);}catch(e){return false;}
@@ -5069,9 +5093,9 @@ function hideCoachToast(){
 }
 function render(){
   const urgTotal=Object.values(S.inv||{}).flat().filter(i=>i&&i.urgent&&(i.qty===null||i.qty>0)).length;
-  const urgCount=RCP.filter(r=>(!r.profile||r.profile===ACTIVE_PROFILE)&&r.urgent===1&&r.slots&&r.slots.length>0&&canCook(r,1)).length;
+  const urgCount=RCP.filter(r=>recetteVisible(r)&&r.urgent===1&&r.slots&&r.slots.length>0&&canCook(r,1)).length;
   const shown=RCP.filter(r=>{
-    if(r.profile&&r.profile!==ACTIVE_PROFILE)return false;
+    if(!recetteVisible(r))return false;
     if(!r.slots||r.slots.length===0)return false;
     if(S.mealTab==='perso')return r.custom===true;
     if(S.mealTab==='urgent')return r.urgent===1&&canCook(r,1);
@@ -5083,8 +5107,9 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">🏋️ Liam</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-23 01h32</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-23 10h39</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
+      <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Clé API${getApiKey()?' ✓':' — à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
     <div id="tabpane">
@@ -5907,6 +5932,465 @@ function _vignetteDefaut(r,taille){
     +'background:linear-gradient(135deg,hsl('+teinte+',32%,26%),hsl('+((teinte+40)%360)+',28%,18%));'
     +'font-size:'+(taille||22)+'px;">'+em+'</div>';
 }
+
+// ═══ COMPTES : identifiant + mot de passe (Firebase Authentication) ═══════
+// Les mots de passe ne transitent que par Google : ils ne sont jamais
+// stockes dans la base, ouverte en lecture tant que les regles ne sont pas
+// posees. L'identifiant est converti en adresse technique, seul format que
+// Firebase accepte.
+const PROFIL_HERITE='liam';
+const CODE_RATTACHEMENT_SHA256='43c16034572ba630dc094d8871929844a4c2f222d989a996e03edd7e13dfbb93';
+const INV_VIDE={frigo:[],placards:[],congelateur:[],epices:[]};
+const CIBLES_PAR_DEFAUT={kcal:2000,prot:110,gluc:250,lip:65};
+const EMOJIS_PROFIL=['\ud83c\udfcb\ufe0f','\ud83c\udfc3','\ud83d\udeb4','\ud83e\uddd8','\ud83e\udd4a','\ud83c\udfca','\u26f9\ufe0f','\ud83e\udd38',
+  '\ud83e\udd51','\ud83c\udf4e','\ud83c\udf53','\ud83e\udd66','\ud83c\udf63','\ud83c\udf5c','\ud83e\udd5e','\ud83c\udf69',
+  '\ud83d\udc3b','\ud83d\udc3c','\ud83e\udd8a','\ud83d\udc38','\ud83d\udc31','\ud83d\udc36','\ud83e\udd81','\ud83d\udc2f',
+  '\ud83c\udf35','\u2b50','\ud83d\udd25','\u26a1','\ud83c\udfae','\ud83c\udfac','\ud83c\udfa7','\ud83d\ude80'];
+const ALLERGENES=['Arachides','Fruits à coque','Lait','Œufs','Gluten','Soja','Poisson','Crustacés','Sésame','Moutarde','Céleri'];
+const EQUIPEMENTS=['Plaques','Four','Micro-ondes','Air fryer','Mixeur','Cuiseur à riz','Robot cuiseur','Barbecue','Poêle','Casserole'];
+const REGIMES=[['omnivore','Omnivore'],['flexitarien','Flexitarien'],['pescetarien','Pescétarien'],['vegetarien','Végétarien'],
+  ['vegan','Végan'],['halal','Halal'],['casher','Casher'],['sans-lactose','Sans lactose'],['sans-gluten','Sans gluten']];
+const ACTIVITES=[['1','Sédentaire (bureau, peu de marche)'],['2','Légèrement actif (1-3 séances/sem.)'],
+  ['3','Modérément actif (3-5 séances/sem.)'],['4','Très actif (6-7 séances/sem.)'],['5','Extrêmement actif (métier physique + sport)']];
+
+function _loginNorm(s){return String(s||'').trim().toLowerCase();}
+function loginValide(s){return /^[a-z0-9][a-z0-9._-]{2,29}$/.test(_loginNorm(s));}
+function _emailDe(login){return _loginNorm(login)+'@dorayaki.app';}
+function _msgErreurAuth(code){
+  code=String(code||'');
+  if(/EMAIL_EXISTS/.test(code))return 'Cet identifiant est déjà pris.';
+  if(/INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND|INVALID_PASSWORD|INVALID_EMAIL/.test(code))return 'Identifiant ou mot de passe incorrect.';
+  if(/WEAK_PASSWORD/.test(code))return 'Mot de passe trop court : 6 caractères minimum.';
+  if(/TOO_MANY_ATTEMPTS/.test(code))return 'Trop de tentatives. Réessaie dans quelques minutes.';
+  if(/OPERATION_NOT_ALLOWED/.test(code))return 'La connexion par mot de passe n\'est pas activée côté Firebase.';
+  if(/USER_DISABLED/.test(code))return 'Ce compte est désactivé.';
+  if(/CODE_INVALIDE/.test(code))return 'Code de rattachement incorrect.';
+  if(/Failed to fetch|NetworkError|network/i.test(code))return 'Pas de connexion réseau.';
+  return 'Erreur : '+code;
+}
+function sessionActive(){
+  try{var s=JSON.parse(localStorage.getItem('dz_auth')||'null');return (s&&s.uid&&s.rtok)?s:null;}catch(e){return null;}
+}
+function _poserSession(d,login){
+  var s={uid:d.localId,rtok:d.refreshToken,login:_loginNorm(login)};
+  try{localStorage.setItem('dz_auth',JSON.stringify(s));}catch(e){}
+  _fbTok=d.idToken;_fbTokExp=Date.now()+(parseInt(d.expiresIn,10)||3600)*1000;
+  return s;
+}
+async function _appelAuth(point,corps){
+  var r=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:'+point+'?key='+_FBK.key,
+    {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(corps)});
+  var d={};try{d=await r.json();}catch(e){}
+  if(!r.ok)throw new Error((d&&d.error&&d.error.message)||('HTTP '+r.status));
+  return d;
+}
+async function connexion(login,mdp){
+  var d=await _appelAuth('signInWithPassword',{email:_emailDe(login),password:String(mdp||''),returnSecureToken:true});
+  return _poserSession(d,login);
+}
+async function creerCompte(login,mdp){
+  var d=await _appelAuth('signUp',{email:_emailDe(login),password:String(mdp||''),returnSecureToken:true});
+  _poserSession(d,login);
+  return d.localId;
+}
+async function changerMotDePasse(nouveau){
+  var s=sessionActive();if(!s)throw new Error('Non connecté');
+  var tok=await fbAuthToken();
+  var d=await _appelAuth('update',{idToken:tok,password:String(nouveau||''),returnSecureToken:true});
+  if(d.refreshToken)_poserSession({localId:s.uid,refreshToken:d.refreshToken,idToken:d.idToken,expiresIn:d.expiresIn},s.login);
+}
+function deconnexion(){
+  if(!confirm('Se déconnecter de cet appareil ?'))return;
+  try{localStorage.removeItem('dz_auth');localStorage.removeItem('dz_herite');}catch(e){}
+  _fbTok=null;_fbTokExp=0;
+  try{location.reload();}catch(e){}
+}
+async function _sha256Hex(txt){
+  var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(txt)));
+  return Array.prototype.map.call(new Uint8Array(b),function(x){return ('0'+x.toString(16)).slice(-2);}).join('');
+}
+async function codeRattachementValide(code){
+  var c=String(code||'').trim().toUpperCase();
+  if(!c)return false;
+  try{return (await _sha256Hex(c))===CODE_RATTACHEMENT_SHA256;}catch(e){return false;}
+}
+
+// ── Profil utilisateur et cibles ──
+function ageDe(naissance){
+  var p=String(naissance||'').split('-');if(p.length!==3)return 0;
+  var t=(S&&S.today?S.today:getToday()).split('-');
+  var a=(+t[0])-(+p[0]);
+  if((+t[1])<(+p[1])||((+t[1])===(+p[1])&&(+t[2])<(+p[2])))a--;
+  return (a>0&&a<130)?a:0;
+}
+// Estimation de depart (Mifflin-St Jeor x niveau d'activite), modifiable.
+function calculerCibles(p){
+  if(!p)return null;
+  var w=+p.poids,hh=+p.taille,a=ageDe(p.naissance);
+  if(!(w>0&&hh>0&&a>0))return null;
+  var sx=p.sexe==='H'?5:(p.sexe==='F'?-161:-78);
+  var bmr=10*w+6.25*hh-5*a+sx;
+  var i=Math.min(4,Math.max(0,(parseInt(p.activite,10)||1)-1));
+  var tdee=bmr*[1.2,1.375,1.55,1.725,1.9][i];
+  var kcal=p.objectif==='perte'?tdee*0.8:(p.objectif==='prise'?tdee*1.1:tdee);
+  kcal=Math.max(1200,Math.round(kcal/10)*10);
+  var ref=(p.objectif==='perte'&&+p.poidsVise>0&&+p.poidsVise<w)?+p.poidsVise:w;
+  var prot=Math.round((p.objectif==='maintien'?1.6:1.8)*ref);
+  var lip=Math.round(kcal*0.25/9);
+  var gluc=Math.max(0,Math.round((kcal-prot*4-lip*9)/4));
+  return {kcal:kcal,prot:prot,gluc:gluc,lip:lip};
+}
+function _ciblesValides(c){
+  return !!c&&['kcal','prot','gluc','lip'].every(function(k){return typeof c[k]==='number'&&isFinite(c[k])&&c[k]>=0;})&&c.kcal>=800;
+}
+function _ciblesProfil(){
+  var p=S&&S.profil;
+  if(p&&_ciblesValides(p.cibles))return {kcal:p.cibles.kcal,prot:p.cibles.prot,gluc:p.cibles.gluc,lip:p.cibles.lip};
+  if(_catalogue()===PROFIL_HERITE)return LIAM_TARGETS;
+  return calculerCibles(p)||CIBLES_PAR_DEFAUT;
+}
+function _catalogue(){return (S&&S.catalogue)||(ACTIVE_PROFILE===PROFIL_HERITE?PROFIL_HERITE:null);}
+function recetteVisible(r){return !!r&&(!r.profile||r.profile===_catalogue());}
+function _nomAffiche(){
+  var p=S&&S.profil;
+  return ((p&&p.emoji)||'\ud83c\udfcb\ufe0f')+' '+((p&&p.prenom)||(ACTIVE_PROFILE===PROFIL_HERITE?'Liam':'Moi'));
+}
+// Contraintes transmises a l'IA pour qu'elle ne propose rien d'irrealisable
+function _contexteProfil(){
+  var p=S&&S.profil;if(!p)return '';
+  var t=[];
+  var rg=REGIMES.find(function(x){return x[0]===p.regime;});
+  if(rg&&rg[0]!=='omnivore')t.push('Régime : '+rg[1]+'.');
+  if(p.allergies&&p.allergies.length)t.push('ALLERGIES, à exclure absolument : '+p.allergies.join(', ')+'.');
+  if(p.eviter)t.push('Aliments à éviter : '+p.eviter+'.');
+  if(p.equipement&&p.equipement.length)t.push('Équipement disponible, n\'utilise rien d\'autre : '+p.equipement.join(', ')+'.');
+  if(p.temps)t.push('Temps de préparation maximum : '+p.temps+' min.');
+  return t.join(' ');
+}
+function validerProfil(p){
+  var e=[];
+  if(!p.prenom||!String(p.prenom).trim())e.push('le prénom');
+  if(!(+p.taille>=100&&+p.taille<=250))e.push('la taille (100 à 250 cm)');
+  if(!(+p.poids>=30&&+p.poids<=350))e.push('le poids (30 à 350 kg)');
+  var a=ageDe(p.naissance);if(!(a>=13&&a<=100))e.push('la date de naissance');
+  if(p.poidsVise&&!(+p.poidsVise>=30&&+p.poidsVise<=350))e.push('le poids visé');
+  return e;
+}
+
+// ── Donnees d'un compte ──
+async function _initNouveauProfil(cle,profil){
+  var tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}
+  var st={rev:1,savedAt:new Date().toISOString(),_profile:cle,profil:profil,catalogue:null,
+          tz:tz||null,pasBase:(+profil.pas>0?Math.round(+profil.pas):0),inv:INV_VIDE,dayMeals:{}};
+  var r=await fetch(await fbUrl(cle+'/state'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)});
+  if(!r.ok)throw new Error('HTTP '+r.status);
+}
+// Copie le profil historique dans le compte. Rien n'est supprime a la source.
+async function rattacherAncienProfil(cle,profil){
+  var lire=async function(n){var r=await fetch(await fbUrl(PROFIL_HERITE+'/'+n));if(!r.ok)throw new Error('HTTP '+r.status);return r.json();};
+  var ecrire=async function(n,v){var r=await fetch(await fbUrl(cle+'/'+n),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});if(!r.ok)throw new Error('HTTP '+r.status);};
+  var st=await lire('state');
+  if(!st||typeof st!=='object'||!(st.inv||st.dayMeals))throw new Error('ancien profil introuvable');
+  var burn=null,photos=null;
+  try{burn=await lire('burn');}catch(e){}
+  try{photos=await lire('photos');}catch(e){}
+  st._profile=cle;                              // sinon _applyState ignorerait l'etat
+  st.catalogue=PROFIL_HERITE;                   // les recettes du catalogue restent visibles
+  st.tz=st.tz||'Europe/Paris';
+  if(typeof st.pasBase!=='number')st.pasBase=PAS_BASE_DEFAUT[PROFIL_HERITE]||0;
+  if(profil)st.profil=Object.assign({},st.profil||{},profil);
+  await ecrire('state',st);
+  if(burn&&typeof burn==='object')await ecrire('burn',burn);
+  if(photos&&typeof photos==='object')await ecrire('photos',_photosSures(photos));
+  return true;
+}
+
+// ── Demarrage ──
+function demarrerApp(){
+  var s=sessionActive();
+  if(s){selectProfile('users/'+s.uid);return 'compte';}
+  var herite=false;try{herite=localStorage.getItem('dz_herite')==='1';}catch(e){}
+  if(herite){selectProfile(PROFIL_HERITE);return 'herite';}
+  afficherEcranConnexion('accueil');
+  return 'connexion';
+}
+
+// ═══ INTERFACE DES COMPTES ════════════════════════════════════════════════
+var _auth={mode:'accueil',err:'',occupe:false};
+var _ins={etape:0,login:'',mdp:'',code:'',avecCode:false,p:{}};
+var _pfChoix={allergies:[],equipement:[]},_pfEmoji='\ud83c\udfcb\ufe0f';
+var _LISTES={allergies:ALLERGENES,equipement:EQUIPEMENTS};
+var _ST_IN='width:100%;box-sizing:border-box;padding:10px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.15);border-radius:9px;color:var(--text);font-size:14px;outline:none;font-family:inherit;';
+var _ST_BTN='width:100%;padding:12px;border-radius:11px;font-size:14px;font-weight:600;cursor:pointer;';
+function _attr(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
+function _val(id){var e=document.getElementById(id);return e?String(e.value||'').trim():'';}
+function _champ(lbl,inner){return '<div style="margin-bottom:12px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">'+lbl+'</div>'+inner+'</div>';}
+function _inp(id,type,val,ph,extra){return '<input id="'+id+'" type="'+type+'" value="'+_attr(val)+'" placeholder="'+_attr(ph||'')+'" style="'+_ST_IN+'" '+(extra||'')+'>';}
+function _sel(id,opts,val){return '<select id="'+id+'" style="'+_ST_IN+'">'+opts.map(function(o){return '<option value="'+_attr(o[0])+'"'+(String(o[0])===String(val)?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';}
+function _deux(a,b){return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+a+b+'</div>';}
+function _chipsInner(grp){
+  return _LISTES[grp].map(function(x){
+    var on=_pfChoix[grp].indexOf(x)>=0;
+    return '<button type="button" onclick="basculerChoix(\''+grp+'\','+_attr(JSON.stringify(x))+')" style="padding:6px 10px;border-radius:99px;font-size:12px;cursor:pointer;'
+      +'background:'+(on?'rgba(111,191,115,.16)':'transparent')+';border:0.5px solid '+(on?'var(--green)':'rgba(246,237,227,.16)')+';color:'+(on?'var(--green)':'var(--text2)')+';">'+x+'</button>';
+  }).join('');
+}
+function _chips(grp){return '<div id="pf-chips-'+grp+'" style="display:flex;flex-wrap:wrap;gap:6px;">'+_chipsInner(grp)+'</div>';}
+function basculerChoix(grp,x){
+  var a=_pfChoix[grp];if(!a)return;
+  var i=a.indexOf(x);if(i>=0)a.splice(i,1);else a.push(x);
+  var c=document.getElementById('pf-chips-'+grp);if(c)c.innerHTML=_chipsInner(grp);
+}
+function _emojisInner(){
+  return EMOJIS_PROFIL.map(function(e){
+    var on=(e===_pfEmoji);
+    return '<button type="button" onclick="choisirEmoji('+_attr(JSON.stringify(e))+')" style="width:40px;height:40px;font-size:21px;border-radius:10px;cursor:pointer;'
+      +'background:'+(on?'rgba(233,161,59,.18)':'transparent')+';border:0.5px solid '+(on?'var(--gold)':'rgba(246,237,227,.12)')+';">'+e+'</button>';
+  }).join('');
+}
+function choisirEmoji(e){if(EMOJIS_PROFIL.indexOf(e)<0)return;_pfEmoji=e;var c=document.getElementById('pf-emojis');if(c)c.innerHTML=_emojisInner();}
+
+// Sections du profil, partagees entre l'inscription et l'edition
+function _secToi(p){
+  return _deux(_champ('Prénom',_inp('pf-prenom','text',p.prenom,'Ton prénom','maxlength="30" autocomplete="given-name"')),
+               _champ('Nom (facultatif)',_inp('pf-nom','text',p.nom,'','maxlength="40" autocomplete="family-name"')))
+    +_champ('Ton icône','<div id="pf-emojis" style="display:flex;flex-wrap:wrap;gap:6px;">'+_emojisInner()+'</div>')
+    +_deux(_champ('Sexe',_sel('pf-sexe',[['H','Homme'],['F','Femme'],['A','Autre']],p.sexe||'H')),
+           _champ('Date de naissance',_inp('pf-naissance','date',p.naissance,'')))
+    +_deux(_champ('Taille (cm)',_inp('pf-taille','number',p.taille,'175','min="100" max="250" inputmode="numeric"')),
+           _champ('Poids (kg)',_inp('pf-poids','number',p.poids,'75','min="30" max="350" step="0.1" inputmode="decimal"')));
+}
+function _secObjectif(p){
+  return _champ('Objectif',_sel('pf-objectif',[['perte','Perdre du poids'],['maintien','Maintenir'],['prise','Prendre de la masse']],p.objectif||'maintien'))
+    +_deux(_champ('Poids visé (kg)',_inp('pf-poidsvise','number',p.poidsVise,'facultatif','min="30" max="350" step="0.1" inputmode="decimal"')),
+           _champ('Pas par jour',_inp('pf-pas','number',p.pas,'8000','min="0" max="60000" inputmode="numeric"')))
+    +_champ('Niveau d\'activité',_sel('pf-activite',ACTIVITES,p.activite||'2'));
+}
+function _secAlim(p){
+  return _champ('Régime',_sel('pf-regime',REGIMES,p.regime||'omnivore'))
+    +_champ('Allergies et intolérances',_chips('allergies'))
+    +_champ('Aliments à éviter',_inp('pf-eviter','text',p.eviter,'ex. coriandre, champignons','maxlength="120"'))
+    +_champ('Équipement de cuisine',_chips('equipement'))
+    +_champ('Temps de cuisine max',_sel('pf-temps',[['15','15 min'],['30','30 min'],['45','45 min'],['60','1 h'],['','Pas de limite']],p.temps==null?'30':p.temps));
+}
+function _secCibles(c,note){
+  return (note?'<div style="font-size:11.5px;color:var(--text3);line-height:1.45;margin-bottom:10px;">'+note+'</div>':'')
+    +_deux(_champ('Calories',_inp('pf-kcal','number',c.kcal,'','min="800" max="6000" inputmode="numeric"')),
+           _champ('Protéines (g)',_inp('pf-prot','number',c.prot,'','min="0" max="400" inputmode="numeric"')))
+    +_deux(_champ('Glucides (g)',_inp('pf-gluc','number',c.gluc,'','min="0" max="900" inputmode="numeric"')),
+           _champ('Lipides (g)',_inp('pf-lip','number',c.lip,'','min="0" max="400" inputmode="numeric"')));
+}
+function _num(id){var v=parseFloat(_val(id).replace(',','.'));return isNaN(v)?'':v;}
+function _lireToi(){return {prenom:_val('pf-prenom'),nom:_val('pf-nom'),emoji:_pfEmoji,sexe:_val('pf-sexe')||'H',
+  naissance:_val('pf-naissance'),taille:_num('pf-taille'),poids:_num('pf-poids')};}
+function _lireObjectif(){return {objectif:_val('pf-objectif')||'maintien',poidsVise:_num('pf-poidsvise'),pas:_num('pf-pas'),activite:_val('pf-activite')||'2'};}
+function _lireAlim(){return {regime:_val('pf-regime')||'omnivore',allergies:_pfChoix.allergies.slice(),eviter:_val('pf-eviter'),
+  equipement:_pfChoix.equipement.slice(),temps:_val('pf-temps')};}
+function _lireCibles(){var c={kcal:_num('pf-kcal'),prot:_num('pf-prot'),gluc:_num('pf-gluc'),lip:_num('pf-lip')};
+  ['kcal','prot','gluc','lip'].forEach(function(k){if(c[k]!=='')c[k]=Math.round(c[k]);});return c;}
+function _chargerChoix(p){
+  _pfChoix={allergies:((p&&p.allergies)||[]).filter(function(x){return ALLERGENES.indexOf(x)>=0;}),
+            equipement:((p&&p.equipement)||[]).filter(function(x){return EQUIPEMENTS.indexOf(x)>=0;})};
+  _pfEmoji=(p&&EMOJIS_PROFIL.indexOf(p.emoji)>=0)?p.emoji:'\ud83c\udfcb\ufe0f';
+}
+
+// ── Ecran de connexion ──
+function afficherEcranConnexion(mode){
+  _auth.mode=mode||'accueil';_auth.err='';
+  var ps=document.getElementById('profile-screen');if(!ps)return;
+  ps.style.display='flex';ps.style.alignItems='flex-start';ps.style.overflowY='auto';
+  renderAuth();
+}
+function _authMode(m){_auth.mode=m;_auth.err='';if(m==='inscription'){_ins={etape:0,login:'',mdp:'',code:'',avecCode:false,p:{}};_chargerChoix(null);}renderAuth();}
+function renderAuth(){
+  var ps=document.getElementById('profile-screen');if(!ps)return;
+  var err=_auth.err?'<div style="font-size:12.5px;color:var(--red);background:rgba(192,87,70,.1);border:0.5px solid rgba(192,87,70,.35);border-radius:9px;padding:9px 11px;margin-bottom:12px;">'+_auth.err+'</div>':'';
+  var dis=_auth.occupe?' disabled':'';
+  var tete='<div style="text-align:center;margin-bottom:22px;"><img src="icon-192.png?v=3" alt="" style="width:74px;height:74px;border-radius:20px;margin-bottom:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);"><div style="font-size:22px;font-weight:700;color:var(--text);">Dorayaki</div></div>';
+  var retour='<button onclick="_authMode(\'accueil\')" style="background:none;border:0;color:var(--text3);font-size:13px;cursor:pointer;margin-top:12px;width:100%;">\u2190 Retour</button>';
+  var h='';
+  if(_auth.mode==='accueil'){
+    h=tete+'<button onclick="_authMode(\'connexion\')" style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;margin-bottom:10px;">Se connecter</button>'
+      +'<button onclick="_authMode(\'inscription\')" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.25);color:var(--text);">Créer un compte</button>'
+      +'<button onclick="_authMode(\'herite\')" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;margin-top:22px;width:100%;text-decoration:underline;">Accéder à un ancien profil</button>';
+  }else if(_auth.mode==='connexion'){
+    h=tete+err+_champ('Identifiant',_inp('au-login','text','','','autocomplete="username" autocapitalize="none"'))
+      +_champ('Mot de passe',_inp('au-mdp','password','','','autocomplete="current-password"'))
+      +'<button onclick="validerConnexion()"'+dis+' style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;">'+(_auth.occupe?'Connexion\u2026':'Se connecter')+'</button>'+retour;
+  }else if(_auth.mode==='herite'){
+    h=tete+err+'<div style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:12px;">Entre ton code de rattachement pour ouvrir l\'ancien profil, sans compte. Solution de transition : crée plutôt un compte avec ce code pour y rapatrier tes données.</div>'
+      +_champ('Code',_inp('au-code','text','','XXXX-XXXX-XXXX-XXXX','autocapitalize="characters"'))
+      +'<button onclick="accederAncienProfil()"'+dis+' style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;">Ouvrir</button>'+retour;
+  }else{
+    h=_renderInscription(err,dis,retour);
+  }
+  ps.innerHTML='<div style="width:100%;max-width:420px;margin:0 auto;padding:calc(24px + env(safe-area-inset-top, 0px)) 20px calc(30px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">'+h+'</div>';
+}
+var _ETAPES=['Ton compte','Toi','Ton objectif','Ton alimentation','Tes cibles'];
+function _renderInscription(err,dis,retour){
+  var e=_ins.etape,p=_ins.p;
+  var barre='<div style="display:flex;gap:4px;margin-bottom:14px;">'+_ETAPES.map(function(x,i){
+    return '<div style="flex:1;height:4px;border-radius:99px;background:'+(i<=e?'var(--gold)':'var(--bg3)')+';"></div>';}).join('')+'</div>';
+  var t='<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.08em;">Étape '+(e+1)+' / '+_ETAPES.length+'</div>'
+    +'<div style="font-size:19px;font-weight:600;color:var(--text);margin:3px 0 14px;">'+_ETAPES[e]+'</div>';
+  var corps='';
+  if(e===0){
+    corps=_champ('Identifiant',_inp('au-login','text',_ins.login,'3 à 30 caractères','autocomplete="username" autocapitalize="none"'))
+      +'<div style="font-size:10.5px;color:var(--text3);margin:-6px 0 12px;">Lettres, chiffres, point, tiret. C\'est lui qui te servira à te connecter.</div>'
+      +_champ('Mot de passe',_inp('au-mdp','password',_ins.mdp,'6 caractères minimum','autocomplete="new-password"'))
+      +_champ('Confirmation',_inp('au-mdp2','password',_ins.mdp,'','autocomplete="new-password"'))
+      +(_ins.avecCode?_champ('Code de rattachement',_inp('au-code','text',_ins.code,'XXXX-XXXX-XXXX-XXXX','autocapitalize="characters"'))
+        :'<button onclick="_ins.avecCode=true;renderAuth()" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;text-decoration:underline;padding:0;margin-bottom:12px;">J\'ai un code pour rapatrier un ancien profil</button>');
+  }else if(e===1)corps=_secToi(p);
+  else if(e===2)corps=_secObjectif(p);
+  else if(e===3)corps=_secAlim(p);
+  else{
+    var c=_ins.avecCode?LIAM_TARGETS:(calculerCibles(p)||CIBLES_PAR_DEFAUT);
+    if(p.cibles&&_ciblesValides(p.cibles))c=p.cibles;
+    corps=_secCibles(c,_ins.avecCode?'Ce sont tes cibles actuelles, reprises telles quelles.'
+      :'Estimation de départ à partir de tes infos (formule Mifflin-St Jeor). Ajuste si besoin : c\'est un repère, pas un avis médical.');
+  }
+  var nav='<div style="display:flex;gap:8px;margin-top:6px;">'
+    +(e>0?'<button onclick="etapeInscription(-1)" style="'+_ST_BTN+'flex:1;background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);">Précédent</button>':'')
+    +'<button onclick="etapeInscription(1)"'+dis+' style="'+_ST_BTN+'flex:2;background:var(--gold);border:0;color:#1a120b;">'
+    +(e===_ETAPES.length-1?(_auth.occupe?'Création\u2026':'Créer mon compte'):'Suivant')+'</button></div>';
+  return barre+t+err+corps+nav+(e===0?retour:'');
+}
+function _memoriserEtape(){
+  var e=_ins.etape;
+  if(e===0){_ins.login=_val('au-login');_ins.mdp=(document.getElementById('au-mdp')||{}).value||'';
+    var c=document.getElementById('au-code');if(c)_ins.code=_val('au-code');}
+  else if(e===1)Object.assign(_ins.p,_lireToi());
+  else if(e===2)Object.assign(_ins.p,_lireObjectif());
+  else if(e===3)Object.assign(_ins.p,_lireAlim());
+  else _ins.p.cibles=_lireCibles();
+}
+async function etapeInscription(sens){
+  if(_auth.occupe)return;
+  var e=_ins.etape;
+  _memoriserEtape();
+  _auth.err='';
+  if(sens>0){
+    if(e===0){
+      var m2=(document.getElementById('au-mdp2')||{}).value||'';
+      if(!loginValide(_ins.login)){_auth.err='Identifiant invalide : 3 à 30 caractères, lettres, chiffres, point ou tiret.';return renderAuth();}
+      if(String(_ins.mdp).length<6){_auth.err='Mot de passe trop court : 6 caractères minimum.';return renderAuth();}
+      if(m2!==_ins.mdp){_auth.err='Les deux mots de passe ne correspondent pas.';return renderAuth();}
+      if(_ins.avecCode&&_ins.code&&!(await codeRattachementValide(_ins.code))){_auth.err=_msgErreurAuth('CODE_INVALIDE');return renderAuth();}
+      if(_ins.avecCode&&!_ins.code)_ins.avecCode=false;
+    }
+    if(e===1){var er=validerProfil(Object.assign({},_ins.p,{poidsVise:''}));
+      if(er.length){_auth.err='À vérifier : '+er.join(', ')+'.';return renderAuth();}}
+    if(e===_ETAPES.length-1)return finaliserInscription();
+  }
+  _ins.etape=Math.max(0,Math.min(_ETAPES.length-1,e+sens));
+  renderAuth();
+}
+async function finaliserInscription(){
+  var p=_ins.p;
+  var er=validerProfil(p);
+  if(er.length){_auth.err='À vérifier : '+er.join(', ')+'.';return renderAuth();}
+  if(!_ciblesValides(p.cibles))p.cibles=_ins.avecCode?LIAM_TARGETS:(calculerCibles(p)||CIBLES_PAR_DEFAUT);
+  _auth.occupe=true;renderAuth();
+  try{
+    var uid=await creerCompte(_ins.login,_ins.mdp);
+    var cle='users/'+uid;
+    var profil=_neutre(Object.assign({},p,{login:_loginNorm(_ins.login),creeLe:new Date().toISOString()}));
+    if(_ins.avecCode)await rattacherAncienProfil(cle,profil);
+    else await _initNouveauProfil(cle,profil);
+    try{localStorage.removeItem('dz_herite');}catch(e){}
+    try{location.reload();}catch(e){}
+  }catch(e){
+    _auth.occupe=false;
+    _auth.err=_msgErreurAuth(e&&e.message)+(sessionActive()?' Ton compte est créé : connecte-toi, puis termine depuis Réglages \u203a Modifier le profil.':'');
+    renderAuth();
+  }
+}
+async function validerConnexion(){
+  if(_auth.occupe)return;
+  var l=_val('au-login'),m=(document.getElementById('au-mdp')||{}).value||'';
+  if(!l||!m){_auth.err='Renseigne ton identifiant et ton mot de passe.';return renderAuth();}
+  _auth.occupe=true;renderAuth();
+  try{await connexion(l,m);try{localStorage.removeItem('dz_herite');}catch(e){}try{location.reload();}catch(e){}}
+  catch(e){_auth.occupe=false;_auth.err=_msgErreurAuth(e&&e.message);renderAuth();}
+}
+async function accederAncienProfil(){
+  if(!(await codeRattachementValide(_val('au-code')))){_auth.err=_msgErreurAuth('CODE_INVALIDE');return renderAuth();}
+  try{localStorage.setItem('dz_herite','1');}catch(e){}
+  try{location.reload();}catch(e){}
+}
+function quitterProfilHerite(){
+  if(!confirm('Quitter l\'ancien profil ?'))return;
+  try{localStorage.removeItem('dz_herite');}catch(e){}
+  try{location.reload();}catch(e){}
+}
+
+// ── Edition du profil (Reglages) ──
+function ouvrirEditionProfil(){
+  var p=S.profil||{};
+  _chargerChoix(p);
+  var c=_ciblesValides(p.cibles)?p.cibles:TARGETS;
+  var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
+    +'<div style="font-size:16px;font-weight:600;color:var(--text);">\u270f\ufe0f Modifier le profil</div>'
+    +'<button onclick="fermerEditionProfil()" style="background:none;border:0;color:var(--text2);font-size:22px;cursor:pointer;line-height:1;">\u00d7</button></div>'
+    +'<div id="pf-err"></div>'
+    +'<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:4px 0 10px;">Toi</div>'+_secToi(p)
+    +'<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Objectif</div>'+_secObjectif(p)
+    +'<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Alimentation</div>'+_secAlim(p)
+    +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 10px;"><span style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;">Cibles</span>'
+    +'<button onclick="recalculerCiblesProfil()" style="background:none;border:0;color:var(--accent2);font-size:11.5px;cursor:pointer;text-decoration:underline;">Recalculer depuis mes infos</button></div>'
+    +_secCibles(c,'');
+  if(sessionActive()){
+    h+='<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Mot de passe</div>'
+      +_deux(_champ('Nouveau',_inp('pf-mdp1','password','','','autocomplete="new-password"')),_champ('Confirmation',_inp('pf-mdp2','password','','','autocomplete="new-password"')))
+      +'<button onclick="modifierMotDePasse()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:6px;">Changer le mot de passe</button>';
+    if(_catalogue()!==PROFIL_HERITE)h+='<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Rapatrier un ancien profil</div>'
+      +_champ('Code de rattachement',_inp('pf-code','text','','XXXX-XXXX-XXXX-XXXX','autocapitalize="characters"'))
+      +'<button onclick="rattacherDepuisReglages()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:6px;">Rapatrier</button>';
+  }
+  h+='<div style="display:flex;gap:8px;margin-top:16px;">'
+    +'<button onclick="fermerEditionProfil()" style="'+_ST_BTN+'flex:1;background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);">Annuler</button>'
+    +'<button onclick="enregistrerProfil()" style="'+_ST_BTN+'flex:2;background:var(--gold);border:0;color:#1a120b;">Enregistrer</button></div>';
+  var pan=document.getElementById('profil-panneau');if(pan)pan.innerHTML=h;
+  var o=document.getElementById('profil-overlay');if(o)o.style.display='flex';
+}
+function fermerEditionProfil(){var o=document.getElementById('profil-overlay');if(o)o.style.display='none';}
+function _errProfil(msg,ok){var e=document.getElementById('pf-err');if(e)e.innerHTML=msg?'<div style="font-size:12.5px;color:var('+(ok?'--green':'--red')+');background:rgba('+(ok?'111,191,115':'192,87,70')+',.1);border-radius:9px;padding:9px 11px;margin-bottom:12px;">'+msg+'</div>':'';
+  var pan=document.getElementById('profil-panneau');if(pan&&msg)pan.scrollTop=0;}
+function _profilSaisi(){return Object.assign({},S.profil||{},_lireToi(),_lireObjectif(),_lireAlim());}
+function recalculerCiblesProfil(){
+  var c=calculerCibles(_profilSaisi());
+  if(!c){_errProfil('Renseigne taille, poids et date de naissance pour le calcul.');return;}
+  ['kcal','prot','gluc','lip'].forEach(function(k){var e=document.getElementById('pf-'+k);if(e)e.value=c[k];});
+  _errProfil('');
+}
+function enregistrerProfil(){
+  var p=_profilSaisi();
+  var er=validerProfil(p);
+  if(er.length){_errProfil('À vérifier : '+er.join(', ')+'.');return;}
+  var c=_lireCibles();
+  p.cibles=_ciblesValides(c)?c:(calculerCibles(p)||TARGETS);
+  S.profil=_neutre(p);
+  if(typeof p.pas==='number'&&p.pas>=0)S.pasBase=Math.round(p.pas);
+  TARGETS=_ciblesProfil();
+  try{saveState();}catch(e){}
+  fermerEditionProfil();
+  render();
+}
+async function modifierMotDePasse(){
+  var a=(document.getElementById('pf-mdp1')||{}).value||'',b=(document.getElementById('pf-mdp2')||{}).value||'';
+  if(a.length<6){_errProfil('Mot de passe trop court : 6 caractères minimum.');return;}
+  if(a!==b){_errProfil('Les deux mots de passe ne correspondent pas.');return;}
+  try{await changerMotDePasse(a);_errProfil('Mot de passe modifié.',true);
+    ['pf-mdp1','pf-mdp2'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});}
+  catch(e){_errProfil(_msgErreurAuth(e&&e.message));}
+}
+async function rattacherDepuisReglages(){
+  if(!(await codeRattachementValide(_val('pf-code')))){_errProfil(_msgErreurAuth('CODE_INVALIDE'));return;}
+  if(!confirm('Rapatrier l\'ancien profil dans ce compte ?\n\nSes repas, son inventaire, ses recettes et son historique remplaceront les données actuelles du compte. L\'ancien profil n\'est pas supprimé.'))return;
+  try{await rattacherAncienProfil(ACTIVE_PROFILE,S.profil||null);try{location.reload();}catch(e){}}
+  catch(e){_errProfil(_msgErreurAuth(e&&e.message));}
+}
 // ─── PAGE D'ACCUEIL ─────────────────────────────────────────────────────
 // Le prochain repas suit l'ordre reel de la journee et saute ce qui est deja
 // enregistre, quel que soit l'ordre dans lequel les repas ont ete saisis.
@@ -5942,7 +6426,7 @@ function suggestionsAccueil(jour,nb){
   var r=resteDuJour(jour);
   var dispo=(RCP||[]).filter(function(x){
     if(!x||!x.slots||!x.slots.length)return false;
-    if(x.profile&&x.profile!==ACTIVE_PROFILE)return false;
+    if(!recetteVisible(x))return false;
     if(x.slots.indexOf(mo.id)<0)return false;
     if(typeof canCook==='function'&&!canCook(x))return false;
     return true;
@@ -6301,7 +6785,7 @@ const FREE_SYS="Tu es nutritionniste. Analyse ce repas et retourne UNIQUEMENT un
 
 // Demarrage direct sur le profil. L'ecran de selection reste dans la page,
 // masque : il servira de base a la future connexion Google.
-try{selectProfile('liam');}catch(e){}
+try{demarrerApp();}catch(e){}
 
 
 
