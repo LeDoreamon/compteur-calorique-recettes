@@ -1269,8 +1269,9 @@ async function aiWaitMacros(){
   const btn=document.getElementById('wait-ai-btn');if(btn){btn.textContent='\u23f3 Recherche…';btn.disabled=true;}
   try{
     const sys="Base de données nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g/100ml: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number}. Si épice/sel: kcal proche de 0.";
-    const data=await callAI([{role:'user',content:'Macros 100g de: '+nm}],200,sys,null,0,7);
+    const data=await callAI([{role:'user',content:'Macros 100g de: '+nm}],700,sys,null,0,7);
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
+    if(!p)throw new Error('réponse vide, réessaie');
     ['kcal','prot','gluc','lip'].forEach(k=>{const el=document.getElementById('wait-'+k);if(el)el.value=p[k]||0;});
   }catch(e){alert('Erreur IA: '+(e.message||'').slice(0,50));}
   if(btn){btn.textContent='\u2746 Chercher via IA';btn.disabled=false;}
@@ -1511,8 +1512,9 @@ async function aiLookupItemMacros(){
     const sys=_pp
       ? `Base de données nutritionnelles fiable. Estime d'abord le poids moyen RÉALISTE d'UNE pièce de cet aliment (ex. 1 pané de poisson ≈ 70g, 1 œuf ≈ 55g, 1 gourde de compote ≈ 90g), puis donne les macros pour CETTE pièce. Retourne UNIQUEMENT un JSON: {"g":number,"kcal":integer,"prot":number,"gluc":number,"lip":number} où g = le poids d'une pièce en grammes. Reste cohérent et précis.`
       : `Base de données nutritionnelles fiable. Retourne UNIQUEMENT un JSON pour 100g/100ml: {"kcal":integer,"prot":number,"gluc":number,"lip":number}. Si épice/sel: kcal proche de 0. Reste cohérent et précis.`;
-    const data=await callAI([{role:'user',content:(_pp?'Macros pour 1 pièce de: ':'Macros pour 100g de: ')+it.name}],200,sys,null,0,7);
+    const data=await callAI([{role:'user',content:(_pp?'Macros pour 1 pièce de: ':'Macros pour 100g de: ')+it.name}],700,sys,null,0,7);
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
+    if(!p)throw new Error('réponse vide, réessaie');
     const sv=(eid,v)=>{const e=document.getElementById(eid);if(e)e.value=(v===undefined||v===null)?'':v;};
     sv('item-kcal',Math.round(p.kcal)||0);sv('item-prot',p.prot||0);sv('item-gluc',p.gluc||0);sv('item-lip',p.lip||0);
     if(_pp&&p.g>0){const pg=document.getElementById('item-pieceg');if(pg)pg.value=Math.round(p.g);}
@@ -1724,7 +1726,9 @@ async function lookupBarcode(code){
     const p=d.product,nu=p.nutriments||{};
     let kcal=nu['energy-kcal_100g'];if(kcal==null&&nu['energy_100g']!=null)kcal=nu['energy_100g']/4.184;
     const macros={kcal:Math.round(kcal||0),prot:Math.round((+nu.proteins_100g||0)*10)/10,gluc:Math.round((+nu.carbohydrates_100g||0)*10)/10,lip:Math.round((+nu.fat_100g||0)*10)/10};
-    const name=((p.product_name_fr||p.product_name||'').trim())||('Produit '+code);
+    // Donnees publiques modifiables par n'importe qui : neutralisees avant tout usage
+    const name=_neutre(((p.product_name_fr||p.product_name||'')+'').trim())||('Produit '+code);
+    p.quantity=_neutre((p.quantity||'')+'');
     stopScanner();if(_scanMode==='meal'){addScannedToMeal(name,macros,p.quantity||'');}else if(_scanMode==='shop'){addScannedToShop(name,macros,p.quantity||'');}else{applyScannedProduct(name,macros,p.quantity||'');}
   }catch(e){if(st)st.textContent='Erreur réseau — réessaie.';_scanActive=true;if(_scanDetector)requestAnimationFrame(_scanTick);}
 }
@@ -1749,8 +1753,9 @@ async function aiLookupMacros(){
   document.getElementById('ai-status').textContent='🔍 Recherche\u2026';
   try{
     const sys="Base de donn\u00e9es nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number,\"note\":string}. Si \u00e9pice: kcal:0 et note:'Epice'.";
-    const data=await callAI([{role:'user',content:'Macros 100g de: '+n}],200,sys,null,0,7);
+    const data=await callAI([{role:'user',content:'Macros 100g de: '+n}],700,sys,null,0,7);
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
+    if(!p)throw new Error('réponse vide, réessaie');
     ['kcal','prot','gluc','lip'].forEach(k=>{const el=document.getElementById('ai-m-'+k);if(el)el.value=p[k]||0;});
     document.getElementById('ai-mnote').textContent=p.note||'';
     document.getElementById('ai-mbox').style.display='block';
@@ -1828,6 +1833,12 @@ async function fbAuthToken(){
       if(rr.ok){const dd=await rr.json();_fbTok=dd.id_token;_fbTokExp=now+(parseInt(dd.expires_in,10)||3600)*1000;
         if(dd.refresh_token&&dd.refresh_token!==_ses.rtok){_ses.rtok=dd.refresh_token;try{localStorage.setItem('dz_auth',JSON.stringify(_ses));}catch(e){}}
         return _fbTok;}
+      // 400 = jeton refuse pour de bon (mot de passe ou identifiant change sur
+      // un autre appareil, compte desactive). Sans cela l'app restait
+      // « hors ligne » indefiniment sans rien demander.
+      if(rr.status===400){var _je={};try{_je=await rr.json();}catch(e){}
+        var _jm=(_je&&_je.error&&(_je.error.message||_je.error.status))||'';
+        if(/TOKEN_EXPIRED|INVALID_REFRESH_TOKEN|USER_DISABLED|USER_NOT_FOUND|INVALID_GRANT/i.test(_jm))_sessionExpiree(_ses);}
     }catch(e){}
     return null;      // jamais de repli anonyme pour un compte
   }
@@ -1842,6 +1853,19 @@ async function fbAuthToken(){
     if(r2.ok){const d=await r2.json();_fbTok=d.idToken;_fbTokExp=now+(parseInt(d.expiresIn,10)||3600)*1000;try{localStorage.setItem('fb_rtok',d.refreshToken);}catch(e){}return _fbTok;}
   }catch(e){}
   return null;
+}
+// Session revoquee : on redemande le mot de passe. Les saisies faites ici
+// restent dans le cache local et repartent au chargement qui suit la connexion.
+var _expireeSignalee=false;
+function _sessionExpiree(ses){
+  if(_expireeSignalee)return;
+  _expireeSignalee=true;
+  _syncStatus='offline';
+  _lastSyncErr='Session expirée : ton mot de passe ou ton identifiant a changé sur un autre appareil. Reconnecte-toi.';
+  try{_majBadgesSync();}catch(e){}
+  try{_auth.login=(ses&&ses.login)||'';afficherEcranConnexion('connexion');
+    _auth.err='Ta session a expiré (mot de passe ou identifiant changé sur un autre appareil). Reconnecte-toi : ce que tu as saisi ici est conservé.';
+    renderAuth();}catch(e){}
 }
 async function fbUrl(path){const t=await fbAuthToken();return FB+'/'+path+'.json'+(t?('?auth='+t):'');}
 let _burnData={};
@@ -2067,10 +2091,10 @@ async function burnEstimateActivity(){
   if(btn){btn.textContent='⏳ Estimation…';btn.disabled=true;}
   var kcal=null;
   try{
-    var w=(S.weights&&S.weights.length)?(S.weights[S.weights.length-1].w||S.weights[S.weights.length-1]):75;
+    var w=_poidsCourant()||75;      // la pesee la plus recente en date, pas la derniere saisie
     var sys='Tu estimes les calories brûlées lors d\'une activité physique. Réponds UNIQUEMENT par un nombre entier (kcal), sans texte ni unité. Base-toi sur le poids et la durée. Sois réaliste (MET standards).';
     var prompt='Poids: '+w+' kg. Activité: "'+name+'". Durée: '+min+' minutes. Combien de calories brûlées ? Réponds juste le nombre.';
-    var data=await callAI([{role:'user',content:prompt}],20,sys,'openai/gpt-oss-20b',0);
+    var data=await callAI([{role:'user',content:prompt}],400,sys,'openai/gpt-oss-20b',0);
     var txt='';
     if(data&&data.content)txt=Array.isArray(data.content)?data.content.map(function(p){return p.text||'';}).join(''):(''+data.content);
     else if(typeof data==='string')txt=data;
@@ -2843,6 +2867,11 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   }
   const text=data.choices?.[0]?.message?.content||'';
   const fin=data.choices?.[0]?.finish_reason||'';
+  // gpt-oss compte sa reflexion dans max_tokens : un budget trop juste donne
+  // une reponse vide coupee (« length »). On retente une fois, plus large.
+  if(!_retried&&fin==='length'&&!text.trim()&&model.indexOf('gpt-oss')>=0){
+    return callAI(messages,Math.min(4000,Math.max(800,maxTokens*3)),system,modelOverride,temperature,seed,true,opts);
+  }
   return{content:[{type:'text',text}],finish_reason:fin,truncated:fin==='length',empty:!text.trim()};
 }
 // ─────────────────────────────────────────────────────────────────────────────
@@ -4157,7 +4186,12 @@ async function _restaurerSauvegarde(sv){
     if(cur)await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'),{method:'PUT',headers:{'Content-Type':'application/json'},
       body:JSON.stringify({at:new Date().toISOString(),remplacePar:'import de sauvegarde',state:cur})});
   }catch(e){}
-  _applyState(sv.state);            // passe par la neutralisation des entrees
+  // Le fichier a ete choisi explicitement : il vaut pour le profil ouvert,
+  // meme s'il a ete exporte sous un autre (ancien profil, autre compte).
+  // Sans ce reetiquetage, _applyState l'ignorait en silence.
+  var _st=Object.assign({},sv.state,{_profile:ACTIVE_PROFILE});
+  delete _st.groqKey;
+  _applyState(_st);                 // passe par la neutralisation des entrees
   if(sv.burn){
     _burnData=_neutre(sv.burn);
     Object.keys(_burnData).forEach(function(d){try{_burnSave(d);}catch(e){}});
@@ -5176,7 +5210,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-24 23h05</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 01h35</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -6459,7 +6493,10 @@ async function changerMotDePasse(nouveau){
 }
 function deconnexion(){
   if(!confirm('Se déconnecter de cet appareil ?'))return;
-  try{localStorage.removeItem('dz_auth');localStorage.removeItem('dz_herite');}catch(e){}
+  // La cle Groq est rangee hors profil : sans ce menage, le compte suivant
+  // sur cet appareil s'en servirait et l'enverrait dans ses propres donnees.
+  // Elle revient a la reconnexion, depuis l'etat du compte.
+  try{localStorage.removeItem('dz_auth');localStorage.removeItem('dz_herite');localStorage.removeItem('anthropic_key');}catch(e){}
   _fbTok=null;_fbTokExp=0;
   try{location.reload();}catch(e){}
 }
@@ -6672,7 +6709,7 @@ function renderAuth(){
       +'<button onclick="_authMode(\'inscription\')" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.25);color:var(--text);">Créer un compte</button>'
       +'<button onclick="_authMode(\'herite\')" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;margin-top:22px;width:100%;text-decoration:underline;">Accéder à un ancien profil</button>';
   }else if(_auth.mode==='connexion'){
-    h=tete+err+_champ('Identifiant ou e-mail',_inp('au-login','text','','','autocomplete="username" autocapitalize="none"'))
+    h=tete+err+_champ('Identifiant ou e-mail',_inp('au-login','text',_auth.login||'','','autocomplete="username" autocapitalize="none"'))
       +_champ('Mot de passe',_inp('au-mdp','password','','','autocomplete="current-password"'))
       +'<button onclick="validerConnexion()"'+dis+' style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;">'+(_auth.occupe?'Connexion\u2026':'Se connecter')+'</button>'
       +'<button onclick="demanderReinitialisation()" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;margin-top:12px;width:100%;text-decoration:underline;">Mot de passe oublié ?</button>'+retour;
