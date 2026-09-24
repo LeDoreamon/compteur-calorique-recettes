@@ -3185,8 +3185,8 @@ function renderIngredients(r){
     return `<span style="${st}border-radius:6px;padding:2px 9px;font-size:11px;">${flex?'\ud83d\udd04 ':''}${u.qty}${unit} · ${nm}${miss?' \u26a0':''}</span>`;
   }).join('');
   const exItems=(r.extras||[]).map(e=>`<span style="border:0.5px dashed var(--border);color:var(--text3);border-radius:6px;padding:2px 9px;font-size:11px;">${e.opt?'opt. ':''}${e.q?e.q+' · ':''}${e.n}</span>`);
-  // Épices détectées dans la recette → ajoutées comme ingrédients optionnels (sans doublon avec les extras)
-  const exNames=new Set((r.extras||[]).map(e=>(e.n||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
+  // Épices détectées dans la recette → ajoutées comme ingrédients optionnels (sans doublon avec les extras ni les ingrédients)
+  const exNames=new Set((r.extras||[]).concat(r.used||[]).map(e=>((e&&e.n)||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')));
   const spiceItems=getSpicesUsedByRecipe(r)
     .filter(sp=>!exNames.has(sp.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')))
     .map(sp=>`<span style="border:0.5px dashed var(--green);color:var(--green);border-radius:6px;padding:2px 9px;font-size:11px;">opt. · ${sp.name} 🌿</span>`);
@@ -3234,7 +3234,7 @@ function renderCard(r){
     <span class="chev" style="font-size:14px;color:var(--text3);flex-shrink:0;margin-top:2px;transform:rotate(${open?'90deg':'0deg'});">▸</span>
   </div>${open?`<div class="rbody${S._anim==='r:'+r.id?' unfold':''}" data-rec="${r.id}" style="padding:0 15px 14px;border-top:0.5px solid var(--border);">${(function(){
     const p=photoRecette(r.id);
-    return `<div style="margin:12px 0 4px;border-radius:12px;overflow:hidden;position:relative;height:${p?'170px':'96px'};border:0.5px solid var(--border);">`
+    return `<div style="margin:12px 0 4px;border-radius:12px;overflow:hidden;position:relative;height:${p?'170px':'128px'};border:0.5px solid var(--border);">`
       +(p?`<img src="${p}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`:_vignetteDefaut(r,40))
       +`<div style="position:absolute;right:7px;bottom:7px;display:flex;gap:6px;">`
       +`<button onclick="event.stopPropagation();choisirPhotoRecette('${r.id}')" style="padding:6px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;backdrop-filter:blur(4px);">\ud83d\udcf7 ${p?'Changer':'Ajouter une photo'}</button>`
@@ -5176,7 +5176,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-23 13h32</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-24 23h05</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -5980,26 +5980,397 @@ function retirerPhotoRecette(id){
   if(!confirm('Retirer la photo de cette recette ?'))return;
   _enregistrerPhoto(id,null);
 }
-// A defaut de photo : une pastille coloree tiree du nom, stable dans le temps
+// ═══ ILLUSTRATIONS DE RECETTES ═══════════════════════════════════════════
+// Dessin compose a partir du nom et des ingredients : contenant, feculent,
+// proteines, garnitures, sauce. Tirage pseudo-aleatoire stable par recette.
+// Tout le SVG vient de constantes : aucun texte saisi n'y entre.
+function _rngDe(seed){
+  var a=seed>>>0;
+  return function(){a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);
+    t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};
+}
+function _hashTxt(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function _nf(n){return Math.round(n*10)/10;}
+function _ci(x,y,r,fill,ex){return '<circle cx="'+_nf(x)+'" cy="'+_nf(y)+'" r="'+_nf(r)+'" fill="'+fill+'"'+(ex||'')+'/>';}
+function _el(x,y,rx,ry,fill,rot,ex){return '<ellipse cx="'+_nf(x)+'" cy="'+_nf(y)+'" rx="'+_nf(rx)+'" ry="'+_nf(ry)+'" fill="'+fill+'"'
+  +(rot?' transform="rotate('+_nf(rot)+' '+_nf(x)+' '+_nf(y)+')"':'')+(ex||'')+'/>';}
+function _g(x,y,rot,s,inner){return '<g transform="translate('+_nf(x)+' '+_nf(y)+') rotate('+_nf(rot||0)+')'+(s&&s!==1?' scale('+_nf(s*100)/100+')':'')+'">'+inner+'</g>';}
+function _rc(w,h,rx,fill,ex){return '<rect x="'+_nf(-w/2)+'" y="'+_nf(-h/2)+'" width="'+_nf(w)+'" height="'+_nf(h)+'" rx="'+_nf(rx)+'" fill="'+fill+'"'+(ex||'')+'/>';}
+function _trait(p,c,w,ex){return '<path d="'+p+'" fill="none" stroke="'+c+'" stroke-width="'+_nf(w)+'" stroke-linecap="round"'+(ex||'')+'/>';}
+function _pt(p){return _nf(p[0])+' '+_nf(p[1]);}
+// Tache aux bords irreguliers, lissee
+function _blob(rng,x,y,rx,ry,fill,irr,ex){
+  var n=9,pts=[],i;irr=irr==null?0.12:irr;
+  var a0=rng()*6.283;
+  for(i=0;i<n;i++){var a=a0+i*6.283/n,k=1-irr+rng()*irr*2;pts.push([x+Math.cos(a)*rx*k,y+Math.sin(a)*ry*k]);}
+  function m(p,q){return[(p[0]+q[0])/2,(p[1]+q[1])/2];}
+  var d='M'+_pt(m(pts[n-1],pts[0]));
+  for(i=0;i<n;i++)d+='Q'+_pt(pts[i])+' '+_pt(m(pts[i],pts[(i+1)%n]));
+  return '<path d="'+d+'Z" fill="'+fill+'"'+(ex||'')+'/>';
+}
+// Points repartis dans un disque, avec espacement minimal
+function _semis(rng,x,y,R,n,fn,minD){
+  var out='',pts=[],essais=0;
+  while(pts.length<n&&essais<n*30){
+    essais++;
+    var a=rng()*6.283,d=Math.sqrt(rng())*R,p=[x+Math.cos(a)*d,y+Math.sin(a)*d],ok=true;
+    if(minD)for(var j=0;j<pts.length;j++){if(Math.hypot(pts[j][0]-p[0],pts[j][1]-p[1])<minD){ok=false;break;}}
+    if(ok)pts.push(p);
+  }
+  pts.forEach(function(p,i){out+=fn(p[0],p[1],i);});
+  return out;
+}
+function _brins(rng,x,y,r,c1,c2,c3,n){
+  var s=_blob(rng,x,y,r*.95,r*.88,c2,.1);
+  for(var i=0;i<n;i++){
+    var p=[];
+    for(var k=0;k<4;k++){var a=rng()*6.283,d=Math.sqrt(rng())*r*.78;p.push([x+Math.cos(a)*d,y+Math.sin(a)*d]);}
+    var d2='M'+_pt(p[0])+'C'+_pt(p[1])+' '+_pt(p[2])+' '+_pt(p[3]);
+    s+=_trait(d2,c3,r/5.2)+_trait(d2,c1,r/7.5);
+  }
+  return s;
+}
+function _vagues(rng,x,y,r,c1,c3,n){
+  var s='';
+  for(var i=0;i<n;i++){
+    var y0=y-r*.8+i*(r*1.6/(n-1)),hw=Math.sqrt(Math.max(0,r*r-(y0-y)*(y0-y)))*.92;
+    if(hw<2)continue;
+    var ph=rng()*6.283,d='';
+    for(var k=0;k<=12;k++){var xx=x-hw+k*hw*2/12,yy=y0+Math.sin(ph+k*1.3)*r*.06;d+=(k?'L':'M')+_nf(xx)+' '+_nf(yy);}
+    s+=_trait(d,c3,r/6.5)+_trait(d,c1,r/9.5);
+  }
+  return s;
+}
+// Filet de sauce : deux boucles souples en travers
+function _zigzag(rng,x,y,r,c){
+  var s='',a=(rng()-.5)*40;
+  for(var j=0;j<2;j++){
+    var dy=(j-.5)*r*.38,d='M'+_nf(-r*.8)+' '+_nf(dy);
+    for(var k=0;k<4;k++){var x1=-r*.8+(k+.5)*r*.4,x2=-r*.8+(k+1)*r*.4;d+='Q'+_nf(x1)+' '+_nf(dy+(k%2?1:-1)*r*.28)+' '+_nf(x2)+' '+_nf(dy);}
+    s+=_trait(d,c,r*.075,' opacity=".95"')+_trait(d,'#FFFFFF',r*.02,' opacity=".25"');
+  }
+  return _g(x,y,a,1,s);
+}
+
+// Chaque dessin : (rng, x, y, r) -> SVG, dans un disque de rayon r
+var _DESSINS={
+  riz:function(g,x,y,r){return _blob(g,x+.8,y+1,r,r*.9,'#CFC6B2',.08)+_blob(g,x,y,r,r*.9,'#F2EEE3',.08)
+    +_semis(g,x,y,r*.82,Math.min(55,Math.round(r*2.6)),function(a,b){return _el(a,b,r*.1,r*.05,'#FFFFFF',g()*180,' stroke="#D8D0BD" stroke-width=".3"');});},
+  pates:function(g,x,y,r){return _brins(g,x,y,r,'#F4D682','#E3BD5E','#C99E45',9);},
+  pates_completes:function(g,x,y,r){return _brins(g,x,y,r,'#D6AD72','#B98E55','#9C7443',9);},
+  nouilles:function(g,x,y,r){return _blob(g,x,y,r,r*.9,'#D9B35F',.08)+_vagues(g,x,y,r*.92,'#F1D07E','#C49A48',7);},
+  tortellini:function(g,x,y,r){return _blob(g,x,y,r*.9,r*.85,'#E9D6A8',.1)+_semis(g,x,y,r*.7,7,function(a,b){
+    return _ci(a,b,r*.24,'#EFCF83',' stroke="#C9A04E" stroke-width=".6"')+_ci(a+r*.03,b+r*.02,r*.08,'#B98D42');},r*.36);},
+  ravioli:function(g,x,y,r){return _semis(g,x,y,r*.68,6,function(a,b){
+    return _g(a,b,g()*40-20,1,_rc(r*.5,r*.5,r*.08,'#EDD08A',' stroke="#C9A24F" stroke-width=".8" stroke-dasharray="1 .8"')+_ci(0,0,r*.12,'#E2BD6A'));},r*.48);},
+  gnocchi:function(g,x,y,r){return _semis(g,x,y,r*.75,9,function(a,b){
+    return _g(a,b,g()*180,1,_el(0,0,r*.2,r*.14,'#DDAE56',0,' stroke="#B8883A" stroke-width=".5"')
+      +_trait('M'+_nf(-r*.08)+' '+_nf(-r*.1)+'L'+_nf(-r*.08)+' '+_nf(r*.1),'#B8883A',.5)
+      +_trait('M'+_nf(r*.06)+' '+_nf(-r*.1)+'L'+_nf(r*.06)+' '+_nf(r*.1),'#B8883A',.5));},r*.36);},
+  frites:function(g,x,y,r){var s='',a0=-30+g()*60;
+    for(var i=0;i<11;i++){var a=a0+(g()-.5)*70,dx=(g()-.5)*r*.9,dy=(g()-.5)*r*.9;
+      s+=_g(x+dx,y+dy,a,1,_rc(r*.95,r*.2,r*.06,'#F2C24C',' stroke="#C98E27" stroke-width=".5"'));}
+    return s;},
+  lentilles:function(g,x,y,r){return _blob(g,x,y,r*.95,r*.85,'#6A4529',.1)+_semis(g,x,y,r*.8,Math.round(r*3),function(a,b,i){
+    return _el(a,b,r*.07,r*.055,i%2?'#9C6B42':'#84583A',g()*180);});},
+  ratatouille:function(g,x,y,r){var c=['#E0B33A','#5E8C3A','#7E3653','#D8553A','#E0B33A'];
+    return _blob(g,x,y,r*.95,r*.88,'#B0402B',.12)+_semis(g,x,y,r*.72,9,function(a,b,i){
+      return _g(a,b,g()*90,1,_rc(r*.26,r*.22,r*.05,c[i%c.length]));},r*.28);},
+  pizza:function(g,x,y,r){var s=_ci(x,y,r,'#D6A158')+_ci(x,y,r*.84,'#C9432F');
+    s+=_semis(g,x,y,r*.65,8,function(a,b){return _blob(g,a,b,r*.16,r*.13,'#F4DC8F',.2);},r*.26);
+    for(var i=0;i<4;i++){var a=i*Math.PI/4;s+=_trait('M'+_nf(x-Math.cos(a)*r)+' '+_nf(y-Math.sin(a)*r)+'L'+_nf(x+Math.cos(a)*r)+' '+_nf(y+Math.sin(a)*r),'#9E6A2A',.7,' opacity=".7"');}
+    return s;},
+  galette:function(g,x,y,r){return _g(x,y,45,1,_rc(r*1.4,r*1.4,r*.1,'#8B5A34')+_rc(r*.8,r*.8,r*.05,'#E8CFA0'))
+    +_semis(g,x,y,r*.35,5,function(a,b){return _g(a,b,g()*180,1,_rc(r*.22,r*.1,.5,'#C2564A'));});},
+  gratin:function(g,x,y,r){return _blob(g,x,y,r,r*.9,'#E8C46E',.1)+_semis(g,x,y,r*.75,10,function(a,b){return _blob(g,a,b,r*.12,r*.09,'#B8772C',.3);});},
+  avoine:function(g,x,y,r){return _blob(g,x,y,r,r*.85,'#D9C08F',.14)+_semis(g,x,y,r*.8,Math.round(r*1.6),function(a,b){
+    return _el(a,b,r*.12,r*.08,'#EBD8AE',g()*180,' stroke="#C2A473" stroke-width=".4"');});},
+  // Proteines
+  poulet:function(g,x,y,r){var s='',a0=-35+g()*20;
+    for(var i=0;i<5;i++){var t=(i-2)/2,a=a0+(g()-.5)*25;
+      s+=_g(x+t*r*.45+(g()-.5)*r*.15,y+t*r*.3*(g()>.5?1:-1)*.4+(g()-.5)*r*.3,a+(i%2?8:-8),1,
+        _rc(r*1.05,r*.3,r*.14,'#DDAB68',' stroke="#AF7B3D" stroke-width=".5"')
+        +_trait('M'+_nf(-r*.2)+' '+_nf(-r*.12)+'L'+_nf(-r*.1)+' '+_nf(r*.12),'#8E5A26',r*.06,' opacity=".55"')
+        +_trait('M'+_nf(r*.15)+' '+_nf(-r*.12)+'L'+_nf(r*.25)+' '+_nf(r*.12),'#8E5A26',r*.06,' opacity=".55"'));}
+    return s;},
+  karaage:function(g,x,y,r){return _semis(g,x,y,r*.62,6,function(a,b){
+    return _blob(g,a,b,r*.3,r*.26,'#C47E2A',.22,' stroke="#9A5E1C" stroke-width=".5"')+_blob(g,a-r*.06,b-r*.06,r*.14,r*.1,'#E3A74B',.3)
+      +_ci(a+r*.1,b+r*.08,r*.03,'#8F561B')+_ci(a-r*.12,b+r*.1,r*.03,'#8F561B');},r*.42);},
+  pane:function(g,x,y,r){var s='';
+    for(var i=0;i<2;i++){var a=-20+i*35+(g()-.5)*10,dx=(i?1:-1)*r*.22,dy=(i?1:-1)*r*.2;
+      s+=_g(x+dx,y+dy,a,1,_el(0,0,r*.72,r*.42,'#CF9036',0,' stroke="#A2661D" stroke-width=".7"')
+        +_semis(g,0,0,r*.55,9,function(a2,b2){return _ci(a2,b2*.55,r*.035,'#E9B45A');}));}
+    return s;},
+  steak:function(g,x,y,r){var s='';
+    for(var i=0;i<2;i++){var dx=(i?1:-1)*r*.25,dy=(i?1:-1)*r*.18;
+      s+=_g(x+dx,y+dy,-15+i*25,1,_blob(g,0,0,r*.66,r*.46,'#6A3222',.1,' stroke="#461D12" stroke-width=".9"')
+        +[-1,0,1].map(function(k){return _trait('M'+_nf(k*r*.25-r*.15)+' '+_nf(-r*.3)+'L'+_nf(k*r*.25+r*.15)+' '+_nf(r*.3),'#2E120A',r*.08,' opacity=".6"');}).join(''));}
+    return s;},
+  boulettes:function(g,x,y,r){return _semis(g,x,y,r*.62,6,function(a,b){
+    return _ci(a,b,r*.27,'#7A4228',' stroke="#55291A" stroke-width=".6"')+_ci(a-r*.08,b-r*.08,r*.09,'#A5673F');},r*.5);},
+  saumon:function(g,x,y,r){var w=r*1.45,h=r*.9,s=_rc(w,h,r*.22,'#EF8A5C',' stroke="#C9653A" stroke-width=".6"')
+      +'<rect x="'+_nf(-w/2)+'" y="'+_nf(h/2-r*.16)+'" width="'+_nf(w)+'" height="'+_nf(r*.16)+'" rx="'+_nf(r*.06)+'" fill="#7E5446"/>';
+    for(var i=0;i<4;i++){var xx=-w/2+w*(i+1)/5;s+=_trait('M'+_nf(xx-r*.12)+' '+_nf(-h/2+r*.08)+'Q'+_nf(xx+r*.12)+' 0 '+_nf(xx-r*.05)+' '+_nf(h/2-r*.2),'#FAD0B8',r*.07);}
+    return _g(x,y,-18+g()*10,1,s);},
+  thon:function(g,x,y,r){return _semis(g,x,y,r*.7,10,function(a,b,i){return _blob(g,a,b,r*.2,r*.15,i%2?'#D3A48E':'#BC8A75',.3);},r*.22);},
+  brouilles:function(g,x,y,r){return _semis(g,x,y,r*.65,8,function(a,b){
+    return _blob(g,a,b,r*.3,r*.24,'#F2CB45',.25)+_blob(g,a-r*.06,b-r*.05,r*.13,r*.09,'#FBE38A',.3);},r*.3);},
+  omelette:function(g,x,y,r){var s='<path d="M'+_nf(-r)+' 0A'+_nf(r)+' '+_nf(r*.85)+' 0 0 1 '+_nf(r)+' 0Z" fill="#F2C94C" stroke="#D59F2C" stroke-width="1"/>'
+      +_trait('M'+_nf(-r*.92)+' '+_nf(-r*.06)+'L'+_nf(r*.92)+' '+_nf(-r*.06),'#E2AE36',r*.06);
+    s+=_semis(g,0,-r*.4,r*.35,5,function(a,b){return _blob(g,a,b,r*.07,r*.05,'#D29A34',.3);});
+    return _g(x,y+r*.35,-12+g()*10,1,s);},
+  oeuf:function(g,x,y,r){var s='';
+    for(var i=0;i<2;i++){var dx=(i?1:-1)*r*.38;
+      s+=_g(x+dx,y+(i?r*.1:-r*.1),g()*40-20,1,_el(0,0,r*.44,r*.36,'#FBFAF3',0,' stroke="#DDD8CA" stroke-width=".5"')+_ci(0,0,r*.2,'#F1A13A')+_ci(-r*.06,-r*.06,r*.06,'#F8C46A'));}
+    return s;},
+  bacon:function(g,x,y,r){return _semis(g,x,y,r*.72,9,function(a,b){
+    return _g(a,b,g()*180,1,_rc(r*.52,r*.21,r*.05,'#C0544A')+_rc(r*.52,r*.06,0,'#F2C8B8'));},r*.24);},
+  jambon_des:function(g,x,y,r){return _semis(g,x,y,r*.72,9,function(a,b){
+    return _g(a,b,g()*180,1,_rc(r*.42,r*.18,r*.05,'#EFA09B',' stroke="#D9807B" stroke-width=".4"'));},r*.24);},
+  jambon:function(g,x,y,r){var s='';
+    for(var i=0;i<2;i++){s+=_g(x+(i?1:-1)*r*.22,y+(i?r*.12:-r*.12),g()*60,1,
+      _el(0,0,r*.62,r*.42,'#F2A6A1',0,' stroke="#FBE3DD" stroke-width="'+_nf(r*.08)+'"')+_trait('M'+_nf(-r*.4)+' 0Q0 '+_nf(r*.2)+' '+_nf(r*.4)+' 0','#E08A85',r*.05));}
+    return s;},
+  mozza:function(g,x,y,r){return _semis(g,x,y,r*.68,6,function(a,b){
+    return _ci(a,b,r*.27,'#FBFBF5',' stroke="#D6D2C6" stroke-width=".5"')+_ci(a-r*.08,b-r*.08,r*.08,'#FFFFFF');},r*.46);},
+  chorizo:function(g,x,y,r){return _semis(g,x,y,r*.65,5,function(a,b){
+    return _ci(a,b,r*.26,'#B8392B',' stroke="#8A2418" stroke-width=".6"')+_ci(a+r*.06,b-r*.05,r*.05,'#E9A08A')+_ci(a-r*.08,b+r*.06,r*.04,'#E9A08A');},r*.45);},
+  // Garnitures
+  tomates:function(g,x,y,r){return _semis(g,x,y,r*.55,3,function(a,b){
+    return _ci(a,b,r*.4,'#D63A2F')+_ci(a,b,r*.29,'#EE6B55')+_ci(a-r*.1,b,r*.05,'#F9DA9E')+_ci(a+r*.1,b,r*.05,'#F9DA9E')+_ci(a,b+r*.1,r*.05,'#F9DA9E');},r*.6);},
+  concombre:function(g,x,y,r){return _semis(g,x,y,r*.55,3,function(a,b){
+    return _ci(a,b,r*.4,'#4E8A38')+_ci(a,b,r*.33,'#D2E9AF')+_ci(a,b-r*.1,r*.04,'#F0F7DF')+_ci(a-r*.09,b+r*.06,r*.04,'#F0F7DF')+_ci(a+r*.09,b+r*.06,r*.04,'#F0F7DF');},r*.6);},
+  carottes:function(g,x,y,r){return _semis(g,x,y,r*.75,22,function(a,b,i){var t=g()*6.283,l=r*.22;
+    return _trait('M'+_nf(a-Math.cos(t)*l)+' '+_nf(b-Math.sin(t)*l)+'L'+_nf(a+Math.cos(t)*l)+' '+_nf(b+Math.sin(t)*l),i%2?'#F28A2E':'#E0731D',r*.1);});},
+  oignons:function(g,x,y,r){return _semis(g,x,y,r*.6,4,function(a,b){var t=g()*360;
+    return _g(a,b,t,1,_trait('M'+_nf(-r*.3)+' 0A'+_nf(r*.3)+' '+_nf(r*.3)+' 0 0 1 '+_nf(r*.3)+' 0','#EFE4CC',r*.09));});},
+  fraises:function(g,x,y,r){return _semis(g,x,y,r*.55,3,function(a,b){var k=r*.075;
+    return _g(a,b,g()*60-30,1,'<path d="M'+_nf(-5*k)+' '+_nf(-3*k)+'Q'+_nf(-5*k)+' '+_nf(-6*k)+' 0 '+_nf(-5*k)+'Q'+_nf(5*k)+' '+_nf(-6*k)+' '+_nf(5*k)+' '+_nf(-3*k)
+      +'Q'+_nf(4*k)+' '+_nf(3*k)+' 0 '+_nf(6*k)+'Q'+_nf(-4*k)+' '+_nf(3*k)+' '+_nf(-5*k)+' '+_nf(-3*k)+'Z" fill="#D8333A"/>'
+      +_ci(-2*k,-1*k,.5*k,'#F7DF7A')+_ci(2*k,-1*k,.5*k,'#F7DF7A')+_ci(0,2*k,.5*k,'#F7DF7A')
+      +_el(0,-5*k,3.2*k,1.3*k,'#4F9A3A'));},r*.62);},
+  framboises:function(g,x,y,r){return _semis(g,x,y,r*.55,3,function(a,b){var s='',k=r*.1;
+    for(var i=0;i<7;i++){var t=i*6.283/6,d=i?k*1.1:0;s+=_ci(a+Math.cos(t)*d,b+Math.sin(t)*d,k*.75,i%2?'#C93A5B':'#D84A6B');}
+    return s;},r*.62);},
+  pomme:function(g,x,y,r){return _semis(g,x,y,r*.5,3,function(a,b){
+    return _g(a,b,g()*360,1,_el(0,0,r*.42,r*.2,'#F4E6BC')+_trait('M'+_nf(-r*.42)+' 0A'+_nf(r*.42)+' '+_nf(r*.2)+' 0 0 1 '+_nf(r*.42)+' 0','#C63B33',r*.08)
+      +_ci(-r*.05,r*.03,r*.03,'#6B4A2A')+_ci(r*.05,r*.03,r*.03,'#6B4A2A'));},r*.4);},
+  pomme_entiere:function(g,x,y,r){return _blob(g,x,y+r*.05,r*.85,r*.8,'#CF3B35',.05)+_blob(g,x-r*.3,y-r*.2,r*.22,r*.14,'#E87A6A',.2)
+    +_trait('M'+_nf(x)+' '+_nf(y-r*.65)+'Q'+_nf(x+r*.05)+' '+_nf(y-r*.95)+' '+_nf(x+r*.15)+' '+_nf(y-r*1.05),'#6B4A2A',r*.1)
+    +_el(x+r*.35,y-r*.85,r*.25,r*.12,'#5E9E3A',-25);},
+  banane:function(g,x,y,r){return _semis(g,x,y,r*.55,4,function(a,b){
+    return _ci(a,b,r*.3,'#F4E4A1',' stroke="#DCC064" stroke-width=".6"')+_ci(a,b,r*.06,'#B8A058');},r*.5);},
+  amandes:function(g,x,y,r){return _semis(g,x,y,r*.6,5,function(a,b){var k=r*.075;
+    return _g(a,b,g()*360,1,'<path d="M0 '+_nf(-4*k)+'Q'+_nf(3*k)+' '+_nf(-k)+' 0 '+_nf(4*k)+'Q'+_nf(-3*k)+' '+_nf(-k)+' 0 '+_nf(-4*k)+'Z" fill="#B67A48" stroke="#8A5530" stroke-width=".4"/>');},r*.42);},
+  salade:function(g,x,y,r){return _semis(g,x,y,r*.45,3,function(a,b,i){
+    return _g(a,b,g()*360,1,_el(0,0,r*.45,r*.28,i%2?'#79B04F':'#8BC45C')+_trait('M'+_nf(-r*.38)+' 0L'+_nf(r*.38)+' 0','#5E9440',r*.05));},r*.4);},
+  stmoret:function(g,x,y,r){return _blob(g,x,y,r*.6,r*.52,'#FAF7EF',.1,' stroke="#E0D9C6" stroke-width=".6"')
+    +_trait('M'+_nf(x-r*.25)+' '+_nf(y)+'Q'+_nf(x)+' '+_nf(y-r*.3)+' '+_nf(x+r*.25)+' '+_nf(y),'#E4DDCB',r*.07);},
+  // Nappes posees sur le feculent
+  bolo:function(g,x,y,r){return _blob(g,x,y,r*.58,r*.52,'#A3391F',.15)+_semis(g,x,y,r*.45,12,function(a,b){return _blob(g,a,b,r*.07,r*.06,'#6E2412',.3);});},
+  chili:function(g,x,y,r){return _blob(g,x,y,r*.62,r*.55,'#94371F',.15)+_semis(g,x,y,r*.45,7,function(a,b){return _el(a,b,r*.1,r*.065,'#561C12',g()*180);});},
+  // Parsemes
+  sesame:function(g,x,y,r){return _semis(g,x,y,r*.8,14,function(a,b){return _el(a,b,.9,.5,'#F3E6C2',g()*180);});},
+  rape:function(g,x,y,r){return _semis(g,x,y,r*.7,14,function(a,b){var t=g()*6.283;
+    return _trait('M'+_nf(a)+' '+_nf(b)+'L'+_nf(a+Math.cos(t)*2.4)+' '+_nf(b+Math.sin(t)*2.4),'#F6D862',.9);});},
+  herbes:function(g,x,y,r){return _semis(g,x,y,r*.75,12,function(a,b){return _ci(a,b,.6,'#5E9A3E');});}
+};
+// Sauces : nappe sous les aliments ou filet par-dessus
+var _SAUCES={
+  creme:{c:'#EEDFBC',nappe:1},sauce_tomate:{c:'#C23F2C',nappe:1},curry:{c:'#E3A443',nappe:1},
+  soja:{c:'#5B2B14'},miel:{c:'#E7A22A'},cheezy:{c:'#F0B43A'},moutarde:{c:'#DDB035'},cancoillotte:{c:'#E9CF6A'}
+};
+// Fonds de bol
+var _FOND_BOL={
+  avoine:{c:'#D8C195',flocons:'#EAD7AE',bord:'#C2A473'},
+  cacao:{c:'#8A5A38',flocons:'#A57250',bord:'#6E4429'},
+  blanc:{c:'#F6F4EE'},
+  soupe:{c:'#E48B34'},
+  ramen:{c:'#D8A24E'}
+};
+
+// Regles de lecture : [motif, role, dessin]. L'ordre fixe la priorite.
+var _REGLES=[
+  [/ramen/,'base','nouilles'],[/nouille/,'base','nouilles'],[/tortellini/,'base','tortellini'],[/ravioli/,'base','ravioli'],
+  [/gnocchi/,'base','gnocchi'],[/pizza/,'base','pizza'],[/galette/,'base','galette'],[/gratin/,'base','gratin'],
+  [/pates? complete/,'base','pates_completes'],[/pates|spaghetti|carbonara|penne|macaroni|tagliatelle/,'base','pates'],
+  [/\briz\b/,'base','riz'],[/frite/,'base','frites'],[/lentille/,'base','lentilles'],
+  [/karaage|nugget/,'prot','karaage'],[/panko|\bpane\b|panure/,'prot','pane'],[/aiguillette|poulet/,'prot','poulet'],
+  [/steak/,'prot','steak'],[/boulette|meatball/,'prot','boulettes'],[/chili/,'nappe','chili'],
+  [/bolognaise|boeuf hache/,'nappe','bolo'],[/saumon/,'prot','saumon'],[/\bthon\b/,'prot','thon'],
+  [/omelette/,'prot','omelette'],[/brouill/,'prot','brouilles'],[/\boeuf/,'prot','oeuf'],
+  [/bacon|lardon/,'prot','bacon'],[/allumettes de jambon|des de jambon/,'prot','jambon_des'],[/jambon|prosciutto/,'prot','jambon'],
+  [/mozza/,'prot','mozza'],[/chorizo/,'prot','chorizo'],
+  [/ratatouille/,'garn','ratatouille'],[/tomates? cerise|tomates? crue|\btomates?\b/,'garn','tomates'],[/concombre/,'garn','concombre'],
+  [/carotte/,'garn','carottes'],[/fraise/,'garn','fraises'],[/framboise/,'garn','framboises'],[/\bpommes?\b/,'garn','pomme'],
+  [/banane/,'garn','banane'],[/amande/,'garn','amandes'],[/salade/,'garn','salade'],[/st moret|kiri|fromage frais/,'garn','stmoret'],
+  [/oignon/,'garn','oignons'],
+  [/sauce_tomate/,'sauce','sauce_tomate'],[/curry/,'sauce','curry'],[/creme|bechamel|4 fromages/,'sauce','creme'],
+  [/cancoillotte/,'sauce','cancoillotte'],[/soja/,'sauce','soja'],[/cheezy/,'sauce','cheezy'],[/mustard|moutarde/,'sauce','moutarde'],[/miel/,'sauce','miel'],
+  [/sesame/,'top','sesame'],[/rape|parmesan|emmental|raclette/,'top','rape'],[/epices italiennes|persil|ciboulette|basilic|pesto|herbe/,'top','herbes']
+];
+function _composition(r){
+  var t=_normNom([(r&&r.name)||''].concat(((r&&r.used)||[]).map(function(u){return (u&&u.n)||'';})).join(' | '));
+  // Ce qui trompe la lecture : un bouillon n'est pas un morceau de viande
+  t=t.replace(/bouillon( de)? [a-z]+/g,' ').replace(/pomme de terre/g,' patate ')
+     .replace(/(tubes? )?sauce tomate|a la tomate/g,' sauce_tomate ').replace(/fromage blanc/g,' fromageblanc ');
+  var nom=_normNom((r&&r.name)||'');
+  var c={contenant:'assiette',fond:null,base:null,prot:[],nappe:null,garn:[],sauces:[],top:[]};
+  var vus={};
+  _REGLES.forEach(function(rg){
+    if(!rg[0].test(t)||vus[rg[2]])return;
+    var k=rg[2];
+    if(rg[1]==='base'){if(!c.base){c.base=k;vus[k]=1;}}
+    else if(rg[1]==='prot'){
+      if(k==='poulet'&&(vus.karaage||vus.pane))return;       // deja dessine pane
+      if(k==='oeuf'&&(vus.pane||vus.omelette||vus.brouilles))return; // oeuf de panure ou deja la
+      if(k==='jambon'&&vus.jambon_des)return;
+      if(c.prot.length<2){c.prot.push(k);vus[k]=1;}
+    }
+    else if(rg[1]==='nappe'){if(!c.nappe){c.nappe=k;vus[k]=1;}}
+    else if(rg[1]==='garn'){
+      if(k==='oignons'&&c.garn.length>=1)return;               // l'oignon est partout : seulement s'il n'y a rien d'autre
+      if(c.garn.length<3){c.garn.push(k);vus[k]=1;}
+    }
+    else if(rg[1]==='sauce'){if(c.sauces.length<2){c.sauces.push(k);vus[k]=1;}}
+    else if(rg[1]==='top'){c.top.push(k);vus[k]=1;}
+  });
+  // Contenant
+  var whey=/whey|proteine en poudre/.test(t),avoine=/avoine|flocons|porridge/.test(t);
+  if(/shaker/.test(nom)||(whey&&!avoine&&!/lait|banania|fromageblanc|yaourt/.test(t)&&!c.base&&!c.prot.length))c.contenant='shaker';
+  else if(/banania|chocolat chaud|cafe|\bthe\b/.test(nom)&&!avoine)c.contenant='tasse';
+  else if(/soupe|velout/.test(t)){c.contenant='bol';c.fond='soupe';}
+  else if(/ramen/.test(t)){c.contenant='bol';c.fond='ramen';}
+  else if(avoine){c.contenant='bol';
+    if(/fromageblanc|yaourt|skyr/.test(t)){c.fond='blanc';c.garn.unshift('avoine');c.garn=c.garn.slice(0,3);}
+    else c.fond=/cacao|banania|chocolat/.test(t)?'cacao':'avoine';}
+  else if(/fromageblanc|yaourt|skyr/.test(t)&&!c.base&&!c.prot.length){c.contenant='bol';c.fond='blanc';}
+  else if(/\bbowl\b|poke|\bbol\b/.test(nom)){c.contenant='bol';}
+  if(c.contenant==='bol'&&c.base==='nouilles'&&c.fond!=='ramen')c.fond=null;
+  // Le fond du bol remplace une nappe de sauce
+  if(c.contenant==='bol'&&(c.fond==='soupe'||c.fond==='ramen'))c.sauces=c.sauces.filter(function(s){return !_SAUCES[s].nappe;});
+  return c;
+}
+// Places libres autour des elements principaux, dans un disque de rayon R
+function _placer(centres,n,R,rg,rayon){
+  var cand=[],out=[];
+  for(var i=0;i<12;i++){var a=i*Math.PI/6+.26,d=R*.66;cand.push([50+Math.cos(a)*d,51+Math.sin(a)*d]);}
+  for(var k=0;k<n;k++){
+    var best=null,bs=-1e9;
+    cand.forEach(function(p){
+      var m=1e9;
+      centres.concat(out).forEach(function(q){m=Math.min(m,Math.hypot(p[0]-q[0],p[1]-q[1])-q[2]);});
+      if(m>bs){bs=m;best=p;}
+    });
+    if(!best)break;
+    out.push([best[0],best[1],rayon]);
+    cand=cand.filter(function(p){return p!==best;});
+  }
+  return out;
+}
+// Les petits elements semes paraissent maigres a taille egale : on les grossit
+var _ECHELLE={tomates:1.4,concombre:1.4,pomme:1.45,amandes:1.45,fraises:1.3,framboises:1.35,banane:1.35,bacon:1.2,jambon_des:1.2,
+  mozza:1.25,stmoret:1.35,oignons:1.1,carottes:1.15,thon:1.15,boulettes:1.15,karaage:1.1,tortellini:1.12,gnocchi:1.12,ravioli:1.12,salade:1.3,chorizo:1.25};
+function _dessin(k,g,x,y,r){var f=_DESSINS[k];return f?f(g,x,y,r*(_ECHELLE[k]||1)):'';}
+function _dessinSauce(k,g,x,y,r,nappe){
+  var s=_SAUCES[k];if(!s)return '';
+  return nappe?_blob(g,x,y,r*1.2,r*1.1,s.c,.16):_zigzag(g,x,y,r,s.c);
+}
+function _assiette(c,g){
+  var s=_el(51,54,46,44,'#000000',0,' opacity=".32"')
+    +_ci(50,51,46,'#DDD4C5')+_ci(50,51,38,'#EDE6D9')+_ci(50,51,38,'none',' stroke="#CDC2AF" stroke-width=".8"');
+  var mains=[];if(c.base)mains.push(c.base);mains=mains.concat(c.prot);
+  var pos;
+  if(!mains.length){
+    var gs=c.garn.length?c.garn:['oignons'];
+    pos=[[[50,51,25]],[[36,51,16.5],[64,51,16.5]],[[37,41,14.5],[63,42,14.5],[50,66,14.5]]][Math.min(gs.length,3)-1];
+    gs.slice(0,3).forEach(function(k,i){s+=_dessin(k,g,pos[i][0],pos[i][1],pos[i][2]);});
+    c.sauces.forEach(function(k){s+=_dessinSauce(k,g,50,52,18,false);});
+    c.top.forEach(function(k){s+=_dessin(k,g,50,51,20);});
+    return s;
+  }
+  pos=[[[50,51,25]],[[39,58,20],[63,42,18]],[[37,58,18],[63,39,16],[65,65,13.5]]][Math.min(mains.length,3)-1];
+  var gp=_placer(pos,c.garn.length,38,g,11);
+  // nappes sous les aliments
+  c.sauces.forEach(function(k){if(_SAUCES[k].nappe){var p=pos[c.base?0:0];s+=_dessinSauce(k,g,p[0],p[1],p[2],true);}});
+  mains.forEach(function(k,i){s+=_dessin(k,g,pos[i][0],pos[i][1],pos[i][2]);
+    if(i===0&&c.base&&c.nappe)s+=_dessin(c.nappe,g,pos[0][0],pos[0][1],pos[0][2]);});
+  if(c.nappe&&!c.base)s+=_dessin(c.nappe,g,pos[0][0],pos[0][1],pos[0][2]);
+  c.garn.forEach(function(k,i){if(gp[i])s+=_dessin(k,g,gp[i][0],gp[i][1],gp[i][2]);});
+  // filets par-dessus la proteine (ou le feculent)
+  var cible=pos[c.prot.length&&c.base?1:0];
+  c.sauces.forEach(function(k){if(!_SAUCES[k].nappe)s+=_dessinSauce(k,g,cible[0],cible[1],cible[2],false);});
+  c.top.forEach(function(k){var p=(k==='rape'||k==='herbes')?pos[0]:cible;s+=_dessin(k,g,p[0],p[1],p[2]);});
+  return s;
+}
+function _bol(c,g){
+  var s=_el(51,55,46,43,'#000000',0,' opacity=".32"')+_ci(50,51,46,'#D9D0C1')+_ci(50,51,44.6,'none',' stroke="#F4F0E8" stroke-width="1.2"')
+    +_ci(50,51,38.6,'none',' stroke="#B9B1A3" stroke-width="1.6"');
+  var f=_FOND_BOL[c.fond];
+  if(f)s+=_ci(50,51,38,f.c);
+  else if(c.base)s+=_ci(50,51,38,'#EFEAE0');
+  else s+=_ci(50,51,38,'#F6F4EE');
+  if(c.fond==='avoine'||c.fond==='cacao')s+=_semis(g,50,51,34,34,function(a,b){return _el(a,b,2.6,1.7,f.flocons,g()*180,' stroke="'+f.bord+'" stroke-width=".4"');});
+  if(c.fond==='blanc')s+=_trait('M34 50Q50 38 67 52Q53 65 40 57','#E6E1D4',1.6);
+  if(c.fond==='soupe')s+=_trait('M38 47Q50 35 62 47Q69 56 57 61Q45 66 42 56Q41 49 50 49','#F6EBD9',3)+_dessin('rape',g,50,51,26);
+  if(c.fond==='ramen')s+=_semis(g,50,51,33,11,function(a,b){return _ci(a,b,1.5,'#EFC57A',' opacity=".8"');});
+  // le feculent tapisse le bol
+  if(c.base){
+    if(c.base==='nouilles')s+=_vagues(g,50,52,30,'#F1D07E','#C49A48',8);
+    else s+=_dessin(c.base,g,50,51,35);
+  }
+  c.sauces.forEach(function(k){if(_SAUCES[k].nappe)s+=_dessinSauce(k,g,40,58,14,true);});
+  if(c.nappe)s+=_dessin(c.nappe,g,50,51,32);
+  var items=c.prot.concat(c.garn).slice(0,4);
+  var pos=[[[50,51,20]],[[37,49,15.5],[63,54,15.5]],[[38,41,13.5],[63,43,13.5],[51,65,13.5]],[[37,39,12.5],[63,39,12.5],[37,63,12.5],[63,63,12.5]]][Math.max(items.length,1)-1];
+  items.forEach(function(k,i){s+=_dessin(k,g,pos[i][0],pos[i][1],pos[i][2]);});
+  c.sauces.forEach(function(k){if(!_SAUCES[k].nappe)s+=_dessinSauce(k,g,52,50,18,false);});
+  c.top.forEach(function(k){s+=_dessin(k,g,50,51,26);});
+  return s;
+}
+function _shaker(c,g){
+  var fruit=c.garn.filter(function(k){return k==='pomme'||k==='banane'||k==='fraises'||k==='framboises';})[0];
+  var x=fruit?-8:0;
+  var s='<g transform="translate('+x+' 0)">'
+    +_el(51,88,15,3,'#000000',0,' opacity=".3"')
+    +'<path d="M37 30L63 30L60 86Q60 88 58 88L42 88Q40 88 40 86Z" fill="#DCE6EC" fill-opacity=".22" stroke="#C9D6DE" stroke-width="1"/>'
+    +'<path d="M38.2 46L61.8 46L60 86Q60 87.2 58.6 87.2L41.4 87.2Q40 87.2 40 86Z" fill="#F4A9BB" fill-opacity=".85"/>'
+    +'<path d="M38.2 46L61.8 46" stroke="#FBD3DD" stroke-width="1.2"/>'
+    +_ci(45,62,1.2,'#FFFFFF',' opacity=".7"')+_ci(53,72,.9,'#FFFFFF',' opacity=".7"')+_ci(49,53,.8,'#FFFFFF',' opacity=".7"')+_ci(55,80,1.1,'#FFFFFF',' opacity=".6"')
+    +'<rect x="41" y="34" width="2.2" height="48" rx="1.1" fill="#FFFFFF" opacity=".28"/>'
+    +'<rect x="35" y="21" width="30" height="10" rx="2.5" fill="#3E4B57"/>'
+    +'<rect x="44" y="15" width="12" height="7" rx="2" fill="#2E3943"/>'
+    +'<rect x="35" y="27" width="30" height="1.2" fill="#56646F"/>'
+    +'</g>';
+  if(fruit)s+=fruit==='pomme'?_dessin('pomme_entiere',g,72,72,10):_dessin(fruit,g,72,72,11);
+  return s;
+}
+function _tasse(c,g){
+  return _el(48,85,24,4,'#000000',0,' opacity=".3"')
+    +'<path d="M66 46Q80 46 78 60Q76 72 64 70" fill="none" stroke="#E6DED0" stroke-width="5"/>'
+    +'<path d="M28 40L68 40L65 80Q64.5 85 59 85L37 85Q31.5 85 31 80Z" fill="#EDE6DA"/>'
+    +'<path d="M31 72L65 72L65 80Q64.5 85 59 85L37 85Q31.5 85 31 80Z" fill="#D9CFBE"/>'
+    +_el(48,40,20,5,'#E1D8C9')+_el(48,40.6,17.6,3.8,'#7A4B2C')+_el(44,40,5,1.2,'#9A6A45')
+    +_trait('M42 30Q39 25 42 20Q45 15 42 10','#FFFFFF',1.4,' opacity=".35"')+_trait('M53 31Q50 26 53 21Q56 16 53 12','#FFFFFF',1.4,' opacity=".28"');
+}
+var _illuCache={};
+function illustrationRecette(r){
+  var nom=(r&&r.name)||'';
+  var cle=((r&&r.id)||'')+'|'+nom+'|'+(((r&&r.used)||[]).length);
+  if(_illuCache[cle])return _illuCache[cle];
+  var g=_rngDe(_hashTxt(cle));
+  var c=_composition(r),corps;
+  try{
+    corps=c.contenant==='shaker'?_shaker(c,g):c.contenant==='tasse'?_tasse(c,g):c.contenant==='bol'?_bol(c,g):_assiette(c,g);
+  }catch(e){corps=_ci(50,51,46,'#E9E3D8')+_ci(50,51,38,'#F6F2EA');}
+  var svg='<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="height:100%;width:auto;max-width:100%;display:block;margin:0 auto;" aria-hidden="true">'+corps+'</svg>';
+  _illuCache[cle]=svg;
+  return svg;
+}
+// A defaut de photo : l'illustration composee, sur un fond chaud commun
 function _vignetteDefaut(r,taille){
-  var n=(r&&r.name)||'?';
-  var t=0;for(var i=0;i<n.length;i++)t=(t*31+n.charCodeAt(i))|0;
-  var teinte=Math.abs(t)%360;
-  var em=/p\u00e2tes|pates|nouille|tortellini|gnocchi|ramen|carbonara|bolognaise/i.test(n)?'\ud83c\udf5d'
-        :/riz/i.test(n)?'\ud83c\udf5a'
-        :/salade|tomate|concombre|carotte/i.test(n)?'\ud83e\udd57'
-        :/poulet|aiguillette|karaage|panko/i.test(n)?'\ud83c\udf57'
-        :/boeuf|steak|boulette/i.test(n)?'\ud83e\udd69'
-        :/saumon|thon|poisson/i.test(n)?'\ud83d\udc1f'
-        :/oeuf|omelette/i.test(n)?'\ud83c\udf73'
-        :/avoine|porridge|flocons/i.test(n)?'\ud83e\udd63'
-        :/fromage blanc|yaourt|fraise|framboise|compote|pomme/i.test(n)?'\ud83c\udf53'
-        :/shaker|whey/i.test(n)?'\ud83e\udd64'
-        :/soupe/i.test(n)?'\ud83c\udf72'
-        :/frite|pizza/i.test(n)?'\ud83c\udf5f':'\ud83c\udf7d\ufe0f';
   return '<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;'
-    +'background:linear-gradient(135deg,hsl('+teinte+',32%,26%),hsl('+((teinte+40)%360)+',28%,18%));'
-    +'font-size:'+(taille||22)+'px;">'+em+'</div>';
+    +'background:linear-gradient(135deg,#3A2E26,#241C17);">'+illustrationRecette(r||{})+'</div>';
 }
 
 // ═══ COMPTES : identifiant + mot de passe (Firebase Authentication) ═══════
