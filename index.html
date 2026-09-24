@@ -1270,8 +1270,9 @@ async function aiWaitMacros(){
   try{
     const sys="Base de données nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g/100ml: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number}. Si épice/sel: kcal proche de 0.";
     const data=await callAI([{role:'user',content:'Macros 100g de: '+nm}],700,sys,null,0,7);
+    if(data.empty)throw new Error('réponse vide, réessaie');
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
-    if(!p)throw new Error('réponse vide, réessaie');
+    if(!p)throw new Error('réponse illisible, réessaie');
     ['kcal','prot','gluc','lip'].forEach(k=>{const el=document.getElementById('wait-'+k);if(el)el.value=p[k]||0;});
   }catch(e){alert('Erreur IA: '+(e.message||'').slice(0,50));}
   if(btn){btn.textContent='\u2746 Chercher via IA';btn.disabled=false;}
@@ -1513,8 +1514,9 @@ async function aiLookupItemMacros(){
       ? `Base de données nutritionnelles fiable. Estime d'abord le poids moyen RÉALISTE d'UNE pièce de cet aliment (ex. 1 pané de poisson ≈ 70g, 1 œuf ≈ 55g, 1 gourde de compote ≈ 90g), puis donne les macros pour CETTE pièce. Retourne UNIQUEMENT un JSON: {"g":number,"kcal":integer,"prot":number,"gluc":number,"lip":number} où g = le poids d'une pièce en grammes. Reste cohérent et précis.`
       : `Base de données nutritionnelles fiable. Retourne UNIQUEMENT un JSON pour 100g/100ml: {"kcal":integer,"prot":number,"gluc":number,"lip":number}. Si épice/sel: kcal proche de 0. Reste cohérent et précis.`;
     const data=await callAI([{role:'user',content:(_pp?'Macros pour 1 pièce de: ':'Macros pour 100g de: ')+it.name}],700,sys,null,0,7);
+    if(data.empty)throw new Error('réponse vide, réessaie');
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
-    if(!p)throw new Error('réponse vide, réessaie');
+    if(!p)throw new Error('réponse illisible, réessaie');
     const sv=(eid,v)=>{const e=document.getElementById(eid);if(e)e.value=(v===undefined||v===null)?'':v;};
     sv('item-kcal',Math.round(p.kcal)||0);sv('item-prot',p.prot||0);sv('item-gluc',p.gluc||0);sv('item-lip',p.lip||0);
     if(_pp&&p.g>0){const pg=document.getElementById('item-pieceg');if(pg)pg.value=Math.round(p.g);}
@@ -1754,8 +1756,9 @@ async function aiLookupMacros(){
   try{
     const sys="Base de donn\u00e9es nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number,\"note\":string}. Si \u00e9pice: kcal:0 et note:'Epice'.";
     const data=await callAI([{role:'user',content:'Macros 100g de: '+n}],700,sys,null,0,7);
+    if(data.empty)throw new Error('réponse vide, réessaie');
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
-    if(!p)throw new Error('réponse vide, réessaie');
+    if(!p)throw new Error('réponse illisible, réessaie');
     ['kcal','prot','gluc','lip'].forEach(k=>{const el=document.getElementById('ai-m-'+k);if(el)el.value=p[k]||0;});
     document.getElementById('ai-mnote').textContent=p.note||'';
     document.getElementById('ai-mbox').style.display='block';
@@ -1838,7 +1841,7 @@ async function fbAuthToken(){
       // « hors ligne » indefiniment sans rien demander.
       if(rr.status===400){var _je={};try{_je=await rr.json();}catch(e){}
         var _jm=(_je&&_je.error&&(_je.error.message||_je.error.status))||'';
-        if(/TOKEN_EXPIRED|INVALID_REFRESH_TOKEN|USER_DISABLED|USER_NOT_FOUND|INVALID_GRANT/i.test(_jm))_sessionExpiree(_ses);}
+        if(/^(TOKEN_EXPIRED|INVALID_REFRESH_TOKEN|MISSING_REFRESH_TOKEN|USER_DISABLED|USER_NOT_FOUND|INVALID_GRANT)\b/i.test(_jm))_sessionExpiree(_ses);}
     }catch(e){}
     return null;      // jamais de repli anonyme pour un compte
   }
@@ -2091,7 +2094,7 @@ async function burnEstimateActivity(){
   if(btn){btn.textContent='⏳ Estimation…';btn.disabled=true;}
   var kcal=null;
   try{
-    var w=_poidsCourant()||75;      // la pesee la plus recente en date, pas la derniere saisie
+    var w=_poidsCourant();          // la pesee la plus recente en date, pas la derniere saisie
     var sys='Tu estimes les calories brûlées lors d\'une activité physique. Réponds UNIQUEMENT par un nombre entier (kcal), sans texte ni unité. Base-toi sur le poids et la durée. Sois réaliste (MET standards).';
     var prompt='Poids: '+w+' kg. Activité: "'+name+'". Durée: '+min+' minutes. Combien de calories brûlées ? Réponds juste le nombre.';
     var data=await callAI([{role:'user',content:prompt}],400,sys,'openai/gpt-oss-20b',0);
@@ -5210,7 +5213,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 01h35</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 01h50</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -6809,7 +6812,11 @@ async function validerConnexion(){
   var l=_val('au-login'),m=(document.getElementById('au-mdp')||{}).value||'';
   if(!l||!m){_auth.err='Renseigne ton identifiant et ton mot de passe.';return renderAuth();}
   _auth.occupe=true;renderAuth();
-  try{await connexion(l,m);try{localStorage.removeItem('dz_herite');}catch(e){}try{location.reload();}catch(e){}}
+  // Reconnexion apres une session expiree : si c'est un autre compte, la cle
+  // Groq du precedent ne doit pas le suivre (meme menage que deconnexion()).
+  var _ancien=(sessionActive()||{}).login||'';
+  try{await connexion(l,m);try{localStorage.removeItem('dz_herite');}catch(e){}
+    try{if(_ancien&&_ancien!==_loginNorm(l))localStorage.removeItem('anthropic_key');}catch(e){}try{location.reload();}catch(e){}}
   catch(e){_auth.occupe=false;_auth.err=_msgErreurAuth(e&&e.message);renderAuth();}
 }
 async function demanderReinitialisation(){
