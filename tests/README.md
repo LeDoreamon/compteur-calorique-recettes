@@ -65,6 +65,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t47.js` | Sauvegarde complète (état, dépense, photos) et restauration |
 | `t48.js` | Comptes : connexion, session, rattachement, inscription, profil, cibles |
 | `t49.js` | Séances du programme de musculation dans la saisie de dépense |
+| `t52.js` | Clé Groq à la reconnexion sur un autre compte, réponse IA vide, refus du jeton de session |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
