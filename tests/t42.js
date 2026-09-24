@@ -39,23 +39,18 @@ t('la vignette est stable pour un meme nom',()=>{
   const b=G('_vignetteDefaut')({name:'Test'},22);
   eq(a,b,'deux rendus differents pour le meme nom');
 });
-t('deux noms donnent deux teintes differentes',()=>{
+t('deux plats differents donnent deux dessins differents',()=>{
   const a=G('_vignetteDefaut')({name:'Poulet'},22);
   const b=G('_vignetteDefaut')({name:'Saumon'},22);
-  if(a===b)throw new Error('teintes identiques');
+  if(a===b)throw new Error('dessins identiques');
 });
-t('*** le pictogramme colle au plat ***',()=>{
-  const cas=[['Pâtes au thon','\ud83c\udf5d'],['Poulet karaage','\ud83c\udf57'],
-             ['Saumon poêlé','\ud83d\udc1f'],['Omelette jambon','\ud83c\udf73'],
-             ['Shaker clear whey','\ud83e\udd64'],['Soupe potiron','\ud83c\udf72']];
-  cas.forEach(function(c){
-    const v=G('_vignetteDefaut')({name:c[0]},22);
-    if(v.indexOf(c[1])<0)throw new Error(c[0]+' : pictogramme inattendu');
-  });
+t('*** la vignette contient une illustration SVG ***',()=>{
+  const v=G('_vignetteDefaut')({name:'Pâtes au thon'},22);
+  if(!/<svg viewBox="0 0 100 100"/.test(v))throw new Error('pas de svg');
 });
-t('un nom inconnu recoit un pictogramme neutre',()=>{
+t('un nom inconnu recoit une assiette neutre',()=>{
   const v=G('_vignetteDefaut')({name:'Truc bidule'},22);
-  if(v.indexOf('\ud83c\udf7d')<0)throw new Error('pas de repli');
+  if(!/<svg/.test(v)||/undefined|NaN/.test(v))throw new Error('pas de repli');
 });
 t('un nom vide ne casse rien',()=>{
   const v=G('_vignetteDefaut')({},22);
@@ -67,7 +62,7 @@ t('*** la carte porte une vignette ***',()=>{
   if(!/width:52px;height:52px/.test(src))throw new Error('vignette absente de la carte');
 });
 t('*** la recette depliee montre une grande image ***',()=>{
-  if(!/height:\$\{p\?'170px':'96px'\}/.test(src))throw new Error('grande image absente');
+  if(!/height:\$\{p\?'170px':'128px'\}/.test(src))throw new Error('grande image absente');
 });
 t('*** le bouton photo n\'apparait qu\'une fois depliee ***',()=>{
   const iBody=src.indexOf('class="rbody');
