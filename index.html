@@ -2772,7 +2772,7 @@ function openSettings(){
   document.getElementById('api-key-input').value=getApiKey();
   var p=document.getElementById('set-profile');
   if(p){
-    var but=_enPriseDeMasse()?'Prise de masse':'S\u00e8che';
+    var but=_libObjectif();
     var bd=(document.querySelector&&0)||'';
     p.innerHTML='<div style="font-size:12.5px;color:var(--text);font-weight:600;margin-bottom:3px;">'
       +_nomAffiche()+' \u00b7 '+but+'</div>'
@@ -2866,7 +2866,7 @@ async function generateStockRecipes(){
   const existingNames=RCP.filter(r=>Array.isArray(r.slots)&&r.slots.length&&recetteVisible(r)).map(r=>r.name).concat((S.aiRecipes||[]).map(r=>r.name));
   const existingList=existingNames.length?existingNames.join(' · '):'aucune';
   // Objectif decrit a partir des cibles reelles, plus de texte fige par profil
-  const diet=(_enPriseDeMasse()?'PRISE DE MASSE : repas caloriques et rassasiants':'S\u00c8CHE / RECOMPOSITION : repas riches en prot\u00e9ines, mod\u00e9r\u00e9s en calories')
+  const diet=(_objectif()==='prise'?'PRISE DE MASSE : repas caloriques et rassasiants':(_objectif()==='maintien'?'MAINTIEN : repas \u00e9quilibr\u00e9s, riches en prot\u00e9ines':'S\u00c8CHE / RECOMPOSITION : repas riches en prot\u00e9ines, mod\u00e9r\u00e9s en calories'))
     +', ~'+TARGETS.kcal+' kcal/jour, '+TARGETS.prot+'g prot\u00e9ines. '+_contexteProfil();
   const sys=`Tu es un chef nutritionniste. Génère un MAXIMUM de recettes RÉALISTES et VARIÉES (jusqu'à 4 par type de repas) en utilisant UNIQUEMENT les ingrédients ci-dessous. Régime: ${diet}
 
@@ -4273,11 +4273,17 @@ function renderDLCSection(){
 
 // ─── COCKPIT DE SÈCHE (bilan hebdo + TDEE adaptatif + budget restant) ────────
 function _wDays(a,b){return Math.round((new Date(a)-new Date(b))/864e5);}
+// Journee exploitable pour une moyenne : des repas, et au moins TDEE_SEUIL_JOUR
+// de la cible (en dessous, saisie manifestement partielle, comme pour le TDEE).
+function _jourComplet(day){
+  var meals=S.dayMeals&&S.dayMeals[day];if(!meals||!meals.length)return false;
+  return getDayMacros(day).kcal>=TARGETS.kcal*TDEE_SEUIL_JOUR;
+}
 function avgMacrosOverDays(nDays){
   var sum={kcal:0,prot:0,gluc:0,lip:0};var n=0;
   for(var i=1;i<=nDays;i++){
-    var day=shiftDate(S.today,-i);var meals=S.dayMeals[day];
-    if(meals&&meals.length){var m=getDayMacros(day);sum.kcal+=m.kcal;sum.prot+=m.prot;sum.gluc+=m.gluc;sum.lip+=m.lip;n++;}
+    var day=shiftDate(S.today,-i);
+    if(_jourComplet(day)){var m=getDayMacros(day);sum.kcal+=m.kcal;sum.prot+=m.prot;sum.gluc+=m.gluc;sum.lip+=m.lip;n++;}
   }
   if(!n)return null;
   return {kcal:sum.kcal/n,prot:sum.prot/n,gluc:sum.gluc/n,lip:sum.lip/n,days:n};
@@ -4335,6 +4341,18 @@ function renderTDEEBlock(t){
   // (L'ancien texte de stagnation disait « descends d'environ 200 kcal » tout en
   // visant rec, soit jusqu'a 700 kcal plus bas : les deux chiffres se contredisaient.)
   var sousCible=rec<TARGETS.kcal-50;
+  var _obj=_objectif(),gain=-t.perWeek;   /* perWeek > 0 = perte ; gain > 0 = prise */
+  if(_obj==='maintien'){
+    rec=Math.round(t.tdee/10)*10;
+    if(Math.abs(t.perWeek)<0.15)tip='Poids stable : ta dépense réelle tourne autour de '+t.tdee+' kcal/j, ta cible de '+TARGETS.kcal+' kcal colle.';
+    else if(t.perWeek>0)tip='Tu perds ~'+t.perWeek.toFixed(2).replace('.',',')+' kg/sem alors que tu vises le maintien : remonte vers ~'+rec+' kcal/j.';
+    else tip='Tu prends ~'+gain.toFixed(2).replace('.',',')+' kg/sem alors que tu vises le maintien : redescends vers ~'+rec+' kcal/j.';
+  }else if(_obj==='prise'){
+    rec=Math.round((t.tdee+300)/10)*10;
+    if(gain>=0.1&&gain<=0.5)tip='Bon rythme de prise, tiens le cap.';
+    else if(gain>0.5)tip='Tu prends vite (~'+gain.toFixed(2).replace('.',',')+' kg/sem) : une partie sera du gras. Vise plutôt ~'+rec+' kcal/j.';
+    else tip='Ta prise stagne : ta dépense réelle tourne autour de '+t.tdee+' kcal/j. Pour prendre ~0,25 kg par semaine, vise ~'+rec+' kcal/j.';
+  }else
   if(t.perWeek>=0.2)tip='Bon rythme de sèche, tiens le cap.';
   else if(t.perWeek>=0.1)tip=sousCible
     ?'Ça descend doucement. Pour accélérer vers ~0,5 kg par semaine, vise ~'+rec+' kcal/j.'
@@ -4353,7 +4371,7 @@ function renderTDEEBlock(t){
     '<div style="font-size:12px;color:var(--accent2);margin-top:9px;line-height:1.45;">💡 '+tip+'</div>'+
     // Conseil chiffre : on peut l'appliquer d'un geste (cible modifiable ensuite dans le profil)
     (function(){
-      if(!(t.perWeek<0.2)||_enPriseDeMasse()||!(rec<TARGETS.kcal))return '';   /* jamais de hausse de cible quand la perte ralentit */
+      if(!(t.perWeek<0.2)||_objectif()!=='perte'||!(rec<TARGETS.kcal))return '';   /* jamais de hausse de cible quand la perte ralentit */
       var pas=_etapeCible(rec);if(!pas)return '';
       return '<button data-action="appliquer-cible" data-val="'+pas+'" style="margin-top:10px;width:100%;padding:10px;background:var(--gold-bg);border:0.5px solid rgba(233,161,59,.5);border-radius:9px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">'
         +(pas===rec?'Appliquer '+rec+' kcal comme cible':'Passer la cible à '+pas+' kcal (étape vers ~'+rec+')')+'</button>';
@@ -4419,14 +4437,16 @@ function renderCoachSummary(){
     var T=TARGETS,bulk=_enPriseDeMasse();
     var m=getDayMacros(S.today), b=getBurn(S.today);
     var brule=b?b.total:0, bal=Math.round(m.kcal-brule);
-    // moyenne sur 7 jours
+    // moyenne sur les 7 jours precedents : meme base que le pilotage (hors
+    // aujourd'hui, pas encore fini, et hors journees incompletes). Avant, les
+    // deux moyennes du Bilan se contredisaient.
     var n=0,sk=0,sp=0,jours=0,nb=0;
-    for(var i=0;i<7;i++){
+    for(var i=1;i<=7;i++){
       var d=shiftDate(S.today,-i);
-      var dm=getDayMacros(d);
-      if(dm.kcal>0){n++;sk+=dm.kcal;sp+=dm.prot;if(dm.prot>=T.prot*0.95)jours++;}
+      if(_jourComplet(d)){var dm=getDayMacros(d);n++;sk+=dm.kcal;sp+=dm.prot;if(dm.prot>=T.prot*0.95)jours++;}
       if(getBurn(d))nb++;
     }
+    var obj=_objectif();
     var mk=n?Math.round(sk/n):0, mp=n?Math.round(sp/n):0;
     var tuile=function(lbl,val,unit,col){
       return '<div style="flex:1;min-width:0;background:var(--bg3);border-radius:9px;padding:9px 6px;text-align:center;">'
@@ -4436,15 +4456,16 @@ function renderCoachSummary(){
     };
     // phrase du coach, croisant alimentation ET depense
     var phrase,col;
-    if(!n){phrase='Aucun repas enregistré cette semaine — commence par logger ta journée.';col='var(--text3)';}
+    if(!n){phrase='Pas encore de journée complète cette semaine (hors aujourd\'hui) : logue tes repas en entier pour voir ta moyenne.';col='var(--text3)';}
     else if(bulk){
       if(mk>=T.kcal-100){phrase='Tu tiens ton surplus : '+mk+' kcal en moyenne sur '+n+' jour'+(n>1?'s':'')+'. C\'est là que la masse se construit.';col='var(--green)';}
       else{phrase='Moyenne à '+mk+' kcal, soit '+(T.kcal-mk)+' de moins que ta cible. Sur la semaine, ça freine la prise.';col='var(--warn)';}
       if(mp<T.prot*0.9)phrase+=' Tes protéines aussi sont courtes ('+mp+' g/jour).';
     }else{
       var ec=mk-T.kcal;
-      if(Math.abs(ec)<=120){phrase='Moyenne à '+mk+' kcal, pile sur ta cible. C\'est la régularité qui fait la sèche, et tu l\'as.';col='var(--green)';}
-      else if(ec>0){phrase='Moyenne à '+mk+' kcal, soit +'+ec+' par jour. Sur une semaine ça fait '+Math.round(ec*7/77)*10+'0 kcal de surplus — resserre un peu.';col='var(--warn)';}
+      if(Math.abs(ec)<=120){phrase='Moyenne à '+mk+' kcal, pile sur ta cible. '+(obj==='maintien'?'C\'est ce qui stabilise ton poids.':'C\'est la régularité qui fait la sèche, et tu l\'as.');col='var(--green)';}
+      else if(ec>0){phrase='Moyenne à '+mk+' kcal, soit +'+ec+' par jour. Sur une semaine ça fait '+Math.round(ec*7/10)*10+' kcal de surplus — resserre un peu.';col='var(--warn)';}   /* ec*7 : l'ancienne formule affichait 1400 pour 1050 */
+      else if(obj==='maintien'){phrase='Moyenne à '+mk+' kcal, '+(-ec)+' sous ta cible. Pour un maintien, remonte un peu : sinon tu perdras du poids.';col='var(--warn)';}
       else{phrase='Moyenne à '+mk+' kcal, '+(-ec)+' sous ta cible. Le déficit est là ; veille juste à ne pas creuser trop vite.';col='var(--green)';}
       if(mp<T.prot*0.9)phrase+=' Attention aux protéines : '+mp+' g/jour en moyenne pour '+T.prot+' visés.';
       else phrase+=' Protéines tenues à '+mp+' g/jour, c\'est ce qui protège ton muscle.';
@@ -4461,14 +4482,15 @@ function renderCoachSummary(){
       +tuile('Moy. 7 j',mk||'—','kcal','var(--text)')
       +'</div>'
       +'<div style="font-size:11.5px;color:var(--text2);line-height:1.55;">'+phrase+'</div>'
-      +(n?'<div style="font-size:11px;color:var(--text3);margin-top:7px;">Protéines atteintes '+jours+' jour'+(jours>1?'s':'')+' sur '+n+'.</div>':'')
+      +(n?'<div style="font-size:11px;color:var(--text3);margin-top:7px;">Protéines atteintes '+jours+' jour'+(jours>1?'s':'')+' sur '+n+' (7 jours précédents, journées complètes).</div>':'')
       +'</div>';
   }catch(e){return '';}
 }
 function renderCockpit(){
   var avg=avgMacrosOverDays(7);
   var html=renderCoachSummary()+'<div style="margin-bottom:18px;">';
-  html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📊 Pilotage de la sèche</div>';
+  var _o=_objectif();
+  html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📊 Pilotage '+(_o==='prise'?'de la prise de masse':(_o==='maintien'?'du maintien':'de la sèche'))+'</div>';
   if(!avg){
     html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:16px;text-align:center;color:var(--text3);font-size:13px;line-height:1.5;">Logue tes repas quelques jours pour voir ta moyenne hebdomadaire et piloter ta sèche.</div>';
   } else {
@@ -4476,7 +4498,7 @@ function renderCockpit(){
     if(arr.length){var a7=_wAgo(arr,7);var last=arr[arr.length-1];if(a7&&a7.off<=4&&a7.x.d!==last.d)dW=last.w-a7.x.w;}
     var calCol=avg.kcal<=TARGETS.kcal+60?'var(--green)':'var(--orange)';
     html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;">'+
-          '<div style="font-size:11px;color:var(--text3);margin-bottom:9px;">Moyenne sur '+avg.days+' jour'+(avg.days>1?'s':'')+' loggé'+(avg.days>1?'s':'')+' (hors aujourd\'hui)</div>'+
+          '<div style="font-size:11px;color:var(--text3);margin-bottom:9px;">Moyenne sur '+avg.days+' jour'+(avg.days>1?'s':'')+' complet'+(avg.days>1?'s':'')+' (hors aujourd\'hui)</div>'+
           '<div style="display:flex;gap:8px;">'+
           _statBox('Calories/j',Math.round(avg.kcal),TARGETS.kcal,'',calCol)+
           _statBox('Protéines/j',Math.round(avg.prot),TARGETS.prot,'g','var(--green)')+
@@ -5602,16 +5624,22 @@ async function renderBackupList(){
 }
 // ─── 💬 Retour du coach apres un repas ──────────────────────────────────────
 // Objectif du profil : prise de masse ou seche (deduit du poids cible, sinon du profil)
-function _enPriseDeMasse(){
-  if(S&&S.profil&&S.profil.objectif)return S.profil.objectif==='prise';
+// 'perte' | 'maintien' | 'prise'. Le profil fait foi ; sans profil, le poids
+// cible tranche ; sans rien, seche (comportement historique). Le maintien,
+// objectif par defaut a l'inscription, etait traite comme une seche partout.
+function _objectif(){
+  var o=S&&S.profil&&S.profil.objectif;
+  if(o==='perte'||o==='maintien'||o==='prise')return o;
   try{
     var wg=(typeof S.weightGoal==='number')?S.weightGoal:(S.weightGoal&&S.weightGoal.goal);
     var w=(S.weights&&S.weights.length)?S.weights[S.weights.length-1]:null;
     var lw=w?(typeof w==='number'?w:(w.w!=null?w.w:(w.kg!=null?w.kg:w.weight))):null;
-    if(wg&&lw)return wg>lw;
+    if(wg&&lw)return wg>lw?'prise':'perte';
   }catch(e){}
-  return false;
+  return 'perte';
 }
+function _enPriseDeMasse(){return _objectif()==='prise';}
+function _libObjectif(){var o=_objectif();return o==='prise'?'Prise de masse':(o==='maintien'?'Maintien':'Sèche');}
 // Le meme "il te reste 1400 kcal" ne veut pas dire la meme chose a 8 h et a
 // 22 h. On situe le moment avant de choisir le ton.
 function _phaseJournee(day){
@@ -5904,7 +5932,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 11h09</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 11h15</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>

@@ -74,6 +74,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t58.js` | Mensurations (saisie, écarts, synchro) et photos de progression (chemins séparés, comparaison, export/import) |
 | `t59.js` | Analyse IA d’un repas : réponse lue par extractJSON (neutralisée), réponse vide |
 | `t60.js` | Fibres : table par familles, articles, recettes, repas, barre et explication, saisie (fiche, ajout, IA, OpenFoodFacts) |
+| `t61.js` | Coach : trois objectifs (sèche, maintien, prise), moyennes sur journées complètes, surplus hebdomadaire, conseils TDEE par objectif |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
