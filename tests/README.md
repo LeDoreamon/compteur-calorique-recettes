@@ -71,6 +71,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t55.js` | Bouton + et volet d’ajout, repas habituels, cible conseillée par étapes de 300 kcal, barre « Reste » de Recettes |
 | `t56.js` | Dessert « autre » : analyse par Groq (plus d’appel Anthropic), réponse neutralisée |
 | `t57.js` | Calendrier du mois : état des journées (cible, dessus, dessous, incomplète), navigation, détail d’un jour |
+| `t58.js` | Mensurations (saisie, écarts, synchro) et photos de progression (chemins séparés, comparaison, export/import) |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

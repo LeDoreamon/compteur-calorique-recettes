@@ -90,8 +90,8 @@ console.log('\n=== FC. Traitement de l\'image ===');
 t('*** l\'image est redimensionnee avant stockage ***',()=>{
   const i=src.indexOf('function _photoVersDataUrl');
   const b=src.slice(i,i+800);
-  if(!/L=480/.test(b))throw new Error('pas de redimensionnement');
-  if(!/toDataURL\('image\/jpeg',0\.72\)/.test(b))throw new Error('pas de compression');
+  if(!/L=(L0\|\|)?480/.test(b))throw new Error('pas de redimensionnement');
+  if(!/toDataURL\('image\/jpeg',(q0\|\|)?0\.72\)/.test(b))throw new Error('pas de compression');
 });
 t('les erreurs de lecture sont traitees',()=>{
   const i=src.indexOf('function _photoVersDataUrl');
