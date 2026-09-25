@@ -128,7 +128,7 @@ t('*** elle ne remplace qu une seule ligne ***',()=>{
 });
 t('un nom vide bloque le recalcul',()=>{
   const i=src.indexOf('async function reestimerLigne');
-  if(!/if\(!nom\)\{alert/.test(src.slice(i,i+700)))throw new Error('garde absente');
+  if(!/if\(!nom\)\{_alerte/.test(src.slice(i,i+700)))throw new Error('garde absente');
 });
 t('un seul recalcul a la fois',()=>{
   const i=src.indexOf('async function reestimerLigne');
@@ -195,7 +195,7 @@ t('le bouton de recalcul est visuellement distinct',()=>{
 t('*** la suppression demande confirmation ***',()=>{
   const i=src.indexOf('function supprimerLigneEstimee');
   const b=src.slice(i,i+420);
-  if(!/if\(!confirm\(/.test(b))throw new Error('aucune confirmation');
+  if(!/_confirmer\(/.test(b))throw new Error('aucune confirmation');
   if(!/Retirer/.test(b))throw new Error('message peu explicite');
 });
 t('le nom de la ligne figure dans la confirmation',()=>{

@@ -57,6 +57,8 @@ function build(opts){
    }};
   sb.window=sb;sb.globalThis=sb;sb.self=sb;
   vm.createContext(sb);vm.runInContext(js,sb,{filename:'a.js'});
+  // Fenetres maison : reponse immediate via sb.confirm / sb.alert (voir sb.js)
+  sb._dialogue=function(o){o=o||{};var v=o.annuler?!!sb.confirm(o.message):(sb.alert(o.message),true);return {then:function(f){return f?f(v):v;}};};
   return {sb,serveur,local,journal,reg,net};
 }
 const attendre=ms=>new Promise(r=>setTimeout(r,ms));
@@ -221,7 +223,7 @@ await t('*** un ecrasement appauvrissant demande confirmation ***',async()=>{
   const i=src.indexOf('const _newRev=(_rr===null?_stateRev:_rr)+1;');
   const b=src.slice(i-1600,i);
   if(!/_volLocal<_volDist\*0\.6/.test(b))throw new Error('aucun seuil de garde');
-  if(!/confirm\(/.test(b))throw new Error('aucune confirmation');
+  if(!/_confirmer\(/.test(b))throw new Error('aucune confirmation');
   if(!/_reloadFromServer\(false\)/.test(b))throw new Error('pas de rechargement propose');
 });
 await t('l etat distant est mis de cote si l utilisateur force',async()=>{

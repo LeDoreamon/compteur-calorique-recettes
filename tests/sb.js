@@ -75,4 +75,9 @@ sb.window=sb;sb.globalThis=sb;sb.self=sb;
 ['inv-items-section','invpick-list','set-backups','macroinfo-body','cc-extras','bnav']
   .forEach(function(id){_surveiller(id,['free-nom-','free-qty-','inv-cb-','inv-qty-','inv-k-','cc-ex']);});
 vm.createContext(sb);vm.runInContext(js,sb,{filename:'a.js'});
+// Fenetres maison : dans le bac a sable, elles repondent tout de suite et de
+// facon synchrone via sb.confirm / sb.alert, que chaque suite peut surcharger.
+sb.__dialogueReel=sb._dialogue;     // la vraie, pour les suites qui la testent (t54)
+sb._dialogue=function(o){o=o||{};var v=o.annuler?!!sb.confirm(o.message):(sb.alert(o.message),true);
+  return {then:function(f){return f?f(v):v;}};};
 module.exports={sb,reg,docEl,makeEl};
