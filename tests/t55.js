@@ -133,8 +133,11 @@ t('le bouton n\'apparait qu\'en seche, quand la perte ralentit',()=>{
   const bloc=pw=>X('renderTDEEBlock')({ok:true,tdee:2161,perWeek:pw,days:28,avgCal:2154,logs:29});
   if(!/appliquer-cible/.test(bloc(0)))throw new Error('absent en stagnation');
   if(/appliquer-cible/.test(bloc(0.4)))throw new Error('present alors que le rythme est bon');
-  const vrai=sb._enPriseDeMasse;sb._enPriseDeMasse=()=>true;
-  try{if(/appliquer-cible/.test(bloc(0)))throw new Error('present en prise de masse');}finally{sb._enPriseDeMasse=vrai;}
+  const vrai=sb._objectif;
+  try{
+    sb._objectif=()=>'prise';if(/appliquer-cible/.test(bloc(0)))throw new Error('present en prise de masse');
+    sb._objectif=()=>'maintien';if(/appliquer-cible/.test(bloc(0)))throw new Error('present en maintien');
+  }finally{sb._objectif=vrai;}
 });
 
 t('*** stagnation : un seul chiffre vise, TDEE − 550, annonce avec la depense ***',()=>{

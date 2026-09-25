@@ -68,7 +68,7 @@ t('le bouton de changement de profil a disparu',()=>{
   if(/backToProfileSelect/.test(src))throw new Error('encore present');
 });
 t('le libelle du profil suit les cibles reelles',()=>{
-  if(!/\$\{_enPriseDeMasse\(\)\?'Prise de masse':'Sèche'\} · \$\{TARGETS\.kcal\} kcal/.test(src))
+  if(!/\$\{_libObjectif\(\)\} · \$\{TARGETS\.kcal\} kcal/.test(src))
     throw new Error('libelle fige');
 });
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
