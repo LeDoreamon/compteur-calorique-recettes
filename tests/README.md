@@ -75,6 +75,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t59.js` | Analyse IA d’un repas : réponse lue par extractJSON (neutralisée), réponse vide |
 | `t60.js` | Fibres : table par familles, articles, recettes, repas, barre et explication, saisie (fiche, ajout, IA, OpenFoodFacts) |
 | `t61.js` | Coach : trois objectifs (sèche, maintien, prise), moyennes sur journées complètes, surplus hebdomadaire, conseils TDEE par objectif |
+| `t62.js` | Activité selon l’objectif (cible du jour), seuil unique des protéines (95 %), tuile Déficit/Reste, fibres dans le coach, bilan de la semaine |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

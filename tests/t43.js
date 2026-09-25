@@ -272,33 +272,39 @@ t('aucune section sans activite enregistree',()=>{
 });
 
 console.log('\n=== FS. Marge avec l\'activite ===');
-t('*** la marge vaut cible plus depense moins consomme ***',()=>{
-  poseJour(2226,12400,[{kcal:300,n:'Muscu'}]);
-  const dep=G('__getBurn')?0:0;
+// Decision du 25/09/2026 : en seche, l'activite ne s'ajoute pas a la cible
+// (elle creuse le deficit) ; en maintien et en prise, elle est a compenser.
+t('*** seche : pas de marge « avec l\'activite », le deficit se creuse ***',()=>{
+  S.profil={objectif:'perte'};poseJour(2226,12400,[{kcal:300,n:'Muscu'}]);
+  const h=G('renderAccueil')();
+  if(!/creusent ton déficit du jour/.test(h))throw new Error('message seche absent');
+  if(/Activité à compenser/.test(h))throw new Error('marge affichee en seche');
+});
+t('*** maintien : la marge vaut cible plus depense moins consomme ***',()=>{
+  S.profil={objectif:'maintien'};poseJour(2226,12400,[{kcal:300,n:'Muscu'}]);
   const b=sb.getBurn(S.today);
   const attendu=Math.round(sb.TARGETS.kcal+b.total-2226);
   const h=G('renderAccueil')();
-  if(h.indexOf(attendu+' kcal')<0)
-    throw new Error('marge attendue '+attendu+' absente du rendu');
+  if(h.indexOf(attendu+' kcal')<0)throw new Error('marge attendue '+attendu+' absente du rendu');
 });
-t('*** un depassement est annonce comme tel ***',()=>{
-  poseJour(4000,0,[{kcal:100,n:'Marche'}]);
+t('*** un depassement est annonce comme tel (hors seche) ***',()=>{
+  S.profil={objectif:'prise'};poseJour(4000,0,[{kcal:100,n:'Marche'}]);
   const h=G('renderAccueil')();
   if(!/−\d+ kcal/.test(h))throw new Error('depassement non signale');
 });
 t('*** le tracker n\'affiche plus de « Balance » ***',()=>{
   if(/Balance : /.test(src))throw new Error('l\'ancienne balance subsiste');
 });
-t('*** il affiche la marge avec l\'activite ***',()=>{
-  if(!/Avec l'activité/.test(src))throw new Error('libelle absent');
+t('*** tracker : marge avec l\'activite hors seche, deficit en seche ***',()=>{
   const i=src.indexOf("Avec l'activité");
-  const b=src.slice(i-400,i);
-  if(!/TARGETS\.kcal\+b\.total-m\.kcal/.test(b))throw new Error('formule incorrecte');
+  if(i<0)throw new Error('libelle absent');
+  const b=src.slice(i-700,i);
+  if(!/_cibleDuJour\(dd\)-m\.kcal/.test(b))throw new Error('formule incorrecte');
+  if(!/en plus de ton déficit/.test(b))throw new Error('branche seche absente');
 });
-t('la marge du tracker et celle de l\'accueil concordent',()=>{
-  const iT=src.indexOf('TARGETS.kcal+b.total-m.kcal');
-  const iA=src.indexOf('TARGETS.kcal+dep-r.pris.kcal');
-  if(iT<0||iA<0)throw new Error('une des deux formules est absente');
+t('la marge du tracker et celle de l\'accueil passent par la meme cible du jour',()=>{
+  if(src.indexOf('_cibleDuJour(dd)-m.kcal')<0||src.indexOf('_cibleDuJour(jour)-r.pris.kcal')<0)throw new Error('une des deux formules est absente');
+  S.profil=null;
 });
 t('rien ne s\'affiche sans depense',()=>{
   poseJour(2000,0,[]);

@@ -34,30 +34,26 @@ t('le detail des pas et des activites est repris',()=>{
   if(!/12\s?400 pas/.test(a.corps.replace(/\u202f|\u00a0/g,' ')))throw new Error(a.corps);
   if(!/1 activité/.test(a.corps))throw new Error(a.corps);
 });
-t('*** la balance du jour est annoncee ***',()=>{
-  jour(2000,100);
+// L'ancienne « balance du jour » (mange - activite) ignorait le metabolisme de
+// repos : elle est remplacee par ce que devient l'activite selon l'objectif.
+t('*** seche : l\'activite creuse le deficit, la cible ne bouge pas ***',()=>{
+  jour(2000,100);S.profil={objectif:'perte'};
   depense(S.today,12400,[{kcal:300,n:'Muscu'}]);
   const a=coachAct(S.today);
-  if(!/Balance du jour/.test(a.corps))throw new Error(a.corps);
+  if(/Balance/.test(a.corps))throw new Error('ancienne balance : '+a.corps);
+  if(!/creusent ton déficit/.test(a.corps))throw new Error(a.corps);
+  eq(a.ton,'ok');
 });
-t('*** en seche, une balance negative est saluee ***',()=>{
-  jour(1800,120);
-  // journee complete : metabolisme de repos + pas + seance
-  G('__setBurn')({[S.today]:{rest:1900,steps:12000,activities:[{kcal:400,n:'Muscu'}]}});
+t('*** maintien et prise : l\'activite est a compenser ***',()=>{
+  jour(2000,100);depense(S.today,12400,[{kcal:300,n:'Muscu'}]);
+  S.profil={objectif:'prise'};if(!/compenser/.test(coachAct(S.today).corps))throw new Error('prise');
+  S.profil={objectif:'maintien'};if(!/maintien/.test(coachAct(S.today).corps))throw new Error('maintien');
+  S.profil=null;
+});
+t('grosse journee : ton positif, pas de reproche',()=>{
+  jour(3900,180);depense(S.today,3000,[]);
   const a=coachAct(S.today);
-  eq(a.ton,'ok','deficit reel');
-  if(!/bon sens/.test(a.corps))throw new Error(a.corps);
-});
-t('en seche, une balance positive reste neutre',()=>{
-  jour(3900,180);
-  G('__setBurn')({[S.today]:{rest:1900,steps:3000,activities:[]}});
-  eq(coachAct(S.today).ton,'mixte');
-});
-t('balance positive : ton neutre, pas de reproche',()=>{
-  jour(3900,180);
-  depense(S.today,3000,[]);
-  const a=coachAct(S.today);
-  eq(a.ton,'mixte');
+  eq(a.ton,'ok');
   if(/écart|dépassé|attention|trop/i.test(a.corps))throw new Error(a.corps);
 });
 
@@ -86,8 +82,8 @@ t('aucune depense enregistree',()=>{
 t('depense sans aucun repas sur la journee',()=>{
   S.dayMeals={};depense(S.today,15000,[]);
   const a=coachAct(S.today);
-  if(!/Aucun repas/.test(a.corps))throw new Error(a.corps);
-  if(/Balance/.test(a.corps))throw new Error('balance annoncee sans repas');
+  if(/Balance/.test(a.corps))throw new Error('balance annoncee');
+  if(!/kcal dépensés/.test(a.corps))throw new Error(a.corps);
 });
 t('pas seuls, sans activite',()=>{
   jour(2000,100);depense(S.today,8000,[]);
