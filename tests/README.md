@@ -67,6 +67,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t49.js` | Séances du programme de musculation dans la saisie de dépense |
 | `t52.js` | Clé Groq à la reconnexion sur un autre compte, réponse IA vide, refus du jeton de session |
 | `t53.js` | Confirmation avant suppression d’un repas, service worker (délai de 6 s, erreurs serveur, hors ligne) |
+| `t54.js` | Fenêtres de dialogue maison (file d’attente, texte non interprété, Échap), plus de fenêtres système, lisibilité (tailles, contraste) |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

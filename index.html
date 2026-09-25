@@ -22,7 +22,7 @@
   --border: rgba(246,237,227,0.09);
   --text: #F6EDE3;
   --text2: #B5A392;
-  --text3: #8B7A6B;
+  --text3: #9A8877;   /* contraste >= 5:1 sur les trois fonds (etait #8B7A6B, 4,2:1 sur --bg3) */
   --accent: #C05746;
   --accent2: #E9A08D;
   --accent-bg: rgba(192,87,70,0.12);
@@ -125,7 +125,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
   will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden;
   isolation: isolate; }
 .bnav-b { flex: 1; background: none; border: none; display: flex; flex-direction: column; align-items: center;
-  gap: 3px; padding: 7px 2px 5px; color: var(--text3); font-size: 10px; font-weight: 500; border-radius: 12px;
+  gap: 3px; padding: 7px 2px 5px; color: var(--text3); font-size: 11px; font-weight: 500; border-radius: 12px;
   transition: color .22s ease; }
 .bnav-i { font-size: 19px; line-height: 1; transition: transform .3s var(--ease);
   display: inline-flex; align-items: center; justify-content: center; height: 19px; }
@@ -167,7 +167,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
   font-family: inherit; transition: background .2s ease, color .2s ease, border-color .2s ease; }
 .rtri.on { background: rgba(233,161,59,.15); border-color: rgba(233,161,59,.5); color: var(--gold); font-weight: 600; }
 .rtri.dir { padding: 4px 8px; font-size: 12px; line-height: 1; }
-.mtab-badge { background: var(--red-bg); color: var(--red); padding: 0 5px; font-size: 10px; }
+.mtab-badge { background: var(--red-bg); color: var(--red); padding: 0 5px; font-size: 11px; }
 .mtab.on .mtab-badge { background: rgba(14,10,7,.22); color: var(--bg); }
 .mtab.urg.on .mtab-badge { background: rgba(255,255,255,.24); color: #fff; }
 
@@ -191,6 +191,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 
 
 /* ═══ RETOUR DU COACH ══════════════════════════════════════════════════ */
+/* Fenetres de dialogue maison (remplacent alert/confirm du systeme) */
+#dz-dlg { position: fixed; inset: 0; z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 24px 20px; background: rgba(6,4,3,.62); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); animation: dzDlgFond .16s var(--ease); }
+.dz-dlg-carte { width: 100%; max-width: 340px; max-height: 80vh; overflow-y: auto; background: var(--bg2); border: 0.5px solid rgba(246,237,227,.14); border-radius: 16px; padding: 18px 18px 14px; box-shadow: 0 18px 50px rgba(0,0,0,.55); animation: dzDlgCarte .2s var(--ease); }
+.dz-dlg-titre { font-size: 15px; font-weight: 600; color: var(--text); line-height: 1.4; white-space: pre-line; overflow-wrap: anywhere; }
+.dz-dlg-corps { font-size: 13px; color: var(--text2); line-height: 1.55; margin-top: 8px; white-space: pre-line; overflow-wrap: anywhere; }
+.dz-dlg-texte { width: 100%; min-height: 140px; margin-top: 10px; background: var(--bg); color: var(--text2); border: 0.5px solid var(--border); border-radius: 8px; padding: 8px; font: 12px ui-monospace, Menlo, monospace; resize: vertical; }
+.dz-dlg-boutons { display: flex; gap: 8px; margin-top: 16px; }
+.dz-dlg-b { flex: 1; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 0.5px solid var(--border); background: var(--bg3); color: var(--text); font-size: 14px; font-weight: 500; line-height: 1.25; }
+.dz-dlg-b:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.dz-dlg-ok { background: var(--gold); border-color: var(--gold); color: #1a120b; font-weight: 600; }
+.dz-dlg-danger { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
+@keyframes dzDlgFond { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dzDlgCarte { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
 #coach-toast { position: fixed; left: 12px; right: 12px; z-index: 240; display: none;
   bottom: calc(96px + env(safe-area-inset-bottom, 12px));
   background: rgba(23,17,13,.97); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px);
@@ -286,15 +299,15 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
           <span style="font-size:11px;color:var(--text3);white-space:nowrap;">Quantité</span>
           <input id="addmeal-qty" type="number" min="0" step="1" oninput="scanQtyChanged()" style="width:78px;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;text-align:center;outline:none;">
           <span id="addmeal-qty-unit" style="font-size:11px;color:var(--text3);">g</span>
-          <span id="addmeal-qty-hint" style="flex:1;text-align:right;font-size:10px;color:var(--text3);"></span>
+          <span id="addmeal-qty-hint" style="flex:1;text-align:right;font-size:11px;color:var(--text3);"></span>
         </div>
         <div id="addmeal-breakdown" style="display:none;margin-top:10px;padding:9px 11px;background:rgba(246,237,227,.03);border:0.5px solid rgba(246,237,227,.08);border-radius:8px;font-size:11px;color:var(--text2);line-height:1.65;"></div>
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:14px;">
-        <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Kcal</label><input id="addmeal-kcal" type="number" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--orange);font-size:13px;outline:none;box-sizing:border-box;"></div>
-        <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Prot. g</label><input id="addmeal-prot" type="number" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--green);font-size:13px;outline:none;box-sizing:border-box;"></div>
-        <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Gluc. g</label><input id="addmeal-gluc" type="number" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--blue);font-size:13px;outline:none;box-sizing:border-box;"></div>
-        <div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Lip. g</label><input id="addmeal-lip" type="number" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--text2);font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Kcal</label><input id="addmeal-kcal" type="number" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--orange);font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Prot. g</label><input id="addmeal-prot" type="number" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--green);font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Gluc. g</label><input id="addmeal-gluc" type="number" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--blue);font-size:13px;outline:none;box-sizing:border-box;"></div>
+        <div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Lip. g</label><input id="addmeal-lip" type="number" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--text2);font-size:13px;outline:none;box-sizing:border-box;"></div>
       </div>
       <div style="margin-bottom:14px;">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
@@ -321,9 +334,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
   <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Moment de la journée</div>
   <div id="cc-moments" style="display:flex;gap:6px;"></div>
 </div><div id="cc-ings" style="margin-bottom:12px;"></div><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Ingrédients en plus ?</span><button onclick="addCCExtra()" style="background:transparent;border:0.5px dashed rgba(246,237,227,.15);border-radius:7px;color:var(--text2);font-size:11px;padding:4px 9px;cursor:pointer;">+ Ajouter</button></div><div id="cc-extras" style="margin-bottom:12px;"></div><div id="cc-totals" style="display:flex;justify-content:center;flex-wrap:wrap;gap:10px;padding:10px 12px;background:var(--bg);border-radius:8px;margin-bottom:14px;font-size:12px;"></div><div style="display:flex;gap:8px;"><button onclick="executeCook()" style="flex:1;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">✓ Confirmer la cuisson</button><button onclick="closeConfirmCook()" style="padding:10px 14px;background:transparent;border:0.5px solid rgba(246,237,227,.1);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">✕</button></div></div></div>
-<div id="wait-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));overflow-y:auto;" onclick="overlayBackdrop(event,this,closeWaitingItem)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:340px;width:100%;box-sizing:border-box;margin:auto;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div id="wait-name" style="font-size:16px;font-weight:600;color:var(--text);">Article</div><button onclick="closeWaitingItem()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Où le placer ?</div><div id="wait-cat-row" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div><div id="wait-mac-toggle" style="display:flex;gap:6px;margin-bottom:12px;"></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" id="wait-qtylabel">Quantité</div><div style="display:flex;gap:6px;margin-bottom:8px;" id="wait-qtyrow"><input id="wait-qty" type="number" placeholder="0" style="flex:1;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><select id="wait-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select><input id="wait-pieceg" type="number" placeholder="poids/pièce" style="display:none;flex:1;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><span id="wait-pieceg-u" style="display:none;font-size:12px;color:var(--text3);white-space:nowrap;align-self:center;">g/pièce</span></div><label style="display:flex;align-items:center;gap:7px;margin-bottom:8px;font-size:12px;color:var(--text2);cursor:pointer;"><input type="checkbox" id="wait-pkg-on" onchange="toggleWaitPkg()" style="width:16px;height:16px;accent-color:var(--accent);"> Emballage (paquet, boîte, pot…)</label><div id="wait-pkg-fields" style="display:none;gap:6px;margin-bottom:8px;grid-template-columns:1fr 1fr auto;align-items:center;"><input id="wait-pkg-size" type="number" placeholder="taille g/ml" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><input id="wait-pkg-count" type="number" placeholder="nombre" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><select id="wait-pkg-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select></div><label style="display:flex;align-items:center;gap:7px;margin-bottom:14px;font-size:12px;color:var(--text2);cursor:pointer;"><input type="checkbox" id="wait-present" onchange="toggleWaitPresent()" style="width:16px;height:16px;"> Illimité (présent)</label><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" id="wait-mac-label">Macros pour 100 g/ml</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;"><div><label style="font-size:9px;color:var(--text3);display:block;">Kcal</label><input id="wait-kcal" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--orange);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:var(--text3);display:block;">Prot</label><input id="wait-prot" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--green);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:var(--text3);display:block;">Gluc</label><input id="wait-gluc" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--blue);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:var(--text3);display:block;">Lip</label><input id="wait-lip" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--red);font-size:12px;outline:none;box-sizing:border-box;"></div></div><div id="wait-macsrc" style="display:flex;gap:6px;margin-bottom:8px;align-items:center;"></div><button id="wait-ai-btn" onclick="aiWaitMacros()" style="width:100%;padding:8px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:7px;color:var(--blue);font-size:12px;cursor:pointer;margin-bottom:14px;">❆ Chercher via IA</button><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">DLC (optionnel)</div><input id="wait-dlc" type="date" style="width:100%;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;margin-bottom:14px;box-sizing:border-box;"><button onclick="confirmWaitPlace()" style="width:100%;padding:11px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">Placer dans l'inventaire</button></div></div>
+<div id="wait-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));overflow-y:auto;" onclick="overlayBackdrop(event,this,closeWaitingItem)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:340px;width:100%;box-sizing:border-box;margin:auto;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div id="wait-name" style="font-size:16px;font-weight:600;color:var(--text);">Article</div><button onclick="closeWaitingItem()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Où le placer ?</div><div id="wait-cat-row" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div><div id="wait-mac-toggle" style="display:flex;gap:6px;margin-bottom:12px;"></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" id="wait-qtylabel">Quantité</div><div style="display:flex;gap:6px;margin-bottom:8px;" id="wait-qtyrow"><input id="wait-qty" type="number" placeholder="0" style="flex:1;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><select id="wait-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select><input id="wait-pieceg" type="number" placeholder="poids/pièce" style="display:none;flex:1;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><span id="wait-pieceg-u" style="display:none;font-size:12px;color:var(--text3);white-space:nowrap;align-self:center;">g/pièce</span></div><label style="display:flex;align-items:center;gap:7px;margin-bottom:8px;font-size:12px;color:var(--text2);cursor:pointer;"><input type="checkbox" id="wait-pkg-on" onchange="toggleWaitPkg()" style="width:16px;height:16px;accent-color:var(--accent);"> Emballage (paquet, boîte, pot…)</label><div id="wait-pkg-fields" style="display:none;gap:6px;margin-bottom:8px;grid-template-columns:1fr 1fr auto;align-items:center;"><input id="wait-pkg-size" type="number" placeholder="taille g/ml" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><input id="wait-pkg-count" type="number" placeholder="nombre" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><select id="wait-pkg-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select></div><label style="display:flex;align-items:center;gap:7px;margin-bottom:14px;font-size:12px;color:var(--text2);cursor:pointer;"><input type="checkbox" id="wait-present" onchange="toggleWaitPresent()" style="width:16px;height:16px;"> Illimité (présent)</label><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" id="wait-mac-label">Macros pour 100 g/ml</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;"><div><label style="font-size:11px;color:var(--text3);display:block;">Kcal</label><input id="wait-kcal" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--orange);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;">Prot</label><input id="wait-prot" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--green);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;">Gluc</label><input id="wait-gluc" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--blue);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;">Lip</label><input id="wait-lip" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--red);font-size:12px;outline:none;box-sizing:border-box;"></div></div><div id="wait-macsrc" style="display:flex;gap:6px;margin-bottom:8px;align-items:center;"></div><button id="wait-ai-btn" onclick="aiWaitMacros()" style="width:100%;padding:8px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:7px;color:var(--blue);font-size:12px;cursor:pointer;margin-bottom:14px;">❆ Chercher via IA</button><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">DLC (optionnel)</div><input id="wait-dlc" type="date" style="width:100%;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;margin-bottom:14px;box-sizing:border-box;"><button onclick="confirmWaitPlace()" style="width:100%;padding:11px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">Placer dans l'inventaire</button></div></div>
 <div id="shopitem-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));" onclick="overlayBackdrop(event,this,closeShopItem)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:320px;width:100%;box-sizing:border-box;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><input id="shopitem-name" type="text" placeholder="Nom" onkeydown="if(event.key==='Enter')moveShopItem()" style="font-size:16px;font-weight:600;color:var(--text);background:transparent;border:0;border-bottom:1px solid rgba(246,237,227,.15);outline:none;padding:3px 0;flex:1;min-width:0;margin-right:10px;box-sizing:border-box;"><button onclick="closeShopItem()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Rayon</div><div id="shopitem-hint" style="font-size:11px;color:var(--text2);margin:-2px 0 8px;"></div><select id="shopitem-rayon" style="width:100%;padding:9px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;margin-bottom:12px;box-sizing:border-box;"></select><button onclick="moveShopItem()" style="width:100%;padding:10px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px;">Enregistrer</button><button onclick="deleteShopItem()" style="width:100%;padding:9px;background:transparent;border:0.5px solid rgba(224,92,79,.3);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">Supprimer de la liste</button></div></div>
-<div id="item-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));" onclick="overlayBackdrop(event,this,closeItemDetail)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:330px;width:100%;box-sizing:border-box;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:2px;"><input id="item-name" type="text" placeholder="Nom de l'article" style="flex:1;min-width:0;box-sizing:border-box;font-size:16px;font-weight:600;color:var(--text);background:transparent;border:0;border-bottom:0.5px solid rgba(246,237,227,.14);border-radius:0;padding:2px 0 4px;outline:none;font-family:inherit;"><button onclick="closeItemDetail()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div id="item-sub" style="font-size:12px;color:var(--text3);margin-bottom:14px;">—</div><div style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">📅 Date limite (DLC)</div><div style="display:flex;align-items:center;gap:8px;"><input id="item-dlc" type="date" onchange="updateItemDlcHint()" style="flex:1;min-width:0;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><button onclick="document.getElementById('item-dlc').value='';updateItemDlcHint();" style="padding:7px 11px;background:transparent;border:0.5px solid var(--border);border-radius:7px;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">Effacer</button></div><div id="item-dlc-hint" style="font-size:10.5px;color:var(--text3);margin-top:6px;"></div></div><div id="item-unit-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Unité de mesure</div><select id="item-unit" onchange="onItemUnitChange()" style="width:100%;box-sizing:border-box;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><option value="g">grammes (g)</option><option value="ml">millilitres (ml)</option><option value="pcs">pièces</option><option value="tubes">tubes</option><option value="boîtes">boîtes</option><option value="cubes">cubes</option></select><div id="item-pieceg-row" style="display:none;align-items:center;gap:8px;margin-top:8px;"><span style="font-size:11px;color:var(--text3);white-space:nowrap;">Poids d'une unité</span><input id="item-pieceg" type="number" min="1" step="1" oninput="updateItemUnitHint()" style="width:74px;padding:6px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;text-align:center;outline:none;"><span style="font-size:11px;color:var(--text3);">g</span></div><div id="item-unit-hint" style="font-size:10.5px;color:var(--text3);margin-top:7px;line-height:1.45;"></div></div><div id="item-dessert-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;">
+<div id="item-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));" onclick="overlayBackdrop(event,this,closeItemDetail)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:330px;width:100%;box-sizing:border-box;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:2px;"><input id="item-name" type="text" placeholder="Nom de l'article" style="flex:1;min-width:0;box-sizing:border-box;font-size:16px;font-weight:600;color:var(--text);background:transparent;border:0;border-bottom:0.5px solid rgba(246,237,227,.14);border-radius:0;padding:2px 0 4px;outline:none;font-family:inherit;"><button onclick="closeItemDetail()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div id="item-sub" style="font-size:12px;color:var(--text3);margin-bottom:14px;">—</div><div style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">📅 Date limite (DLC)</div><div style="display:flex;align-items:center;gap:8px;"><input id="item-dlc" type="date" onchange="updateItemDlcHint()" style="flex:1;min-width:0;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><button onclick="document.getElementById('item-dlc').value='';updateItemDlcHint();" style="padding:7px 11px;background:transparent;border:0.5px solid var(--border);border-radius:7px;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">Effacer</button></div><div id="item-dlc-hint" style="font-size:11px;color:var(--text3);margin-top:6px;"></div></div><div id="item-unit-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Unité de mesure</div><select id="item-unit" onchange="onItemUnitChange()" style="width:100%;box-sizing:border-box;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><option value="g">grammes (g)</option><option value="ml">millilitres (ml)</option><option value="pcs">pièces</option><option value="tubes">tubes</option><option value="boîtes">boîtes</option><option value="cubes">cubes</option></select><div id="item-pieceg-row" style="display:none;align-items:center;gap:8px;margin-top:8px;"><span style="font-size:11px;color:var(--text3);white-space:nowrap;">Poids d'une unité</span><input id="item-pieceg" type="number" min="1" step="1" oninput="updateItemUnitHint()" style="width:74px;padding:6px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;text-align:center;outline:none;"><span style="font-size:11px;color:var(--text3);">g</span></div><div id="item-unit-hint" style="font-size:11px;color:var(--text3);margin-top:7px;line-height:1.45;"></div></div><div id="item-dessert-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;">
   <label style="display:flex;align-items:center;gap:9px;cursor:pointer;"><input type="checkbox" id="item-dessert" onchange="toggleItemDessert()" style="width:17px;height:17px;accent-color:var(--gold);flex:0 0 auto;"><span style="font-size:12px;color:var(--text2);">🍰 Proposer comme dessert</span></label>
   <div id="item-dessert-qty-row" style="display:none;align-items:center;gap:8px;margin-top:9px;">
     <span style="font-size:11px;color:var(--text3);">Portion</span>
@@ -332,9 +345,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <span id="item-dessert-kcal" style="flex:1;text-align:right;font-size:11px;color:var(--gold);"></span>
   </div>
 </div>
-<div id="item-move-wrap" style="margin-bottom:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Déplacer vers…</div><div id="item-move-row" style="display:flex;gap:6px;flex-wrap:wrap;"></div></div><div id="item-mac-toggle" style="display:flex;gap:6px;margin-bottom:8px;"></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap;"><span id="item-mac-label" style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">Valeurs pour</span><input id="item-mac-base" type="number" min="1" value="100" oninput="majApercuBase('item')" style="width:62px;flex:0 0 auto;box-sizing:border-box;padding:4px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.15);border-radius:6px;color:var(--text);font-size:12px;text-align:center;outline:none;"><span id="item-mac-unit" style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">g/ml</span></div><div id="item-mac-apercu" style="display:none;font-size:10px;color:var(--gold);margin:-4px 0 8px;line-height:1.4;"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Kcal</label><input id="item-kcal" type="number" oninput="onMacInput('item')" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--orange);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Prot. g</label><input id="item-prot" type="number" oninput="onMacInput('item')" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--green);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Gluc. g</label><input id="item-gluc" type="number" oninput="onMacInput('item')" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--blue);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:3px;">Lip. g</label><input id="item-lip" type="number" oninput="onMacInput('item')" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--red);font-size:13px;outline:none;box-sizing:border-box;"></div></div><div id="item-cond" style="margin-bottom:14px;"></div><div id="item-macsrc" style="display:flex;gap:6px;margin-bottom:8px;align-items:center;"></div><button id="item-ai-btn" onclick="aiLookupItemMacros()" style="width:100%;padding:9px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;">❆ Chercher via IA</button><button onclick="saveItemDetail()" style="width:100%;padding:10px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:14px;font-weight:500;cursor:pointer;">Enregistrer</button></div></div>
+<div id="item-move-wrap" style="margin-bottom:14px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Déplacer vers…</div><div id="item-move-row" style="display:flex;gap:6px;flex-wrap:wrap;"></div></div><div id="item-mac-toggle" style="display:flex;gap:6px;margin-bottom:8px;"></div><div style="display:flex;align-items:center;gap:7px;margin-bottom:8px;flex-wrap:wrap;"><span id="item-mac-label" style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">Valeurs pour</span><input id="item-mac-base" type="number" min="1" value="100" oninput="majApercuBase('item')" style="width:62px;flex:0 0 auto;box-sizing:border-box;padding:4px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.15);border-radius:6px;color:var(--text);font-size:12px;text-align:center;outline:none;"><span id="item-mac-unit" style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">g/ml</span></div><div id="item-mac-apercu" style="display:none;font-size:11px;color:var(--gold);margin:-4px 0 8px;line-height:1.4;"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;"><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Kcal</label><input id="item-kcal" type="number" oninput="onMacInput('item')" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--orange);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Prot. g</label><input id="item-prot" type="number" oninput="onMacInput('item')" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--green);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Gluc. g</label><input id="item-gluc" type="number" oninput="onMacInput('item')" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--blue);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Lip. g</label><input id="item-lip" type="number" oninput="onMacInput('item')" style="width:100%;padding:7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:6px;color:var(--red);font-size:13px;outline:none;box-sizing:border-box;"></div></div><div id="item-cond" style="margin-bottom:14px;"></div><div id="item-macsrc" style="display:flex;gap:6px;margin-bottom:8px;align-items:center;"></div><button id="item-ai-btn" onclick="aiLookupItemMacros()" style="width:100%;padding:9px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;">❆ Chercher via IA</button><button onclick="saveItemDetail()" style="width:100%;padding:10px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:14px;font-weight:500;cursor:pointer;">Enregistrer</button></div></div>
 <div id="ai-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:200;align-items:center;justify-content:center;padding:12px;"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:14px;padding:20px;width:100%;max-width:420px;max-height:92vh;overflow-y:auto;"><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:12px;">➕ Ajouter un item</div>
-<button onclick="openScanner()" style="width:100%;padding:11px;margin-bottom:14px;background:rgba(192,87,70,.14);border:0.5px solid rgba(192,87,70,.45);border-radius:9px;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer;">📷 Scanner un code-barres</button><div style="margin-bottom:10px;"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Nom</label><input id="ai-name" oninput="onAIName()" type="text" placeholder="Ex: Yaourt grec…" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;"></div><div id="ai-qtyrow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><div id="ai-qtycol"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Quantité</label><input id="ai-qty" type="number" placeholder="vide = présent" min="0" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"></div><div><div id="ai-pkg-wrap" style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:8px;padding:8px 10px;background:rgba(192,87,70,.06);border:0.5px solid rgba(192,87,70,.25);border-radius:8px;"><input type="checkbox" id="ai-pkg-on" onchange="toggleAIPkg()" style="width:16px;height:16px;accent-color:var(--accent);"> Emballage (paquet, boîte, pot…)</label><div id="ai-pkg-fields" style="display:none;grid-template-columns:1fr 1fr auto;gap:6px;"><div><label style="font-size:9px;color:var(--text3);display:block;margin-bottom:3px;">Taille/emballage</label><input id="ai-pkg-size" type="number" placeholder="100" min="1" style="width:100%;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:var(--text3);display:block;margin-bottom:3px;">Nombre</label><input id="ai-pkg-count" type="number" placeholder="3" min="1" style="width:100%;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:9px;color:var(--text3);display:block;margin-bottom:3px;">Unité</label><select id="ai-pkg-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select></div></div></div><div id="ai-unitwrap"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Unité</label><select id="ai-unit" onchange="onAIUnit()" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><option>g</option><option>ml</option><option>pcs</option><option>pots</option><option>boîtes</option><option>tubes</option><option>packs</option></select></div></div></div><div id="ai-pieceg-row" style="display:none;margin-bottom:10px;"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Poids moyen par pièce (g)</label><input id="ai-pieceg" type="number" placeholder="ex : 55 pour un œuf" min="1" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><div style="font-size:10px;color:var(--text3);margin-top:4px;font-style:italic;">Calcule les macros par unité à partir des macros pour 100 g.</div></div><div style="margin-bottom:10px;"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">📅 DLC (facultatif)</label><input id="ai-dlc" type="date" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><div style="font-size:10px;color:var(--text3);margin-top:4px;font-style:italic;">Sert au tri « 📅 Trier par DLC » et aux alertes ⚠ DLC.</div></div><div id="ai-present-row" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(192,87,70,.06);border:0.5px solid rgba(192,87,70,.25);border-radius:8px;"><input type="checkbox" id="ai-present" onchange="toggleAIPresent()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto;"><label for="ai-present" style="font-size:12px;color:var(--accent2);cursor:pointer;line-height:1.3;">Présent — stock illimité (pas besoin de quantité)</label></div><div style="margin-bottom:10px;"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Catégorie</label><div style="display:flex;gap:6px;flex-wrap:wrap;"><button onclick="setAICat('frigo')" id="aicat-frigo" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(246,237,227,.12);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;">🌡️ Frigo</button><button onclick="setAICat('congelateur')" id="aicat-congelateur" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(246,237,227,.12);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;">❄ Congélateur</button><button onclick="setAICat('placards')" id="aicat-placards" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(246,237,227,.12);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;">▣ Placards</button><button onclick="setAICat('epices')" id="aicat-epices" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(246,237,227,.12);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;">∿ Épices</button></div></div><div id="ai-mbox" style="display:none;margin-bottom:12px;padding:12px;background:var(--bg);border-radius:8px;"><div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Macros pour 100g/ml (modifiables)</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;"><div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:2px;">Kcal</label><input id="ai-m-kcal" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--orange);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:2px;">Prot.</label><input id="ai-m-prot" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--green);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:2px;">Gluc.</label><input id="ai-m-gluc" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--blue);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:10px;color:var(--text3);display:block;margin-bottom:2px;">Lip.</label><input id="ai-m-lip" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--text2);font-size:12px;outline:none;box-sizing:border-box;"></div></div><div id="ai-mnote" style="font-size:10px;color:var(--text3);margin-top:6px;font-style:italic;"></div></div><div id="aim-macsrc" style="display:flex;gap:6px;margin-bottom:8px;align-items:center;"></div><button id="aim-ai-btn" onclick="aiLookupMacros()" style="width:100%;padding:10px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;">❆ Chercher les macros</button><div id="ai-status" style="font-size:12px;color:var(--text2);margin-bottom:10px;min-height:18px;"></div><div style="display:flex;gap:8px;"><button onclick="confirmAddItem()" style="flex:1;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">✓ Ajouter</button><button onclick="closeAddItem()" style="padding:10px 14px;background:transparent;border:0.5px solid rgba(246,237,227,.1);border-radius:8px;color:var(--text3);font-size:13px;cursor:pointer;">✕</button></div></div></div>
+<button onclick="openScanner()" style="width:100%;padding:11px;margin-bottom:14px;background:rgba(192,87,70,.14);border:0.5px solid rgba(192,87,70,.45);border-radius:9px;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer;">📷 Scanner un code-barres</button><div style="margin-bottom:10px;"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Nom</label><input id="ai-name" oninput="onAIName()" type="text" placeholder="Ex: Yaourt grec…" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;"></div><div id="ai-qtyrow" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px;"><div id="ai-qtycol"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Quantité</label><input id="ai-qty" type="number" placeholder="vide = présent" min="0" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"></div><div><div id="ai-pkg-wrap" style="margin-bottom:10px;"><label style="display:flex;align-items:center;gap:7px;font-size:12px;color:var(--text2);cursor:pointer;margin-bottom:8px;padding:8px 10px;background:rgba(192,87,70,.06);border:0.5px solid rgba(192,87,70,.25);border-radius:8px;"><input type="checkbox" id="ai-pkg-on" onchange="toggleAIPkg()" style="width:16px;height:16px;accent-color:var(--accent);"> Emballage (paquet, boîte, pot…)</label><div id="ai-pkg-fields" style="display:none;grid-template-columns:1fr 1fr auto;gap:6px;"><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Taille/emballage</label><input id="ai-pkg-size" type="number" placeholder="100" min="1" style="width:100%;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Nombre</label><input id="ai-pkg-count" type="number" placeholder="3" min="1" style="width:100%;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:3px;">Unité</label><select id="ai-pkg-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select></div></div></div><div id="ai-unitwrap"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Unité</label><select id="ai-unit" onchange="onAIUnit()" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><option>g</option><option>ml</option><option>pcs</option><option>pots</option><option>boîtes</option><option>tubes</option><option>packs</option></select></div></div></div><div id="ai-pieceg-row" style="display:none;margin-bottom:10px;"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Poids moyen par pièce (g)</label><input id="ai-pieceg" type="number" placeholder="ex : 55 pour un œuf" min="1" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic;">Calcule les macros par unité à partir des macros pour 100 g.</div></div><div style="margin-bottom:10px;"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">📅 DLC (facultatif)</label><input id="ai-dlc" type="date" style="width:100%;padding:9px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><div style="font-size:11px;color:var(--text3);margin-top:4px;font-style:italic;">Sert au tri « 📅 Trier par DLC » et aux alertes ⚠ DLC.</div></div><div id="ai-present-row" style="margin-bottom:12px;display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(192,87,70,.06);border:0.5px solid rgba(192,87,70,.25);border-radius:8px;"><input type="checkbox" id="ai-present" onchange="toggleAIPresent()" style="width:16px;height:16px;accent-color:var(--accent);cursor:pointer;flex:0 0 auto;"><label for="ai-present" style="font-size:12px;color:var(--accent2);cursor:pointer;line-height:1.3;">Présent — stock illimité (pas besoin de quantité)</label></div><div style="margin-bottom:10px;"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Catégorie</label><div style="display:flex;gap:6px;flex-wrap:wrap;"><button onclick="setAICat('frigo')" id="aicat-frigo" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(246,237,227,.12);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;">🌡️ Frigo</button><button onclick="setAICat('congelateur')" id="aicat-congelateur" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(246,237,227,.12);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;">❄ Congélateur</button><button onclick="setAICat('placards')" id="aicat-placards" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(246,237,227,.12);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;">▣ Placards</button><button onclick="setAICat('epices')" id="aicat-epices" style="padding:6px 12px;border-radius:6px;border:0.5px solid rgba(246,237,227,.12);background:transparent;color:var(--text2);font-size:12px;cursor:pointer;">∿ Épices</button></div></div><div id="ai-mbox" style="display:none;margin-bottom:12px;padding:12px;background:var(--bg);border-radius:8px;"><div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Macros pour 100g/ml (modifiables)</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;"><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:2px;">Kcal</label><input id="ai-m-kcal" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--orange);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:2px;">Prot.</label><input id="ai-m-prot" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--green);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:2px;">Gluc.</label><input id="ai-m-gluc" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--blue);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;margin-bottom:2px;">Lip.</label><input id="ai-m-lip" type="number" oninput="onMacInput('aim')" style="width:100%;padding:5px;background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--text2);font-size:12px;outline:none;box-sizing:border-box;"></div></div><div id="ai-mnote" style="font-size:11px;color:var(--text3);margin-top:6px;font-style:italic;"></div></div><div id="aim-macsrc" style="display:flex;gap:6px;margin-bottom:8px;align-items:center;"></div><button id="aim-ai-btn" onclick="aiLookupMacros()" style="width:100%;padding:10px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:13px;font-weight:500;cursor:pointer;margin-bottom:8px;">❆ Chercher les macros</button><div id="ai-status" style="font-size:12px;color:var(--text2);margin-bottom:10px;min-height:18px;"></div><div style="display:flex;gap:8px;"><button onclick="confirmAddItem()" style="flex:1;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">✓ Ajouter</button><button onclick="closeAddItem()" style="padding:10px 14px;background:transparent;border:0.5px solid rgba(246,237,227,.1);border-radius:8px;color:var(--text3);font-size:13px;cursor:pointer;">✕</button></div></div></div>
 
 <div id="custrec-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:255;align-items:center;justify-content:center;padding:20px;">
   <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;padding:18px;width:100%;max-width:460px;max-height:88vh;overflow-y:auto;">
@@ -379,7 +392,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <input id="burn-date" type="date" onchange="burnDateChanged()" style="width:100%;box-sizing:border-box;padding:9px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px;">
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;">👟 Nombre de pas</div>
     <input id="burn-steps" type="number" min="0" placeholder="ex. 8500" oninput="updateBurnTotals()" style="width:100%;box-sizing:border-box;padding:9px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:14px;outline:none;margin-bottom:14px;">
-    <div id="burn-base-info" style="font-size:10.5px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;"></div>
+    <div id="burn-base-info" style="font-size:11px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;"></div>
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
       <span style="flex:1;font-size:11px;color:var(--text3);">Pas d'une journée ordinaire</span>
       <input id="burn-base" type="number" min="0" placeholder="0" oninput="majPasBase()" style="width:86px;box-sizing:border-box;padding:6px 8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:12px;text-align:right;outline:none;">
@@ -427,10 +440,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     </div>
     <div id="em-pane-macros" style="display:none;">
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;">
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Kcal</div><input id="em-kcal" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--orange);font-size:14px;outline:none;text-align:center;"></div>
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Prot. g</div><input id="em-prot" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--green);font-size:14px;outline:none;text-align:center;"></div>
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Gluc. g</div><input id="em-gluc" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--blue);font-size:14px;outline:none;text-align:center;"></div>
-        <div><div style="font-size:10px;color:var(--text3);margin-bottom:3px;">Lip. g</div><input id="em-lip" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:14px;outline:none;text-align:center;"></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">Kcal</div><input id="em-kcal" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--orange);font-size:14px;outline:none;text-align:center;"></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">Prot. g</div><input id="em-prot" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--green);font-size:14px;outline:none;text-align:center;"></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">Gluc. g</div><input id="em-gluc" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--blue);font-size:14px;outline:none;text-align:center;"></div>
+        <div><div style="font-size:11px;color:var(--text3);margin-bottom:3px;">Lip. g</div><input id="em-lip" type="number" min="0" oninput="updateEmTotals()" style="width:100%;box-sizing:border-box;padding:8px 4px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:14px;outline:none;text-align:center;"></div>
       </div>
       <div id="em-note" style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:10px;"></div>
     </div>
@@ -902,11 +915,13 @@ function mergeDuplicates(){
 function runMergeDuplicates(){
   try{apprendNomsIngredients();}catch(e){}   // capte les noms avant que les id changent
   const n=countDuplicates();
-  if(!n){alert('Aucun doublon détecté.');return;}
-  if(!confirm(n+' doublon(s) détecté(s).\n\nLes quantités seront additionnées (conversion pièces/grammes incluse) et les macros manuelles gardées comme référence. Les entrées en double iront dans « Récemment supprimés » (récupérables 24 h).\n\nFusionner ?'))return;
-  const r=mergeDuplicates();
-  saveState();render();
-  alert('✓ '+r.count+' doublon(s) fusionné(s) :\n\n'+r.summary.join('\n'));
+  if(!n){_alerte('Aucun doublon détecté.');return;}
+  _confirmer('Fusionner '+n+' doublon(s) ?\n\nLes quantités seront additionnées (conversion pièces/grammes incluse) et les macros manuelles gardées comme référence. Les entrées en double iront dans « Récemment supprimés » (récupérables 24 h).',{ok:'Fusionner'}).then(function(ok){
+    if(!ok)return;
+    const r=mergeDuplicates();
+    saveState();render();
+    _alerte('✓ '+r.count+' doublon(s) fusionné(s)\n\n'+r.summary.join('\n'));
+  });
 }
 function stepInvPkg(cat,id,dir){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(!it||!it.pkg||!(it.pkg.size>0))return;
   if(it.unit&&it.unit!=='g'&&it.unit!=='ml')return;
@@ -1131,7 +1146,7 @@ function ccFlexPick(i){
 }
 function renderCCIngs(){
   const el=document.getElementById('cc-ings');if(!el)return;
-  el.innerHTML=(_cc.subst?'<div style="font-size:11px;color:var(--blue);background:rgba(95,168,201,.1);border:0.5px solid rgba(95,168,201,.3);border-radius:8px;padding:8px 10px;margin-bottom:6px;line-height:1.45;">🔁 Mode remplacement — les ingrédients manquants sont à 0 : ajuste les quantités et ajoute tes substituts avec « + Ajouter un ingrédient ». La recette d\'origine ne sera pas modifiée.</div>':'')+_cc.ings.map((g,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid rgba(246,237,227,.06);">${g.flex?`<select id="cc-sel-${i}" onchange="ccFlexPick(${i})" style="flex:1;min-width:0;padding:6px;background:var(--bg);border:0.5px solid rgba(95,168,201,.45);border-radius:6px;color:var(--text);font-size:12px;outline:none;"></select>`:`<span style="flex:1;font-size:13px;color:var(--text2);">${g.name}${g._miss?' <span style="font-size:10px;color:var(--red);">(manquant)</span>':''}</span>`}<input type="number" id="cc-${i}" value="${g.qty}" min="0" oninput="updateCCTotals()" style="width:68px;padding:5px 7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span id="cc-unit-${i}" style="font-size:11px;color:var(--text3);min-width:20px;">${g.unit}</span></div>`).join('');
+  el.innerHTML=(_cc.subst?'<div style="font-size:11px;color:var(--blue);background:rgba(95,168,201,.1);border:0.5px solid rgba(95,168,201,.3);border-radius:8px;padding:8px 10px;margin-bottom:6px;line-height:1.45;">🔁 Mode remplacement — les ingrédients manquants sont à 0 : ajuste les quantités et ajoute tes substituts avec « + Ajouter un ingrédient ». La recette d\'origine ne sera pas modifiée.</div>':'')+_cc.ings.map((g,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid rgba(246,237,227,.06);">${g.flex?`<select id="cc-sel-${i}" onchange="ccFlexPick(${i})" style="flex:1;min-width:0;padding:6px;background:var(--bg);border:0.5px solid rgba(95,168,201,.45);border-radius:6px;color:var(--text);font-size:12px;outline:none;"></select>`:`<span style="flex:1;font-size:13px;color:var(--text2);">${g.name}${g._miss?' <span style="font-size:11px;color:var(--red);">(manquant)</span>':''}</span>`}<input type="number" id="cc-${i}" value="${g.qty}" min="0" oninput="updateCCTotals()" style="width:68px;padding:5px 7px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span id="cc-unit-${i}" style="font-size:11px;color:var(--text3);min-width:20px;">${g.unit}</span></div>`).join('');
   _cc.ings.forEach((g,i)=>{if(!g.flex)return;const s=document.getElementById('cc-sel-'+i);if(!s)return;s.innerHTML=invPickOptions();s.value=g.id;if(s.value&&s.value!==g.id)ccFlexPick(i);});
   updateCCTotals();
 }
@@ -1274,7 +1289,7 @@ async function aiWaitMacros(){
     const p=extractJSON(data.content.map(i=>i.text||'').join(''));
     if(!p)throw new Error('réponse illisible, réessaie');
     ['kcal','prot','gluc','lip'].forEach(k=>{const el=document.getElementById('wait-'+k);if(el)el.value=p[k]||0;});
-  }catch(e){alert('Erreur IA: '+(e.message||'').slice(0,50));}
+  }catch(e){_alerte('Erreur IA: '+(e.message||'').slice(0,50));}
   if(btn){btn.textContent='\u2746 Chercher via IA';btn.disabled=false;}
 }
 function closeWaitingItem(){const o=document.getElementById('wait-overlay');if(o)o.style.display='none';_waitRef=null;}
@@ -1329,7 +1344,7 @@ function confirmWaitPlace(){
   const it=(S.waiting||[]).find(w=>w.id===_waitRef);if(!it){closeWaitingItem();return;}
   if(_waitMacMode==='piece'){
     const np=parseFloat(document.getElementById('wait-qty').value);
-    if(!(np>=1)){alert('Indique le nombre de pièces (1 minimum).');return;}
+    if(!(np>=1)){_alerte('Indique le nombre de pièces (1 minimum).');return;}
     let pg=parseFloat(document.getElementById('wait-pieceg').value);if(!(pg>=1))pg=100;
     const gp=k=>{const v=parseFloat(document.getElementById('wait-'+k).value);return isNaN(v)?0:Math.max(0,v);};
     const mp={kcal:gp('kcal'),prot:gp('prot'),gluc:gp('gluc'),lip:gp('lip')};
@@ -1346,8 +1361,8 @@ function confirmWaitPlace(){
   const pkgOn=document.getElementById('wait-pkg-on')&&document.getElementById('wait-pkg-on').checked;
   let qty,unit,_pkgSize=0;
   if(present){qty=null;unit='';}
-  else if(pkgOn){const sz=parseFloat(document.getElementById('wait-pkg-size').value);const ct=parseFloat(document.getElementById('wait-pkg-count').value);if(!(sz>=1)||!(ct>=1)){alert('Renseigne la taille et le nombre.');return;}unit=document.getElementById('wait-pkg-unit').value||'g';qty=Math.round(sz*ct);_pkgSize=sz;}
-  else{const v=parseFloat(document.getElementById('wait-qty').value);if(!(v>=1)){alert('Indique une quantité (≥1) ou coche « Illimité ».');return;}qty=v;unit=document.getElementById('wait-unit').value||'g';}
+  else if(pkgOn){const sz=parseFloat(document.getElementById('wait-pkg-size').value);const ct=parseFloat(document.getElementById('wait-pkg-count').value);if(!(sz>=1)||!(ct>=1)){_alerte('Renseigne la taille et le nombre.');return;}unit=document.getElementById('wait-pkg-unit').value||'g';qty=Math.round(sz*ct);_pkgSize=sz;}
+  else{const v=parseFloat(document.getElementById('wait-qty').value);if(!(v>=1)){_alerte('Indique une quantité (≥1) ou coche « Illimité ».');return;}qty=v;unit=document.getElementById('wait-unit').value||'g';}
   const g=k=>{const v=parseFloat(document.getElementById('wait-'+k).value);return isNaN(v)?0:Math.max(0,v);};
   const mac={kcal:g('kcal'),prot:g('prot'),gluc:g('gluc'),lip:g('lip')};
   const dlc=document.getElementById('wait-dlc').value||null;
@@ -1421,7 +1436,7 @@ function _macWrite(ctx,v){if(!v)return;const c=MACCTX[ctx];const s=(i,val)=>{con
 function renderMacSrc(ctx){
   const c=MACCTX[ctx];const t=document.getElementById(c.toggle);if(!t)return;const cur=_macSrc[ctx];
   const mk=(m,l)=>`<button onclick="setMacSource('${ctx}','${m}')" style="flex:1;padding:6px;border-radius:6px;font-size:11px;cursor:pointer;border:0.5px solid ${cur===m?'var(--accent)':'rgba(246,237,227,.15)'};background:${cur===m?'rgba(192,87,70,.15)':'transparent'};color:${cur===m?'var(--accent2)':'var(--text2)'};">${l}</button>`;
-  t.innerHTML='<span style="font-size:10px;color:var(--text3);align-self:center;white-space:nowrap;">Macros :</span>'+mk('manual','✎ Manuel')+mk('auto','✨ Auto');
+  t.innerHTML='<span style="font-size:11px;color:var(--text3);align-self:center;white-space:nowrap;">Macros :</span>'+mk('manual','✎ Manuel')+mk('auto','✨ Auto');
   const btn=document.getElementById(c.btn);
   if(btn){const auto=cur==='auto';btn.disabled=!auto;btn.style.opacity=auto?'1':'0.4';btn.style.cursor=auto?'pointer':'not-allowed';btn.title=auto?'':"Passe en « Auto » pour chercher via IA";}
 }
@@ -1445,7 +1460,7 @@ function renderItemCond(){
   } else {
     const sz=(it&&it.pkg&&it.pkg.size)||'';
     const ct=(it&&it.pkg&&it.pkg.size&&it.qty)?(Math.round((it.qty/it.pkg.size)*10)/10):'';
-    c.innerHTML='<div style="'+ttl+'">Emballage (optionnel)</div><div style="display:flex;align-items:center;gap:6px;"><input id="item-pkg-size" type="number" value="'+sz+'" placeholder="taille" style="flex:1;min-width:0;'+inp+'"><span style="font-size:13px;color:var(--text3);">×</span><input id="item-pkg-count" type="number" value="'+ct+'" placeholder="nb" style="width:62px;'+inp+'"></div><div style="font-size:10px;color:var(--text3);margin-top:4px;">Vide = aucun emballage. Sinon, fixe la quantité (taille × nombre).</div>';
+    c.innerHTML='<div style="'+ttl+'">Emballage (optionnel)</div><div style="display:flex;align-items:center;gap:6px;"><input id="item-pkg-size" type="number" value="'+sz+'" placeholder="taille" style="flex:1;min-width:0;'+inp+'"><span style="font-size:13px;color:var(--text3);">×</span><input id="item-pkg-count" type="number" value="'+ct+'" placeholder="nb" style="width:62px;'+inp+'"></div><div style="font-size:11px;color:var(--text3);margin-top:4px;">Vide = aucun emballage. Sinon, fixe la quantité (taille × nombre).</div>';
   }
 }
 function openItemDetail(cat,id){
@@ -1594,6 +1609,20 @@ function updateItemDessertKcal(){
 }
 function saveItemDetail(){
   if(!_itemDetailRef)return;
+  // Renommage vers un nom deja pris : on demande avant d'enregistrer quoi que ce soit
+  var _q=null;
+  try{
+    var _ne=document.getElementById('item-name');
+    var _nv=_ne?String(_ne.value||'').trim():'';
+    var _it0=_nv?findItem(_itemDetailRef.id):null;
+    var _autre=(_it0&&_nv!==_it0.name)?findItemByName(_nv):null;
+    if(_autre&&_autre.id!==_it0.id)_q='« '+_nv+' » existe déjà dans ton inventaire.\n\nGarder ce nom quand même ? Les deux articles resteront séparés.';
+  }catch(e){}
+  if(_q){_confirmer(_q,{ok:'Garder ce nom'}).then(function(ok){if(ok)_enregistrerItemDetail();});return;}
+  _enregistrerItemDetail();
+}
+function _enregistrerItemDetail(){
+  if(!_itemDetailRef)return;
   var _pkgAvant=0;
   // Renommage. L'identifiant ne bouge pas, donc les recettes continuent de
   // pointer dessus ; on met a jour le nom de repli pour rester coherent.
@@ -1603,11 +1632,7 @@ function saveItemDetail(){
     if(_nv){
       var _it0=findItem(_itemDetailRef.id);
       if(_it0&&_nv!==_it0.name){
-        var _autre=findItemByName(_nv);
-        if(_autre&&_autre.id!==_it0.id){
-          if(!confirm('« '+_nv+' » existe déjà dans ton inventaire.\n\nGarder ce nom quand même ? Les deux articles resteront séparés.'))return;
-        }
-        _it0.name=_nv;
+        _it0.name=_nv;          /* doublon de nom deja accepte dans saveItemDetail */
         if(S.ingNames&&S.ingNames[_it0.id])S.ingNames[_it0.id]=_nv;
       }
     }
@@ -1750,7 +1775,7 @@ function applyScannedProduct(name,macros,qtyStr){
 function setAICat(c){_aic=c;['frigo','congelateur','placards','epices'].forEach(k=>{const el=document.getElementById('aicat-'+k);if(!el)return;el.style.background=k===c?'rgba(95,168,201,.15)':'transparent';el.style.borderColor=k===c?'var(--blue)':'rgba(246,237,227,.12)';el.style.color=k===c?'var(--blue)':'var(--text2)';});const ep=(c==='epices');const qr=document.getElementById('ai-qtyrow'),pr=document.getElementById('ai-present-row');if(qr)qr.style.display=ep?'none':'grid';if(pr)pr.style.display=ep?'none':'flex';}
 
 async function aiLookupMacros(){
-  const n=document.getElementById('ai-name').value.trim();if(!n){alert('Entre un nom.');return;}
+  const n=document.getElementById('ai-name').value.trim();if(!n){_alerte('Entre un nom.');return;}
   if(_macSrc.aim!=='auto')return;
   document.getElementById('ai-status').textContent='🔍 Recherche\u2026';
   try{
@@ -1801,8 +1826,14 @@ function confirmAddItem(){
   item.macSource=_macSrc.aim;
   if(_macSrc.aim==='manual'){if(_mk.kcal||_mk.prot||_mk.gluc||_mk.lip)item.macManual=_mk;}else if(_macManual.aim){item.macManual={kcal:+_macManual.aim.kcal||0,prot:+_macManual.aim.prot||0,gluc:+_macManual.aim.gluc||0,lip:+_macManual.aim.lip||0};}
   var _pgEl=document.getElementById('ai-pieceg');var _pg=_pgEl?parseFloat(_pgEl.value):0;var _countable=['pcs','pots','boîtes','tubes','packs'].indexOf(unit)>=0;if(!pkgOn&&_countable&&_pg>=1&&(_mk.kcal||_mk.prot||_mk.gluc||_mk.lip)){var _f=_pg/100;item.pieceG=_pg;item.macPiece={kcal:Math.round(_mk.kcal*_f),prot:+(_mk.prot*_f).toFixed(1),gluc:+(_mk.gluc*_f).toFixed(1),lip:+(_mk.lip*_f).toFixed(1)};}
-var _dup=findItemByName(n);if(_dup){var _curr=_dup.qty===null?'stock illimité':(_dup.qty+' '+(_dup.unit||''));if(confirm('« '+_dup.name+' » est déjà en stock ('+_curr+'). OK = recharger ce stock, Annuler = créer un article à part.')){if(present){_dup.qty=null;}else if(_dup.qty!==null){_dup.qty=(+_dup.qty||0)+qty;if(unit&&!_dup.unit)_dup.unit=unit;}if(_pkgSize>0)_dup.pkg={size:_pkgSize};if(item.pieceG){_dup.pieceG=item.pieceG;_dup.macPiece=item.macPiece;if(item.mac100)_dup.mac100=item.mac100;}saveState();closeAddItem();render();return;}}
-if(!S.inv[cat])S.inv[cat]=[];S.inv[cat].push(item);saveState();closeAddItem();render();
+var _ajouter=function(){if(!S.inv[cat])S.inv[cat]=[];S.inv[cat].push(item);saveState();closeAddItem();render();};
+var _dup=findItemByName(n);if(_dup){var _curr=_dup.qty===null?'stock illimité':(_dup.qty+' '+(_dup.unit||''));
+  _confirmer('« '+_dup.name+' » est déjà en stock ('+_curr+').\n\nRecharger ce stock, ou créer un article à part ?',{ok:'Recharger ce stock',annuler:'Créer un article à part'}).then(function(ok){
+    if(!ok){_ajouter();return;}
+    if(present){_dup.qty=null;}else if(_dup.qty!==null){_dup.qty=(+_dup.qty||0)+qty;if(unit&&!_dup.unit)_dup.unit=unit;}if(_pkgSize>0)_dup.pkg={size:_pkgSize};if(item.pieceG){_dup.pieceG=item.pieceG;_dup.macPiece=item.macPiece;if(item.mac100)_dup.mac100=item.mac100;}saveState();closeAddItem();render();
+  });
+  return;}
+_ajouter();
 }
 function toggleAIPresent(){
   const cb=document.getElementById('ai-present');const on=cb&&cb.checked;
@@ -2014,7 +2045,7 @@ function renderProgrammeApercu(){
   a.innerHTML='<div style="font-size:11px;color:var(--text3);line-height:1.45;margin:7px 0 8px;">'+s.exos+'.</div>'
     +'<button onclick="ajouterSeanceProgramme()" style="width:100%;padding:10px;background:rgba(233,161,59,.12);border:0.5px solid rgba(233,161,59,.45);border-radius:9px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">'
     +'Ajouter \u00b7 '+Math.round(min)+' min \u00b7 ~'+kcalSeance(s,min)+' kcal</button>'
-    +'<div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.4;">Estimation nette, hors cardio, pour '+Math.round(_poidsCourant())+' kg : le métabolisme de repos est déjà dans ta cible.</div>';
+    +'<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4;">Estimation nette, hors cardio, pour '+Math.round(_poidsCourant())+' kg : le métabolisme de repos est déjà dans ta cible.</div>';
 }
 function _valSel(){var e=document.getElementById('burn-prog-sel');return e?e.value:'';}
 function ajouterSeanceProgramme(){
@@ -2066,7 +2097,7 @@ function renderActHistory(){
   var l=actHistory();
   if(!l.length){el.innerHTML='';el.style.display='none';return;}
   el.style.display='block';
-  el.innerHTML='<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">R\u00e9cent \u2014 touche pour remplir</div>'
+  el.innerHTML='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">R\u00e9cent \u2014 touche pour remplir</div>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
     +l.map(function(a,i){
       return '<button onclick="useActHistory('+i+')" style="padding:5px 10px;background:var(--bg);border:0.5px solid var(--border);border-radius:99px;color:var(--text2);font-size:11px;cursor:pointer;white-space:nowrap;">'
@@ -2088,8 +2119,8 @@ function useActHistory(i){
 async function burnEstimateActivity(){
   var name=(document.getElementById('burn-act-name').value||'').trim();
   var min=parseInt(document.getElementById('burn-act-min').value,10)||0;
-  if(!name){alert('Indique une activité (ex. course, vélo, marche).');return;}
-  if(min<=0){alert('Indique une durée en minutes.');return;}
+  if(!name){_alerte('Indique une activité (ex. course, vélo, marche).');return;}
+  if(min<=0){_alerte('Indique une durée en minutes.');return;}
   var btn=document.getElementById('burn-est-btn');var old=btn?btn.textContent:'';
   if(btn){btn.textContent='⏳ Estimation…';btn.disabled=true;}
   var kcal=null;
@@ -2290,7 +2321,7 @@ function _applyState(d){
   // Fusion one-shot des doublons d'inventaire (Liam) : macros manuelles, somme des quantites, retires au cimetiere
   if(_catalogue()===PROFIL_HERITE){if(!d.dupMerged){if(_mergeDuplicates())_etatCorrige=true;S.dupMerged=true;}else{S.dupMerged=true;}}
 }
-function showSyncErr(){alert(_lastSyncErr||'Aucun detail enregistre pour le moment. Declenche une sauvegarde (ajoute un repas) puis retape.');}
+function showSyncErr(){_alerte(_lastSyncErr||'Aucun détail enregistré pour le moment.\n\nDéclenche une sauvegarde (ajoute un repas) puis retape.');}
 // Le badge existe a deux endroits : en tete de page et sur l'accueil. Un seul
 // point de rafraichissement evite qu'un des deux reste fige.
 function _majBadgesSync(){
@@ -2300,10 +2331,10 @@ function _majBadgesSync(){
   });
 }
 function _syncBadge(){
-  if(_syncStatus==='ok') return '<span style="font-size:10px;color:var(--green);">☁ sync</span>';
-  if(_syncStatus==='conflict') return '<span onclick="_reloadFromServer(false)" style="font-size:10px;color:var(--red);cursor:pointer;">\u26a0 conflit \u2014 recharger</span>';
-  if(_syncStatus==='offline') return '<span onclick="showSyncErr()" style="font-size:10px;color:var(--orange);cursor:pointer;">⚠ hors ligne ⓘ</span>';
-  return '<span style="font-size:10px;color:var(--text3);">💾 auto</span>';
+  if(_syncStatus==='ok') return '<span style="font-size:11px;color:var(--green);">☁ sync</span>';
+  if(_syncStatus==='conflict') return '<span onclick="_reloadFromServer(false)" style="font-size:11px;color:var(--red);cursor:pointer;">\u26a0 conflit \u2014 recharger</span>';
+  if(_syncStatus==='offline') return '<span onclick="showSyncErr()" style="font-size:11px;color:var(--orange);cursor:pointer;">⚠ hors ligne ⓘ</span>';
+  return '<span style="font-size:11px;color:var(--text3);">💾 auto</span>';
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2373,7 +2404,7 @@ async function _onSaveConflict(){
   _conflictBusy=true;
   _syncStatus='conflict';
   _majBadgesSync();
-  var ok=confirm("\u26a0 Ces donn\u00e9es ont \u00e9t\u00e9 modifi\u00e9es ailleurs entre-temps.\n\nEnregistrer maintenant \u00e9craserait ces modifications. L'app peut recharger la version la plus r\u00e9cente \u00e0 la place.\n\nRecharger ? (Annuler = ne rien enregistrer pour l'instant)");
+  var ok=await _confirmer("\u26a0 Ces donn\u00e9es ont \u00e9t\u00e9 modifi\u00e9es ailleurs entre-temps.\n\nEnregistrer maintenant \u00e9craserait ces modifications. L'app peut recharger la version la plus r\u00e9cente \u00e0 la place.",{ok:'Recharger',annuler:'Ne rien enregistrer'});
   _conflictBusy=false;
   if(ok)await _reloadFromServer(true);
 }
@@ -2394,6 +2425,53 @@ async function _checkFresherOnResume(){
   const rr=await _remoteRev();
   if(rr!==null&&rr>_stateRev)await _reloadFromServer(false);
 }
+// ─── Fenetres de dialogue ───────────────────────────────────────────────────
+// Sur iPhone, en PWA, alert/confirm ouvrent une boite systeme grise qui affiche
+// l'adresse du site. Celles-ci gardent le style de l'app et renvoient une
+// promesse. Le texte passe par textContent : aucune donnee n'est interpretee.
+// Premier paragraphe (avant une ligne vide) = titre, la suite = corps.
+var _dlgFile=[],_dlgOuvert=false;
+function _dialogue(o){
+  return new Promise(function(resolve){_dlgFile.push({o:o||{},resolve:resolve});_dlgSuivant();});
+}
+function _dlgSuivant(){
+  if(_dlgOuvert||!_dlgFile.length)return;
+  var d=_dlgFile.shift(),o=d.o;
+  _dlgOuvert=true;
+  var el=function(tag,cls,txt){var x=document.createElement(tag);if(cls)x.className=cls;if(txt!=null)x.textContent=txt;return x;};
+  var fond=el('div');fond.id='dz-dlg';
+  try{fond.setAttribute('role','dialog');fond.setAttribute('aria-modal','true');}catch(e){}
+  var carte=el('div','dz-dlg-carte');
+  // Espaces insecables : un « ? » ou un « : » ne se retrouve pas seul en debut de ligne
+  var parts=String(o.message==null?'':o.message).replace(/ ([?!:;\u00bb])/g,'\u00a0$1').replace(/\u00ab /g,'\u00ab\u00a0').replace(/(\d) (g|kg|ml|cl|l|kcal|pcs?|pots?|jours?|j)\b/g,'$1\u00a0$2').split('\n\n');
+  carte.appendChild(el('div','dz-dlg-titre',parts[0]));
+  if(parts.length>1)carte.appendChild(el('div','dz-dlg-corps',parts.slice(1).join('\n\n')));
+  if(o.texte!=null){var ta=el('textarea','dz-dlg-texte');ta.readOnly=true;ta.value=o.texte;carte.appendChild(ta);}
+  var rang=el('div','dz-dlg-boutons');
+  var fermer=function(v){
+    if(!_dlgOuvert)return;
+    document.removeEventListener('keydown',clavier,true);
+    try{fond.remove();}catch(e){}
+    _dlgOuvert=false;d.resolve(v);_dlgSuivant();
+  };
+  var clavier=function(e){if(e.key==='Escape'){e.preventDefault();fermer(!o.annuler);}};
+  var bA=null;
+  if(o.annuler){bA=el('button','dz-dlg-b',o.annuler);bA.type='button';bA.onclick=function(){fermer(false);};rang.appendChild(bA);}
+  if(o.copier){var bC=el('button','dz-dlg-b','Copier');bC.type='button';
+    bC.onclick=function(){try{navigator.clipboard.writeText(o.texte).then(function(){bC.textContent='\u2713 Copi\u00e9';},function(){});}catch(e){}};
+    rang.appendChild(bC);}
+  var bO=el('button','dz-dlg-b '+(o.danger?'dz-dlg-danger':'dz-dlg-ok'),o.ok||'OK');bO.type='button';bO.onclick=function(){fermer(true);};
+  rang.appendChild(bO);carte.appendChild(rang);fond.appendChild(carte);
+  document.body.appendChild(fond);
+  document.addEventListener('keydown',clavier,true);
+  // Focus pour le clavier (PC) ; pas sur ecran tactile, ou il ne sert a rien
+  try{if(!('ontouchstart' in window))(o.danger&&bA?bA:bO).focus({preventScroll:true});}catch(e){}
+}
+// Question oui/non : resout true (bouton d'action) ou false (Annuler, Echap)
+function _confirmer(message,o){o=o||{};
+  return _dialogue({message:message,ok:o.ok||'Confirmer',annuler:o.annuler||'Annuler',danger:!!o.danger});}
+// Simple information, un seul bouton. Ne bloque pas : le code continue.
+function _alerte(message){return _dialogue({message:message,ok:'OK'});}
 function _infoToast(titre,corps){
   try{
     var el=document.getElementById('coach-toast');
@@ -2435,10 +2513,10 @@ async function _saveStateNow(){
   if(_rr!==null){
     var _volLocal=_volumeEtat(S), _volDist=await _remoteVol();
     if(_volDist!==null&&_volDist>20&&_volLocal<_volDist*0.6){
-      if(!confirm('\u26a0 Cet appareil s\'apprête à remplacer des données bien plus complètes.\n\n'
+      if(!(await _confirmer('\u26a0 Cet appareil s\'apprête à remplacer des données bien plus complètes.\n\n'
         +'Ici : environ '+_volLocal+' éléments.\nSur le cloud : environ '+_volDist+' éléments.\n\n'
-        +'Cela ressemble à un appareil resté en retard. Annuler et recharger la version du cloud ?\n\n'
-        +'OK = recharger le cloud (recommandé)\nAnnuler = envoyer quand même ce qui est ici')){
+        +'Cela ressemble à un appareil resté en retard. Recharger la version du cloud est recommandé.',
+        {ok:'Recharger le cloud',annuler:'Envoyer quand même'}))){
         // L'utilisateur choisit d'envoyer : on met l'etat distant de cote avant
         try{
           var _av=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'));
@@ -2606,10 +2684,12 @@ function saveApiKey(){
   if(v){localStorage.setItem('anthropic_key',v);closeSettings();render();}
 }
 function clearApiKey(){
-  if(!confirm('Supprimer la clé API ?\n\nElle sera retirée de cet appareil et de tes autres appareils à la prochaine synchronisation. Il faudra la ressaisir pour utiliser l\'analyse de repas et la génération de recettes.'))return;
-  localStorage.removeItem('anthropic_key');
-  saveState();                 // sinon la clé est réinjectée depuis Firebase au rechargement
-  closeSettings();render();
+  _confirmer('Supprimer la clé API ?\n\nElle sera retirée de cet appareil et de tes autres appareils à la prochaine synchronisation. Il faudra la ressaisir pour utiliser l\'analyse de repas et la génération de recettes.',{ok:'Supprimer',danger:true}).then(function(ok){
+    if(!ok)return;
+    localStorage.removeItem('anthropic_key');
+    saveState();                 // sinon la clé est réinjectée depuis Firebase au rechargement
+    closeSettings();render();
+  });
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -2667,7 +2747,7 @@ async function generateStockRecipes(){
   const foodItems=['frigo','congelateur','placards'].flatMap(c=>(S.inv[c]||[])).filter(i=>i.qty===null||i.qty>0);
   const spices=(S.inv.epices||[]).map(i=>i.name);
   if(foodItems.length<5){
-    alert('Il faut au moins 5 ingrédients en stock pour générer des recettes cohérentes. Ajoute des aliments à ton inventaire d\'abord !');
+    _alerte('Il faut au moins 5 ingrédients en stock pour générer des recettes cohérentes. Ajoute des aliments à ton inventaire d\'abord !');
     return;
   }
   const btn=document.getElementById('gen-recipes-btn');
@@ -2768,7 +2848,7 @@ RÈGLES ABSOLUES:
     saveState();render();
   }catch(e){
     if(btn){btn.disabled=false;btn.textContent='✨ Générer des recettes selon mon stock';}
-    if(e.message!=='NO_KEY')alert('⚠ '+_aiFriendly(e.message));
+    if(e.message!=='NO_KEY')_alerte('⚠ '+_aiFriendly(e.message));
   }
 }
 
@@ -2994,7 +3074,7 @@ function calorieRing(eaten,target,burned){
     +'<div style="flex:1;text-align:center;min-width:0;">'
       +'<div style="font-size:17px;font-weight:600;color:var(--text);">'+Math.round(eaten)+'</div>'
       +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;">Consomm\u00e9es'
-        +'<button data-action="macro-info" data-val="kcal" title="D\'o\u00f9 vient ce chiffre ?" style="background:none;border:0;color:var(--text3);font-size:10px;cursor:pointer;padding:0 0 0 3px;line-height:1;">\u24D8</button></div>'
+        +'<button data-action="macro-info" data-val="kcal" title="D\'o\u00f9 vient ce chiffre ?" style="background:none;border:0;color:var(--text3);font-size:11px;cursor:pointer;padding:0 0 0 3px;line-height:1;">\u24D8</button></div>'
     +'</div>'
     +'<div style="position:relative;width:128px;height:128px;flex-shrink:0;">'
       +'<svg width="128" height="128" viewBox="0 0 128 128" style="transform:rotate(-90deg);">'
@@ -3004,8 +3084,8 @@ function calorieRing(eaten,target,burned){
       +'</svg>'
       +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">'
         +'<div style="font-size:25px;font-weight:700;color:'+(over?'var(--red)':'var(--text)')+';line-height:1.05;">'+Math.abs(reste)+'</div>'
-        +'<div style="font-size:10px;color:var(--text3);">kcal</div>'
-        +'<div style="font-size:10px;color:'+(over?'var(--red)':'var(--text3)')+';">'+(over?'d\u00e9pass\u00e9':'restantes')+'</div>'
+        +'<div style="font-size:11px;color:var(--text3);">kcal</div>'
+        +'<div style="font-size:11px;color:'+(over?'var(--red)':'var(--text3)')+';">'+(over?'d\u00e9pass\u00e9':'restantes')+'</div>'
       +'</div>'
     +'</div>'
     +'<div style="flex:1;text-align:center;min-width:0;">'
@@ -3045,7 +3125,7 @@ function ouvrirInfoMacro(cle){
       var pct=total>0?Math.round(x.v/total*100):0;
       return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(246,237,227,.06);">'
         +'<span style="flex:1;min-width:0;font-size:12.5px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+x.nom+'</span>'
-        +'<span style="font-size:10px;color:var(--text3);flex:0 0 auto;">'+pct+' %</span>'
+        +'<span style="font-size:11px;color:var(--text3);flex:0 0 auto;">'+pct+' %</span>'
         +'<span style="font-size:12px;color:var(--gold);flex:0 0 auto;min-width:56px;text-align:right;">'+x.v+' '+inf.unite+'</span></div>';
     }).join('');
     var reste=Math.round((cible-total)*10)/10;
@@ -3056,7 +3136,7 @@ function ouvrirInfoMacro(cle){
       +(reste>=0?('Reste '+reste+' '+inf.unite+'.'):('Dépassement de '+Math.abs(reste)+' '+inf.unite+'.'))+'</div>';
   }
   h+='<div style="margin-top:14px;padding-top:12px;border-top:0.5px solid var(--border);font-size:12px;color:var(--text2);line-height:1.5;">'+inf.texte+'</div>';
-  if(cible>0)h+='<div style="margin-top:8px;font-size:10.5px;color:var(--text3);line-height:1.45;">Ta cible de '+cible+' '+inf.unite+" vient de ton profil : c'est un repère personnel, pas une norme.</div>";
+  if(cible>0)h+='<div style="margin-top:8px;font-size:11px;color:var(--text3);line-height:1.45;">Ta cible de '+cible+' '+inf.unite+" vient de ton profil : c'est un repère personnel, pas une norme.</div>";
   var t=document.getElementById('macroinfo-title');if(t)t.textContent=inf.titre;
   var b=document.getElementById('macroinfo-body');if(b)b.innerHTML=h;
   var o=document.getElementById('macroinfo-overlay');if(o)o.style.display='flex';
@@ -3064,7 +3144,7 @@ function ouvrirInfoMacro(cle){
 function fermerInfoMacro(){var o=document.getElementById('macroinfo-overlay');if(o)o.style.display='none';}
 function macroBar(label,val,target,unit,color,cle){
   const pct=Math.min(100,Math.round(val/target*100));const over=val>target;
-  const info=cle?`<button data-action="macro-info" data-val="${cle}" title="D'où vient ce chiffre ?" style="background:none;border:0;color:var(--text3);font-size:10px;cursor:pointer;padding:0 0 0 3px;line-height:1;">\u24D8</button>`:'';
+  const info=cle?`<button data-action="macro-info" data-val="${cle}" title="D'où vient ce chiffre ?" style="background:none;border:0;color:var(--text3);font-size:11px;cursor:pointer;padding:0 0 0 3px;line-height:1;">\u24D8</button>`:'';
   return`<span style="font-size:11px;color:var(--text3);">${label}${info}</span><div style="height:7px;background:var(--bg3);border-radius:99px;overflow:hidden;"><div style="width:${pct}%;height:100%;background:var(${over?'--red':color});border-radius:99px;transition:width 1.1s var(--ease);"></div></div><span style="font-size:11px;color:var(${over?'--red':'--text2'});text-align:right;">${val}/${target} ${unit}</span>`;
 }
 
@@ -3077,11 +3157,11 @@ function renderDessert(r){
     const tc=isSel?'var(--text)':(d.urgent&&ok)?'var(--warn)':isAI?'var(--blue)':'var(--text)';
     const bc=isSel?'var(--gold)':(d.urgent&&ok)?'var(--warn)':isAI?'var(--blue)':'var(--border)';
     const bg=isSel?'var(--gold-bg, rgba(233,161,59,.14))':'transparent';
-    const extra=d.kcal>0?` <span style="font-size:10px;opacity:0.6;">+${d.kcal}</span>`:'';
+    const extra=d.kcal>0?` <span style="font-size:11px;opacity:0.6;">+${d.kcal}</span>`:'';
     const ico=isAI?`✦ `:'';
     return`<button data-action="select-dessert" data-val="${r.id}" data-dessert="${d.id}" ${!ok?'data-disabled="true"':''} style="padding:4px 10px;border-radius:20px;border:0.5px solid ${bc};background:${bg};font-size:12px;color:${tc};font-weight:${isSel?600:400};cursor:${ok?'pointer':'not-allowed'};display:inline-flex;align-items:center;gap:2px;">${ico}${d.name}${extra}</button>`;
   }).join('');
-  const hint=`<div style="font-size:10px;color:var(--text3);margin-top:6px;">Touche à nouveau pour retirer le dessert. Marque un article de l'inventaire avec 🍰 pour l'ajouter ici.</div>`;
+  const hint=`<div style="font-size:11px;color:var(--text3);margin-top:6px;">Touche à nouveau pour retirer le dessert. Marque un article de l'inventaire avec 🍰 pour l'ajouter ici.</div>`;
   let inp='';
   if(sel==='autre'){
     if(!cd||cd.error){
@@ -3132,8 +3212,8 @@ function _mealStock(meal,sign){
   }
 }
 function copyMealTo(dayKey,idx,target){
-  if(!target){alert('Choisis une date cible (le champ date en bas de la carte).');return;}
-  if(target===dayKey){alert('La date cible est le jour affiché.');return;}
+  if(!target){_alerte('Choisis une date cible (le champ date en bas de la carte).');return;}
+  if(target===dayKey){_alerte('La date cible est le jour affiché.');return;}
   const meal=(S.dayMeals[dayKey]||[])[idx];
   if(!meal)return;
   const copy=JSON.parse(JSON.stringify(meal));
@@ -3143,12 +3223,18 @@ function copyMealTo(dayKey,idx,target){
   saveState();render();
 }
 function copyDayTo(target){
-  if(!target){alert('Choisis une date.');return;}
+  if(!target){_alerte('Choisis une date.');return;}
   const src=S.dayMeals[S.displayDate]||[];
-  if(!src.length){alert('Aucun repas à copier ce jour-là.');return;}
-  if(target===S.displayDate){alert('La date cible est le jour affiché. Choisis une autre date.');return;}
+  if(!src.length){_alerte('Aucun repas à copier ce jour-là.');return;}
+  if(target===S.displayDate){_alerte('La date cible est le jour affiché. Choisis une autre date.');return;}
   const existing=(S.dayMeals[target]||[]).length;
-  if(existing&&!confirm('Le '+target+' a déjà '+existing+' repas. Ajouter les '+src.length+' repas du jour affiché par-dessus ?'))return;
+  if(existing){
+    _confirmer('Le '+new Date(target+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+' a déjà '+existing+' repas.\n\nAjouter les '+src.length+' repas du jour affiché par-dessus ?',{ok:'Ajouter'}).then(function(ok){if(ok)_copierJourVers(src,target);});
+    return;
+  }
+  _copierJourVers(src,target);
+}
+function _copierJourVers(src,target){
   const copies=JSON.parse(JSON.stringify(src));
   S.dayMeals[target]=(S.dayMeals[target]||[]).concat(copies);
   copies.forEach(m=>_mealStock(m,-1));
@@ -3161,7 +3247,7 @@ function renderMacros(){
   const canPrev=dd>shiftDate(S.today,-6),canNext=dd<TOMORROW;
   const dt=new Date(dd+'T00:00:00');
   const dateLabel=dt.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
-  const suffix=isToday?' <span style="font-size:10px;color:var(--text3);">· aujourd\'hui</span>':isTomorrow?' <span style="font-size:10px;color:var(--blue);">· demain</span>':'';
+  const suffix=isToday?' <span style="font-size:11px;color:var(--text3);">· aujourd\'hui</span>':isTomorrow?' <span style="font-size:11px;color:var(--blue);">· demain</span>':'';
   const list=_ordreRepas(meals).map((idx)=>{const {rid,dessert,customDessert,extras,macros,name}=meals[idx];const r=findRecipe(rid);const base=macros||r;if(!base)return'';const _nm=name||(r&&r.name)||'Repas';let dl='';if(dessert&&dessert!=='none'){if(dessert==='autre'&&customDessert)dl=` + ${customDessert.name}`;else{const d=allDesserts().find(x=>x.id===dessert);if(d)dl=` + ${d.name}`;}}const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0)}),{kcal:0,prot:0});if(extras&&extras.length)dl+=' + '+extras.map(e=>e.name).join(', ');const _mo=moment(meals[idx]&&meals[idx].slot);
     const _lis=_mo?`border-left:3px solid ${_mo.couleur};padding-left:7px;`:'border-left:3px solid transparent;padding-left:7px;';
     return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);${_lis}"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(base.kcal+dm.kcal+ex.kcal)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round((base.prot+dm.prot+ex.prot)*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" title="Supprimer ce repas" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;width:40px;height:40px;margin:-10px -10px -10px -6px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;">✕</button></div>`;}).filter(Boolean).join('');
@@ -3173,14 +3259,14 @@ function renderMacros(){
   const navBtn=(a,icon,en)=>`<button data-action="${a}" ${!en?'data-disabled="true"':''} style="background:none;border:0.5px solid var(--border);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:${en?'pointer':'default'};color:${en?'var(--text2)':'var(--border)'};flex-shrink:0;font-size:16px;">${ICNAV[icon]||icon}</button>`;
   return`<div id="daypane" style="background:var(--bg2);border:0.5px solid ${isTomorrow?'var(--blue)':'var(--border)'};border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">${navBtn('prev-day','chevron-left',canPrev)}<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--bg3);border-radius:99px;padding:7px 12px;min-width:0;"><span style="font-size:13px;">\ud83d\udcc5</span><span style="font-size:13px;font-weight:600;color:var(--text);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dateLabel}${suffix}</span></div>${navBtn('next-day','chevron-right',canNext)}</div>
-    <div style="text-align:center;font-size:10px;color:var(--text3);margin:-4px 0 8px;">${meals.length} repas</div>
+    <div style="text-align:center;font-size:11px;color:var(--text3);margin:-4px 0 8px;">${meals.length} repas</div>
     ${calorieRing(m.kcal,TARGETS.kcal,(function(){var b=getBurn(dd);return b?b.total:0;})())}
     <div style="display:grid;grid-template-columns:65px 1fr 75px;align-items:center;gap:5px;row-gap:7px;">${macroBar('Protéines',m.prot,TARGETS.prot,'g','--green','prot')}${macroBar('Glucides',m.gluc,TARGETS.gluc,'g','--blue','gluc')}${macroBar('Lipides',m.lip,TARGETS.lip,'g','--text2','lip')}</div>
     ${meals.length===0?'<div style="text-align:center;padding:10px 0 2px;font-size:12px;color:var(--text3);">Aucun repas enregistré</div>':''}
     ${list?`<div style="margin-top:8px;">${list}</div>`:''}
     ${rem}
-    ${meals.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:10px;color:var(--text3);">Copier vers</span><input type="date" id="copy-day-target" value="${shiftDate(dd,1)}" style="font-size:11px;padding:2px 5px;background:var(--bg);border:0.5px solid var(--border);border-radius:5px;color:var(--text2);"><button onclick="copyDayTo(document.getElementById('copy-day-target').value)" style="font-size:10px;padding:3px 10px;background:var(--blue);color:#fff;border:0;border-radius:5px;cursor:pointer;font-weight:500;">⧉ Jour entier</button></div><div style="font-size:9px;color:var(--text3);margin-top:4px;">Astuce : le ⧉ à côté d'un repas le copie seul vers cette date.</div>`:''}
-    <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:10px;color:var(--text3);">J−7 à J+1</span></div>
+    ${meals.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text3);">Copier vers</span><input type="date" id="copy-day-target" value="${shiftDate(dd,1)}" style="font-size:11px;padding:2px 5px;background:var(--bg);border:0.5px solid var(--border);border-radius:5px;color:var(--text2);"><button onclick="copyDayTo(document.getElementById('copy-day-target').value)" style="font-size:11px;padding:3px 10px;background:var(--blue);color:#fff;border:0;border-radius:5px;cursor:pointer;font-weight:500;">⧉ Jour entier</button></div><div style="font-size:11px;color:var(--text3);margin-top:4px;">Astuce : le ⧉ à côté d'un repas le copie seul vers cette date.</div>`:''}
+    <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:11px;color:var(--text3);">J−7 à J+1</span></div>
   </div>`;
 }
 
@@ -3190,8 +3276,8 @@ function renderFreeMealNightModal(){
   const now=new Date();const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
   const yd=shiftDate(S.today,-1);
   return`<div style="background:var(--warn-bg);border:0.5px solid var(--warn);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;"><div style="font-size:13px;font-weight:500;color:var(--warn);margin-bottom:8px;">⏱ ${hh}h${mm} — "${nm}" c'est pour…</div><div style="display:flex;gap:8px;">
-    <button data-action="free-meal-day" data-day="${yd}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--warn);background:transparent;color:var(--warn);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Hier<br><span style="font-size:10px;opacity:0.8;">${new Date(yd+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
-    <button data-action="free-meal-day" data-day="${S.today}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Aujourd'hui<br><span style="font-size:10px;opacity:0.6;">${new Date(S.today+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
+    <button data-action="free-meal-day" data-day="${yd}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--warn);background:transparent;color:var(--warn);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Hier<br><span style="font-size:11px;opacity:0.8;">${new Date(yd+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
+    <button data-action="free-meal-day" data-day="${S.today}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Aujourd'hui<br><span style="font-size:11px;opacity:0.6;">${new Date(S.today+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
   </div></div>`;
 }
 function renderNightModal(){
@@ -3199,8 +3285,8 @@ function renderNightModal(){
   const now=new Date();const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
   const yd=shiftDate(S.today,-1);
   return`<div style="background:var(--warn-bg);border:0.5px solid var(--warn);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;"><div style="font-size:13px;font-weight:500;color:var(--warn);margin-bottom:8px;">⏱ ${hh}h${mm} — "${r.name}" c'est pour…</div><div style="display:flex;gap:8px;">
-    <button data-action="confirm-day" data-day="${yd}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--warn);background:transparent;color:var(--warn);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Hier<br><span style="font-size:10px;opacity:0.8;">${new Date(yd+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
-    <button data-action="confirm-day" data-day="${S.today}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Aujourd'hui<br><span style="font-size:10px;opacity:0.6;">${new Date(S.today+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
+    <button data-action="confirm-day" data-day="${yd}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--warn);background:transparent;color:var(--warn);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Hier<br><span style="font-size:11px;opacity:0.8;">${new Date(yd+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
+    <button data-action="confirm-day" data-day="${S.today}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Aujourd'hui<br><span style="font-size:11px;opacity:0.6;">${new Date(S.today+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
   </div></div>`;
 }
 
@@ -3272,7 +3358,7 @@ function renderCard(r){
       +`<button onclick="event.stopPropagation();choisirPhotoRecette('${r.id}')" style="padding:6px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;backdrop-filter:blur(4px);">\ud83d\udcf7 ${p?'Changer':'Ajouter une photo'}</button>`
       +(p?`<button onclick="event.stopPropagation();retirerPhotoRecette('${r.id}')" title="Retirer la photo" style="padding:6px 9px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;">\u00d7</button>`:'')
       +`</div></div>`;
-  })()}${renderIngredients(r)}<div style="padding-top:12px;">${(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${s}</span></div>`).join('')}</div>${renderCardBottom(r)}</div>`:''}</div>`;
+  })()}${renderIngredients(r)}<div style="padding-top:12px;">${(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${s}</span></div>`).join('')}</div>${renderCardBottom(r)}</div>`:''}</div>`;
 }
 
 function qtyLabel(it){
@@ -3385,7 +3471,7 @@ function renderInvDiag(){
     h+=d.zero.map(function(x){
       return '<div onclick="openItemDetail(\''+x.cat+'\',\''+x.it.id+'\')" style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);cursor:pointer;">'
         +'<span style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'+x.it.name+'</span>'
-        +'<span style="font-size:10.5px;color:var(--red);white-space:nowrap;">en \u00ab '+(x.it.unit||'?')+' \u00bb \u2192 corriger</span></div>';
+        +'<span style="font-size:11px;color:var(--red);white-space:nowrap;">en \u00ab '+(x.it.unit||'?')+' \u00bb \u2192 corriger</span></div>';
     }).join('');
   }
   if(d.suspects&&d.suspects.length){
@@ -3396,9 +3482,9 @@ function renderInvDiag(){
         : (x.it.qty+' '+(x.it.unit||'')+' \u2192 plutot '+x.paquets+' ?');
       return '<div onclick="openItemDetail(\''+x.cat+'\',\''+x.it.id+'\')" style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);cursor:pointer;">'
         +'<span style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'+x.it.name+'</span>'
-        +'<span style="font-size:10.5px;color:var(--warn);white-space:nowrap;">'+_det+'</span></div>';
+        +'<span style="font-size:11px;color:var(--warn);white-space:nowrap;">'+_det+'</span></div>';
     }).join('');
-    h+='<div style="font-size:10px;color:var(--text3);margin-top:5px;line-height:1.4;">Ces quantites valent exactement le poids d\'une unite multiplie par un petit nombre : c\'est probablement un poids saisi comme un nombre de pieces.</div>';
+    h+='<div style="font-size:11px;color:var(--text3);margin-top:5px;line-height:1.4;">Ces quantites valent exactement le poids d\'une unite multiplie par un petit nombre : c\'est probablement un poids saisi comme un nombre de pieces.</div>';
   }
   if(d.voisins&&d.voisins.length){
     h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 5px;">Noms voisins, un seul en stock</div>';
@@ -3415,7 +3501,7 @@ function renderInvDiag(){
         +'</div></div>';
     }).join('');
     var _ni=Object.keys(S.paires0k||{}).length;
-    if(_ni)h+='<div style="font-size:10px;color:var(--text3);margin-top:6px;text-align:right;">'+_ni+' paire'+(_ni>1?'s':'')+' ignoree'+(_ni>1?'s':'')+' \u00b7 <button onclick="reprendreVoisins()" style="background:none;border:0;color:var(--accent2);font-size:10px;cursor:pointer;text-decoration:underline;padding:0;">tout revoir</button></div>';
+    if(_ni)h+='<div style="font-size:11px;color:var(--text3);margin-top:6px;text-align:right;">'+_ni+' paire'+(_ni>1?'s':'')+' ignoree'+(_ni>1?'s':'')+' \u00b7 <button onclick="reprendreVoisins()" style="background:none;border:0;color:var(--accent2);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">tout revoir</button></div>';
   }
   if(d.dupes.length){
     h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:10px 0 5px;">Doublons</div>';
@@ -3423,7 +3509,7 @@ function renderInvDiag(){
       var ou=g.map(function(x){return (CINFO[x.cat]&&CINFO[x.cat].n)||x.cat;}).join(' + ');
       return '<div style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);">'
         +'<span style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'+g[0].it.name+'</span>'
-        +'<span style="font-size:10.5px;color:var(--text3);white-space:nowrap;">'+g.length+'\u00d7 \u00b7 '+ou+'</span></div>';
+        +'<span style="font-size:11px;color:var(--text3);white-space:nowrap;">'+g.length+'\u00d7 \u00b7 '+ou+'</span></div>';
     }).join('');
     h+='<button onclick="runMergeDuplicates()" style="width:100%;margin-top:7px;padding:8px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:11.5px;font-weight:600;cursor:pointer;">\ud83e\uddec Fusionner les doublons</button>';
   }
@@ -3432,9 +3518,9 @@ function renderInvDiag(){
     h+=d.expires.map(function(x){
       return '<div onclick="openItemDetail(\''+x.cat+'\',\''+x.it.id+'\')" style="display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);cursor:pointer;">'
         +'<span style="font-size:12px;color:var(--text2);flex:1;min-width:0;">'+x.it.name+'</span>'
-        +'<span style="font-size:10.5px;color:var(--red);white-space:nowrap;">'+x.it.dlc+'</span></div>';
+        +'<span style="font-size:11px;color:var(--red);white-space:nowrap;">'+x.it.dlc+'</span></div>';
     }).join('');
-    h+='<div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.45;">V\u00e9rifie avant de jeter : \u0153ufs et yaourts tiennent souvent au-del\u00e0 de la date.</div>';
+    h+='<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.45;">V\u00e9rifie avant de jeter : \u0153ufs et yaourts tiennent souvent au-del\u00e0 de la date.</div>';
   }
   return h+'</div>';
 }
@@ -3473,7 +3559,7 @@ function renderInvCats(){
       if(S.editMode){
         return`<div class="irow" style="flex-wrap:wrap;gap:4px;align-items:center;">
           <span onclick="openItemDetail('${cat}','${it.id}')" style="color:${isUrg?'var(--red)':'var(--text2)'};flex:1;font-size:12px;min-width:100px;cursor:pointer;">${it.name}${it.dessert?'<span title="Propos\u00e9 comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">\ud83c\udf70</span>':''}</span>
-          ${isEp?`<span style="font-size:11px;color:var(--text3);">présent</span>`:`<button onclick="toggleInvPresent('${cat}','${it.id}')" title="Présent / quantité" style="padding:4px 7px;border-radius:6px;border:0.5px solid ${it.qty===null?'var(--green)':'var(--border)'};background:${it.qty===null?'rgba(111,191,115,.12)':'transparent'};color:${it.qty===null?'var(--green)':'var(--text3)'};font-size:12px;cursor:pointer;white-space:nowrap;">∞</button>${it.qty===null?`<span style="font-size:11px;color:var(--green);margin-left:3px;">présent</span>`:`<input type="number" value="${it.qty||0}" min="0" onchange="updateInvQty('${cat}','${it.id}',this.value)" style="width:56px;padding:4px 6px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none;text-align:center;box-sizing:border-box;margin-left:3px;">${it.pkg&&it.pkg.size>0&&(!it.unit||it.unit==='g'||it.unit==='ml')?`<button onclick="stepInvPkg('${cat}','${it.id}',-1)" style="padding:4px 6px;margin-left:3px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">−1</button><button onclick="stepInvPkg('${cat}','${it.id}',1)" style="padding:4px 6px;margin-left:2px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">+1</button><span style="font-size:10px;color:var(--text3);margin-left:4px;white-space:nowrap;">${Math.round((it.qty||0)/it.pkg.size*10)/10} × ${it.pkg.size}${it.unit||"g"}</span>`:``}<span style="font-size:11px;color:var(--text3);margin-left:2px;">${it.unit}</span>`}`}
+          ${isEp?`<span style="font-size:11px;color:var(--text3);">présent</span>`:`<button onclick="toggleInvPresent('${cat}','${it.id}')" title="Présent / quantité" style="padding:4px 7px;border-radius:6px;border:0.5px solid ${it.qty===null?'var(--green)':'var(--border)'};background:${it.qty===null?'rgba(111,191,115,.12)':'transparent'};color:${it.qty===null?'var(--green)':'var(--text3)'};font-size:12px;cursor:pointer;white-space:nowrap;">∞</button>${it.qty===null?`<span style="font-size:11px;color:var(--green);margin-left:3px;">présent</span>`:`<input type="number" value="${it.qty||0}" min="0" onchange="updateInvQty('${cat}','${it.id}',this.value)" style="width:56px;padding:4px 6px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none;text-align:center;box-sizing:border-box;margin-left:3px;">${it.pkg&&it.pkg.size>0&&(!it.unit||it.unit==='g'||it.unit==='ml')?`<button onclick="stepInvPkg('${cat}','${it.id}',-1)" style="padding:4px 6px;margin-left:3px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">−1</button><button onclick="stepInvPkg('${cat}','${it.id}',1)" style="padding:4px 6px;margin-left:2px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">+1</button><span style="font-size:11px;color:var(--text3);margin-left:4px;white-space:nowrap;">${Math.round((it.qty||0)/it.pkg.size*10)/10} × ${it.pkg.size}${it.unit||"g"}</span>`:``}<span style="font-size:11px;color:var(--text3);margin-left:2px;">${it.unit}</span>`}`}
           <input type="date" value="${it.dlc||''}" onchange="updateInvDlc('${cat}','${it.id}',this.value)" title="Date p\u00e9remption" style="padding:3px 6px;background:var(--bg);border:0.5px solid ${dlc?dlc.color:'var(--border)'};border-radius:6px;color:${dlc?dlc.color:'var(--text3)'};font-size:11px;outline:none;cursor:pointer;"/>
           <button onclick="deleteInvItem('${cat}','${it.id}')" style="background:var(--red-bg);border:0.5px solid var(--red);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;padding:3px 8px;flex-shrink:0;">✕</button>
         </div>`;
@@ -3482,7 +3568,7 @@ function renderInvCats(){
         <span onclick="openItemDetail('${cat}','${it.id}')" style="color:${_nc};cursor:pointer;">${_hot?'⏱ ':''}${it.name}${it.dessert?'<span title="Propos\u00e9 comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">\ud83c\udf70</span>':''}</span>
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-size:12px;color:var(--text3);">${qtyLabel(it)}</span>
-          ${isUrg&&!it.dlc?`<span title="Produit périssable sans date — à consommer rapidement" style="font-size:10px;padding:1px 6px;border-radius:4px;background:var(--red-bg);color:var(--red);font-weight:500;">⚠ À consommer</span>`:''}${dlc?`<span style="font-size:10px;padding:1px 6px;border-radius:4px;background:${dlc.bg};color:${dlc.color};font-weight:500;">DLC ${dlc.label}</span>`:''}
+          ${isUrg&&!it.dlc?`<span title="Produit périssable sans date — à consommer rapidement" style="font-size:11px;padding:1px 6px;border-radius:4px;background:var(--red-bg);color:var(--red);font-weight:500;">⚠ À consommer</span>`:''}${dlc?`<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:${dlc.bg};color:${dlc.color};font-weight:500;">DLC ${dlc.label}</span>`:''}
         </div>
       </div>`;
     }).join(''):'';
@@ -3491,7 +3577,7 @@ function renderInvCats(){
   }).join('');
   if(!Object.values(S.inv).flat().length&&!S.editMode)return`<div style="text-align:center;padding:2rem 1rem;"><div style="font-size:32px;margin-bottom:10px;">🌿</div><div style="font-size:14px;color:var(--text3);margin-bottom:12px;">Inventaire vide — clique pour ajouter tes aliments dans les catégories !</div><button onclick="toggleEditMode()" style="padding:9px 18px;background:linear-gradient(135deg,#C86050,#A63F32);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button></div>`;
   const _del=getDeletedItems();
-  const histSection=S.editMode&&_del.length?`<div style="margin-top:16px;padding:12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🗑 Récemment supprimés · récupérables 24h, sinon définitif</div>${_del.map((d,i)=>{const hh=Math.floor((Date.now()-d.deletedAt)/3600000);const left=Math.max(1,24-hh);const ci=CINFO[d.cat];return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--border);"><span style="flex:1;font-size:12px;color:var(--text2);">${d.item.name} <span style="color:var(--text3);font-size:10px;">· ${ci?ci.label:d.cat} · encore ${left}h pour récupérer</span></span><button onclick="restoreDeletedItem(${i})" style="padding:4px 10px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;flex-shrink:0;">↩ Restaurer</button></div>`;}).join('')}</div>`:'';
+  const histSection=S.editMode&&_del.length?`<div style="margin-top:16px;padding:12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🗑 Récemment supprimés · récupérables 24h, sinon définitif</div>${_del.map((d,i)=>{const hh=Math.floor((Date.now()-d.deletedAt)/3600000);const left=Math.max(1,24-hh);const ci=CINFO[d.cat];return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--border);"><span style="flex:1;font-size:12px;color:var(--text2);">${d.item.name} <span style="color:var(--text3);font-size:11px;">· ${ci?ci.label:d.cat} · encore ${left}h pour récupérer</span></span><button onclick="restoreDeletedItem(${i})" style="padding:4px 10px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;flex-shrink:0;">↩ Restaurer</button></div>`;}).join('')}</div>`:'';
   const bottomAdd=S.editMode?`<button onclick="openAddItem('frigo')" style="width:100%;padding:11px;margin-top:14px;background:linear-gradient(135deg,var(--green),var(--green));border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button>`:'';
   const waitSection=(S.waiting&&S.waiting.length)?`<div style="background:rgba(192,87,70,.07);border:0.5px solid rgba(192,87,70,.25);border-radius:12px;padding:12px;margin-bottom:14px;"><div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:2px;">\ud83d\uded2 Salle d'attente \u00b7 ${S.waiting.length}</div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Articles achet\u00e9s \u00e0 ranger. Tape un article pour le placer ; \u2715 pour le retirer.</div>${S.waiting.map(w=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;"><span onclick="openWaitingItem('${w.id}')" style="flex:1;font-size:13px;color:var(--text);cursor:pointer;">${w.name}</span><span onclick="openWaitingItem('${w.id}')" style="font-size:15px;color:var(--accent);cursor:pointer;">\u2192</span><button onclick="deleteWaiting('${w.id}')" style="background:none;border:0;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:2px 6px;">\u2715</button></div>`).join('')}</div>`:'';
   return waitSection+cats+bottomAdd+histSection;
@@ -3532,9 +3618,9 @@ function renderShopAuto(){
   try{_purgeExclusionsRachat();}catch(e){}
   var s=shopSuggestions();
   var nbExclus=Object.keys(S.pasRacheter||{}).length;
-  var lienReprise=nbExclus?('<button onclick="reprendreLesSuggestions()" style="background:none;border:0;color:var(--accent2);font-size:10px;cursor:pointer;text-decoration:underline;padding:0;">tout reproposer</button>'):'';
+  var lienReprise=nbExclus?('<button onclick="reprendreLesSuggestions()" style="background:none;border:0;color:var(--accent2);font-size:11px;cursor:pointer;text-decoration:underline;padding:0;">tout reproposer</button>'):'';
   if(!s.length){
-    return nbExclus?('<div style="margin-bottom:12px;font-size:10.5px;color:var(--text3);text-align:center;">'
+    return nbExclus?('<div style="margin-bottom:12px;font-size:11px;color:var(--text3);text-align:center;">'
       +nbExclus+' article'+(nbExclus>1?'s':'')+' \u00e9cart\u00e9'+(nbExclus>1?'s':'')+' des suggestions \u00b7 '+lienReprise+'</div>'):'';
   }
   if(!S.shopAutoOpen){
@@ -3549,12 +3635,12 @@ function renderShopAuto(){
     return '<label style="display:flex;align-items:center;gap:9px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);cursor:pointer;">'
       +'<input type="checkbox" id="sa-'+i+'" checked style="width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto;">'
       +'<span style="flex:1;min-width:0;font-size:12px;color:var(--text2);">'+x.name+'</span>'
-      +'<span style="font-size:10px;color:'+col+';white-space:nowrap;">'+x.etat+'</span>'
+      +'<span style="font-size:11px;color:'+col+';white-space:nowrap;">'+x.etat+'</span>'
       +'<button onclick="event.preventDefault();event.stopPropagation();exclureDuRachat('+JSON.stringify(x.name).replace(/"/g,'&quot;')+')" title="Ne plus me le proposer" style="background:none;border:0;color:var(--text3);font-size:15px;line-height:1;cursor:pointer;padding:0 2px;flex:0 0 auto;">\u00d7</button></label>';
   }).join('');
   h+='<button onclick="applyShopSuggestions()" style="width:100%;margin-top:9px;padding:9px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">\u2713 Ajouter \u00e0 ma liste</button>';
-  if(nbExclus)h+='<div style="font-size:10px;color:var(--text3);margin-top:7px;text-align:right;">'+nbExclus+' \u00e9cart\u00e9'+(nbExclus>1?'s':'')+' \u00b7 '+lienReprise+'</div>';
-  h+='<div style="font-size:10px;color:var(--text3);margin-top:6px;line-height:1.45;">\u00ab \u00e9puis\u00e9 \u00bb = stock \u00e0 0 \u00b7 \u00ab presque fini \u00bb = moins d\'un emballage restant.</div>';
+  if(nbExclus)h+='<div style="font-size:11px;color:var(--text3);margin-top:7px;text-align:right;">'+nbExclus+' \u00e9cart\u00e9'+(nbExclus>1?'s':'')+' \u00b7 '+lienReprise+'</div>';
+  h+='<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.45;">\u00ab \u00e9puis\u00e9 \u00bb = stock \u00e0 0 \u00b7 \u00ab presque fini \u00bb = moins d\'un emballage restant.</div>';
   return h+'</div>';
 }
 function exclureDuRachat(nom){
@@ -3586,7 +3672,7 @@ function applyShopSuggestions(){
   });
   S.shopAutoOpen=0;
   saveState();render();
-  if(n)alert('\u2713 '+n+' article'+(n>1?'s ajout\u00e9s':' ajout\u00e9')+' \u00e0 ta liste de courses.');
+  if(n)_alerte('\u2713 '+n+' article'+(n>1?'s ajout\u00e9s':' ajout\u00e9')+' \u00e0 ta liste de courses.');
 }
 function renderCoursesHTML(){
   const byR={};SHOP_CATS.forEach(c=>byR[c.k]=[]);
@@ -3607,7 +3693,7 @@ function renderCoursesHTML(){
     html+='</div>';
   });
   if(!(S.shop.list||[]).length)html+='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">Liste vide. Ajoute des articles ci-dessus.</div>';
-  html+='<div style="font-size:10px;color:var(--text3);margin:0 0 8px;text-align:center;">🪦 = direct au cimetière (sans salle d’attente)</div>';html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">\u2713 Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
+  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;">🪦 = direct au cimetière (sans salle d’attente)</div>';html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">\u2713 Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
   html+=`<button onclick="S.coursesGrave=!S.coursesGrave;render();" style="width:100%;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;margin-top:8px;">Cimeti\u00e8re des articles (${graveN})</button>`;
   if(S.coursesGrave)html+=renderGraveyardHTML();
   html+='</div>';
@@ -3617,9 +3703,9 @@ function renderGraveyardHTML(){
   const g=S.shop.graveyard||[];
   if(!g.length)return '<div style="margin-top:10px;color:var(--text3);font-size:12px;text-align:center;padding:14px;">Cimeti\u00e8re vide. Les articles valid\u00e9s y resteront pour \u00eatre rachet\u00e9s plus tard.</div>';
   const lbl=k=>{const c=SHOP_CATS.find(x=>x.k===k);return c?c.label:k;};
-  let html='<div style="margin-top:10px;border-top:0.5px solid rgba(246,237,227,.08);padding-top:10px;"><div style="font-size:10px;color:var(--text3);margin-bottom:8px;">Articles d\u00e9j\u00e0 achet\u00e9s \u2014 rach\u00e8te en un tap ou supprime d\u00e9finitivement.</div>';
+  let html='<div style="margin-top:10px;border-top:0.5px solid rgba(246,237,227,.08);padding-top:10px;"><div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Articles d\u00e9j\u00e0 achet\u00e9s \u2014 rach\u00e8te en un tap ou supprime d\u00e9finitivement.</div>';
   g.forEach(it=>{
-    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(246,237,227,.04);"><div style="flex:1;min-width:0;"><div style="font-size:13px;color:var(--text2);">${it.name}</div><div style="font-size:10px;color:var(--text3);">${lbl(it.rayon)}</div></div><button onclick="regraveAdd('${it.id}')" style="padding:5px 10px;background:rgba(192,87,70,.15);border:0.5px solid rgba(192,87,70,.4);border-radius:6px;color:var(--accent2);font-size:12px;cursor:pointer;white-space:nowrap;">\u21bb Racheter</button><button onclick="graveDelete('${it.id}')" style="padding:5px 9px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text2);font-size:12px;cursor:pointer;">\u2715</button></div>`;
+    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(246,237,227,.04);"><div style="flex:1;min-width:0;"><div style="font-size:13px;color:var(--text2);">${it.name}</div><div style="font-size:11px;color:var(--text3);">${lbl(it.rayon)}</div></div><button onclick="regraveAdd('${it.id}')" style="padding:5px 10px;background:rgba(192,87,70,.15);border:0.5px solid rgba(192,87,70,.4);border-radius:6px;color:var(--accent2);font-size:12px;cursor:pointer;white-space:nowrap;">\u21bb Racheter</button><button onclick="graveDelete('${it.id}')" style="padding:5px 9px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text2);font-size:12px;cursor:pointer;">\u2715</button></div>`;
   });
   return html+'</div>';
 }
@@ -3639,9 +3725,11 @@ function deleteWaiting(id){
   saveState();render();
 }
 function graveDelete(id){
-  if(!confirm('Supprimer d\u00e9finitivement cet article du cimeti\u00e8re ?'))return;
-  S.shop.graveyard=(S.shop.graveyard||[]).filter(g=>g.id!==id);
-  saveState();render();
+  _confirmer('Supprimer d\u00e9finitivement cet article du cimeti\u00e8re ?',{ok:'Supprimer',danger:true}).then(function(ok){
+    if(!ok)return;
+    S.shop.graveyard=(S.shop.graveyard||[]).filter(g=>g.id!==id);
+    saveState();render();
+  });
 }
 function toggleShopItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(it){it.checked=!it.checked;saveState();render();}}
   function toggleGraveItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(it){it.graveOnly=!it.graveOnly;saveState();render();}}
@@ -3682,7 +3770,7 @@ function addScannedToShop(name,macros,qtyStr){
 function addShopItem(){const nm=document.getElementById('shop-add-name');const ry=document.getElementById('shop-add-rayon');if(!nm||!nm.value.trim())return;S.shop.list.push({id:'sh_'+Date.now().toString(36),name:nm.value.trim(),rayon:ry?ry.value:'divers',checked:false});saveState();render();}
 function validateCourses(){
   const checked=(S.shop.list||[]).filter(i=>i.checked);
-  if(!checked.length){alert('Coche au moins un article \u00e0 valider.');return;}
+  if(!checked.length){_alerte('Coche au moins un article \u00e0 valider.');return;}
   S.shop.graveyard=S.shop.graveyard||[];S.waiting=S.waiting||[];
   let placed=0;
   checked.forEach(it=>{
@@ -3696,7 +3784,7 @@ function validateCourses(){
   });
   S.shop.list=(S.shop.list||[]).filter(i=>!i.checked);
   saveState();render();
-  alert(placed?(placed+' article(s) en salle d\'attente (onglet Inventaire) \u00e0 ranger.'):'Articles valid\u00e9s (non transf\u00e9r\u00e9s vers l\'inventaire).');
+  _alerte(placed?(placed+' article(s) en salle d\'attente (onglet Inventaire) \u00e0 ranger.'):'Articles valid\u00e9s (non transf\u00e9r\u00e9s vers l\'inventaire).');
 }
 function openShopItem(id){
   const it=(S.shop.list||[]).find(i=>i.id===id);if(!it)return;
@@ -3727,7 +3815,7 @@ function _wAgo(arr,days){if(!arr.length)return null;var tgt=new Date(arr[arr.len
 function _fmtKg(v){return (v>0?'+':'')+v.toFixed(1)+' kg';}
 function _wDateLabel(d){var p=(d||'').split('-');return p.length===3?p[2]+'/'+p[1]:d;}
 function addWeight(){var el=document.getElementById('weight-input');if(!el)return;var w=parseFloat((el.value||'').replace(',','.'));if(!w||w<30||w>400){el.style.borderColor='var(--red)';el.focus();return;}S.weights=S.weights||[];var i=S.weights.findIndex(function(x){return x.d===S.today;});if(i>=0)S.weights[i].w=w;else S.weights.push({d:S.today,w:w});S.weights.sort(function(a,b){return a.d<b.d?-1:1;});saveState();render();}
-function delWeight(d){if(!confirm('Supprimer cette pesée ?'))return;S.weights=(S.weights||[]).filter(function(x){return x.d!==d;});saveState();render();}
+function delWeight(d){_confirmer('Supprimer la pesée du '+_wDateLabel(d)+' ?',{ok:'Supprimer',danger:true}).then(function(ok){if(!ok)return;S.weights=(S.weights||[]).filter(function(x){return x.d!==d;});saveState();render();});}
 function weightChartSVG(arr){
   if(arr.length<2)return '<div style="text-align:center;color:var(--text3);font-size:12px;padding:18px 0;">Ajoute au moins 2 pesées pour voir la courbe.</div>';
   var W=320,H=170,mL=34,mR=10,mT=12,mB=22;var pW=W-mL-mR,pH=H-mT-mB;
@@ -3759,7 +3847,7 @@ function renderWeightHTML(){
   var dPrev=(arr.length>=2)?last.w-arr[arr.length-2].w:null;
   var a7=_wAgo(arr,7);var d7=(a7&&a7.off<=4&&a7.x.d!==last.d)?last.w-a7.x.w:null;
   var a30=_wAgo(arr,30);var d30=(a30&&a30.off<=10&&a30.x.d!==last.d)?last.w-a30.x.w:null;
-  function chip(lbl,v){if(v===null)return '';var col=v<-0.05?'var(--green)':(v>0.05?'var(--orange)':'var(--text2)');return '<div style="flex:1;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">'+lbl+'</div><div style="font-size:15px;font-weight:600;color:'+col+';margin-top:3px;">'+_fmtKg(v)+'</div></div>';}
+  function chip(lbl,v){if(v===null)return '';var col=v<-0.05?'var(--green)':(v>0.05?'var(--orange)':'var(--text2)');return '<div style="flex:1;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">'+lbl+'</div><div style="font-size:15px;font-weight:600;color:'+col+';margin-top:3px;">'+_fmtKg(v)+'</div></div>';}
   var html='<div style="margin-bottom:20px;">';
   html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px;">'+
         '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">⚖ Poids du jour</div>'+
@@ -3876,7 +3964,7 @@ function estimateTDEE(){
   return {ok:true,tdee:Math.round(avgCal+deficitPerDay),avgCal:Math.round(avgCal),deltaW:deltaW,days:days,logs:n,perWeek:deltaW/days*7,ecartes:ecartes,seuil:Math.round(seuil)};
 }
 function _statBox(lbl,val,tgt,unit,col){
-  return '<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;">'+lbl+'</div><div style="font-size:16px;font-weight:600;color:'+col+';margin-top:3px;">'+val+'</div><div style="font-size:9px;color:var(--text3);">cible '+tgt+unit+'</div></div>';
+  return '<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.03em;">'+lbl+'</div><div style="font-size:16px;font-weight:600;color:'+col+';margin-top:3px;">'+val+'</div><div style="font-size:11px;color:var(--text3);">cible '+tgt+unit+'</div></div>';
 }
 function renderTDEEBlock(t){
   if(!t.ok){
@@ -3900,7 +3988,7 @@ function renderTDEEBlock(t){
     '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Dépense estimée (TDEE)</div>'+
     '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:27px;font-weight:700;color:var(--text);">'+t.tdee+'</span><span style="font-size:12px;color:var(--text3);">kcal/j</span></div>'+
     '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+t.days+' j : ~'+t.avgCal+' kcal/j sur '+t.logs+' journée'+(t.logs>1?'s':'')+' complète'+(t.logs>1?'s':'')+' · '+perWeekTxt+'</div>'+
-    ((t.ecartes&&t.ecartes.length)?'<div style="font-size:10px;color:var(--gold);margin-top:5px;line-height:1.4;">'+t.ecartes.length+' journée'+(t.ecartes.length>1?'s':'')+' écartée'+(t.ecartes.length>1?'s':'')+' (sous '+t.seuil+' kcal, saisie probablement incomplète) : '+t.ecartes.slice(0,6).join(', ')+(t.ecartes.length>6?'…':'')+'</div>':'')+
+    ((t.ecartes&&t.ecartes.length)?'<div style="font-size:11px;color:var(--gold);margin-top:5px;line-height:1.4;">'+t.ecartes.length+' journée'+(t.ecartes.length>1?'s':'')+' écartée'+(t.ecartes.length>1?'s':'')+' (sous '+t.seuil+' kcal, saisie probablement incomplète) : '+t.ecartes.slice(0,6).join(', ')+(t.ecartes.length>6?'…':'')+'</div>':'')+
     '<div style="font-size:12px;color:var(--accent2);margin-top:9px;line-height:1.45;">💡 '+tip+'</div></div>';
 }
 function renderBurnBlock(){
@@ -3915,9 +4003,9 @@ function renderBurnBlock(){
     return '<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:12px;margin-top:10px;">'
       +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🔥 D\u00e9pense \u00e9nerg\u00e9tique</div>'+'<button data-action="log-burn" style="width:100%;margin-bottom:10px;padding:9px;background:rgba(233,161,59,.12);border:0.5px solid rgba(233,161,59,.45);border-radius:8px;color:var(--orange);font-size:12px;font-weight:600;cursor:pointer;">➕ Enregistrer pas & activit\u00e9s</button>'
       +'<div style="display:flex;gap:8px;">'
-      +(tb?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">Aujourd\u2019hui</div><div style="font-size:16px;font-weight:600;color:var(--orange);margin-top:3px;">'+tb.total+'</div><div style="font-size:9px;color:var(--text3);">kcal</div></div>':'')
-      +'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">Moy. '+n+' j</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:3px;">'+avg+'</div><div style="font-size:9px;color:var(--text3);">kcal</div></div>'
-      +(estK?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">TDEE estim\u00e9</div><div style="font-size:16px;font-weight:600;color:var(--text2);margin-top:3px;">'+estK+'</div><div style="font-size:9px;color:var(--text3);">kcal (poids)</div></div>':'')
+      +(tb?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Aujourd\u2019hui</div><div style="font-size:16px;font-weight:600;color:var(--orange);margin-top:3px;">'+tb.total+'</div><div style="font-size:11px;color:var(--text3);">kcal</div></div>':'')
+      +'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Moy. '+n+' j</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:3px;">'+avg+'</div><div style="font-size:11px;color:var(--text3);">kcal</div></div>'
+      +(estK?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">TDEE estim\u00e9</div><div style="font-size:16px;font-weight:600;color:var(--text2);margin-top:3px;">'+estK+'</div><div style="font-size:11px;color:var(--text3);">kcal (poids)</div></div>':'')
       +'</div>'
       +(tb&&(tb.steps||tb.activities.length)?'<div style="margin-top:9px;padding-top:8px;border-top:0.5px solid rgba(246,237,227,.06);font-size:11px;color:var(--text3);line-height:1.6;">'+(tb.steps?('\ud83d\udc5f '+tb.steps.toLocaleString('fr-FR')+' pas \u2192 '+(tb.stepKcalBrut||tb.stepKcal)+' kcal'
       +((tb.stepKcalBrut&&tb.stepKcal!==tb.stepKcalBrut)?(' <span style="color:var(--text3);opacity:.75;">('+tb.stepKcal+' au-dessus de ta routine)</span>'):'')
@@ -3925,10 +4013,10 @@ function renderBurnBlock(){
       +'<div style="display:flex;gap:5px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;">'
         +_burnDays(7).reverse().map(function(x){
           var bb=getBurn(x.d);var on=!!bb;
-          return '<button data-action="log-burn" data-day="'+x.d+'" style="flex:1;min-width:44px;padding:6px 3px;border-radius:8px;cursor:pointer;border:0.5px solid '+(on?'rgba(233,161,59,.45)':'rgba(246,237,227,.10)')+';background:'+(on?'rgba(233,161,59,.10)':'transparent')+';color:'+(on?'var(--orange)':'var(--text3)')+';font-size:10px;line-height:1.35;">'+x.lbl+'<br><strong style="font-size:11px;">'+(on?(bb.brut||bb.total):'\u2014')+'</strong></button>';
+          return '<button data-action="log-burn" data-day="'+x.d+'" style="flex:1;min-width:44px;padding:6px 3px;border-radius:8px;cursor:pointer;border:0.5px solid '+(on?'rgba(233,161,59,.45)':'rgba(246,237,227,.10)')+';background:'+(on?'rgba(233,161,59,.10)':'transparent')+';color:'+(on?'var(--orange)':'var(--text3)')+';font-size:11px;line-height:1.35;">'+x.lbl+'<br><strong style="font-size:11px;">'+(on?(bb.brut||bb.total):'\u2014')+'</strong></button>';
         }).join('')
       +'</div>'
-      +'<div style="font-size:10px;color:var(--text3);margin-top:6px;">Touche un jour pour compl\u00e9ter un oubli.</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin-top:6px;">Touche un jour pour compl\u00e9ter un oubli.</div>'
       +'</div>';
   }catch(e){return '';}
 }
@@ -3948,9 +4036,9 @@ function renderCoachSummary(){
     var mk=n?Math.round(sk/n):0, mp=n?Math.round(sp/n):0;
     var tuile=function(lbl,val,unit,col){
       return '<div style="flex:1;min-width:0;background:var(--bg3);border-radius:9px;padding:9px 6px;text-align:center;">'
-        +'<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">'+lbl+'</div>'
+        +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">'+lbl+'</div>'
         +'<div style="font-size:15px;font-weight:600;color:'+(col||'var(--text)')+';margin-top:3px;">'+val+'</div>'
-        +'<div style="font-size:9px;color:var(--text3);">'+unit+'</div></div>';
+        +'<div style="font-size:11px;color:var(--text3);">'+unit+'</div></div>';
     };
     // phrase du coach, croisant alimentation ET depense
     var phrase,col;
@@ -3973,13 +4061,13 @@ function renderCoachSummary(){
     return '<div style="background:var(--bg2);border:0.5px solid var(--border);border-left:3px solid '+col+';border-radius:12px;padding:13px;margin-bottom:16px;">'
       +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;">\ud83d\udcac Le point du coach</div>'
       +'<div style="display:flex;gap:6px;margin-bottom:10px;">'
-      +tuile('Auj. mangé',Math.round(m.kcal),'kcal','var(--gold)')
-      +tuile('Auj. dépensé',brule||'—','kcal',brule?'var(--orange)':'var(--text3)')
+      +tuile('Mangé',Math.round(m.kcal),'kcal','var(--gold)')
+      +tuile('Dépensé',brule||'—','kcal',brule?'var(--orange)':'var(--text3)')
       +tuile('Balance',(bal>0?'+':'')+bal,'kcal',(bulk?bal>0:bal<0)?'var(--green)':'var(--text2)')
       +tuile('Moy. 7 j',mk||'—','kcal','var(--text)')
       +'</div>'
       +'<div style="font-size:11.5px;color:var(--text2);line-height:1.55;">'+phrase+'</div>'
-      +(n?'<div style="font-size:10px;color:var(--text3);margin-top:7px;">Protéines atteintes '+jours+' jour'+(jours>1?'s':'')+' sur '+n+'.</div>':'')
+      +(n?'<div style="font-size:11px;color:var(--text3);margin-top:7px;">Protéines atteintes '+jours+' jour'+(jours>1?'s':'')+' sur '+n+'.</div>':'')
       +'</div>';
   }catch(e){return '';}
 }
@@ -3998,7 +4086,7 @@ function renderCockpit(){
           '<div style="display:flex;gap:8px;">'+
           _statBox('Calories/j',Math.round(avg.kcal),TARGETS.kcal,'',calCol)+
           _statBox('Protéines/j',Math.round(avg.prot),TARGETS.prot,'g','var(--green)')+
-          (dW!==null?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:9px;color:var(--text3);text-transform:uppercase;">Poids 7 j</div><div style="font-size:16px;font-weight:600;color:'+(dW<-0.05?'var(--green)':(dW>0.05?'var(--orange)':'var(--text2)'))+';margin-top:3px;">'+(dW>0?'+':'')+dW.toFixed(1)+'</div><div style="font-size:9px;color:var(--text3);">kg</div></div>':'')+
+          (dW!==null?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Poids 7 j</div><div style="font-size:16px;font-weight:600;color:'+(dW<-0.05?'var(--green)':(dW>0.05?'var(--orange)':'var(--text2)'))+';margin-top:3px;">'+(dW>0?'+':'')+dW.toFixed(1)+'</div><div style="font-size:11px;color:var(--text3);">kg</div></div>':'')+
           '</div></div>';
     html+=renderTDEEBlock(estimateTDEE());
   }
@@ -4029,7 +4117,7 @@ function renderBudgetSuggestions(){
   var _b=getBurn(S.today);
   var html='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:13px;margin-bottom:14px;">';
   html+='<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">🎯 Il te reste <strong style="color:var(--orange);">'+remK+' kcal</strong>'+(remP>0?' · <strong style="color:var(--green);">'+remP+' g</strong> de protéines':'')+' — ça rentre :</div>';
-  html+=(_b&&_b.total)?'<div style="font-size:10px;color:var(--text3);margin-bottom:9px;">Tu as dépensé '+_b.total+' kcal aujourd\'hui — ta cible reste la même, c\'est ton déficit qui s\'élargit.</div>':'<div style="margin-bottom:9px;"></div>';
+  html+=(_b&&_b.total)?'<div style="font-size:11px;color:var(--text3);margin-bottom:9px;">Tu as dépensé '+_b.total+' kcal aujourd\'hui — ta cible reste la même, c\'est ton déficit qui s\'élargit.</div>':'<div style="margin-bottom:9px;"></div>';
   cands.forEach(function(r){
     html+='<button data-action="goto-recipe" data-rid="'+r.id+'" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:var(--bg3);border:0.5px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:6px;cursor:pointer;"><span style="flex:1;font-size:13px;color:var(--text);">'+r.name+'</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">'+r.kcal+' kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;">'+r.prot+'g P</span></button>';
   });
@@ -4056,7 +4144,7 @@ function weightTrendPerWeek(){
 function setWeightGoal(){
   var el=document.getElementById('goal-input');
   var v=el?parseFloat(el.value):NaN;
-  if(!(v>=30&&v<=400)){alert('Entre un poids cible réaliste (en kg).');return;}
+  if(!(v>=30&&v<=400)){_alerte('Entre un poids cible réaliste (en kg).');return;}
   S.weightGoal=Math.round(v*10)/10;saveState();render();
 }
 function clearWeightGoal(){S.weightGoal=null;saveState();render();}
@@ -4137,7 +4225,7 @@ async function _exportFile(filename,mime,content){
     var a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();
     setTimeout(function(){URL.revokeObjectURL(url);a.remove();},1500);return;
   }catch(e2){}
-  try{prompt('Copie tes données ('+filename+') :',content);}catch(e3){alert('Export impossible sur cet appareil.');}
+  _dialogue({message:'Copie tes données\n\nL\'enregistrement du fichier '+filename+' n\'a pas marché sur cet appareil. Copie ce texte et garde-le en lieu sûr.',texte:content,copier:true,ok:'Fermer'});
 }
 
 // Sauvegarde complete. La depense et les photos vivent dans leurs propres
@@ -4169,15 +4257,15 @@ function importBackup(){
     var fr=new FileReader();
     fr.onload=async function(){
       var sv;
-      try{sv=_lireSauvegarde(fr.result);}catch(e){alert('Import impossible : '+e.message);return;}
+      try{sv=_lireSauvegarde(fr.result);}catch(e){_alerte('Import impossible : '+e.message);return;}
       var nbJ=Object.keys(sv.state.dayMeals||{}).length;
-      if(!confirm('Restaurer cette sauvegarde ?\n\n'+nbJ+' journées de repas'
+      if(!(await _confirmer('Restaurer cette sauvegarde ?\n\n'+nbJ+' journées de repas'
         +(sv.burn?', '+Object.keys(sv.burn).length+' journées d\'activité':'')
         +(sv.photos?', '+Object.keys(sv.photos).length+' photos':'')
-        +'.\n\nTon état actuel sera d\'abord mis de côté et restera récupérable.'))return;
+        +'.\n\nTon état actuel sera d\'abord mis de côté et restera récupérable.',{ok:'Restaurer'})))return;
       await _restaurerSauvegarde(sv);
     };
-    fr.onerror=function(){alert('Fichier illisible.');};
+    fr.onerror=function(){_alerte('Fichier illisible.');};
     fr.readAsText(f);
   };
   inp.click();
@@ -4213,7 +4301,7 @@ async function _restaurerSauvegarde(sv){
 
 function exportWeightCSV(){
   var w=(S.weights||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
-  if(!w.length){alert('Aucune pesée à exporter pour le moment.');return;}
+  if(!w.length){_alerte('Aucune pesée à exporter pour le moment.');return;}
   var lines=['date,poids_kg,moyenne_7j'];
   w.forEach(function(p,i){lines.push(p.d+','+p.w+','+_wMA(w,i,7).toFixed(2));});
   _exportFile('poids-'+getToday()+'.csv','text/csv',lines.join('\n'));
@@ -4227,7 +4315,7 @@ function renderDataExport(){
     '<button onclick="importBackup()" style="flex:1;min-width:140px;padding:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;">\u21a9\ufe0f Restaurer une sauvegarde</button>'+
     '<button onclick="exportWeightCSV()" style="flex:1;min-width:140px;padding:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;">📊 Poids (.csv)</button>'+
     '</div>'+
-    '<div style="font-size:10px;color:var(--text3);margin-top:8px;font-style:italic;line-height:1.4;">Le .json contient tout (repas, inventaire, recettes, poids), sauf ta clé API. La feuille de partage iOS te laisse l\'enregistrer dans Fichiers, Notes ou l\'envoyer par mail.</div>'+
+    '<div style="font-size:11px;color:var(--text3);margin-top:8px;font-style:italic;line-height:1.4;">Le .json contient tout (repas, inventaire, recettes, poids), sauf ta clé API. La feuille de partage iOS te laisse l\'enregistrer dans Fichiers, Notes ou l\'envoyer par mail.</div>'+
     '</div>';
 }
 
@@ -4363,7 +4451,7 @@ function renderMacroTrend(){
   html+=_mtChart(hist,'kcal',TARGETS.kcal,'',_kcalColor);
   html+='<div style="font-size:11px;color:var(--text2);margin:10px 0 2px;">Protéines <span style="color:var(--text3);">· cible '+TARGETS.prot+' g</span></div>';
   html+=_mtChart(hist,'prot',TARGETS.prot,'g',_protColor);
-  html+='<div style="font-size:10px;color:var(--text3);margin-top:8px;line-height:1.5;">Vert = dans la cible (±10 % kcal, ≥ cible prot) · orange = au-dessus · gris = en dessous / jour non loggé.</div>';
+  html+='<div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;">Vert = dans la cible (±10 % kcal, ≥ cible prot) · orange = au-dessus · gris = en dessous / jour non loggé.</div>';
   html+='</div>';
   return html;
 }
@@ -4401,7 +4489,7 @@ function toggleInvDlcSort(){
 }
 function _invDlcBar(){
   return '<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:12px;">'
-   +'<span style="font-size:12px;color:var(--text2);">📅 Trier par DLC <span style="color:var(--text3);font-size:10px;">(~ = estimée pour le frais)</span></span>'
+   +'<span style="font-size:12px;color:var(--text2);">📅 Trier par DLC <span style="color:var(--text3);font-size:11px;">(~ = estimée pour le frais)</span></span>'
    +'<span id="dlc-sw" onclick="toggleInvDlcSort()" style="cursor:pointer;-webkit-tap-highlight-color:transparent;flex-shrink:0;display:inline-block;width:42px;height:24px;border-radius:12px;background:'+(S.invDlcSort?'var(--green)':'var(--bg3)')+';border:0.5px solid var(--border);position:relative;transition:background .18s;">'
    +'<span id="dlc-knob" style="position:absolute;top:2px;left:'+(S.invDlcSort?'19px':'2px')+';width:18px;height:18px;border-radius:50%;background:#fff;transition:left .18s cubic-bezier(.34,1.56,.64,1);box-shadow:0 1px 2px rgba(0,0,0,.4);"></span></span></div>';
 }
@@ -4425,7 +4513,7 @@ function renderDlcSortedInventory(){
     var qty=qtyLabel(o.it);
     return '<div style="display:flex;align-items:center;gap:8px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;padding:9px 11px;margin-bottom:6px;">'
      +'<span style="flex:1;min-width:0;font-size:13px;color:var(--text);">'+o.it.name+' <span style="color:var(--text3);font-size:11px;">· '+(CATL[o.cat]||o.cat)+' · '+qty+'</span></span>'
-     +'<span style="font-size:10px;padding:2px 7px;border-radius:6px;white-space:nowrap;color:'+st.color+';background:'+st.bg+';">'+lbl+'</span></div>';
+     +'<span style="font-size:11px;padding:2px 7px;border-radius:6px;white-space:nowrap;color:'+st.color+';background:'+st.bg+';">'+lbl+'</span></div>';
   }).join('');
 }
 
@@ -4535,7 +4623,7 @@ function emSaveAsRecipe(){
   if(!_editMeal)return;
   syncEmRows();
   var rows=_emRows.filter(function(r){return r.qty>0;});
-  if(!rows.length){alert('Ce repas n\'a pas d\'ingrédients détaillés. Utilise « Corriger la base » pour les détailler, puis réessaie.');return;}
+  if(!rows.length){_alerte('Ce repas n\'a pas d\'ingrédients détaillés. Utilise « Corriger la base » pour les détailler, puis réessaie.');return;}
   var nm=(document.getElementById('em-name').value||'').trim();
   var slot=null;
   try{var mm=(S.dayMeals[_editMeal.day]||[])[_editMeal.idx];var rr=mm&&findRecipe(mm.rid);if(rr&&rr.slots&&rr.slots.length)slot=rr.slots[0];}catch(e){}
@@ -4662,7 +4750,7 @@ function _crSync(){if(_cr)_cr.rows.forEach(function(r,i){var el=document.getElem
 function renderCrIngs(){
   var el=document.getElementById('cr-ings-list');if(!el||!_cr)return;
   el.innerHTML=_cr.rows.map(function(g,i){
-    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);"><span style="flex:1;min-width:0;font-size:13px;color:var(--text2);">'+g.name+(g.flex?' <span style="font-size:10px;color:var(--blue);">🔄 au choix</span>':'')+'</span><input type="number" id="cr-ing-'+i+'" value="'+g.qty+'" min="0" oninput="updateCrTotals()" style="width:64px;padding:5px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:22px;">'+g.unit+'</span><span id="cr-ingk-'+i+'" style="font-size:11px;color:var(--orange);min-width:52px;text-align:right;">0 kcal</span><button onclick="crToggleFlex('+i+')" title="Au choix à la cuisson" style="padding:3px 6px;border-radius:6px;font-size:11px;cursor:pointer;background:none;border:0.5px solid '+(g.flex?'rgba(95,168,201,.7)':'var(--border)')+';color:'+(g.flex?'var(--blue)':'var(--text3)')+';">🔄</button><button onclick="crRemoveIng('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button></div>';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);"><span style="flex:1;min-width:0;font-size:13px;color:var(--text2);">'+g.name+(g.flex?' <span style="font-size:11px;color:var(--blue);">🔄 au choix</span>':'')+'</span><input type="number" id="cr-ing-'+i+'" value="'+g.qty+'" min="0" oninput="updateCrTotals()" style="width:64px;padding:5px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:22px;">'+g.unit+'</span><span id="cr-ingk-'+i+'" style="font-size:11px;color:var(--orange);min-width:52px;text-align:right;">0 kcal</span><button onclick="crToggleFlex('+i+')" title="Au choix à la cuisson" style="padding:3px 6px;border-radius:6px;font-size:11px;cursor:pointer;background:none;border:0.5px solid '+(g.flex?'rgba(95,168,201,.7)':'var(--border)')+';color:'+(g.flex?'var(--blue)':'var(--text3)')+';">🔄</button><button onclick="crRemoveIng('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button></div>';
   }).join('')||'<div style="font-size:12px;color:var(--text3);padding:8px 0;">Aucun ingrédient — ajoute-en ci-dessous.</div>';
 }
 function crToggleFlex(i){_crSync();if(_cr&&_cr.rows[i])_cr.rows[i].flex=!_cr.rows[i].flex;renderCrIngs();updateCrTotals();}
@@ -4705,11 +4793,11 @@ function saveCustRec(){
   if(!_cr)return;
   _crSync();
   var name=(document.getElementById('cr-name').value||'').trim();
-  if(!name){alert('Donne un nom à ta recette.');return;}
+  if(!name){_alerte('Donne un nom à ta recette.');return;}
   var slots=Object.keys(_cr.slots).filter(function(s){return _cr.slots[s];});
-  if(!slots.length){alert('Choisis au moins un type de repas (petit-déj, déjeuner…).');return;}
+  if(!slots.length){_alerte('Choisis au moins un type de repas (petit-déj, déjeuner…).');return;}
   var rows=_cr.rows.filter(function(r){return r.qty>0;});
-  if(!rows.length){alert('Ajoute au moins un ingrédient.');return;}
+  if(!rows.length){_alerte('Ajoute au moins un ingrédient.');return;}
   var steps=(document.getElementById('cr-steps').value||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
   var t=_crMacros();
   var rec={id:_cr.id||('cust_'+Date.now().toString(36)),custom:true,profile:ACTIVE_PROFILE,
@@ -4725,7 +4813,10 @@ function saveCustRec(){
 }
 function deleteCustRec(){
   if(!_cr||!_cr.id)return;
-  if(!confirm('Supprimer définitivement cette recette ?'))return;
+  _confirmer('Supprimer définitivement la recette « '+(_cr.name||'sans nom')+' » ?',{ok:'Supprimer',danger:true}).then(function(ok){if(ok)_supprimerCustRec();});
+}
+function _supprimerCustRec(){
+  if(!_cr||!_cr.id)return;
   var id=_cr.id;
   S.customRecipes=(S.customRecipes||[]).filter(function(x){return x.id!==id;});
   var ri=RCP.findIndex(function(x){return x.id===id;});if(ri>=0)RCP.splice(ri,1);
@@ -4755,7 +4846,7 @@ function renderAccueil(){
       +'<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">Aujourd\'hui</div>'
       +'<div style="font-size:16px;font-weight:600;color:var(--text);margin-top:2px;">Objectif du jour</div></div>'
       +'<div style="text-align:right;"><div style="font-size:22px;font-weight:600;color:var('+(over?'--red':'--gold')+');">'
-      +Math.round(r.pris.kcal)+'</div><div style="font-size:10px;color:var(--text3);">/ '+TARGETS.kcal+' kcal</div></div>'
+      +Math.round(r.pris.kcal)+'</div><div style="font-size:11px;color:var(--text3);">/ '+TARGETS.kcal+' kcal</div></div>'
     +'</div>'
     +'<div style="height:7px;background:var(--bg3);border-radius:99px;overflow:hidden;margin-bottom:12px;">'
       +'<div style="width:'+Math.round(pct*100)+'%;height:100%;background:var('+(over?'--red':'--gold')+');border-radius:99px;transition:width 1s var(--ease);"></div></div>'
@@ -4779,7 +4870,7 @@ function renderAccueil(){
       h+='<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-top:6px;">'
         +'<span>\ud83d\udc5f '+b.steps.toLocaleString('fr-FR')+' pas</span>'
         +'<span style="color:var(--text3);">'+_kcalPas+' kcal</span></div>';
-      if(_base>0)h+='<div style="font-size:10.5px;color:var(--text3);margin-top:2px;line-height:1.4;">'
+      if(_base>0)h+='<div style="font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4;">'
         +(_sup>0?('dont '+_sup.toLocaleString('fr-FR')+' au-dessus de ta routine de '+_base.toLocaleString('fr-FR'))
                 :('sous ta routine de '+_base.toLocaleString('fr-FR')+', déjà comptée dans ta cible'))
         +'</div>';
@@ -4799,7 +4890,7 @@ function renderAccueil(){
   // ── Prochain repas ──
   if(sug.moment){
     h+='<div class="rcard" style="padding:13px 15px;margin-bottom:12px;border-left:3px solid '+sug.moment.couleur+';">'
-      +'<div style="font-size:10px;color:'+sug.moment.couleur+';text-transform:uppercase;letter-spacing:.07em;">Prochain repas</div>'
+      +'<div style="font-size:11px;color:'+sug.moment.couleur+';text-transform:uppercase;letter-spacing:.07em;">Prochain repas</div>'
       +'<div style="font-size:15px;font-weight:600;color:var(--text);margin-top:3px;">'+sug.moment.nom+'</div>'
       +'<div style="font-size:11.5px;color:var(--text3);margin-top:4px;line-height:1.45;">'
       +(r.kcal>0?('Il te reste <span style="color:var(--gold);">'+r.kcal+' kcal</span> et <span style="color:var(--green);">'+r.prot+' g</span> de protéines.')
@@ -4938,7 +5029,7 @@ async function forceBackup(){
   S.lastBackup=null;
   await autoBackup();
   await renderBackupList();
-  alert('\u2713 Sauvegarde effectu\u00e9e.');
+  _alerte('\u2713 Sauvegarde effectu\u00e9e.');
 }
 async function listBackups(){
   try{
@@ -4949,7 +5040,7 @@ async function listBackups(){
   }catch(e){return [];}
 }
 async function restoreBackup(day){
-  if(!confirm('Restaurer la sauvegarde du '+day+' ?\n\nToutes les données actuelles seront remplacées.'))return;
+  if(!(await _confirmer('Restaurer la sauvegarde du '+day+' ?\n\nToutes les données actuelles seront remplacées.',{ok:'Restaurer',danger:true})))return;
   try{
     var u=await fbUrl(ACTIVE_PROFILE+'/backups/'+day);
     var r=await fetch(u);
@@ -4969,11 +5060,11 @@ async function restoreBackup(day){
     _applyState(st);
     S.lastBackup=null;
     saveState();closeSettings();render();
-    alert('✓ Sauvegarde du '+day+' restaurée.');
-  }catch(e){alert('⚠ Restauration impossible : '+(e.message||e));}
+    _alerte('✓ Sauvegarde du '+day+' restaurée.');
+  }catch(e){_alerte('⚠ Restauration impossible : '+(e.message||e));}
 }
 async function annulerRestauration(){
-  if(!confirm('Revenir a l\'etat qui precedait la derniere restauration ?\n\nLes donnees actuelles seront remplacees.'))return;
+  if(!(await _confirmer('Revenir à l\'état qui précédait la dernière restauration ?\n\nLes données actuelles seront remplacées.',{ok:'Revenir en arrière',danger:true})))return;
   try{
     var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'));
     if(!r.ok)throw new Error('lecture impossible');
@@ -4982,8 +5073,8 @@ async function annulerRestauration(){
     _applyState(JSON.parse(b.state));
     S.lastBackup=null;
     saveState();closeSettings();render();
-    alert('\u2713 Etat precedent retabli.');
-  }catch(e){alert('\u26a0 Impossible : '+(e.message||e));}
+    _alerte('\u2713 État précédent rétabli.');
+  }catch(e){_alerte('\u26a0 Impossible : '+(e.message||e));}
 }
 function toggleBackupList(){
   var el=document.getElementById('set-backups'),bt=document.getElementById('set-backups-toggle');
@@ -5213,7 +5304,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h15</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h26</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -5304,17 +5395,18 @@ function _onActionClick(e){
   }
   else if(action==='delete-meal'){
     const day=el.dataset.day,idx=parseInt(el.dataset.idx);
-    if(S.dayMeals[day]){
-      const meal=S.dayMeals[day][idx];
-      // Un tap rate en faisant defiler suffisait a effacer un repas
-      if(meal&&!confirm(_msgSuppressionRepas(meal,day)))return;
-      if(meal){
-        // Restituer le stock (detail reel si dispo, sinon recette) + extras + dessert
-        _mealStock(meal,1);
-      }
-      S.dayMeals[day].splice(idx,1);
-      saveState();
-    }
+    const meal=S.dayMeals[day]&&S.dayMeals[day][idx];
+    if(!meal)return;
+    // Un tap rate en faisant defiler suffisait a effacer un repas
+    _confirmer(_msgSuppressionRepas(meal,day),{ok:'Supprimer',danger:true}).then(function(ok){
+      // La liste a pu bouger pendant la question : on retrouve le repas lui-meme
+      var i=(S.dayMeals[day]||[]).indexOf(meal);
+      if(!ok||i<0)return;
+      _mealStock(meal,1);   /* restitue le stock (detail reel si dispo, sinon recette) + extras + dessert */
+      S.dayMeals[day].splice(i,1);
+      saveState();render();
+    });
+    return;
   }
   else if(action==='log-burn'){openBurnLog(el.dataset.day||null);return;}
   else if(action==='cook-again'){handleCook(el.dataset.rid,1,false,true);return;}
@@ -5420,9 +5512,9 @@ function overlayBackdrop(ev,el,closeFn){
   if(ev.target!==el)return;
   var touche=false;
   try{touche=(el.dataset&&el.dataset.touche==='1');}catch(e){}
-  if(touche&&!confirm('Fermer sans enregistrer ? La saisie en cours sera perdue.'))return;
-  try{if(el.dataset)el.dataset.touche='';}catch(e){}
-  closeFn();
+  var fermer=function(){try{if(el.dataset)el.dataset.touche='';}catch(e){}closeFn();};
+  if(!touche){fermer();return;}
+  _confirmer('Fermer sans enregistrer ?\n\nLa saisie en cours sera perdue.',{ok:'Fermer sans enregistrer',annuler:'Continuer',danger:true}).then(function(ok){if(ok)fermer();});
 }
 function closeAddMeal() { document.getElementById('addmeal-overlay').style.display = 'none'; }
 
@@ -5565,7 +5657,7 @@ function renderInvPick(){
     }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'});});
     if(!items.length)return;
     var info=(typeof CINFO!=='undefined'&&CINFO[cat])?CINFO[cat]:null;
-    html+='<div style="font-size:9px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:9px 0 3px;">'+((info&&info.sym)?info.sym+' ':'')+((info&&info.label)||cat)+'</div>';
+    html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:9px 0 3px;">'+((info&&info.sym)?info.sym+' ':'')+((info&&info.label)||cat)+'</div>';
     html+=items.map(function(it){
       var sel=_invPick[it.id]||'';
       var reste=(it.qty===null)?'\u221e':(Math.round((+it.qty||0)*10)/10)+(it.unit||'');
@@ -5573,9 +5665,9 @@ function renderInvPick(){
       var trop=(it.qty!==null&&sel>0&&sel>it.qty);
       return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid rgba(246,237,227,.05);">'
         +'<span style="flex:1;min-width:0;font-size:12.5px;color:'+(sel>0?'var(--text)':'var(--text2)')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+it.name+'</span>'
-        +'<span style="font-size:10px;color:'+(trop?'var(--red)':'var(--text3)')+';white-space:nowrap;">reste '+reste+'</span>'
+        +'<span style="font-size:11px;color:'+(trop?'var(--red)':'var(--text3)')+';white-space:nowrap;">reste '+reste+'</span>'
         +'<input type="number" min="0" step="1" value="'+sel+'" oninput="invPickQty(\''+it.id+'\',this.value)" placeholder="0" style="width:62px;flex:0 0 auto;box-sizing:border-box;padding:5px;background:var(--bg);border:0.5px solid '+(trop?'var(--red)':'var(--border)')+';border-radius:7px;color:var(--text);font-size:12px;text-align:center;outline:none;">'
-        +'<span style="font-size:10px;color:var(--text3);width:22px;">'+unit+'</span>'
+        +'<span style="font-size:11px;color:var(--text3);width:22px;">'+unit+'</span>'
         +'</div>';
     }).join('');
   });
@@ -5664,10 +5756,13 @@ function supprimerLigneEstimee(i){
   _lireLignesEstimees();
   if(!_addMealFreeItems||!_addMealFreeItems[i])return;
   var f=_addMealFreeItems[i];
-  if(!confirm('Retirer « '+(f.n||'cette ligne')+' » du repas ?'))return;
-  _addMealFreeItems.splice(i,1);
-  renderInvSuggestions(_addMealInvSuggestions);
-  recalcAddMealMacros();
+  _confirmer('Retirer « '+(f.n||'cette ligne')+' » du repas ?',{ok:'Retirer'}).then(function(ok){
+    var j=(_addMealFreeItems||[]).indexOf(f);
+    if(!ok||j<0)return;
+    _addMealFreeItems.splice(j,1);
+    renderInvSuggestions(_addMealInvSuggestions);
+    recalcAddMealMacros();
+  });
 }
 // Recalcule une seule ligne a partir du nom corrige, sans toucher aux autres
 async function reestimerLigne(i){
@@ -5675,7 +5770,7 @@ async function reestimerLigne(i){
   var f=(_addMealFreeItems||[])[i];
   if(!f||_ligneEnCours>=0)return;
   var nom=(f.n||'').trim();
-  if(!nom){alert('Donne un nom à cette ligne avant de la recalculer.');return;}
+  if(!nom){_alerte('Donne un nom à cette ligne avant de la recalculer.');return;}
   _ligneEnCours=i;
   renderInvSuggestions(_addMealInvSuggestions);
   try{
@@ -5695,7 +5790,7 @@ async function reestimerLigne(i){
     _addMealFreeItems[i]={n:p.n||nom,qty:q,baseQty:q,unit:(q>0?u:''),m:m,
       pu:(q>0?{kcal:m.kcal/q,prot:m.prot/q,gluc:m.gluc/q,lip:m.lip/q}:null)};
   }catch(e){
-    alert('Recalcul impossible : '+((e&&e.message)||e));
+    _alerte('Recalcul impossible : '+((e&&e.message)||e));
   }finally{
     _ligneEnCours=-1;
     renderInvSuggestions(_addMealInvSuggestions);
@@ -5744,7 +5839,7 @@ function toggleIngMacros(){S.voirMacrosIng=!S.voirMacrosIng;renderInvSuggestions
 function _ligneMacros(m,estime){
   if(!S.voirMacrosIng)return '';
   var c=estime?'var(--blue)':'var(--text3)';
-  return '<div style="display:flex;gap:10px;font-size:10px;padding:0 0 5px 24px;color:'+c+';">'
+  return '<div style="display:flex;gap:10px;font-size:11px;padding:0 0 5px 24px;color:'+c+';">'
     +'<span style="color:var(--green);">P '+(Math.round((m.prot||0)*10)/10)+'</span>'
     +'<span style="color:var(--blue);">G '+(Math.round((m.gluc||0)*10)/10)+'</span>'
     +'<span style="color:var(--red);">L '+(Math.round((m.lip||0)*10)/10)+'</span></div>';
@@ -5761,7 +5856,7 @@ function renderInvSuggestions(suggestions) {
     var _amb=suggestions.filter(function(s){
       return s&&s.src!=='pick'&&!s.leve&&articlesProches(s.id).length;
     }).length;
-    if(_amb)html+='<div style="font-size:10.5px;color:var(--gold);background:rgba(233,161,59,.1);border:0.5px solid rgba(233,161,59,.3);border-radius:7px;padding:6px 9px;margin:2px 0 6px;line-height:1.4;">'
+    if(_amb)html+='<div style="font-size:11px;color:var(--gold);background:rgba(233,161,59,.1);border:0.5px solid rgba(233,161,59,.3);border-radius:7px;padding:6px 9px;margin:2px 0 6px;line-height:1.4;">'
       +(_amb>1?(_amb+' lignes correspondent'):'Une ligne correspond')+' à plusieurs articles au nom voisin. Vérifie le choix dans les listes ci-dessous.</div>';
     html += suggestions.map((s, i) => {
       const it = findItem(s.id);
@@ -6015,15 +6110,14 @@ function choisirPhotoRecette(id){
     inp.value='';
     if(!f)return;
     _photoVersDataUrl(f,function(d){
-      if(!d){alert('Image illisible.');return;}
+      if(!d){_alerte('Image illisible.');return;}
       _enregistrerPhoto(id,d);
     });
   };
   inp.click();
 }
 function retirerPhotoRecette(id){
-  if(!confirm('Retirer la photo de cette recette ?'))return;
-  _enregistrerPhoto(id,null);
+  _confirmer('Retirer la photo de cette recette ?',{ok:'Retirer'}).then(function(ok){if(ok)_enregistrerPhoto(id,null);});
 }
 // ═══ ILLUSTRATIONS DE RECETTES ═══════════════════════════════════════════
 // Dessin compose a partir du nom et des ingredients : contenant, feculent,
@@ -6503,7 +6597,9 @@ async function changerMotDePasse(nouveau){
   if(d.refreshToken)_poserSession({localId:s.uid,refreshToken:d.refreshToken,idToken:d.idToken,expiresIn:d.expiresIn},s.login);
 }
 function deconnexion(){
-  if(!confirm('Se déconnecter de cet appareil ?'))return;
+  _confirmer('Se déconnecter de cet appareil ?',{ok:'Se déconnecter'}).then(function(ok){if(ok)_deconnecter();});
+}
+function _deconnecter(){
   // La cle Groq est rangee hors profil : sans ce menage, le compte suivant
   // sur cet appareil s'en servirait et l'enverrait dans ses propres donnees.
   // Elle revient a la reconnexion, depuis l'etat du compte.
@@ -6745,7 +6841,7 @@ function _renderInscription(err,dis,retour){
   var corps='';
   if(e===0){
     corps=_champ('Identifiant ou e-mail',_inp('au-login','text',_ins.login,'ex. liam ou liam@mail.fr','autocomplete="username" autocapitalize="none"'))
-      +'<div style="font-size:10.5px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;">Avec une <strong style="color:var(--text2);">adresse e-mail</strong>, tu pourras récupérer ton mot de passe en cas d\'oubli. Avec un simple identifiant, ce ne sera pas possible.</div>'
+      +'<div style="font-size:11px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;">Avec une <strong style="color:var(--text2);">adresse e-mail</strong>, tu pourras récupérer ton mot de passe en cas d\'oubli. Avec un simple identifiant, ce ne sera pas possible.</div>'
       +_champ('Mot de passe',_inp('au-mdp','password',_ins.mdp,'6 caractères minimum','autocomplete="new-password"'))
       +_champ('Confirmation',_inp('au-mdp2','password',_ins.mdp,'','autocomplete="new-password"'))
       +(_ins.avecCode?_champ('Code de rattachement',_inp('au-code','text',_ins.code,'XXXX-XXXX-XXXX-XXXX','autocapitalize="characters"'))
@@ -6832,7 +6928,7 @@ async function demanderReinitialisation(){
   if(!l){_auth.err='Entre d\'abord ton adresse e-mail dans le champ Identifiant.';return renderAuth();}
   try{await motDePasseOublie(l);
     _auth.err='';renderAuth();
-    alert('Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d\'être envoyé. Pense à regarder les indésirables.');}
+    _alerte('Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d\'être envoyé. Pense à regarder les indésirables.');}
   catch(e){_auth.err=_msgErreurAuth(e&&e.message);renderAuth();}
 }
 async function accederAncienProfil(){
@@ -6841,9 +6937,11 @@ async function accederAncienProfil(){
   try{location.reload();}catch(e){}
 }
 function quitterProfilHerite(){
-  if(!confirm('Quitter l\'ancien profil ?'))return;
-  try{localStorage.removeItem('dz_herite');}catch(e){}
-  try{location.reload();}catch(e){}
+  _confirmer('Quitter l\'ancien profil ?',{ok:'Quitter'}).then(function(ok){
+    if(!ok)return;
+    try{localStorage.removeItem('dz_herite');}catch(e){}
+    try{location.reload();}catch(e){}
+  });
 }
 
 // ── Edition du profil (Reglages) ──
@@ -6923,7 +7021,7 @@ async function modifierMotDePasse(){
 }
 async function rattacherDepuisReglages(){
   if(!(await codeRattachementValide(_val('pf-code')))){_errProfil(_msgErreurAuth('CODE_INVALIDE'));return;}
-  if(!confirm('Rapatrier l\'ancien profil dans ce compte ?\n\nSes repas, son inventaire, ses recettes et son historique remplaceront les données actuelles du compte. L\'ancien profil n\'est pas supprimé.'))return;
+  if(!(await _confirmer('Rapatrier l\'ancien profil dans ce compte ?\n\nSes repas, son inventaire, ses recettes et son historique remplaceront les données actuelles du compte. L\'ancien profil n\'est pas supprimé.',{ok:'Rapatrier',danger:true})))return;
   try{await rattacherAncienProfil(ACTIVE_PROFILE,S.profil||null);try{location.reload();}catch(e){}}
   catch(e){_errProfil(_msgErreurAuth(e&&e.message));}
 }
@@ -6998,7 +7096,7 @@ function renderMealBreakdown(){
   var el=document.getElementById('addmeal-breakdown');if(!el)return;
   var it=(_pendingMeal&&_pendingMeal.items)||[];
   if(it.length<2){el.style.display='none';el.innerHTML='';return;}
-  el.innerHTML='<div style="color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-size:9px;margin-bottom:5px;">Détail estimé — corrige le total si une ligne te semble fausse</div>'
+  el.innerHTML='<div style="color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-size:10px;margin-bottom:5px;">Détail estimé — corrige le total si une ligne te semble fausse</div>'
     +it.map(function(x){return '<div style="display:flex;justify-content:space-between;gap:10px;"><span style="flex:1;min-width:0;">'+(x.n||'?')+'</span><span style="color:var(--orange);white-space:nowrap;">'+Math.round(+x.kcal||0)+' kcal</span></div>';}).join('');
   el.style.display='block';
 }

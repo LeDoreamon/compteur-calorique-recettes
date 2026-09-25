@@ -83,7 +83,7 @@ t('le retrait n\'est propose que s\'il y a une photo',()=>{
 });
 t('le retrait demande confirmation',()=>{
   const i=src.indexOf('function retirerPhotoRecette');
-  if(!/confirm\(/.test(src.slice(i,i+160)))throw new Error('aucune confirmation');
+  if(!/_confirmer\(/.test(src.slice(i,i+160)))throw new Error('aucune confirmation');
 });
 
 console.log('\n=== FC. Traitement de l\'image ===');

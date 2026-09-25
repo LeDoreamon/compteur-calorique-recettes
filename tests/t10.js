@@ -130,14 +130,14 @@ t('*** clearApiKey demande confirmation et propage la suppression ***',()=>{
   const src=require('fs').readFileSync('index.html','utf8');
   const i=src.indexOf('function clearApiKey');
   const bloc=src.slice(i,i+700);
-  if(!bloc.includes('confirm('))throw new Error('pas de confirmation');
+  if(!bloc.includes('_confirmer('))throw new Error('pas de confirmation');
   if(!bloc.includes('saveState()'))throw new Error('suppression non propagee : la cle reviendrait de Firebase');
 });
 t('annuler la confirmation ne supprime rien',()=>{
   const src=require('fs').readFileSync('index.html','utf8');
   const i=src.indexOf('function clearApiKey');
   const bloc=src.slice(i,i+300);
-  if(!/if\(!confirm\([\s\S]*?\)\)return;/.test(bloc))throw new Error('sortie anticipee absente');
+  if(!/_confirmer\([\s\S]*?\)\.then\(function\(ok\)\{\s*if\(!ok\)return;/.test(src.slice(i,i+700)))throw new Error('sortie anticipee absente');
 });
 
 console.log('\n=== AD. Filet avant restauration ===');
@@ -158,7 +158,7 @@ t('annulerRestauration existe et demande confirmation',()=>{
   if(typeof f!=='function')throw new Error('non definie');
   const src=require('fs').readFileSync('index.html','utf8');
   const i=src.indexOf('async function annulerRestauration');
-  if(!src.slice(i,i+300).includes('confirm('))throw new Error('pas de confirmation');
+  if(!src.slice(i,i+300).includes('_confirmer('))throw new Error('pas de confirmation');
 });
 
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
