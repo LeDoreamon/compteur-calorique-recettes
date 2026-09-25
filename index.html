@@ -3164,7 +3164,7 @@ function renderMacros(){
   const suffix=isToday?' <span style="font-size:10px;color:var(--text3);">· aujourd\'hui</span>':isTomorrow?' <span style="font-size:10px;color:var(--blue);">· demain</span>':'';
   const list=_ordreRepas(meals).map((idx)=>{const {rid,dessert,customDessert,extras,macros,name}=meals[idx];const r=findRecipe(rid);const base=macros||r;if(!base)return'';const _nm=name||(r&&r.name)||'Repas';let dl='';if(dessert&&dessert!=='none'){if(dessert==='autre'&&customDessert)dl=` + ${customDessert.name}`;else{const d=allDesserts().find(x=>x.id===dessert);if(d)dl=` + ${d.name}`;}}const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0)}),{kcal:0,prot:0});if(extras&&extras.length)dl+=' + '+extras.map(e=>e.name).join(', ');const _mo=moment(meals[idx]&&meals[idx].slot);
     const _lis=_mo?`border-left:3px solid ${_mo.couleur};padding-left:7px;`:'border-left:3px solid transparent;padding-left:7px;';
-    return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);${_lis}"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(base.kcal+dm.kcal+ex.kcal)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round((base.prot+dm.prot+ex.prot)*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;padding:1px 6px;flex-shrink:0;line-height:1;">✕</button></div>`;}).filter(Boolean).join('');
+    return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);${_lis}"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(base.kcal+dm.kcal+ex.kcal)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round((base.prot+dm.prot+ex.prot)*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" title="Supprimer ce repas" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;width:40px;height:40px;margin:-10px -10px -10px -6px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;">✕</button></div>`;}).filter(Boolean).join('');
   const rem=meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text2);">${isToday?'Reste':'Écart'} : <strong style="color:var(--text);">${isToday?(Math.round(Math.max(0,TARGETS.kcal-m.kcal))+' kcal'):((m.kcal>TARGETS.kcal?'+':'')+Math.round(m.kcal-TARGETS.kcal)+' kcal')}</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${isToday?(Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10+'g'):(Math.round(m.prot*10)/10+'/'+TARGETS.prot+'g')}</strong></span>${(()=>{const b=getBurn(dd);if(!b||!b.total)return '';
     const marge=Math.round(TARGETS.kcal+b.total-m.kcal);
     const lib=isToday?"Avec l'activité":"Marge";
@@ -5213,7 +5213,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 01h50</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h15</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -5248,6 +5248,12 @@ function render(){
   _animateTabs();
 }
 
+function _msgSuppressionRepas(meal,day){
+  var r=findRecipe(meal.rid);
+  var nom=meal.name||(r&&r.name)||'ce repas';
+  var quand=day===S.today?"d'aujourd'hui":(day===shiftDate(S.today,-1)?"d'hier":('du '+new Date(day+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})));
+  return 'Supprimer « '+nom+' » des repas '+quand+' ?\n\nCe qui avait été pris dans l\'inventaire y sera remis.';
+}
 function _onActionClick(e){
   const el=e.target.closest('[data-action]');if(!el||el.dataset.disabled==='true')return;
   const{action,val}=el.dataset;
@@ -5300,6 +5306,8 @@ function _onActionClick(e){
     const day=el.dataset.day,idx=parseInt(el.dataset.idx);
     if(S.dayMeals[day]){
       const meal=S.dayMeals[day][idx];
+      // Un tap rate en faisant defiler suffisait a effacer un repas
+      if(meal&&!confirm(_msgSuppressionRepas(meal,day)))return;
       if(meal){
         // Restituer le stock (detail reel si dispo, sinon recette) + extras + dessert
         _mealStock(meal,1);
