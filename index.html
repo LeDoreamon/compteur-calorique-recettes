@@ -143,6 +143,29 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
   padding-left: calc(12px + env(safe-area-inset-left, 0px)); padding-right: calc(12px + env(safe-area-inset-right, 0px)); }
 .bnav { padding-left: calc(4px + env(safe-area-inset-left, 0px)); padding-right: calc(4px + env(safe-area-inset-right, 0px)); }
 
+/* ═══ BOUTON + CENTRAL ET VOLET D'AJOUT ════════════════════════════════ */
+.bnav-plus { flex: 0 0 60px; display: flex; align-items: flex-start; justify-content: center; background: none; border: none; padding: 0; }
+.bnav-plus-i { width: 48px; height: 48px; margin-top: -6px; border-radius: 50%; background: var(--gold); color: #1a120b;
+  font-size: 30px; font-weight: 400; line-height: 1; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 6px 18px rgba(233,161,59,.32), 0 0 0 4px rgba(14,10,7,.92); transition: transform .15s var(--ease); }
+.bnav-plus:active .bnav-i, .bnav-plus:active .bnav-plus-i { transform: scale(.92); }
+.ma-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.ma-b { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px;
+  padding: 10px 4px; background: var(--bg3); border: 0.5px solid var(--border); border-radius: 12px; color: var(--text);
+  font-size: 12px; line-height: 1.25; text-align: center; }
+.ma-b .ma-i { font-size: 22px; line-height: 1; }
+.ma-b:active { transform: scale(.97); }
+.ma-habit { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px 12px; margin-top: 6px;
+  background: var(--bg3); border: 0.5px solid var(--border); border-radius: 10px; color: var(--text); text-align: left; }
+.ma-habit:active { transform: scale(.99); }
+/* Barre « Reste » : pend sous l'en-tete dans Recettes quand le tracker sort de l'ecran */
+#barre-reste { position: absolute; left: 12px; right: 12px; top: calc(100% + 6px); display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; background: rgba(34,26,20,.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  border: 0.5px solid rgba(246,237,227,.14); border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
+  font-size: 12.5px; color: var(--text2); cursor: pointer; opacity: 0; transform: translateY(-6px); pointer-events: none;
+  transition: opacity .2s var(--ease), transform .2s var(--ease); }
+#barre-reste.vis { opacity: 1; transform: none; pointer-events: auto; }
+
 /* ═══ EN-TETE COLLANT ══════════════════════════════════════════════════ */
 .apphead { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 12px;
   margin: -14px -12px 12px; padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 12px; background: rgba(14,10,7,.82);
@@ -257,6 +280,16 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 
 
 
+<!-- Volet d'ajout ouvert par le + de la barre du bas -->
+<div id="menu-ajout" onclick="if(event.target===this)fermerMenuAjout()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:195;align-items:flex-end;justify-content:center;">
+  <div style="background:var(--bg2);border-top:0.5px solid rgba(246,237,227,.1);border-radius:16px 16px 0 0;padding:18px 16px calc(20px + env(safe-area-inset-bottom, 12px));width:100%;max-width:480px;max-height:85vh;overflow-y:auto;animation:dzDlgCarte .2s var(--ease);">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+      <div style="font-size:16px;font-weight:600;color:var(--text);">Ajouter</div>
+      <button onclick="fermerMenuAjout()" aria-label="Fermer" style="background:none;border:none;color:var(--text2);font-size:20px;cursor:pointer;line-height:1;width:40px;height:40px;margin:-10px -10px -10px 0;">✕</button>
+    </div>
+    <div id="menu-ajout-corps"></div>
+  </div>
+</div>
 <!-- Add-meal modal (text + photo + inventory) -->
 <div id="addmeal-overlay" onclick="overlayBackdrop(event,this,closeAddMeal)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:flex-end;justify-content:center;">
   <div style="background:var(--bg2);border-top:0.5px solid rgba(246,237,227,.1);border-radius:14px 14px 0 0;padding:20px 20px 32px;width:100%;max-width:480px;max-height:88vh;overflow-y:auto;">
@@ -3989,7 +4022,40 @@ function renderTDEEBlock(t){
     '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:27px;font-weight:700;color:var(--text);">'+t.tdee+'</span><span style="font-size:12px;color:var(--text3);">kcal/j</span></div>'+
     '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+t.days+' j : ~'+t.avgCal+' kcal/j sur '+t.logs+' journée'+(t.logs>1?'s':'')+' complète'+(t.logs>1?'s':'')+' · '+perWeekTxt+'</div>'+
     ((t.ecartes&&t.ecartes.length)?'<div style="font-size:11px;color:var(--gold);margin-top:5px;line-height:1.4;">'+t.ecartes.length+' journée'+(t.ecartes.length>1?'s':'')+' écartée'+(t.ecartes.length>1?'s':'')+' (sous '+t.seuil+' kcal, saisie probablement incomplète) : '+t.ecartes.slice(0,6).join(', ')+(t.ecartes.length>6?'…':'')+'</div>':'')+
-    '<div style="font-size:12px;color:var(--accent2);margin-top:9px;line-height:1.45;">💡 '+tip+'</div></div>';
+    '<div style="font-size:12px;color:var(--accent2);margin-top:9px;line-height:1.45;">💡 '+tip+'</div>'+
+    // Conseil chiffre : on peut l'appliquer d'un geste (cible modifiable ensuite dans le profil)
+    (function(){
+      if(!(t.perWeek<0.2)||_enPriseDeMasse())return '';
+      var pas=_etapeCible(rec);if(!pas)return '';
+      return '<button data-action="appliquer-cible" data-val="'+pas+'" style="margin-top:10px;width:100%;padding:10px;background:var(--gold-bg);border:0.5px solid rgba(233,161,59,.5);border-radius:9px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">'
+        +(pas===rec?'Appliquer '+rec+' kcal comme cible':'Passer la cible à '+pas+' kcal (étape vers ~'+rec+')')+'</button>';
+    })()+
+    '</div>';
+}
+// Une cible ne bouge pas de plus de 300 kcal d'un coup : l'ecart conseille peut
+// depasser 600 kcal, et les glucides tomberaient trop bas. Le bilan suivant
+// reproposera l'etape d'apres si besoin. null = rien a appliquer.
+function _etapeCible(rec){
+  if(!(rec>=1200))return null;
+  var a=TARGETS.kcal,d=rec-a;
+  if(Math.abs(d)<50)return null;
+  return Math.round((a+Math.max(-300,Math.min(300,d)))/10)*10;
+}
+// Nouvelle cible calorique : proteines et lipides gardes, les glucides absorbent l'ecart
+function _ciblesPour(kcal){
+  var c=TARGETS,gluc=Math.max(50,Math.round((c.gluc||0)+(kcal-c.kcal)/4));
+  return {kcal:kcal,prot:c.prot,gluc:gluc,lip:c.lip};
+}
+function appliquerCibleConseillee(kcal){
+  if(!(kcal>=1200))return;
+  var n=_ciblesPour(kcal),a=TARGETS;
+  _confirmer('Passer ta cible de '+a.kcal+' à '+kcal+' kcal ?\n\nProtéines et lipides inchangés ('+a.prot+' g et '+a.lip+' g). Les glucides passent de '+a.gluc+' à '+n.gluc+' g.\n\nTu pourras la modifier dans Réglages \u203a Modifier le profil.',{ok:'Appliquer'}).then(function(ok){
+    if(!ok)return;
+    S.profil=Object.assign({},S.profil||{},{cibles:n});
+    TARGETS=_ciblesProfil();
+    saveState();render();
+    _infoToast('\ud83c\udfaf Nouvelle cible : '+kcal+' kcal','Protéines '+n.prot+' g · glucides '+n.gluc+' g · lipides '+n.lip+' g.');
+  });
 }
 function renderBurnBlock(){
   try{
@@ -4971,10 +5037,13 @@ var _bnavPose=false;
 function renderBnav(){
   var n=document.getElementById('bnav');if(!n)return;
   if(!_bnavPose){
-    n.innerHTML=_BNAV.map(function(t){
+    var _bt=_BNAV.map(function(t){
       return '<button id="bnav-b-'+t[0]+'" data-action="main-tab" data-val="'+t[0]+'" class="bnav-b'
         +(S.mainTab===t[0]?' on':'')+'"><span class="bnav-i">'+t[1]+'</span><span>'+t[2]+'</span></button>';
-    }).join('');
+    });
+    // + au centre, entre Recettes et Inventaire : ajouter un repas, une activite, une pesee
+    _bt.splice(2,0,'<button id="bnav-plus" data-action="menu-ajout" class="bnav-plus" aria-label="Ajouter" title="Ajouter"><span class="bnav-plus-i">+</span></button>');
+    n.innerHTML=_bt.join('');
     _bnavPose=true;
     return;
   }
@@ -5263,6 +5332,113 @@ function coachActivite(day){
   corps+=' Aucun repas enregistré sur cette journée pour l\'instant.';
   return {titre:'\ud83d\udd25 Activité enregistrée',corps:corps,ton:'mixte'};
 }
+// ─── Volet d'ajout (+) et repas habituels ──────────────────────────────────
+// Jour vise : celui du tracker dans Recettes, aujourd'hui partout ailleurs
+function _jourAjout(){return (S.mainTab==='recipes'&&S.displayDate)?S.displayDate:S.today;}
+function _libJour(d){
+  if(d===S.today)return "aujourd'hui";
+  if(d===shiftDate(S.today,-1))return 'hier';
+  if(d===shiftDate(S.today,1))return 'demain';
+  return new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+}
+// Macros d'un repas saisi (meme calcul que getDayMacros, pour un seul repas)
+function _macrosRepas(m){
+  if(!m)return null;
+  var r=findRecipe(m.rid),base=m.macros||r;if(!base)return null;
+  var dm=getDessertMacros(m.dessert,m.customDessert);
+  var ex=(m.extras||[]).reduce(function(a,e){return{kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0),gluc:a.gluc+(e.gluc||0),lip:a.lip+(e.lip||0)};},{kcal:0,prot:0,gluc:0,lip:0});
+  return {kcal:(base.kcal||0)+dm.kcal+ex.kcal,prot:(base.prot||0)+dm.prot+ex.prot,gluc:(base.gluc||0)+dm.gluc+ex.gluc,lip:(base.lip||0)+dm.lip+ex.lip};
+}
+// Repas des 30 derniers jours, regroupes par nom et calories (a 10 kcal pres) :
+// les plus frequents d'abord, puis les plus recents. On garde la saisie la
+// plus recente de chacun comme modele.
+function _repasHabituels(n){
+  var debut=shiftDate(S.today,-30),vus={},liste=[];
+  Object.keys(S.dayMeals||{}).filter(function(d){return /^\d{4}-\d\d-\d\d$/.test(d)&&d>=debut&&d<=S.today;}).sort().reverse().forEach(function(d){
+    (S.dayMeals[d]||[]).forEach(function(m,i){
+      var mc=_macrosRepas(m);if(!mc||!(mc.kcal>0))return;
+      var r=findRecipe(m.rid),nom=m.name||(r&&r.name)||'';if(!nom)return;
+      var cle=_normNom(nom)+'|'+Math.round(mc.kcal/10);
+      if(!vus[cle]){vus[cle]={nom:nom,mc:mc,jour:d,idx:i,nb:0};liste.push(vus[cle]);}
+      vus[cle].nb++;
+    });
+  });
+  liste.sort(function(a,b){return (b.nb-a.nb)||(a.jour<b.jour?1:(a.jour>b.jour?-1:0));});
+  return liste.slice(0,n||6);
+}
+function ouvrirMenuAjout(){
+  var ov=document.getElementById('menu-ajout'),c=document.getElementById('menu-ajout-corps');if(!ov||!c)return;
+  var jour=_jourAjout();
+  var b=function(act,ic,lib){return '<button class="ma-b" onclick="menuAjoutAction(\''+act+'\')"><span class="ma-i">'+ic+'</span><span>'+lib+'</span></button>';};
+  var h=(jour!==S.today?'<div style="margin:-4px 0 12px;padding:8px 11px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.4);border-radius:8px;font-size:12px;color:var(--blue);">Pour '+_libJour(jour)+' (jour affiché dans le tracker)</div>':'')
+    +'<div class="ma-grille">'
+    +b('texte','\u270d\ufe0f','Décrire un repas')+b('photo','\ud83d\udcf7','Photo')+b('code','\u25a5','Code-barres')
+    +b('inventaire','\ud83d\udce6','Mon inventaire')+b('activite','\ud83d\udd25','Pas et activités')+b('pesee','\u2696\ufe0f','Pesée')
+    +'</div>';
+  var hab=_repasHabituels(6);
+  if(hab.length){
+    h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 2px;">Refaire un repas habituel</div>';
+    h+=hab.map(function(x){
+      return '<button class="ma-habit" onclick="refaireRepas(\''+x.jour+'\','+x.idx+')">'
+        +'<span style="flex:1;min-width:0;"><span style="display:block;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+x.nom+'</span>'
+        +'<span style="font-size:11px;color:var(--text3);">'+Math.round(x.mc.kcal)+' kcal \u00b7 '+Math.round(x.mc.prot)+' g prot.'+(x.nb>1?' \u00b7 '+x.nb+' fois en 30 j':'')+'</span></span>'
+        +'<span style="flex-shrink:0;width:30px;height:30px;border-radius:50%;background:var(--gold-bg);color:var(--gold);font-size:18px;display:flex;align-items:center;justify-content:center;">+</span></button>';
+    }).join('');
+  }
+  c.innerHTML=h;
+  ov.style.display='flex';
+}
+function fermerMenuAjout(){var ov=document.getElementById('menu-ajout');if(ov)ov.style.display='none';}
+// Les boutons du volet ouvrent les parcours existants, sans les dupliquer
+function menuAjoutAction(a){
+  var jour=_jourAjout();
+  fermerMenuAjout();
+  S.displayDate=jour;          // openAddMeal et la fiche d'activite partent de ce jour
+  if(a==='activite'){openBurnLog(jour);return;}
+  if(a==='pesee'){
+    S.mainTab='weight';render();
+    try{var w=document.getElementById('weight-input');if(w){w.scrollIntoView({block:'center'});w.focus();}}catch(e){}
+    return;
+  }
+  openAddMeal(a==='photo'?'photo':'text');   // la photo doit partir du geste de l'utilisateur
+  if(a==='code')openScanner('meal');
+  else if(a==='inventaire')invAddMeal();
+}
+function refaireRepas(jour,idx){
+  var src=(S.dayMeals[jour]||[])[idx];if(!src)return;
+  var cible=_jourAjout();
+  var copie=JSON.parse(JSON.stringify(src));
+  if(!copie.slot){var _mo=prochainMoment(cible);copie.slot=_mo?_mo.id:null;}
+  fermerMenuAjout();
+  _mealStock(copie,-1);                 // comme une copie de repas : le stock suit
+  if(cible===S.today&&heureProfil()<4){  // garde nocturne : « hier ou aujourd'hui ? » (affichee dans Recettes)
+    S.pendingFreeMeal=copie;S.mainTab='recipes';saveState();render();
+    try{window.scrollTo(0,0);}catch(e){}
+    return;
+  }
+  (S.dayMeals[cible]=S.dayMeals[cible]||[]).push(copie);
+  saveState();render();
+  showCoachToast(cible);
+}
+// ─── Barre « Reste » collante (Recettes) ───────────────────────────────────
+function _htmlBarreReste(){
+  if(S.mainTab!=='recipes')return '';
+  var dd=S.displayDate||S.today,m=getDayMacros(dd);
+  var rk=Math.round(TARGETS.kcal-m.kcal),rp=Math.round(TARGETS.prot-m.prot);
+  var jour=dd===S.today?'':'<span style="color:var(--blue);">'+_libJour(dd)+'</span> \u00b7 ';
+  var kc=rk>=0?'Reste <strong style="color:var(--gold);">'+rk+' kcal</strong>':'Dépassé de <strong style="color:var(--red);">'+(-rk)+' kcal</strong>';
+  var pr=rp>0?' \u00b7 <strong style="color:var(--green);">'+rp+' g</strong> prot.':' \u00b7 <span style="color:var(--green);">prot. atteintes</span>';
+  return '<div id="barre-reste" data-action="remonter-tracker" role="button" aria-label="Remonter au tracker"><span style="flex:1;min-width:0;">'+jour+kc+pr+'</span><span style="color:var(--text3);font-size:14px;">\u2191</span></div>';
+}
+var _barreRaf=0;
+function _majBarreReste(){
+  _barreRaf=0;
+  var b=document.getElementById('barre-reste'),dp=document.getElementById('daypane'),hd=document.querySelector('.apphead');
+  if(!b||!dp||!hd)return;
+  var vis=dp.getBoundingClientRect().bottom<hd.getBoundingClientRect().bottom+8;
+  if(b.classList.contains('vis')!==vis)b.classList.toggle('vis',vis);
+}
+try{window.addEventListener('scroll',function(){if(!_barreRaf)_barreRaf=requestAnimationFrame(_majBarreReste);},{passive:true});}catch(e){}
 function showCoachToast(day,source){
   try{
     var a=(source==='activite')?coachActivite(day):coachAdvice(day);
@@ -5303,8 +5479,8 @@ function render(){
     return`<button data-action="meal-tab" data-val="${t.k}" class="mtab${active?' on':''}${isUrg?' urg':''}">${t.l}${isUrg&&urgCount?`<span class="chip mtab-badge">${urgCount}</span>`:''}</button>`;
   }).join('');
   ROOT.innerHTML=`<div>
-    <div class="apphead">
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h26</span></div></div>
+    <div class="apphead">${_htmlBarreReste()}
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h42</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -5337,6 +5513,7 @@ function render(){
     
   </div>`;
   _animateTabs();
+  _majBarreReste();
 }
 
 function _msgSuppressionRepas(meal,day){
@@ -5349,6 +5526,9 @@ function _onActionClick(e){
   const el=e.target.closest('[data-action]');if(!el||el.dataset.disabled==='true')return;
   const{action,val}=el.dataset;
   if(action==='main-tab')S.mainTab=val;
+  else if(action==='menu-ajout'){ouvrirMenuAjout();return;}
+  else if(action==='appliquer-cible'){appliquerCibleConseillee(parseInt(el.dataset.val,10));return;}
+  else if(action==='remonter-tracker'){var _dp=document.getElementById('daypane');if(_dp)try{window.scrollBy({top:_dp.getBoundingClientRect().top-90,behavior:'smooth'});}catch(e){}return;}
   else if(action==='toggle-fav'){S.favs=S.favs||[];var _fi=S.favs.indexOf(val);if(_fi>=0)S.favs.splice(_fi,1);else S.favs.push(val);saveState();}
   else if(action==='macro-info'){ouvrirInfoMacro(el.dataset.val);}
   else if(action==='go-recipe'){
@@ -7362,7 +7542,8 @@ function confirmAddMealFinal() {
   // La question « c'est pour hier ou aujourd'hui ? » n'a de sens que si le jour
   // n'a pas deja ete choisi explicitement dans le tracker.
   if(_jour===S.today&&heureProfil()<4){
-    S.pendingFreeMeal=_meal;saveState();closeAddMeal();render();return;
+    S.pendingFreeMeal=_meal;S.mainTab='recipes';   /* la question s'affiche dans Recettes, meme si l'ajout vient d'un autre onglet */
+    saveState();closeAddMeal();render();return;
   }
   if (!S.dayMeals[_jour]) S.dayMeals[_jour] = [];
   S.dayMeals[_jour].push(_meal);

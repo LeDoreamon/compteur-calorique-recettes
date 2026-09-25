@@ -172,7 +172,7 @@ t('*** la barre n\'est construite qu\'une fois ***',()=>{
 });
 t('*** seule la classe change ensuite ***',()=>{
   const i=src.indexOf('function renderBnav');
-  const b=src.slice(i,i+900);
+  const b=src.slice(i,i+1400);
   if(!/if\(b\.className!==vis\)b\.className=vis/.test(b))
     throw new Error('la classe est reecrite meme sans changement');
 });
