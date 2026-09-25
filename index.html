@@ -5764,7 +5764,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 03h00</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 03h02</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -7712,7 +7712,10 @@ Réponds UNIQUEMENT en JSON sans markdown:
   try {
     const data = await callAI(msgs, 1300, sys, msgs.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'))?null:'openai/gpt-oss-120b');
     const raw = data.content.map(i=>i.text||'').join('');
-    const p = JSON.parse(raw.replace(/```json|```/g,'').trim());
+    if(data.empty)throw new Error('Réponse vide, réessaie.');
+    // extractJSON : balises <think>, texte autour du JSON, et surtout _neutre
+    // (le nom propose par l'IA finit dans la page)
+    const p = extractJSON(raw);
     if(_addMealUseStock){
       document.getElementById('addmeal-name').value = p.name || 'Repas';
       _addMealInvSuggestions = (p.inv_suggestions||[]).map(s=>{

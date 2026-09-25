@@ -72,6 +72,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t56.js` | Dessert « autre » : analyse par Groq (plus d’appel Anthropic), réponse neutralisée |
 | `t57.js` | Calendrier du mois : état des journées (cible, dessus, dessous, incomplète), navigation, détail d’un jour |
 | `t58.js` | Mensurations (saisie, écarts, synchro) et photos de progression (chemins séparés, comparaison, export/import) |
+| `t59.js` | Analyse IA d’un repas : réponse lue par extractJSON (neutralisée), réponse vide |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
