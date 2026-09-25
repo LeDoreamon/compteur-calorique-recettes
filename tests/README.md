@@ -78,6 +78,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t62.js` | Activité selon l’objectif (cible du jour), seuil unique des protéines (95 %), tuile Déficit/Reste, fibres dans le coach, bilan de la semaine |
 | `t63.js` | Carte « Ta journée » de l’accueil : message selon le moment (cap, point d’étape, bilan), chiffres, activité |
 | `t64.js` | Fibres de l’inventaire remplies une fois par article (`FIBRES_INVENTAIRE`, `S.fibInv`), bouton de déconnexion à gauche |
+| `t65.js` | Inscription : étape facultative de la clé Groq (explications, format, passer l’étape, clé d’un autre compte effacée) |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

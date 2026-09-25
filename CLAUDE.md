@@ -55,12 +55,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t64.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1196 tests au 25/09/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t65.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1204 tests au 25/09/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t64` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t65` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -109,7 +109,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 - Inventaire : catégories, DLC, unités, diagnostic, fusion de doublons. Courses : liste par rayon, scanner, complétion auto.
 - Dépense : pas (seuil `pasBase()` = `S.pasBase`, fixé à l'inscription ; 9679 pour l'ancien profil `liam`, repris à la migration), activités, séances du programme de musculation (`PROGRAMME_SEANCES`, sans cardio), estimation IA avec repli MET.
 - Bilan : bilan de la semaine précédente le lundi et le mardi (`renderBilanSemaine`, masquable, `S.bilanVu`), coach (tuile « Déficit/j » estimé par le TDEE, sinon « Reste » ; fibres), poids et moyenne mobile, TDEE estimé, bouton « Appliquer » la cible conseillée (TDEE − 550 ≈ −0,5 kg/semaine, baisse seulement, étapes de 300 kcal au plus, protéines et lipides gardés), calendrier du mois (`renderCalendrier`, `_etatJour` : vert ±10 % de cible + activité, orange au-dessus, bleu en dessous, pointillés sous 50 %), mensurations (`S.mesures`, en cm) et photos de progression (vignettes chargées à l'ouverture du Bilan, photos pleines seulement pour comparer, pas de copie locale : réseau requis).
-- Comptes : inscription guidée (prénom, emoji, objectifs Mifflin-St Jeor, régime, matériel), modification du profil, de l'identifiant, de l'e-mail et du mot de passe, déconnexion.
+- Comptes : inscription guidée (prénom, emoji, objectifs Mifflin-St Jeor, régime, matériel, puis étape facultative de la clé Groq avec mode d'emploi et « Passer cette étape » : `_secCleGroq`, `_cleGroqValide`, `passerCleGroq`), modification du profil, de l'identifiant, de l'e-mail et du mot de passe, déconnexion.
 - Technique : sauvegardes auto quotidiennes (`BACKUP_KEEP=14`), export/import `.json` (format 2), filet avant écrasement.
 
 ## 8. Points ouverts

@@ -6105,7 +6105,7 @@ function render(){
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 15h05</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 16h00</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -7506,10 +7506,11 @@ function validerProfil(p){
 }
 
 // ── Donnees d'un compte ──
-async function _initNouveauProfil(cle,profil){
+async function _initNouveauProfil(cle,profil,groq){
   var tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}
   var st={rev:1,savedAt:new Date().toISOString(),_profile:cle,profil:profil,catalogue:null,
           tz:tz||null,pasBase:(+profil.pas>0?Math.round(+profil.pas):0),inv:INV_VIDE,dayMeals:{}};
+  if(_cleGroqValide(groq))st.groqKey=groq;
   var r=await fetch(await fbUrl(cle+'/state'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)});
   if(!r.ok)throw new Error('HTTP '+r.status);
 }
@@ -7545,7 +7546,7 @@ function demarrerApp(){
 
 // ═══ INTERFACE DES COMPTES ════════════════════════════════════════════════
 var _auth={mode:'accueil',err:'',occupe:false};
-var _ins={etape:0,login:'',mdp:'',code:'',avecCode:false,p:{}};
+var _ins={etape:0,login:'',mdp:'',code:'',avecCode:false,p:{},groq:''};
 var _pfChoix={allergies:[],equipement:[]},_pfEmoji='\ud83c\udfcb\ufe0f';
 var _LISTES={allergies:ALLERGENES,equipement:EQUIPEMENTS};
 var _ST_IN='width:100%;box-sizing:border-box;padding:10px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.15);border-radius:9px;color:var(--text);font-size:14px;outline:none;font-family:inherit;';
@@ -7629,7 +7630,7 @@ function afficherEcranConnexion(mode){
   ps.style.display='flex';ps.style.alignItems='flex-start';ps.style.overflowY='auto';
   renderAuth();
 }
-function _authMode(m){_auth.mode=m;_auth.err='';if(m==='inscription'){_ins={etape:0,login:'',mdp:'',code:'',avecCode:false,p:{}};_chargerChoix(null);}renderAuth();}
+function _authMode(m){_auth.mode=m;_auth.err='';if(m==='inscription'){_ins={etape:0,login:'',mdp:'',code:'',avecCode:false,p:{},groq:''};_chargerChoix(null);}renderAuth();}
 function renderAuth(){
   var ps=document.getElementById('profile-screen');if(!ps)return;
   var err=_auth.err?'<div style="font-size:12.5px;color:var(--red);background:rgba(192,87,70,.1);border:0.5px solid rgba(192,87,70,.35);border-radius:9px;padding:9px 11px;margin-bottom:12px;">'+_auth.err+'</div>':'';
@@ -7657,7 +7658,21 @@ function renderAuth(){
   // de l'ecran, les marges automatiques tombent a zero et rien n'est coupe.
   ps.innerHTML='<div style="width:100%;max-width:420px;margin:auto;padding:calc(24px + env(safe-area-inset-top, 0px)) 20px calc(30px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">'+h+'</div>';
 }
-var _ETAPES=['Ton compte','Toi','Ton objectif','Ton alimentation','Tes cibles'];
+var _ETAPES=['Ton compte','Toi','Ton objectif','Ton alimentation','Tes cibles','L\u2019IA (facultatif)'];
+// Cle Groq : format gsk_ suivi de caracteres alphanumeriques (pas de verification en ligne)
+function _cleGroqValide(k){return /^gsk_[A-Za-z0-9]{20,}$/.test(String(k||''));}
+function _secCleGroq(){
+  var li='style="margin-bottom:6px;"';
+  return '<div style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:12px;">Avec une clé Groq, Dorayaki peut analyser un repas décrit en quelques mots ou pris en photo, créer des recettes avec ce que tu as, et estimer la dépense d\'une activité. C\'est <strong style="color:var(--text);">gratuit</strong>, sans carte bancaire.</div>'
+    +'<ol style="font-size:12.5px;color:var(--text2);line-height:1.45;margin:0 0 14px;padding-left:20px;">'
+    +'<li '+li+'>Ouvre <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--blue);">console.groq.com</a> et crée un compte (Google ou e-mail).</li>'
+    +'<li '+li+'>Dans <strong style="color:var(--text);">API Keys</strong>, touche <strong style="color:var(--text);">Create API Key</strong> et donne-lui un nom, par exemple « Dorayaki ».</li>'
+    +'<li '+li+'>Copie la clé (elle commence par <span style="font-family:monospace;color:var(--text);">gsk_</span>) : elle ne s\'affiche qu\'une fois.</li>'
+    +'<li>Reviens ici et colle-la ci-dessous.</li></ol>'
+    +_champ('Clé API Groq',_inp('au-groq','password',_ins.groq,'gsk_…','autocomplete="off" autocapitalize="none" spellcheck="false"'))
+    +'<div style="font-size:11px;color:var(--text3);line-height:1.45;margin:-4px 0 12px;">Elle reste liée à ton compte et n\'est jamais incluse dans les exports. Tu pourras l\'ajouter ou la changer plus tard dans Réglages \u2699.</div>';
+}
+function passerCleGroq(){if(_auth.occupe)return;_ins.groq='';_auth.err='';return finaliserInscription();}
 function _renderInscription(err,dis,retour){
   var e=_ins.etape,p=_ins.p;
   var barre='<div style="display:flex;gap:4px;margin-bottom:14px;">'+_ETAPES.map(function(x,i){
@@ -7675,6 +7690,7 @@ function _renderInscription(err,dis,retour){
   }else if(e===1)corps=_secToi(p);
   else if(e===2)corps=_secObjectif(p);
   else if(e===3)corps=_secAlim(p);
+  else if(e===5)corps=_secCleGroq();
   else{
     var c=_ins.avecCode?LIAM_TARGETS:(calculerCibles(p)||CIBLES_PAR_DEFAUT);
     if(p.cibles&&_ciblesValides(p.cibles))c=p.cibles;
@@ -7685,6 +7701,7 @@ function _renderInscription(err,dis,retour){
     +(e>0?'<button onclick="etapeInscription(-1)" style="'+_ST_BTN+'flex:1;background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);">Précédent</button>':'')
     +'<button onclick="etapeInscription(1)"'+dis+' style="'+_ST_BTN+'flex:2;background:var(--gold);border:0;color:#1a120b;">'
     +(e===_ETAPES.length-1?(_auth.occupe?'Création\u2026':'Créer mon compte'):'Suivant')+'</button></div>';
+  if(e===_ETAPES.length-1)nav+='<button onclick="passerCleGroq()"'+dis+' style="background:none;border:0;color:var(--text3);font-size:12.5px;cursor:pointer;margin-top:12px;width:100%;text-decoration:underline;">Passer cette étape</button>';
   return barre+t+err+corps+nav+(e===0?retour:'');
 }
 function _memoriserEtape(){
@@ -7694,6 +7711,7 @@ function _memoriserEtape(){
   else if(e===1)Object.assign(_ins.p,_lireToi());
   else if(e===2)Object.assign(_ins.p,_lireObjectif());
   else if(e===3)Object.assign(_ins.p,_lireAlim());
+  else if(e===5)_ins.groq=_val('au-groq').replace(/\s+/g,'');
   else _ins.p.cibles=_lireCibles();
 }
 async function etapeInscription(sens){
@@ -7712,6 +7730,7 @@ async function etapeInscription(sens){
     }
     if(e===1){var er=validerProfil(Object.assign({},_ins.p,{poidsVise:''}));
       if(er.length){_auth.err='À vérifier : '+er.join(', ')+'.';return renderAuth();}}
+    if(e===5&&_ins.groq&&!_cleGroqValide(_ins.groq)){_auth.err='Cette clé ne ressemble pas à une clé Groq : elle commence par gsk_. Vérifie le copier-coller, ou passe cette étape.';return renderAuth();}
     if(e===_ETAPES.length-1)return finaliserInscription();
   }
   _ins.etape=Math.max(0,Math.min(_ETAPES.length-1,e+sens));
@@ -7727,8 +7746,11 @@ async function finaliserInscription(){
     var uid=await creerCompte(_ins.login,_ins.mdp);
     var cle='users/'+uid;
     var profil=_neutre(Object.assign({},p,{login:_loginNorm(_ins.login),creeLe:new Date().toISOString()}));
+    var _cg=_cleGroqValide(_ins.groq)?_ins.groq:'';
     if(_ins.avecCode)await rattacherAncienProfil(cle,profil);
-    else await _initNouveauProfil(cle,profil);
+    else await _initNouveauProfil(cle,profil,_cg);
+    /* La cle d'un compte precedent ne doit pas suivre le nouveau */
+    try{if(_cg)localStorage.setItem('anthropic_key',_cg);else localStorage.removeItem('anthropic_key');}catch(e){}
     try{localStorage.removeItem('dz_herite');}catch(e){}
     try{location.reload();}catch(e){}
   }catch(e){
