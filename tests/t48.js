@@ -233,7 +233,7 @@ await t('le passage par l\'ancien profil reste possible pendant la transition',(
 });
 await t('*** chaque ecran d\'inscription se rend sans erreur ***',()=>{
   G('afficherEcranConnexion')('accueil');G('_authMode')('inscription');
-  for(let e=0;e<5;e++){sb.window._ins.etape=e;G('renderAuth')();
+  for(let e=0;e<6;e++){sb.window._ins.etape=e;G('renderAuth')();
     const h=docEl('profile-screen').innerHTML;if(/undefined|NaN/.test(h.replace(/<[^>]+>/g,' ')))throw new Error('etape '+e);}
 });
 await t('*** un identifiant invalide bloque la premiere etape ***',async()=>{
