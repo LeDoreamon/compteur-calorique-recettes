@@ -1203,17 +1203,20 @@ function _remplirFibresInventaire(){
   });});
   return n>0;
 }
-// Gingembre et ail en poudre : valeurs du frais saisies par erreur (18 et
-// 34 kcal/100 g). Remplacees une fois (S.epicesFix1) par celles de la poudre
-// (CIQUAL/USDA, glucides hors fibres), seulement si l'article est encore
-// sous 100 kcal : une valeur corrigee a la main n'est pas touchee.
-const EPICES_POUDRE={'gingembre':{kcal:335,prot:9,gluc:58,lip:4.2,fib:14},'ail en poudre':{kcal:331,prot:16.6,gluc:63.7,lip:0.7,fib:9}};
+// Epices en poudre saisies avec des valeurs du frais ou trop basses
+// (gingembre 18, ail 34, poivre 6 kcal/100 g…). Remplacees une fois
+// (S.epicesFix2) par celles de la poudre (CIQUAL/USDA, glucides hors fibres),
+// seulement si l'article est sous 60 % de la reference : une valeur corrigee
+// a la main n'est pas touchee.
+const EPICES_POUDRE={'gingembre':{kcal:335,prot:9,gluc:58,lip:4.2,fib:14},'ail en poudre':{kcal:331,prot:16.6,gluc:63.7,lip:0.7,fib:9},
+  'poivre':{kcal:251,prot:10.4,gluc:38.7,lip:3.3,fib:25},'paprika':{kcal:282,prot:14.1,gluc:19,lip:12.9,fib:35},
+  'curry':{kcal:325,prot:14,gluc:26,lip:14,fib:30},'noix de muscade':{kcal:525,prot:5.8,gluc:28.5,lip:36,fib:20}};
 function _corrigerEpicesPoudre(){
   var n=0;
   Object.keys(S.inv||{}).forEach(function(cat){(S.inv[cat]||[]).forEach(function(it){
     if(!it)return;var k=normMac(it.name);if(!Object.prototype.hasOwnProperty.call(EPICES_POUDRE,k))return;
-    if(it.macPiece||(it.mac100&&!((+it.mac100.kcal||0)<100)))return;
     var v=EPICES_POUDRE[k];
+    if(it.macPiece||(it.mac100&&!((+it.mac100.kcal||0)<v.kcal*0.6)))return;
     it.mac100=Object.assign({},v);it.macSource='manual';it.macManual={kcal:v.kcal,prot:v.prot,gluc:v.gluc,lip:v.lip};n++;
   });});
   return n>0;
@@ -2459,8 +2462,8 @@ function _applyState(d){
   // Fibres de l'inventaire : une seule fois, un champ vide ensuite reste vide
   if(!d.fibInv&&_remplirFibresInventaire())_etatCorrige=true;
   S.fibInv=true;
-  if(!d.epicesFix1&&_corrigerEpicesPoudre())_etatCorrige=true;
-  S.epicesFix1=true;
+  if(!d.epicesFix2&&_corrigerEpicesPoudre())_etatCorrige=true;
+  S.epicesFix2=true;
 }
 function showSyncErr(){_alerte(_lastSyncErr||'Aucun détail enregistré pour le moment.\n\nDéclenche une sauvegarde (ajoute un repas) puis retape.');}
 // Le badge existe a deux endroits : en tete de page et sur l'accueil. Un seul
@@ -2688,7 +2691,7 @@ async function _saveStateNow(){
     mzFix4:S.mzFix4||false,
     dupMerged:S.dupMerged||false,
     fibInv:S.fibInv||false,
-    epicesFix1:S.epicesFix1||false,
+    epicesFix2:S.epicesFix2||false,
     removedSpices:S.removedSpices||[],
     shop:S.shop||{list:[],graveyard:[]},
     waiting:S.waiting||[],
@@ -6102,7 +6105,7 @@ function render(){
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 14h20</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 15h05</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
