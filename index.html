@@ -1189,6 +1189,20 @@ function _fibParNom(nom){
   for(var i=0;i<FIBRES_PAR_NOM.length;i++)if(FIBRES_PAR_NOM[i][0].test(n))return FIBRES_PAR_NOM[i][1];
   return null;
 }
+// Fibres (g/100 g) estimees article par article pour l'inventaire de Liam
+// (25/09/2026), ecrites une seule fois dans mac100/macPiece (S.fibInv).
+// Cle = nom normalise (normMac) ; un article d'un autre nom n'est pas touche.
+const FIBRES_INVENTAIRE={'creme legere liquide':0,'creme semi epaisse':0,'oeufs':0,'fromage rape':0,'billes de mozzarella':0,'lait sans lactose':0,'allumettes de bacon':0,'panes de cabillaud':1,'fromage blanc 0 nature ou parfume':0.2,'creme fraiche legere':0,'des de chorizo':0.5,'avocats':6.7,'concombres':0.6,'saumon':0,'jambon blanc':0,'jambon de poulet':0,'parmigiano reggiano dop en copeaux':0,'st moret leger':0,'allumettes de jambon':0,'tapas de queso':0,'ricotta e spinaci':2,'ravioli 4 fromages':1.8,'ravioli jambon et ricotta':1.8,'tomates cerises':1.5,'yaourts 0 fruits':0.3,'fromage blanc vanille 0':0.1,'tortellini prosciutto':2.5,'compotes':1.5,'carottes batonnets':2.7,'st moret':0,'cancoillotte franc comtoise':0,'carottes rapees citron':2.3,'fromage blanc fruite 5 5 mg':0.4,'tortellini viande':2.5,'activia bifidus fruits 0 panache 125 g x 12':0.3,'gnocchis fromage jambon':1.5,'gnocchi a poeler':1.5,'citron citron vert':0.3,'sauce cheezy zero':0.3,'honey mustard dressing sauce':0.5,'pizzas de la mama':2,'steaks 4 a 5 mg':0,'boeuf hache 450g a 5 mg':0,'oignons eminces':1.7,'frites au four':2.7,'framboises surgelees':6.5,'aiguillettes de poulet':0,'pates carbonara surgelees':1.2,'poulet karaage':0.5,'poulet panko':1,'haut de cuisse de poulet pane':0.8,'huvudroll meatballs boulettes ikea':1,'fraises surgelees':2,'nouilles chinoises':1.2,'the vert noir':0,'gourdes de compotes':1.5,'ramen instantanes':1,'banania':3.5,'ratatouille casse grain':1.8,'chili mexicain casse grain':3.5,'thon en conserve':0,'tubes sauce tomate':1.5,'bouillon poulet':0,'bouillon boeuf':0,'bouillon legumes':0,'riz oiseaux celestes':1.4,'pates completes':7,'pates blanches':3,'pates proteinees':6,'flocons d avoine':10,'sauce chili douce':0.5,'vinaigre de riz':0,'sauce soja sucree':0.3,'lait de coco':0.7,'huile de tournesol':0,'clear whey':0,'sucre blanc':0,'panure':3.5,'amandes':12.5,'lentilles casse grains':4,'pommes':2.4,'soupe potiron et kiri':0.8,'lion':4,'bananes':2.2,'pates 21 g protein':6,'vinaigre balsamique':0,'curry':30,'gingembre':2,'ail en poudre':9,'poivre':25,'sel herbamare':0,'epices italiennes':30,'sesame dore':8,'paprika':35,'noix de muscade':20,'curcuma':21,'oignons frits':5,'miel liquide':0,'huile d olive':0};
+function _remplirFibresInventaire(){
+  var n=0;
+  Object.keys(S.inv||{}).forEach(function(cat){(S.inv[cat]||[]).forEach(function(it){
+    if(!it||!Object.prototype.hasOwnProperty.call(FIBRES_INVENTAIRE,normMac(it.name)))return;
+    var f=FIBRES_INVENTAIRE[normMac(it.name)];
+    if(it.mac100&&typeof it.mac100.fib!=='number'){it.mac100.fib=f;n++;}
+    if(it.macPiece&&typeof it.macPiece.fib!=='number'&&it.pieceG>0){it.macPiece.fib=Math.round(f*it.pieceG/10)/10;n++;}
+  });});
+  return n>0;
+}
 // Fibres pour 100 g d'un article : valeur saisie (ou OpenFoodFacts, IA), sinon la table
 function _fib100(it){
   if(!it)return null;
@@ -2427,6 +2441,9 @@ function _applyState(d){
   try{apprendNomsIngredients();}catch(e){}
   // Fusion one-shot des doublons d'inventaire (Liam) : macros manuelles, somme des quantites, retires au cimetiere
   if(_catalogue()===PROFIL_HERITE){if(!d.dupMerged){if(_mergeDuplicates())_etatCorrige=true;S.dupMerged=true;}else{S.dupMerged=true;}}
+  // Fibres de l'inventaire : une seule fois, un champ vide ensuite reste vide
+  if(!d.fibInv&&_remplirFibresInventaire())_etatCorrige=true;
+  S.fibInv=true;
 }
 function showSyncErr(){_alerte(_lastSyncErr||'Aucun détail enregistré pour le moment.\n\nDéclenche une sauvegarde (ajoute un repas) puis retape.');}
 // Le badge existe a deux endroits : en tete de page et sur l'accueil. Un seul
@@ -2653,6 +2670,7 @@ async function _saveStateNow(){
     mzFix3:S.mzFix3||false,
     mzFix4:S.mzFix4||false,
     dupMerged:S.dupMerged||false,
+    fibInv:S.fibInv||false,
     removedSpices:S.removedSpices||[],
     shop:S.shop||{list:[],graveyard:[]},
     waiting:S.waiting||[],
@@ -6065,9 +6083,9 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 11h44</span></div></div>
-      ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 13h10</span></div></div>
+      ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
     <div id="tabpane">
