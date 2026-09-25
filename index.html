@@ -840,7 +840,7 @@ const TODAY=getToday();const TOMORROW=shiftDate(TODAY,1);
 const S={
   inv:JSON.parse(JSON.stringify(INV_DEFAULT)),
   recipeDesserts:{},customDesserts:{},customInputs:{},
-  mainTab:'accueil',mealTab:'breakfast',weights:[],weightGoal:null,favs:[],invDlcSort:false,openRec:null,
+  mainTab:'accueil',mealTab:'breakfast',weights:[],mesures:[],weightGoal:null,favs:[],invDlcSort:false,openRec:null,
   openCat:{frigo:1,congelateur:1,placards:1,epices:1},
   editMode:false,
   today:TODAY,displayDate:TODAY,
@@ -2283,7 +2283,7 @@ function _applyState(d){
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it&&MACROS_PIECE[it.id]&&!it.macPiece){const _p=MACROS_PIECE[it.id];it.macPiece={kcal:_p.kcal,prot:_p.prot,gluc:_p.gluc,lip:_p.lip};it.pieceG=_p.g;it.mac100={kcal:+(_p.kcal*100/_p.g).toFixed(1),prot:+(_p.prot*100/_p.g).toFixed(1),gluc:+(_p.gluc*100/_p.g).toFixed(1),lip:+(_p.lip*100/_p.g).toFixed(1)};}}));
   // Courses + salle d'attente
   S.shop=(d.shop&&Array.isArray(d.shop.list))?{list:d.shop.list,graveyard:Array.isArray(d.shop.graveyard)?d.shop.graveyard:[],graveRayons:Array.isArray(d.shop.graveRayons)?d.shop.graveRayons:[]}:{list:[],graveyard:[],graveRayons:[]};
-  S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
+  S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.mesures=Array.isArray(d.mesures)?d.mesures.filter(function(m){return m&&/^\d{4}-\d\d-\d\d$/.test(m.d);}):[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
   S.shopSeeded=d.shopSeeded||false;
   S.recTri=d.recTri||'';S.recTriDir=(d.recTriDir===-1?-1:1);
   S.pasRacheter=(d.pasRacheter&&typeof d.pasRacheter==='object')?_assainirCles(d.pasRacheter):{};
@@ -2411,6 +2411,7 @@ function _volumeEtat(d){
     var iv=d.inv||{};
     Object.keys(iv).forEach(function(c){n+=(iv[c]||[]).length;});
     n+=(d.weights||[]).length;
+    n+=(d.mesures||[]).length;
     n+=(d.customRecipes||[]).length*2;
     n+=(d.aiRecipes||[]).length;
     n+=((d.shop&&d.shop.list)||[]).length;
@@ -2581,7 +2582,7 @@ async function _saveStateNow(){
     removedSpices:S.removedSpices||[],
     shop:S.shop||{list:[],graveyard:[]},
     waiting:S.waiting||[],
-    weights:S.weights||[],favs:S.favs||[],weightGoal:(S.weightGoal||null),
+    weights:S.weights||[],mesures:S.mesures||[],favs:S.favs||[],weightGoal:(S.weightGoal||null),
     todaySummary:(function(){try{var t=getDayMacros(S.today);return{date:S.today,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip};}catch(e){return null;}})(),
     shopSeeded:S.shopSeeded||false,
     recTri:S.recTri||'',recTriDir:S.recTriDir||1,
@@ -3875,6 +3876,204 @@ function weightChartSVG(arr){
     '<polyline points="'+maPts.join(' ')+'" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+
     dots+yLabels+xLabels+'</svg>';
 }
+// ─── 📏 Mensurations ───────────────────────────────────────────────────────
+// Une entree par jour : {d, taille, hanches, poitrine, bras, cuisse} en cm.
+// En seche, le tour de taille bouge quand la balance stagne.
+var MESURES=[{k:'taille',l:'Tour de taille'},{k:'hanches',l:'Hanches'},{k:'poitrine',l:'Poitrine'},{k:'bras',l:'Bras'},{k:'cuisse',l:'Cuisse'}];
+function _cm(v){return (Math.round(v*10)/10).toFixed(1).replace('.',',');}
+function addMesure(){
+  var e={d:S.today},n=0,err=null;
+  MESURES.forEach(function(m){
+    var el=document.getElementById('mes-'+m.k);if(!el)return;
+    var s=String(el.value||'').trim().replace(',','.');if(!s)return;
+    var v=parseFloat(s);
+    if(!(v>=15&&v<=250)){err=m.l;return;}
+    e[m.k]=Math.round(v*10)/10;n++;
+  });
+  if(err){_alerte(err+' : valeur à vérifier (en cm, entre 15 et 250).');return;}
+  if(!n){_alerte('Renseigne au moins une mesure, en cm.');return;}
+  S.mesures=(S.mesures||[]).slice();
+  var i=S.mesures.findIndex(function(x){return x.d===S.today;});
+  if(i>=0)S.mesures[i]=Object.assign({},S.mesures[i],e);   // les champs laisses vides gardent la valeur du jour
+  else S.mesures.push(e);
+  S.mesures.sort(function(a,b){return a.d<b.d?-1:1;});
+  saveState();render();
+  _infoToast('\ud83d\udccf Mensurations enregistrées',n+' mesure'+(n>1?'s':'')+' pour aujourd\u2019hui.');
+}
+function delMesure(d){
+  _confirmer('Supprimer les mensurations du '+_wDateLabel(d)+' ?',{ok:'Supprimer',danger:true}).then(function(ok){
+    if(!ok)return;S.mesures=(S.mesures||[]).filter(function(x){return x.d!==d;});saveState();render();
+  });
+}
+// Ecart d'une mesure entre la derniere valeur et celle d'il y a ~n jours
+function _ecartMesure(arr,k,n){
+  var v=arr.filter(function(x){return typeof x[k]==='number';});if(v.length<2)return null;
+  var der=v[v.length-1],lim=shiftDate(der.d,-n),ref=null;
+  for(var i=v.length-2;i>=0;i--){if(v[i].d<=lim){ref=v[i];break;}}
+  if(!ref)ref=v[0];
+  return {delta:der[k]-ref[k],jours:Math.round((new Date(der.d)-new Date(ref.d))/864e5)};
+}
+function renderMesuresHTML(){
+  var arr=(S.mesures||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
+  var auj=arr.find(function(x){return x.d===S.today;})||{};
+  var html='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">'
+    +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">\ud83d\udccf Mensurations (cm)</div>';
+  var tailles=arr.filter(function(x){return typeof x.taille==='number';});
+  if(tailles.length){
+    var der=tailles[tailles.length-1],e30=_ecartMesure(arr,'taille',30);
+    html+='<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><span style="font-size:24px;font-weight:700;color:var(--text);">'+_cm(der.taille)+'</span><span style="font-size:13px;color:var(--text3);">cm de tour de taille</span></div>';
+    if(e30&&e30.jours>0){var col=e30.delta<-0.05?'var(--green)':(e30.delta>0.05?'var(--orange)':'var(--text2)');
+      html+='<div style="font-size:12px;color:'+col+';margin-bottom:10px;">'+(e30.delta>0?'+':'')+_cm(e30.delta)+' cm en '+e30.jours+' jour'+(e30.jours>1?'s':'')+'</div>';}
+    if(tailles.length>=2)html+='<div style="margin:0 -4px 10px;">'+weightChartSVG(tailles.map(function(x){return {d:x.d,w:x.taille};}))+'</div>';
+  }
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
+    +MESURES.map(function(m){return '<label style="display:block;"><span style="display:block;font-size:11px;color:var(--text3);margin-bottom:3px;">'+m.l+'</span>'
+      +'<input id="mes-'+m.k+'" type="text" inputmode="decimal" placeholder="cm" value="'+(typeof auj[m.k]==='number'?_cm(auj[m.k]):'')+'" style="width:100%;padding:9px 10px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-size:14px;"></label>';}).join('')
+    +'<button onclick="addMesure()" style="align-self:end;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:700;cursor:pointer;">'+(auj.d?'Modifier':'Enregistrer')+'</button></div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;">Mesure le matin, à jeun, au même endroit (tour de taille : au niveau du nombril).</div>';
+  if(arr.length){
+    html+='<div style="margin-top:12px;">'+arr.slice(-6).reverse().map(function(x){
+      var v=MESURES.filter(function(m){return typeof x[m.k]==='number';}).map(function(m){return m.l.replace('Tour de taille','Taille')+' '+_cm(x[m.k]);}).join(' \u00b7 ');
+      return '<div style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid var(--border);font-size:12px;"><span style="color:var(--text3);width:42px;flex-shrink:0;">'+_wDateLabel(x.d)+'</span><span style="flex:1;color:var(--text2);">'+v+'</span>'
+        +'<button onclick="delMesure(\''+x.d+'\')" title="Supprimer" style="background:none;border:none;color:var(--text3);width:36px;height:36px;margin:-8px -8px -8px 0;cursor:pointer;">\u2715</button></div>';
+    }).join('')+'</div>';
+  }
+  return html+'</div>';
+}
+// ─── 📸 Photos de progression ─────────────────────────────────────────────
+// Stockees hors de l'etat (trop lourdes pour la synchro) : users/<uid>/progres/<jour>_<pose>
+// (photo pleine, ~1000 px) et progresMini/<jour>_<pose> (vignette). Les vignettes
+// ne se chargent qu'a l'ouverture du Bilan, les pleines seulement pour comparer.
+var POSES=[{k:'face',l:'Face'},{k:'profil',l:'Profil'},{k:'dos',l:'Dos'}];
+var _RE_CLE_PROGRES=/^\d{4}-\d\d-\d\d_(face|profil|dos)$/;
+var _RE_IMG=/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+\/=]+$/;
+var _prog={profil:null,etat:'rien',minis:{},pleines:{},pose:'face',sel:[]};
+function _progresSurs(o){
+  var out={};
+  Object.keys(o||{}).forEach(function(k){var v=o[k];if(_RE_CLE_PROGRES.test(k)&&typeof v==='string'&&_RE_IMG.test(v))out[k]=v;});
+  return out;
+}
+async function chargerProgres(){
+  if(_prog.profil!==ACTIVE_PROFILE)_prog={profil:ACTIVE_PROFILE,etat:'rien',minis:{},pleines:{},pose:_prog.pose,sel:[]};
+  if(_prog.etat!=='rien')return;
+  _prog.etat='charge';
+  try{
+    var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/progresMini'));
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    _prog.minis=_progresSurs(await r.json());_prog.etat='ok';
+  }catch(e){_prog.etat='erreur';}
+  if(S.mainTab==='weight')render();
+}
+function _miniature(dataUrl,L,q,cb){
+  var img=new Image();
+  img.onload=function(){
+    try{var f=Math.min(1,L/Math.max(img.width,img.height)),cv=document.createElement('canvas');
+      cv.width=Math.round(img.width*f);cv.height=Math.round(img.height*f);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);cb(cv.toDataURL('image/jpeg',q));}catch(e){cb(null);}
+  };
+  img.onerror=function(){cb(null);};
+  img.src=dataUrl;
+}
+function choisirPoseProgres(k){if(POSES.some(function(p){return p.k===k;})){_prog.pose=k;_prog.sel=[];render();}}
+function ajouterPhotoProgres(){
+  var inp=document.getElementById('progres-input');
+  if(!inp){inp=document.createElement('input');inp.type='file';inp.accept='image/*';inp.id='progres-input';inp.style.display='none';document.body.appendChild(inp);}
+  var pose=_prog.pose,cle=S.today+'_'+pose;
+  inp.onchange=function(){
+    var f=inp.files&&inp.files[0];inp.value='';if(!f)return;
+    _photoVersDataUrl(f,function(pleine){
+      if(!pleine){_alerte('Image illisible.');return;}
+      _miniature(pleine,240,0.7,function(mini){
+        if(!mini){_alerte('Image illisible.');return;}
+        _enregistrerProgres(cle,pleine,mini);
+      });
+    },1000,0.8);
+  };
+  var go=function(){inp.click();};
+  if(_prog.minis[cle])_confirmer('Remplacer la photo « '+pose+' » d\u2019aujourd\u2019hui ?',{ok:'Remplacer'}).then(function(ok){if(ok)go();});
+  else go();   // sans question : le clic doit partir du geste de l'utilisateur (iPhone)
+}
+async function _enregistrerProgres(cle,pleine,mini){
+  try{
+    var r1=await fetch(await fbUrl(ACTIVE_PROFILE+'/progres/'+cle),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(pleine)});
+    var r2=await fetch(await fbUrl(ACTIVE_PROFILE+'/progresMini/'+cle),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(mini)});
+    if(!r1.ok||!r2.ok)throw new Error('HTTP');
+  }catch(e){_alerte('Photo non enregistrée\n\nIl faut du réseau pour envoyer une photo de progression. Réessaie une fois connecté.');return;}
+  _prog.minis[cle]=mini;_prog.pleines[cle]=pleine;
+  render();
+  _infoToast('\ud83d\udcf8 Photo enregistrée','Privée : elle reste dans ton compte.');
+}
+async function _chargerPleine(cle){
+  if(_prog.pleines[cle]||!_RE_CLE_PROGRES.test(cle))return;
+  try{var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/progres/'+cle));if(!r.ok)return;
+    var v=await r.json();if(typeof v==='string'&&_RE_IMG.test(v)){_prog.pleines[cle]=v;if(S.mainTab==='weight')render();}}catch(e){}
+}
+function choisirProgres(cle){
+  var i=_prog.sel.indexOf(cle);
+  if(i>=0)_prog.sel.splice(i,1);
+  else{_prog.sel.push(cle);if(_prog.sel.length>2)_prog.sel.shift();}
+  _prog.sel.forEach(_chargerPleine);
+  render();
+}
+function supprimerProgres(cle){
+  if(!_RE_CLE_PROGRES.test(cle))return;
+  _confirmer('Supprimer la photo du '+_wDateLabel(cle.slice(0,10))+' ?',{ok:'Supprimer',danger:true}).then(async function(ok){
+    if(!ok)return;
+    try{
+      await fetch(await fbUrl(ACTIVE_PROFILE+'/progres/'+cle),{method:'PUT',headers:{'Content-Type':'application/json'},body:'null'});
+      await fetch(await fbUrl(ACTIVE_PROFILE+'/progresMini/'+cle),{method:'PUT',headers:{'Content-Type':'application/json'},body:'null'});
+    }catch(e){_alerte('Suppression impossible sans réseau.');return;}
+    delete _prog.minis[cle];delete _prog.pleines[cle];
+    _prog.sel=_prog.sel.filter(function(x){return x!==cle;});
+    render();
+  });
+}
+// Poids le plus proche d'une date (pour legender une comparaison)
+function _poidsAu(d){
+  var best=null;(S.weights||[]).forEach(function(x){if(!x||!(x.w>0))return;var e=Math.abs(new Date(x.d)-new Date(d));if(e<=3*864e5&&(!best||e<best.e))best={w:+x.w,e:e};});
+  return best?best.w:null;
+}
+function _tailleAu(d){
+  var best=null;(S.mesures||[]).forEach(function(x){if(typeof x.taille!=='number')return;var e=Math.abs(new Date(x.d)-new Date(d));if(e<=7*864e5&&(!best||e<best.e))best={v:x.taille,e:e};});
+  return best?best.v:null;
+}
+function renderProgresHTML(){
+  if(!_prog)_prog={profil:null,etat:'rien',minis:{},pleines:{},pose:'face',sel:[]};   /* rendu avant l'initialisation */
+  if(_prog.profil!==ACTIVE_PROFILE||_prog.etat==='rien')setTimeout(chargerProgres,0);
+  var html='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;"><div style="flex:1;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">\ud83d\udcf8 Photos de progression</div>'
+    +'<span style="font-size:11px;color:var(--text3);">\ud83d\udd12 privées</span></div>'
+    +'<div style="display:flex;gap:6px;margin-bottom:10px;">'+POSES.map(function(p){var on=_prog.pose===p.k;
+      return '<button onclick="choisirPoseProgres(\''+p.k+'\')" style="flex:1;padding:8px;border-radius:999px;border:0.5px solid '+(on?'var(--gold)':'var(--border)')+';background:'+(on?'var(--gold)':'transparent')+';color:'+(on?'var(--bg)':'var(--text2)')+';font-size:12.5px;font-weight:'+(on?'600':'400')+';cursor:pointer;">'+p.l+'</button>';}).join('')+'</div>'
+    +'<button onclick="ajouterPhotoProgres()" style="width:100%;padding:10px;margin-bottom:12px;background:var(--gold-bg);border:0.5px solid rgba(233,161,59,.5);border-radius:9px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">\ud83d\udcf7 Ajouter la photo du jour ('+POSES.find(function(p){return p.k===_prog.pose;}).l.toLowerCase()+')</button>';
+  if(_prog.etat==='charge'||_prog.etat==='rien')return html+'<div style="font-size:12px;color:var(--text3);">Chargement\u2026</div></div>';
+  if(_prog.etat==='erreur')return html+'<div style="font-size:12px;color:var(--text3);">Photos indisponibles hors ligne.</div></div>';
+  var cles=Object.keys(_prog.minis).filter(function(k){return k.slice(11)===_prog.pose;}).sort().reverse();
+  if(!cles.length)return html+'<div style="font-size:12px;color:var(--text3);line-height:1.5;">Aucune photo « '+_prog.pose+' » pour l\u2019instant. Une par semaine, même lumière, même tenue : c\u2019est ce qui rend la comparaison parlante.</div></div>';
+  if(_prog.sel.length===2){
+    var s=_prog.sel.slice().sort(),a=s[0].slice(0,10),b=s[1].slice(0,10);
+    var jours=Math.round((new Date(b)-new Date(a))/864e5);
+    var pa=_poidsAu(a),pb=_poidsAu(b),ta=_tailleAu(a),tb=_tailleAu(b);
+    var bilan=[];
+    if(pa&&pb)bilan.push((pb-pa>0?'+':'')+(pb-pa).toFixed(1).replace('.',',')+' kg');
+    if(ta&&tb)bilan.push((tb-ta>0?'+':'')+_cm(tb-ta)+' cm de tour de taille');
+    html+='<div style="display:flex;gap:6px;margin-bottom:6px;">'+s.map(function(c){
+      var src=_prog.pleines[c]||_prog.minis[c];
+      return '<div style="flex:1;min-width:0;"><img src="'+src+'" alt="" style="width:100%;border-radius:8px;display:block;"><div style="display:flex;align-items:center;font-size:11px;color:var(--text2);margin-top:4px;"><span style="flex:1;">'+_wDateLabel(c.slice(0,10))+'</span>'
+        +'<button onclick="supprimerProgres(\''+c+'\')" style="background:none;border:none;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;padding:6px 0;">Supprimer</button></div></div>';
+    }).join('')+'</div>'
+      +'<div style="font-size:12px;color:var(--text2);margin-bottom:10px;">En '+jours+' jour'+(jours>1?'s':'')+(bilan.length?' : '+bilan.join(' \u00b7 '):'')+'</div>';
+  }else{
+    html+='<div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Touche deux photos pour les comparer côte à côte.</div>';
+  }
+  html+='<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;">'+cles.map(function(c){
+    var on=_prog.sel.indexOf(c)>=0;
+    return '<button onclick="choisirProgres(\''+c+'\')" style="padding:0;border:none;background:none;cursor:pointer;text-align:center;">'
+      +'<img src="'+_prog.minis[c]+'" alt="" style="width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:7px;display:block;'+(on?'outline:2px solid var(--gold);outline-offset:1px;':'')+'">'
+      +'<span style="display:block;font-size:11px;color:'+(on?'var(--gold)':'var(--text3)')+';margin-top:3px;">'+_wDateLabel(c.slice(0,10))+'</span></button>';
+  }).join('')+'</div>';
+  return html+'</div>';
+}
 function renderWeightHTML(){
   var arr=(S.weights||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
   var todayW='';var ti=arr.findIndex(function(x){return x.d===S.today;});if(ti>=0)todayW=arr[ti].w;
@@ -4304,8 +4503,15 @@ async function exportBackup(){
   var raw=localStorage.getItem(ACTIVE_PROFILE+'_st')||'{}';
   var st;try{st=JSON.parse(raw);}catch(e){st={};}
   delete st.groqKey;                       // la cle d'API ne quitte jamais l'app
+  // Photos de progression : lues sur le cloud (elles ne sont pas en local)
+  var progres=null,progresMini=null;
+  try{
+    var r1=await fetch(await fbUrl(ACTIVE_PROFILE+'/progres')),r2=await fetch(await fbUrl(ACTIVE_PROFILE+'/progresMini'));
+    if(r1.ok&&r2.ok){progres=_progresSurs(await r1.json());progresMini=_progresSurs(await r2.json());}
+  }catch(e){}
   var obj={_format:2,_exportedAt:new Date().toISOString(),_profile:ACTIVE_PROFILE,
            state:st,burn:_burnData||{},photos:PHOTOS||{}};
+  if(progres&&Object.keys(progres).length){obj.progres=progres;obj.progresMini=progresMini;}
   _exportFile('sauvegarde-dorayaki-'+ACTIVE_PROFILE+'-'+getToday()+'.json','application/json',JSON.stringify(obj));
 }
 // Lecture d'une sauvegarde : format complet (2) ou ancien export d'etat seul
@@ -4315,7 +4521,9 @@ function _lireSauvegarde(txt){
   var st=(o._format===2)?o.state:o;
   if(!st||typeof st!=='object'||!(st.inv||st.dayMeals))throw new Error('ce fichier ne ressemble pas a une sauvegarde Dorayaki');
   return {state:st,burn:(o._format===2&&o.burn&&typeof o.burn==='object')?o.burn:null,
-          photos:(o._format===2&&o.photos&&typeof o.photos==='object')?_photosSures(o.photos):null};
+          photos:(o._format===2&&o.photos&&typeof o.photos==='object')?_photosSures(o.photos):null,
+          progres:(o._format===2&&o.progres&&typeof o.progres==='object')?_progresSurs(o.progres):null,
+          progresMini:(o._format===2&&o.progresMini&&typeof o.progresMini==='object')?_progresSurs(o.progresMini):null};
 }
 function importBackup(){
   var inp=document.getElementById('backup-file-input');if(!inp)return;
@@ -4330,6 +4538,7 @@ function importBackup(){
       if(!(await _confirmer('Restaurer cette sauvegarde ?\n\n'+nbJ+' journées de repas'
         +(sv.burn?', '+Object.keys(sv.burn).length+' journées d\'activité':'')
         +(sv.photos?', '+Object.keys(sv.photos).length+' photos':'')
+        +(sv.progres?', '+Object.keys(sv.progres).length+' photos de progression':'')
         +'.\n\nTon état actuel sera d\'abord mis de côté et restera récupérable.',{ok:'Restaurer'})))return;
       await _restaurerSauvegarde(sv);
     };
@@ -4361,6 +4570,17 @@ async function _restaurerSauvegarde(sv){
     _photosChargees=true;
     try{localStorage.setItem(ACTIVE_PROFILE+'_photos',JSON.stringify(PHOTOS));}catch(e){}
     try{await fetch(await fbUrl(ACTIVE_PROFILE+'/photos'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(PHOTOS)});}catch(e){}
+  }
+  if(sv.progres&&sv.progresMini){
+    // Ajout, jamais d'effacement : les photos deja en ligne restent
+    for(var _k in sv.progres){
+      if(!sv.progresMini[_k])continue;
+      try{
+        await fetch(await fbUrl(ACTIVE_PROFILE+'/progres/'+_k),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(sv.progres[_k])});
+        await fetch(await fbUrl(ACTIVE_PROFILE+'/progresMini/'+_k),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(sv.progresMini[_k])});
+      }catch(e){}
+    }
+    _prog.etat='rien';
   }
   try{await saveState();}catch(e){}
   render();
@@ -5544,7 +5764,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h54</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 03h00</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -5552,7 +5772,7 @@ function render(){
     <div id="tabpane">
     ${S.mainTab==='accueil'?renderAccueil():''}
     ${S.mainTab==='courses'?renderCoursesHTML():''}
-    ${S.mainTab==='weight'?renderCockpit()+renderMacroTrend()+renderCalendrier()+renderGoalBlock()+renderWeightHTML()+renderDataExport():''}
+    ${S.mainTab==='weight'?renderCockpit()+renderMacroTrend()+renderCalendrier()+renderGoalBlock()+renderWeightHTML()+renderMesuresHTML()+renderProgresHTML()+renderDataExport():''}
     ${S.mainTab==='recipes'?`
       ${!getApiKey()?`<div style="background:rgba(233,161,59,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:var(--bg);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
@@ -6330,18 +6550,18 @@ async function _enregistrerPhoto(id,dataUrl){
 }
 // Redimensionne avant stockage : une photo de telephone pese plusieurs Mo,
 // on n'a besoin que d'une vignette.
-function _photoVersDataUrl(file,cb){
+function _photoVersDataUrl(file,cb,L0,q0){
   var fr=new FileReader();
   fr.onload=function(){
     var img=new Image();
     img.onload=function(){
       try{
-        var L=480,l=img.width,ht=img.height;
+        var L=L0||480,l=img.width,ht=img.height;
         var f=Math.min(1,L/Math.max(l,ht));
         var cv=document.createElement('canvas');
         cv.width=Math.round(l*f);cv.height=Math.round(ht*f);
         cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
-        cb(cv.toDataURL('image/jpeg',0.72));
+        cb(cv.toDataURL('image/jpeg',q0||0.72));
       }catch(e){cb(null);}
     };
     img.onerror=function(){cb(null);};

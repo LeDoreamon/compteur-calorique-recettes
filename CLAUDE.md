@@ -20,7 +20,7 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 - Auth Firebase par API REST : `accounts:signUp`, `signInWithPassword`, `update`, `sendOobCode`, et `securetoken` pour rafraîchir le jeton.
 - La session est stockée dans `localStorage.dz_auth = {uid, rtok, login}`. Le mot de passe n'est jamais stocké.
 - Adresse technique `login@dorayaki.app` (`_emailDe`), sauf si l'identifiant est déjà un e-mail.
-- Données de chaque compte sous `users/<uid>/` : `state`, `burn`, `photos`, `filet`, `backups`.
+- Données de chaque compte sous `users/<uid>/` : `state`, `burn`, `photos`, `filet`, `backups`, `progres` et `progresMini` (photos de progression, hors de l'état : clé `AAAA-MM-JJ_pose`, pose = face, profil ou dos).
 - Règles Firebase en place : seul `users/$uid` est accessible (`auth.uid === $uid`), tout le reste est fermé. Conséquence : `/liam` (ancien profil) et `/maureen` sont verrouillés. Le code de rattachement et le mode « profil hérité » ne fonctionnent donc plus ; c'est normal, la migration est terminée. **Ne pas supprimer ces nœuds** : c'est à moi d'en décider.
 - `fbUrl(path)` ajoute `?auth=<idToken>`. Si `securetoken` refuse le jeton pour de bon (400 `TOKEN_EXPIRED`, `INVALID_REFRESH_TOKEN`, `MISSING_REFRESH_TOKEN`, `USER_DISABLED`, `USER_NOT_FOUND`, `INVALID_GRANT`), `_sessionExpiree()` rouvre l'écran de connexion.
 - Code de rattachement : seule son empreinte SHA-256 figure dans le code (`CODE_RATTACHEMENT_SHA256`). **Ne jamais écrire le code en clair.**
@@ -55,12 +55,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t57.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1120 tests au 25/09/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t58.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1136 tests au 25/09/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t57` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t58` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -105,7 +105,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 - Recettes : catalogue v6 (30 recettes, visible si `S.catalogue='liam'`), recettes perso et IA, favoris, cuisson avec remplacement, desserts. Illustration SVG générée pour chaque recette sans photo (`illustrationRecette`, `_composition`).
 - Inventaire : catégories, DLC, unités, diagnostic, fusion de doublons. Courses : liste par rayon, scanner, complétion auto.
 - Dépense : pas (seuil `pasBase()` = `S.pasBase`, fixé à l'inscription ; 9679 pour l'ancien profil `liam`, repris à la migration), activités, séances du programme de musculation (`PROGRAMME_SEANCES`, sans cardio), estimation IA avec repli MET.
-- Bilan : coach, poids et moyenne mobile, TDEE estimé, bouton « Appliquer » la cible conseillée (étapes de 300 kcal au plus, protéines et lipides gardés), calendrier du mois (`renderCalendrier`, `_etatJour` : vert ±10 % de cible + activité, orange au-dessus, bleu en dessous, pointillés sous 50 %).
+- Bilan : coach, poids et moyenne mobile, TDEE estimé, bouton « Appliquer » la cible conseillée (étapes de 300 kcal au plus, protéines et lipides gardés), calendrier du mois (`renderCalendrier`, `_etatJour` : vert ±10 % de cible + activité, orange au-dessus, bleu en dessous, pointillés sous 50 %), mensurations (`S.mesures`, en cm) et photos de progression (vignettes chargées à l'ouverture du Bilan, photos pleines seulement pour comparer, pas de copie locale : réseau requis).
 - Comptes : inscription guidée (prénom, emoji, objectifs Mifflin-St Jeor, régime, matériel), modification du profil, de l'identifiant, de l'e-mail et du mot de passe, déconnexion.
 - Technique : sauvegardes auto quotidiennes (`BACKUP_KEEP=14`), export/import `.json` (format 2), filet avant écrasement.
 
