@@ -2358,6 +2358,7 @@ function _applyState(d){
   S.shop=(d.shop&&Array.isArray(d.shop.list))?{list:d.shop.list,graveyard:Array.isArray(d.shop.graveyard)?d.shop.graveyard:[],graveRayons:Array.isArray(d.shop.graveRayons)?d.shop.graveRayons:[]}:{list:[],graveyard:[],graveRayons:[]};
   S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.mesures=Array.isArray(d.mesures)?d.mesures.filter(function(m){return m&&/^\d{4}-\d\d-\d\d$/.test(m.d);}):[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
   S.shopSeeded=d.shopSeeded||false;
+  S.bilanVu=(typeof d.bilanVu==='string'&&/^\d{4}-\d\d-\d\d$/.test(d.bilanVu))?d.bilanVu:null;
   S.recTri=d.recTri||'';S.recTriDir=(d.recTriDir===-1?-1:1);
   S.pasRacheter=(d.pasRacheter&&typeof d.pasRacheter==='object')?_assainirCles(d.pasRacheter):{};
   if(typeof d.pasBase==='number'&&d.pasBase>=0)S.pasBase=d.pasBase;
@@ -2657,7 +2658,7 @@ async function _saveStateNow(){
     waiting:S.waiting||[],
     weights:S.weights||[],mesures:S.mesures||[],favs:S.favs||[],weightGoal:(S.weightGoal||null),
     todaySummary:(function(){try{var t=getDayMacros(S.today);return{date:S.today,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip};}catch(e){return null;}})(),
-    shopSeeded:S.shopSeeded||false,
+    shopSeeded:S.shopSeeded||false,bilanVu:S.bilanVu||null,
     recTri:S.recTri||'',recTriDir:S.recTriDir||1,
     pasBase:(typeof S.pasBase==='number')?S.pasBase:null,
     profil:S.profil||null,catalogue:S.catalogue||null,tz:S.tz||null,
@@ -3402,7 +3403,8 @@ function renderMacros(){
     const _lis=_mo?`border-left:3px solid ${_mo.couleur};padding-left:7px;`:'border-left:3px solid transparent;padding-left:7px;';
     return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);${_lis}"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(base.kcal+dm.kcal+ex.kcal)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round((base.prot+dm.prot+ex.prot)*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" title="Supprimer ce repas" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;width:40px;height:40px;margin:-10px -10px -10px -6px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;">✕</button></div>`;}).filter(Boolean).join('');
   const rem=meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text2);">${isToday?'Reste':'Écart'} : <strong style="color:var(--text);">${isToday?(Math.round(Math.max(0,TARGETS.kcal-m.kcal))+' kcal'):((m.kcal>TARGETS.kcal?'+':'')+Math.round(m.kcal-TARGETS.kcal)+' kcal')}</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${isToday?(Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10+'g'):(Math.round(m.prot*10)/10+'/'+TARGETS.prot+'g')}</strong></span>${(()=>{const b=getBurn(dd);if(!b||!b.total)return '';
-    const marge=Math.round(TARGETS.kcal+b.total-m.kcal);
+    if(_objectif()==='perte')return `<span style="font-size:11px;color:var(--text2);">🔥 <strong style="color:var(--text);">${b.total} kcal</strong> d'activité · <span style="color:var(--green);">en plus de ton déficit</span></span>`;
+    const marge=Math.round(_cibleDuJour(dd)-m.kcal);
     const lib=isToday?"Avec l'activité":"Marge";
     return `<span style="font-size:11px;color:var(--text2);">🔥 <strong style="color:var(--text);">${b.total} kcal</strong> · ${lib} : <strong style="color:${marge>=0?'var(--green)':'var(--red)'};">${marge>=0?marge+' kcal':'dépassement de '+Math.abs(marge)+' kcal'}</strong></span>`;})()}</div>`:'';
   const ICNAV={'chevron-left':'←','chevron-right':'→'};
@@ -4440,10 +4442,11 @@ function renderCoachSummary(){
     // moyenne sur les 7 jours precedents : meme base que le pilotage (hors
     // aujourd'hui, pas encore fini, et hors journees incompletes). Avant, les
     // deux moyennes du Bilan se contredisaient.
-    var n=0,sk=0,sp=0,jours=0,nb=0;
+    var n=0,sk=0,sp=0,jours=0,nb=0,nf=0,sf=0;
     for(var i=1;i<=7;i++){
       var d=shiftDate(S.today,-i);
-      if(_jourComplet(d)){var dm=getDayMacros(d);n++;sk+=dm.kcal;sp+=dm.prot;if(dm.prot>=T.prot*0.95)jours++;}
+      if(_jourComplet(d)){var dm=getDayMacros(d);n++;sk+=dm.kcal;sp+=dm.prot;if(_protOk(dm.prot))jours++;
+        var _fd7=getDayFibres(d);if(_fd7.complet){nf++;sf+=_fd7.g;}}
       if(getBurn(d))nb++;
     }
     var obj=_objectif();
@@ -4470,15 +4473,25 @@ function renderCoachSummary(){
       if(mp<T.prot*0.9)phrase+=' Attention aux protéines : '+mp+' g/jour en moyenne pour '+T.prot+' visés.';
       else phrase+=' Protéines tenues à '+mp+' g/jour, c\'est ce qui protège ton muscle.';
     }
-    if(nb>=3&&brule)phrase+=' Dépense suivie sur '+nb+' jour'+(nb>1?'s':'')+' : ta balance du jour est de '+(bal>0?'+':'')+bal+' kcal.';
-    else if(!nb)phrase+=' Pense à saisir tes pas et séances : sans eux, la balance reste théorique.';
+    // Ecart moyen a la depense reelle (TDEE, activite habituelle comprise) :
+    // remplace l'ancienne « balance » (mange - activite), qui ignorait le
+    // metabolisme de repos et affichait presque toujours +1500 ou plus.
+    var _td=null;try{_td=estimateTDEE();}catch(e){}
+    var ecartTdee=(_td&&_td.ok&&n)?Math.round(_td.tdee-mk):null;
+    if(ecartTdee!==null&&Math.abs(ecartTdee)>=50){
+      var kgSem=Math.abs(ecartTdee)*7/7700;
+      phrase+=' Par rapport à ta dépense réelle (~'+_td.tdee+' kcal/j), c\'est un '+(ecartTdee>0?'déficit':'surplus')+' d\'environ '+Math.abs(ecartTdee)+' kcal/j, soit ~'+kgSem.toFixed(2).replace('.',',')+' kg par semaine.';
+    }
+    if(nf>=3){var mf=Math.round(sf/nf);phrase+=' Fibres : ~'+mf+' g/jour'+(mf<25?' (repère 30 g).':'.');}
 
     return '<div style="background:var(--bg2);border:0.5px solid var(--border);border-left:3px solid '+col+';border-radius:12px;padding:13px;margin-bottom:16px;">'
       +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;">\ud83d\udcac Le point du coach</div>'
       +'<div style="display:flex;gap:6px;margin-bottom:10px;">'
       +tuile('Mangé',Math.round(m.kcal),'kcal','var(--gold)')
       +tuile('Dépensé',brule||'—','kcal',brule?'var(--orange)':'var(--text3)')
-      +tuile('Balance',(bal>0?'+':'')+bal,'kcal',(bulk?bal>0:bal<0)?'var(--green)':'var(--text2)')
+      +(ecartTdee!==null
+        ?tuile(ecartTdee>=0?'Déficit/j':'Surplus/j',Math.abs(ecartTdee),'kcal (est.)',((obj==='prise')?ecartTdee<0:(obj==='perte'?ecartTdee>0:Math.abs(ecartTdee)<150))?'var(--green)':'var(--text2)')
+        :tuile('Reste',Math.max(0,Math.round(_cibleDuJour(S.today)-m.kcal)),'kcal','var(--text)'))
       +tuile('Moy. 7 j',mk||'—','kcal','var(--text)')
       +'</div>'
       +'<div style="font-size:11.5px;color:var(--text2);line-height:1.55;">'+phrase+'</div>'
@@ -4486,9 +4499,64 @@ function renderCoachSummary(){
       +'</div>';
   }catch(e){return '';}
 }
+// ─── 🗓 Bilan de la semaine ────────────────────────────────────────────────
+// Le lundi et le mardi, en tete du Bilan : la semaine precedente (lundi a
+// dimanche) en quelques chiffres. Masquable jusqu'a la semaine suivante.
+function _lundiDe(d){var j=new Date(d+'T12:00:00').getDay();return shiftDate(d,-((j+6)%7));}
+function _statsSemaine(debut){
+  var s={complets:0,kcal:0,prot:0,dansCible:0,protOk:0,fib:0,nFib:0};
+  for(var i=0;i<7;i++){
+    var d=shiftDate(debut,i);if(!_jourComplet(d))continue;
+    var m=getDayMacros(d),e=_etatJour(d),f=getDayFibres(d);
+    s.complets++;s.kcal+=m.kcal;s.prot+=m.prot;
+    if(e.etat==='cible')s.dansCible++;if(_protOk(m.prot))s.protOk++;
+    if(f.complet){s.fib+=f.g;s.nFib++;}
+  }
+  if(s.complets){s.kcal=Math.round(s.kcal/s.complets);s.prot=Math.round(s.prot/s.complets);}
+  s.fib=s.nFib?Math.round(s.fib/s.nFib):null;
+  var fin=shiftDate(debut,6);
+  var moy=function(a,b){var v=(S.weights||[]).filter(function(x){return x&&x.w>0&&x.d>=a&&x.d<=b;});return v.length?v.reduce(function(t,x){return t+(+x.w);},0)/v.length:null;};
+  var pSem=moy(debut,fin),pAvant=moy(shiftDate(debut,-7),shiftDate(debut,-1));
+  s.poids=(pSem!==null&&pAvant!==null)?Math.round((pSem-pAvant)*10)/10:null;
+  var der=function(lim){var v=(S.mesures||[]).filter(function(x){return typeof x.taille==='number'&&x.d<=lim;});return v.length?v[v.length-1]:null;};
+  var tf=der(fin),ta=der(shiftDate(debut,-1));
+  s.taille=(tf&&ta&&tf.d>=debut)?Math.round((tf.taille-ta.taille)*10)/10:null;
+  return s;
+}
+function masquerBilanSemaine(){S.bilanVu=_lundiDe(S.today);saveState();render();}
+function renderBilanSemaine(){
+  var auj=S.today,jour=new Date(auj+'T12:00:00').getDay();
+  if(jour!==1&&jour!==2)return '';                          // lundi et mardi
+  var lundi=_lundiDe(auj);if(S.bilanVu===lundi)return '';
+  var debut=shiftDate(lundi,-7),s=_statsSemaine(debut);
+  if(!s.complets)return '';
+  var obj=_objectif(),T=TARGETS;
+  var titre=s.dansCible>=5?'Semaine solide':(s.dansCible>=3?'Bonne base, à consolider':'Semaine en dents de scie');
+  var msg=s.dansCible>=5?'Tu as tenu ta cible la plupart des jours : c\'est exactement ce qui fait avancer.'
+    :(s.dansCible>=3?'Plus de la moitié des jours dans la cible. Vise un ou deux jours de plus cette semaine.'
+    :'Peu de jours dans la cible. Choisis un repas de la journée à caler en premier, le reste suivra.');
+  if(s.complets<5)msg+=' ('+s.complets+' jour'+(s.complets>1?'s':'')+' saisi'+(s.complets>1?'s':'')+' en entier sur 7 : plus tu saisis, plus le bilan est juste.)';
+  var ligne=function(lbl,val,col){return '<div style="display:flex;justify-content:space-between;padding:5px 0;border-top:0.5px solid var(--border);font-size:12.5px;"><span style="color:var(--text2);">'+lbl+'</span><span style="color:'+(col||'var(--text)')+';font-weight:600;">'+val+'</span></div>';};
+  var sg=function(v,u){return (v>0?'+':(v<0?'\u2212':''))+String(Math.abs(v)).replace('.',',')+' '+u;};
+  var bonPoids=function(v){return obj==='prise'?v>0:(obj==='perte'?v<0:Math.abs(v)<=0.2);};
+  var h='<div style="background:linear-gradient(135deg,rgba(233,161,59,.12),rgba(233,161,59,.03));border:0.5px solid rgba(233,161,59,.4);border-radius:12px;padding:14px;margin-bottom:16px;">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;"><div style="flex:1;font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.07em;">\ud83d\uddd3 Bilan de la semaine \u00b7 '+_wDateLabel(debut)+' au '+_wDateLabel(shiftDate(debut,6))+'</div>'
+    +'<button onclick="masquerBilanSemaine()" aria-label="Masquer le bilan" style="background:none;border:none;color:var(--text3);width:36px;height:36px;margin:-10px -10px -10px 0;cursor:pointer;">\u2715</button></div>'
+    +'<div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:4px;">'+titre+'</div>'
+    +'<div style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:8px;">'+msg+'</div>'
+    +ligne('Jours dans la cible',s.dansCible+' / '+s.complets,s.dansCible>=5?'var(--green)':'var(--text)')
+    +ligne('Calories moyennes',s.kcal+' kcal (cible '+T.kcal+')')
+    +ligne('Protéines',s.prot+' g/j \u00b7 atteintes '+s.protOk+' j',s.protOk>=5?'var(--green)':'var(--text)')
+    +(s.fib!==null?ligne('Fibres',s.fib+' g/j (repère 30)',s.fib>=25?'var(--green)':'var(--text)'):'')
+    +(s.poids!==null?ligne('Poids (moyenne vs semaine d\u2019avant)',sg(s.poids,'kg'),bonPoids(s.poids)?'var(--green)':'var(--text2)'):'')
+    +(s.taille!==null?ligne('Tour de taille',sg(s.taille,'cm'),(obj==='prise'?false:s.taille<0)?'var(--green)':'var(--text2)'):'');
+  var td=null;try{td=estimateTDEE();}catch(e){}
+  if(obj==='perte'&&td&&td.ok&&td.perWeek<0.2)h+='<div style="font-size:12px;color:var(--accent2);margin-top:9px;line-height:1.45;">\ud83d\udca1 Ta perte ralentit : la carte « Dépense estimée » plus bas propose une nouvelle cible.</div>';
+  return h+'</div>';
+}
 function renderCockpit(){
   var avg=avgMacrosOverDays(7);
-  var html=renderCoachSummary()+'<div style="margin-bottom:18px;">';
+  var html=renderBilanSemaine()+renderCoachSummary()+'<div style="margin-bottom:18px;">';
   var _o=_objectif();
   html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📊 Pilotage '+(_o==='prise'?'de la prise de masse':(_o==='maintien'?'du maintien':'de la sèche'))+'</div>';
   if(!avg){
@@ -4512,7 +4580,7 @@ function renderCockpit(){
 }
 function renderBudgetSuggestions(){
   var eaten=getDayMacros(S.today);
-  var remK=Math.round(TARGETS.kcal-eaten.kcal),remP=Math.round(TARGETS.prot-eaten.prot);
+  var remK=Math.round(_cibleDuJour(S.today)-eaten.kcal),remP=Math.round(TARGETS.prot-eaten.prot);
   if(remK<=120)return '';
   var cands=RCP.filter(function(r){
     if(!r.slots||!r.slots.length)return false;
@@ -4533,7 +4601,7 @@ function renderBudgetSuggestions(){
   var _b=getBurn(S.today);
   var html='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:13px;margin-bottom:14px;">';
   html+='<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">🎯 Il te reste <strong style="color:var(--orange);">'+remK+' kcal</strong>'+(remP>0?' · <strong style="color:var(--green);">'+remP+' g</strong> de protéines':'')+' — ça rentre :</div>';
-  html+=(_b&&_b.total)?'<div style="font-size:11px;color:var(--text3);margin-bottom:9px;">Tu as dépensé '+_b.total+' kcal aujourd\'hui — ta cible reste la même, c\'est ton déficit qui s\'élargit.</div>':'<div style="margin-bottom:9px;"></div>';
+  html+=(_b&&_b.total)?'<div style="font-size:11px;color:var(--text3);margin-bottom:9px;">Tu as dépensé '+_b.total+' kcal aujourd\'hui — '+(_objectif()==='perte'?'ta cible reste la même, c\'est ton déficit qui s\'élargit.':'ils sont comptés dans ce qu\'il te reste.')+'</div>':'<div style="margin-bottom:9px;"></div>';
   cands.forEach(function(r){
     html+='<button data-action="goto-recipe" data-rid="'+r.id+'" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:var(--bg3);border:0.5px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:6px;cursor:pointer;"><span style="flex:1;font-size:13px;color:var(--text);">'+r.name+'</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">'+r.kcal+' kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;">'+r.prot+'g P</span></button>';
   });
@@ -4833,25 +4901,25 @@ function protStreak(){
   var t=TARGETS.prot,cur=0,best=0,run=0;
   for(var i=364;i>=0;i--){
     var p=getDayMacros(shiftDate(S.today,-i)).prot||0;
-    if(p>=t){run++;if(run>best)best=run;}else run=0;
+    if(_protOk(p)){run++;if(run>best)best=run;}else run=0;
   }
-  var j=(getDayMacros(S.today).prot||0)>=t?0:1;
+  var j=_protOk(getDayMacros(S.today).prot)?0:1;
   for(;j<365;j++){
-    if((getDayMacros(shiftDate(S.today,-j)).prot||0)>=t)cur++;else break;
+    if(_protOk(getDayMacros(shiftDate(S.today,-j)).prot))cur++;else break;
   }
   return {cur:cur,best:best};
 }
 // ─── 📅 Calendrier du mois (Bilan) ─────────────────────────────────────────
-// Une case par jour, coloree selon l'ecart a la cible du jour (cible + activite,
-// comme la marge du tracker). Sous TDEE_SEUIL_JOUR de la cible, la journee est
+// Une case par jour, coloree selon l'ecart a la cible du jour (_cibleDuJour :
+// activite comprise en maintien et en prise, pas en seche). Sous TDEE_SEUIL_JOUR de la cible, la journee est
 // jugee incomplete (meme regle que l'estimation du TDEE) : pas de couleur.
 var _calMois=null,_calSel=null;
 function _etatJour(d){
   var repas=(S.dayMeals&&S.dayMeals[d])||[];
   if(!repas.length)return {etat:'vide'};
   var m=getDayMacros(d),b=null;try{b=getBurn(d);}catch(e){}
-  var dep=(b&&b.total)||0,cible=TARGETS.kcal+dep;
-  var res={kcal:m.kcal,prot:m.prot,dep:dep,cible:cible,protOk:m.prot>=TARGETS.prot};
+  var dep=(b&&b.total)||0,cible=_cibleDuJour(d);
+  var res={kcal:m.kcal,prot:m.prot,dep:dep,cible:cible,protOk:_protOk(m.prot)};
   if(m.kcal<TARGETS.kcal*TDEE_SEUIL_JOUR)res.etat='partiel';
   else if(m.kcal>cible*1.1)res.etat='dessus';
   else if(m.kcal<cible*0.9)res.etat='dessous';
@@ -4891,7 +4959,7 @@ function renderCalendrier(){
   if(_calSel&&_calSel.slice(0,7)===_calMois){
     var e2=_etatJour(_calSel),lib=new Date(_calSel+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
     var det=e2.etat==='vide'?'Aucun repas enregistré.'
-      :(Math.round(e2.kcal)+' kcal pour '+Math.round(e2.cible)+' visées'+(e2.dep?' (dont '+Math.round(e2.dep)+' d\u2019activité)':'')+' \u00b7 '+Math.round(e2.prot)+' g de protéines'+(e2.etat==='partiel'?' \u00b7 journée incomplète':''));
+      :(Math.round(e2.kcal)+' kcal pour '+Math.round(e2.cible)+' visées'+(e2.dep?(_objectif()==='perte'?' \u00b7 '+Math.round(e2.dep)+' kcal d\u2019activité en plus':' (dont '+Math.round(e2.dep)+' d\u2019activité)'):'')+' \u00b7 '+Math.round(e2.prot)+' g de protéines'+(e2.etat==='partiel'?' \u00b7 journée incomplète':''));
     var dansTracker=_calSel>=shiftDate(auj,-6)&&_calSel<=shiftDate(auj,1);
     html+='<div style="margin-top:10px;padding:9px 11px;background:var(--bg3);border-radius:9px;font-size:12px;color:var(--text2);line-height:1.5;">'
       +'<strong style="color:var(--text);">'+lib.charAt(0).toUpperCase()+lib.slice(1)+'</strong><br>'+det
@@ -4899,12 +4967,12 @@ function renderCalendrier(){
   }
   html+='<div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6;">'
     +(stats.saisis?'<strong style="color:var(--text2);">'+stats.cible+' jour'+(stats.cible>1?'s':'')+' sur '+stats.saisis+'</strong> dans la cible \u00b7 protéines atteintes '+stats.prot+' fois<br>':'')
-    +'<span style="color:var(--green);">\u25a0</span> dans la cible (±10 %, activité comprise) \u00b7 <span style="color:var(--orange);">\u25a0</span> au-dessus \u00b7 <span style="color:var(--blue);">\u25a0</span> en dessous \u00b7 pointillés : journée incomplète \u00b7 <span style="color:var(--green);">\u25cf</span> protéines atteintes</div>'
+    +'<span style="color:var(--green);">\u25a0</span> dans la cible (±10 %'+(_objectif()==='perte'?'':', activité comprise')+') \u00b7 <span style="color:var(--orange);">\u25a0</span> au-dessus \u00b7 <span style="color:var(--blue);">\u25a0</span> en dessous \u00b7 pointillés : journée incomplète \u00b7 <span style="color:var(--green);">\u25cf</span> protéines atteintes</div>'
     +'</div>';
   return html;
 }
 function _kcalColor(v){var t=TARGETS.kcal;if(v>t*1.1)return 'var(--orange)';if(v<t*0.9)return 'rgba(140,151,171,.55)';return 'var(--green)';}
-function _protColor(v){return v>=TARGETS.prot?'var(--green)':'rgba(140,151,171,.55)';}
+function _protColor(v){return _protOk(v)?'var(--green)':'rgba(140,151,171,.55)';}
 function _mtChart(hist,key,target,unit,colorFn){
   var W=320,H=86,padL=2,padR=34,top=6,bottom=14;
   var chartW=W-padL-padR,chartH=H-top-bottom;
@@ -4940,9 +5008,9 @@ function renderMacroTrend(){
   var html='<div style="'+box+'">';
   html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📈 Tendance 14 jours</div>';
   if(st.cur>0){
-    html+='<div style="font-size:13px;color:var(--text);margin-bottom:12px;">🔥 <strong>'+st.cur+' jour'+(st.cur>1?'s':'')+'</strong> d\'affilée avec tes protéines (≥ '+TARGETS.prot+' g)'+(st.best>st.cur?' · record : '+st.best+' j':(st.best===st.cur&&st.cur>1?' · record en cours !':''))+'</div>';
+    html+='<div style="font-size:13px;color:var(--text);margin-bottom:12px;">🔥 <strong>'+st.cur+' jour'+(st.cur>1?'s':'')+'</strong> d\'affilée avec tes protéines (≥ '+Math.round(TARGETS.prot*PROT_ATTEINT)+' g)'+(st.best>st.cur?' · record : '+st.best+' j':(st.best===st.cur&&st.cur>1?' · record en cours !':''))+'</div>';
   } else {
-    html+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">🔥 Atteins '+TARGETS.prot+' g de protéines aujourd\'hui pour lancer une série'+(st.best>0?' (record : '+st.best+' j)':'')+'.</div>';
+    html+='<div style="font-size:12px;color:var(--text3);margin-bottom:12px;">🔥 Atteins '+TARGETS.prot+' g de protéines aujourd\'hui pour lancer une série (95 % comptent)'+(st.best>0?' (record : '+st.best+' j)':'')+'.</div>';
   }
   if(!hasData){
     html+='<div style="font-size:12px;color:var(--text3);line-height:1.5;">Les courbes apparaîtront dès que tu enregistres des repas.</div></div>';
@@ -5381,9 +5449,13 @@ function renderAccueil(){
         +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">\ud83c\udfcb '+((a&&(a.name||a.n))||'Activité')+'</span>'
         +'<span style="color:var(--text3);flex:0 0 auto;">'+Math.round((a&&a.kcal)||0)+' kcal</span></div>';
     });
-    var _marge=Math.round(TARGETS.kcal+dep-r.pris.kcal);
-    h+='<div style="margin-top:8px;font-size:11.5px;color:var(--text3);">Avec l\'activité, il te reste '
-      +'<span style="color:var('+(_marge>=0?'--green':'--red')+');">'+(_marge>=0?(_marge+' kcal'):('\u2212'+Math.abs(_marge)+' kcal'))+'</span>.</div>';
+    if(_objectif()==='perte'){
+      h+='<div style="margin-top:8px;font-size:11.5px;color:var(--text3);">Ta cible ne bouge pas : ces '+dep+' kcal <span style="color:var(--green);">creusent ton déficit du jour</span>.</div>';
+    }else{
+      var _marge=Math.round(_cibleDuJour(jour)-r.pris.kcal);
+      h+='<div style="margin-top:8px;font-size:11.5px;color:var(--text3);">Activité à compenser : il te reste '
+        +'<span style="color:var('+(_marge>=0?'--green':'--red')+');">'+(_marge>=0?(_marge+' kcal'):('\u2212'+Math.abs(_marge)+' kcal'))+'</span>.</div>';
+    }
     h+='</div>';
   }
   h+='</div>';
@@ -5639,6 +5711,15 @@ function _objectif(){
   return 'perte';
 }
 function _enPriseDeMasse(){return _objectif()==='prise';}
+// Calories visees un jour donne. En seche, l'activite ne s'ajoute pas : la cible
+// tient deja compte de l'activite habituelle, et les estimations de depense
+// sont souvent hautes ; l'activite creuse le deficit. En maintien et en prise,
+// il faut au contraire la compenser.
+function _depenseDuJour(day){var b=null;try{b=getBurn(day);}catch(e){}return (b&&b.total)||0;}
+function _cibleDuJour(day){return TARGETS.kcal+(_objectif()==='perte'?0:_depenseDuJour(day));}
+// Un seul seuil pour « proteines atteintes », partout (coach, serie, calendrier)
+const PROT_ATTEINT=0.95;
+function _protOk(p){return (+p||0)>=TARGETS.prot*PROT_ATTEINT;}
 function _libObjectif(){var o=_objectif();return o==='prise'?'Prise de masse':(o==='maintien'?'Maintien':'Sèche');}
 // Le meme "il te reste 1400 kcal" ne veut pas dire la meme chose a 8 h et a
 // 22 h. On situe le moment avant de choisir le ton.
@@ -5666,12 +5747,13 @@ function _suggereRecette(resteK,resteP){
   return c[0];
 }
 function coachAdvice(day){
-  var m=getDayMacros(day||S.today), T=TARGETS, bulk=_enPriseDeMasse();
+  var _j=day||S.today,m=getDayMacros(_j), bulk=_enPriseDeMasse();
+  var T=Object.assign({},TARGETS,{kcal:_cibleDuJour(_j)});   /* activite comptee hors seche */
   var phase=_phaseJournee(day);
   var enCours=(phase==='debut'||phase==='milieu');
   var r={kcal:Math.round(T.kcal-m.kcal),prot:Math.round(T.prot-m.prot),
          gluc:Math.round(T.gluc-m.gluc),lip:Math.round(T.lip-m.lip)};
-  var protOk=m.prot>=T.prot*0.98;
+  var protOk=_protOk(m.prot);
 
   if(bulk){
     // ── PRISE DE MASSE : l'enjeu est d'atteindre le total, pas de le limiter ──
@@ -5699,6 +5781,7 @@ function coachAdvice(day){
     }
     var sg=enCours?_suggereRecette(r.kcal,r.prot):null;
     if(sg)corps+=' « '+sg.name+' » tomberait bien : '+sg.kcal+' kcal, '+sg.prot+' g de protéines.';
+    if(!enCours){var _fdb=getDayFibres(_j);if(_fdb.complet&&_fdb.n>0&&_fdb.g<20)corps+=' Fibres : '+String(_fdb.g).replace('.',',')+' g aujourd\'hui (repère 30 g).';}
     return {titre:titre,corps:corps,ton:ton};
   }
 
@@ -5758,6 +5841,8 @@ function coachAdvice(day){
     corps='Tu débordes en '+libs.join(' et ')+', mais tu restes dans tes calories. '+
       (protOk?'Protéines validées, c\'est le principal.':'Il te reste '+Math.max(0,r.prot)+' g de protéines à prendre.');
   }
+  // Fibres, en fin de journee seulement, et si toutes les valeurs du jour sont connues
+  if(!enCours){var _fd=getDayFibres(_j);if(_fd.complet&&_fd.n>0&&_fd.g<20)corps+=' Fibres : '+String(_fd.g).replace('.',',')+' g aujourd\'hui (repère 30 g) : légumes, fruits ou légumineuses demain.';}
   return {titre:titre,corps:corps,ton:ton};
 }
 var _coachTid=null;
@@ -5773,16 +5858,13 @@ function coachActivite(day){
   if(b.actKcal>0)det.push((b.activities||[]).length+' activité'+(((b.activities||[]).length>1)?'s':''));
   var quand=(day===S.today)?"aujourd'hui":('le '+(day||'').split('-').reverse().slice(0,2).join('/'));
   var corps='\u2248 '+tot+' kcal dépensés '+quand+(det.length?' ('+det.join(' + ')+')':'')+'.';
-  var m=getDayMacros(day);
-  if(m&&m.kcal>0){
-    var bal=Math.round(m.kcal-tot);
-    var bulk=(typeof _enPriseDeMasse==='function')&&_enPriseDeMasse();
-    var bon=bulk?(bal>0):(bal<0);
-    corps+=' Balance du jour : '+(bal>0?'+':'')+bal+' kcal'+(bon?', dans le bon sens.':'.');
-    return {titre:'\ud83d\udd25 Activité enregistrée',corps:corps,ton:bon?'ok':'mixte'};
-  }
-  corps+=' Aucun repas enregistré sur cette journée pour l\'instant.';
-  return {titre:'\ud83d\udd25 Activité enregistrée',corps:corps,ton:'mixte'};
+  // L'ancienne « balance du jour » (mange - activite) ignorait le metabolisme
+  // de repos : elle etait presque toujours tres positive, donc trompeuse.
+  var o=_objectif();
+  if(o==='perte')corps+=' Ta cible ne bouge pas : ils creusent ton déficit du jour.';
+  else if(o==='prise')corps+=' Pense à les compenser : ils s\'ajoutent à ce qu\'il te reste à manger.';
+  else corps+=' Ils s\'ajoutent à ce qu\'il te reste à manger, pour tenir ton maintien.';
+  return {titre:'\ud83d\udd25 Activité enregistrée',corps:corps,ton:'ok'};
 }
 // ─── Volet d'ajout (+) et repas habituels ──────────────────────────────────
 // Jour vise : celui du tracker dans Recettes, aujourd'hui partout ailleurs
@@ -5932,7 +6014,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 11h15</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 11h32</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -7698,7 +7780,7 @@ function prochainMoment(jour){
 function resteDuJour(jour){
   var m=getDayMacros(jour)||{kcal:0,prot:0,gluc:0,lip:0};
   return {
-    kcal:Math.max(0,Math.round(TARGETS.kcal-m.kcal)),
+    kcal:Math.max(0,Math.round(_cibleDuJour(jour)-m.kcal)),
     prot:Math.max(0,Math.round(TARGETS.prot-m.prot)),
     gluc:Math.max(0,Math.round(TARGETS.gluc-m.gluc)),
     lip :Math.max(0,Math.round(TARGETS.lip -m.lip)),

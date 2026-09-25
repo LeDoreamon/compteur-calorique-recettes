@@ -55,12 +55,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t61.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1168 tests au 25/09/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t62.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1177 tests au 25/09/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t61` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t62` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -96,19 +96,19 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 10. Fenêtres : ne jamais utiliser `alert`, `confirm` ou `prompt` (boîte système grise sur iPhone). Utiliser `_alerte(msg)` et `_confirmer(msg,{ok,annuler,danger})`, qui renvoient une promesse : `.then(function(ok){…})` dans une fonction synchrone, `await` dans une fonction `async`. Le premier paragraphe du message (avant une ligne vide) sert de titre. Dans les tests, `sb.js` les fait répondre tout de suite via `sb.confirm` / `sb.alert` (`t54.js` vérifie qu'il ne reste aucune fenêtre système).
 11. Tailles de texte : 11 px minimum ; 10 px seulement pour les libellés en majuscules. `--text3` doit garder un contraste d'au moins 4,5:1 sur `--bg`, `--bg2` et `--bg3`. `t54.js` le vérifie.
 12. Fibres : champ `fib` facultatif (g) dans `mac100`, `macPiece`, les lignes `ings` et `macros` d'un repas. Absent = inconnu, jamais 0 par défaut. Repli : table `FIBRES_PAR_NOM` (familles, premier motif gagnant). Calcul d'un repas par `_fibRepas`, d'une journée par `getDayFibres` ; `getDayMacros` ne les compte pas. Repère fixe `FIBRES_CIBLE=30` g, hors de `TARGETS`.
-13. Objectif : `_objectif()` renvoie `perte`, `maintien` ou `prise` (profil, sinon poids cible, sinon `perte`) ; `_libObjectif()` donne le libellé (Sèche, Maintien, Prise de masse). Ne pas tester l'objectif par `_enPriseDeMasse()` seul : le maintien n'est pas une sèche. Les moyennes du Bilan portent sur les journées complètes (`_jourComplet` : hors aujourd'hui, au moins 50 % de la cible).
+13. Objectif : `_objectif()` renvoie `perte`, `maintien` ou `prise` (profil, sinon poids cible, sinon `perte`) ; `_libObjectif()` donne le libellé (Sèche, Maintien, Prise de masse). Ne pas tester l'objectif par `_enPriseDeMasse()` seul : le maintien n'est pas une sèche. Les moyennes du Bilan portent sur les journées complètes (`_jourComplet` : hors aujourd'hui, au moins 50 % de la cible). Cible du jour : `_cibleDuJour(jour)` ; en sèche l'activité ne s'ajoute pas (elle creuse le déficit), en maintien et en prise elle est à compenser (décision du 25/09/2026). Protéines « atteintes » : `_protOk` (95 % de la cible), partout.
 14. Réseau du bac à sable cloud : Firebase, Groq et `github.io` sont bloqués par le proxy (vérifié le 25/09/2026). On ne peut donc pas tester en direct : simuler les réponses. `raw.githubusercontent.com` et `git clone` fonctionnent.
 
 ## 7. Ce que l'app sait faire
 
 - Accueil : objectif du jour, prochain repas, recettes qui rentrent dans le reste, pas et activités.
 - Ajout : bouton + flottant en bas à droite, au-dessus de la barre (`#fab-ajout` → `ouvrirMenuAjout`) : décrire, photo, code-barres, inventaire, pas et activités, pesée, et « Refaire un repas habituel » (`_repasHabituels` : 30 derniers jours, fréquence puis récence).
-- Suivi : anneau calorique, marge = cible + dépense − consommé, macros, tracker par jour (en tête de Recettes, avec la barre « Reste » qui reste collée sous l'en-tête quand il sort de l'écran), repas libres (texte, photo, code-barres, manuel), édition, copie vers un autre jour, repas triés par moment.
+- Suivi : anneau calorique, marge (hors sèche) = cible + dépense − consommé, macros, tracker par jour (en tête de Recettes, avec la barre « Reste » qui reste collée sous l'en-tête quand il sort de l'écran), repas libres (texte, photo, code-barres, manuel), édition, copie vers un autre jour, repas triés par moment.
 - Fibres : barre et explication (ⓘ) dans le tracker et sur l'accueil, « ≥ » quand un aliment du jour n'a pas de valeur ; champ Fibres dans la fiche article, l'ajout d'article et la fenêtre d'ajout de repas ; OpenFoodFacts (`fiber_100g`) et les invites IA les renseignent.
 - Recettes : catalogue v6 (30 recettes, visible si `S.catalogue='liam'`), recettes perso et IA, favoris, cuisson avec remplacement, desserts. Illustration SVG générée pour chaque recette sans photo (`illustrationRecette`, `_composition`).
 - Inventaire : catégories, DLC, unités, diagnostic, fusion de doublons. Courses : liste par rayon, scanner, complétion auto.
 - Dépense : pas (seuil `pasBase()` = `S.pasBase`, fixé à l'inscription ; 9679 pour l'ancien profil `liam`, repris à la migration), activités, séances du programme de musculation (`PROGRAMME_SEANCES`, sans cardio), estimation IA avec repli MET.
-- Bilan : coach, poids et moyenne mobile, TDEE estimé, bouton « Appliquer » la cible conseillée (TDEE − 550 ≈ −0,5 kg/semaine, baisse seulement, étapes de 300 kcal au plus, protéines et lipides gardés), calendrier du mois (`renderCalendrier`, `_etatJour` : vert ±10 % de cible + activité, orange au-dessus, bleu en dessous, pointillés sous 50 %), mensurations (`S.mesures`, en cm) et photos de progression (vignettes chargées à l'ouverture du Bilan, photos pleines seulement pour comparer, pas de copie locale : réseau requis).
+- Bilan : bilan de la semaine précédente le lundi et le mardi (`renderBilanSemaine`, masquable, `S.bilanVu`), coach (tuile « Déficit/j » estimé par le TDEE, sinon « Reste » ; fibres), poids et moyenne mobile, TDEE estimé, bouton « Appliquer » la cible conseillée (TDEE − 550 ≈ −0,5 kg/semaine, baisse seulement, étapes de 300 kcal au plus, protéines et lipides gardés), calendrier du mois (`renderCalendrier`, `_etatJour` : vert ±10 % de cible + activité, orange au-dessus, bleu en dessous, pointillés sous 50 %), mensurations (`S.mesures`, en cm) et photos de progression (vignettes chargées à l'ouverture du Bilan, photos pleines seulement pour comparer, pas de copie locale : réseau requis).
 - Comptes : inscription guidée (prénom, emoji, objectifs Mifflin-St Jeor, régime, matériel), modification du profil, de l'identifiant, de l'e-mail et du mot de passe, déconnexion.
 - Technique : sauvegardes auto quotidiennes (`BACKUP_KEEP=14`), export/import `.json` (format 2), filet avant écrasement.
 
