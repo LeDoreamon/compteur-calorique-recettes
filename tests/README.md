@@ -76,6 +76,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t60.js` | Fibres : table par familles, articles, recettes, repas, barre et explication, saisie (fiche, ajout, IA, OpenFoodFacts) |
 | `t61.js` | Coach : trois objectifs (sèche, maintien, prise), moyennes sur journées complètes, surplus hebdomadaire, conseils TDEE par objectif |
 | `t62.js` | Activité selon l’objectif (cible du jour), seuil unique des protéines (95 %), tuile Déficit/Reste, fibres dans le coach, bilan de la semaine |
+| `t63.js` | Carte « Ta journée » de l’accueil : message selon le moment (cap, point d’étape, bilan), chiffres, activité |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
