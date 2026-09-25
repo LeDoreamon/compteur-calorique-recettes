@@ -44,19 +44,21 @@ console.log('\n=== XIVB. Gingembre et ail en poudre ===');
 const epices=()=>({dayMeals:{},inv:{frigo:[],congelateur:[],placards:[],epices:[
   {id:'gi',name:'Gingembre',qty:null,unit:'',mac100:{kcal:18,prot:0.9,gluc:4.2,lip:0.2}},
   {id:'ai',name:'Ail en poudre',qty:null,unit:'',mac100:{kcal:34,prot:2.6,gluc:7.6,lip:0.2}},
-  {id:'po',name:'Poivre',qty:null,unit:'',mac100:{kcal:6,prot:1.6,gluc:1.6,lip:0.4}}]}});
+  {id:'po',name:'Poivre',qty:null,unit:'',mac100:{kcal:6,prot:1.6,gluc:1.6,lip:0.4}},
+  {id:'pa',name:'Paprika',qty:null,unit:'',mac100:{kcal:300,prot:14,gluc:20,lip:13}},
+  {id:'se',name:'Sel Herbamare',qty:null,unit:'g',mac100:{kcal:18,prot:0.9,gluc:2.5,lip:0.5}}]}});
 t('*** valeurs du frais remplacees par celles de la poudre ***',()=>{
   X('_etatCorrige=false;');sb._applyState(epices());
   eq(X("findItem('gi').mac100.kcal"),335);eq(X("findItem('gi').mac100.fib"),14);eq(X("findItem('gi').macManual.gluc"),58);
   eq(X("findItem('ai').mac100.kcal"),331);eq(X("findItem('ai').mac100.fib"),9);eq(X("findItem('ai').macSource"),'manual');
-  eq(X("findItem('po').mac100.kcal"),6,'autre epice non touchee');eq(X('_etatCorrige'),true);
+  eq(X("findItem('po').mac100.kcal"),251,'poivre corrige');eq(X("findItem('pa').mac100.kcal"),300,'paprika deja correct garde');eq(X("findItem('se').mac100.kcal"),18,'epice hors table non touchee');eq(X('_etatCorrige'),true);
 });
 t('une valeur deja corrigee a la main est gardee',()=>{
   const e=epices();e.inv.epices[0].mac100={kcal:300,prot:8,gluc:60,lip:4};sb._applyState(e);eq(X("findItem('gi').mac100.kcal"),300);
 });
-t('une seule fois (drapeau epicesFix1 enregistre)',()=>{
-  const e=epices();e.epicesFix1=true;sb._applyState(e);eq(X("findItem('gi').mac100.kcal"),18);
-  const i=src.indexOf('async function _saveStateNow');if(src.slice(i,i+6000).indexOf('epicesFix1:S.epicesFix1')<0)throw new Error('drapeau absent');
+t('une seule fois (drapeau epicesFix2 enregistre)',()=>{
+  const e=epices();e.epicesFix2=true;sb._applyState(e);eq(X("findItem('gi').mac100.kcal"),18);
+  const i=src.indexOf('async function _saveStateNow');if(src.slice(i,i+6000).indexOf('epicesFix2:S.epicesFix2')<0)throw new Error('drapeau absent');
 });
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();
