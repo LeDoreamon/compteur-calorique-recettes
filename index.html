@@ -4470,6 +4470,68 @@ function protStreak(){
   }
   return {cur:cur,best:best};
 }
+// ─── 📅 Calendrier du mois (Bilan) ─────────────────────────────────────────
+// Une case par jour, coloree selon l'ecart a la cible du jour (cible + activite,
+// comme la marge du tracker). Sous TDEE_SEUIL_JOUR de la cible, la journee est
+// jugee incomplete (meme regle que l'estimation du TDEE) : pas de couleur.
+var _calMois=null,_calSel=null;
+function _etatJour(d){
+  var repas=(S.dayMeals&&S.dayMeals[d])||[];
+  if(!repas.length)return {etat:'vide'};
+  var m=getDayMacros(d),b=null;try{b=getBurn(d);}catch(e){}
+  var dep=(b&&b.total)||0,cible=TARGETS.kcal+dep;
+  var res={kcal:m.kcal,prot:m.prot,dep:dep,cible:cible,protOk:m.prot>=TARGETS.prot};
+  if(m.kcal<TARGETS.kcal*TDEE_SEUIL_JOUR)res.etat='partiel';
+  else if(m.kcal>cible*1.1)res.etat='dessus';
+  else if(m.kcal<cible*0.9)res.etat='dessous';
+  else res.etat='cible';
+  return res;
+}
+var _CAL_FOND={cible:'rgba(111,191,115,.28)',dessus:'rgba(233,161,59,.30)',dessous:'rgba(95,168,201,.24)'};
+function renderCalendrier(){
+  var auj=S.today;
+  if(!_calMois)_calMois=auj.slice(0,7);
+  var an=+_calMois.slice(0,4),mo=+_calMois.slice(5,7);
+  var nbJ=new Date(an,mo,0).getDate();
+  var decal=(new Date(an,mo-1,1).getDay()+6)%7;            // lundi = 0
+  var titre=new Date(an,mo-1,1).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  var cases='',stats={saisis:0,cible:0,prot:0};
+  for(var i=0;i<decal;i++)cases+='<div></div>';
+  for(var j=1;j<=nbJ;j++){
+    var d=_calMois+'-'+(j<10?'0':'')+j,e=_etatJour(d),futur=d>auj;
+    if(e.etat!=='vide'&&e.etat!=='partiel'){stats.saisis++;if(e.etat==='cible')stats.cible++;}
+    if(e.protOk&&e.etat!=='partiel')stats.prot++;
+    var st='position:relative;aspect-ratio:1;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;';
+    st+=_CAL_FOND[e.etat]?'background:'+_CAL_FOND[e.etat]+';color:var(--text);':'background:var(--bg3);color:'+(futur?'var(--border)':'var(--text3)')+';';
+    if(e.etat==='partiel')st+='border:1px dashed rgba(246,237,227,.25);';
+    if(d===auj)st+='box-shadow:inset 0 0 0 1.5px var(--gold);font-weight:700;';
+    if(d===_calSel)st+='outline:2px solid var(--text2);outline-offset:1px;';
+    cases+='<div data-action="cal-jour" data-val="'+d+'" style="'+st+'">'+j
+      +(e.protOk&&e.etat!=='partiel'?'<span style="position:absolute;bottom:4px;left:50%;width:4px;height:4px;margin-left:-2px;border-radius:50%;background:var(--green);"></span>':'')+'</div>';
+  }
+  var nav=function(sens,en){return '<button data-action="cal-mois" data-val="'+sens+'" '+(en?'':'data-disabled="true" ')+'aria-label="'+(sens<0?'Mois précédent':'Mois suivant')+'" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:32px;color:'+(en?'var(--text2)':'var(--border)')+';font-size:15px;cursor:'+(en?'pointer':'default')+';">'+(sens<0?'\u2190':'\u2192')+'</button>';};
+  var html='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'
+      +'<div style="flex:1;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">\ud83d\udcc5 '+titre+'</div>'
+      +nav(-1,true)+nav(1,_calMois<auj.slice(0,7))+'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;">'
+      +['L','M','M','J','V','S','D'].map(function(x){return '<div style="text-align:center;font-size:11px;color:var(--text3);">'+x+'</div>';}).join('')+'</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;">'+cases+'</div>';
+  if(_calSel&&_calSel.slice(0,7)===_calMois){
+    var e2=_etatJour(_calSel),lib=new Date(_calSel+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+    var det=e2.etat==='vide'?'Aucun repas enregistré.'
+      :(Math.round(e2.kcal)+' kcal pour '+Math.round(e2.cible)+' visées'+(e2.dep?' (dont '+Math.round(e2.dep)+' d\u2019activité)':'')+' \u00b7 '+Math.round(e2.prot)+' g de protéines'+(e2.etat==='partiel'?' \u00b7 journée incomplète':''));
+    var dansTracker=_calSel>=shiftDate(auj,-6)&&_calSel<=shiftDate(auj,1);
+    html+='<div style="margin-top:10px;padding:9px 11px;background:var(--bg3);border-radius:9px;font-size:12px;color:var(--text2);line-height:1.5;">'
+      +'<strong style="color:var(--text);">'+lib.charAt(0).toUpperCase()+lib.slice(1)+'</strong><br>'+det
+      +(dansTracker?'<br><button data-action="cal-tracker" data-val="'+_calSel+'" style="margin-top:6px;background:none;border:none;padding:0;color:var(--gold);font-size:12px;cursor:pointer;text-decoration:underline;">Voir dans le tracker</button>':'')+'</div>';
+  }
+  html+='<div style="font-size:11px;color:var(--text3);margin-top:10px;line-height:1.6;">'
+    +(stats.saisis?'<strong style="color:var(--text2);">'+stats.cible+' jour'+(stats.cible>1?'s':'')+' sur '+stats.saisis+'</strong> dans la cible \u00b7 protéines atteintes '+stats.prot+' fois<br>':'')
+    +'<span style="color:var(--green);">\u25a0</span> dans la cible (±10 %, activité comprise) \u00b7 <span style="color:var(--orange);">\u25a0</span> au-dessus \u00b7 <span style="color:var(--blue);">\u25a0</span> en dessous \u00b7 pointillés : journée incomplète \u00b7 <span style="color:var(--green);">\u25cf</span> protéines atteintes</div>'
+    +'</div>';
+  return html;
+}
 function _kcalColor(v){var t=TARGETS.kcal;if(v>t*1.1)return 'var(--orange)';if(v<t*0.9)return 'rgba(140,151,171,.55)';return 'var(--green)';}
 function _protColor(v){return v>=TARGETS.prot?'var(--green)':'rgba(140,151,171,.55)';}
 function _mtChart(hist,key,target,unit,colorFn){
@@ -5482,7 +5544,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h52</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h54</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -5490,7 +5552,7 @@ function render(){
     <div id="tabpane">
     ${S.mainTab==='accueil'?renderAccueil():''}
     ${S.mainTab==='courses'?renderCoursesHTML():''}
-    ${S.mainTab==='weight'?renderCockpit()+renderMacroTrend()+renderGoalBlock()+renderWeightHTML()+renderDataExport():''}
+    ${S.mainTab==='weight'?renderCockpit()+renderMacroTrend()+renderCalendrier()+renderGoalBlock()+renderWeightHTML()+renderDataExport():''}
     ${S.mainTab==='recipes'?`
       ${!getApiKey()?`<div style="background:rgba(233,161,59,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:var(--bg);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
@@ -5529,6 +5591,10 @@ function _onActionClick(e){
   const{action,val}=el.dataset;
   if(action==='main-tab')S.mainTab=val;
   else if(action==='menu-ajout'){ouvrirMenuAjout();return;}
+  else if(action==='cal-mois'){var _cm=(_calMois||S.today.slice(0,7)).split('-'),_cd=new Date(+_cm[0],+_cm[1]-1+parseInt(val,10),1);
+    _calMois=_cd.getFullYear()+'-'+String(_cd.getMonth()+1).padStart(2,'0');if(_calMois>S.today.slice(0,7))_calMois=S.today.slice(0,7);}
+  else if(action==='cal-jour'){_calSel=(_calSel===val)?null:val;}
+  else if(action==='cal-tracker'){S.displayDate=val;S.mainTab='recipes';render();try{window.scrollTo(0,0);}catch(e){}return;}
   else if(action==='appliquer-cible'){appliquerCibleConseillee(parseInt(el.dataset.val,10));return;}
   else if(action==='remonter-tracker'){var _dp=document.getElementById('daypane');if(_dp)try{window.scrollBy({top:_dp.getBoundingClientRect().top-90,behavior:'smooth'});}catch(e){}return;}
   else if(action==='toggle-fav'){S.favs=S.favs||[];var _fi=S.favs.indexOf(val);if(_fi>=0)S.favs.splice(_fi,1);else S.favs.push(val);saveState();}
