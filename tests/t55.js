@@ -137,6 +137,22 @@ t('le bouton n\'apparait qu\'en seche, quand la perte ralentit',()=>{
   try{if(/appliquer-cible/.test(bloc(0)))throw new Error('present en prise de masse');}finally{sb._enPriseDeMasse=vrai;}
 });
 
+t('*** stagnation : un seul chiffre vise, TDEE − 550, annonce avec la depense ***',()=>{
+  X("TARGETS={kcal:2300,prot:170,gluc:230,lip:70};");
+  const h=X('renderTDEEBlock')({ok:true,tdee:2161,perWeek:0,days:28,avgCal:2154,logs:29});
+  if(/200 kcal/.test(h))throw new Error('ancien chiffre contradictoire');
+  if(h.indexOf('autour de 2161 kcal/j')<0||h.indexOf('vise ~1610 kcal/j, par étapes')<0)throw new Error('texte');
+});
+t('cible deja sous TDEE − 550 : ni hausse proposee, ni chiffre plus haut',()=>{
+  X("TARGETS={kcal:1500,prot:170,gluc:120,lip:60};");
+  [0,0.15,-0.3].forEach(pw=>{
+    const h=X('renderTDEEBlock')({ok:true,tdee:2161,perWeek:pw,days:28,avgCal:2154,logs:29});
+    if(/appliquer-cible/.test(h))throw new Error('bouton de hausse ('+pw+')');
+    if(/vise ~1610/.test(h))throw new Error('vise plus haut que la cible ('+pw+')');
+    if(h.indexOf('1500 kcal')<0)throw new Error('cible non rappelee ('+pw+')');
+  });
+});
+
 console.log('\n=== VD. Barre « Reste » ===');
 t('*** presente dans Recettes seulement ***',()=>{
   prepa();X("TARGETS={kcal:2300,prot:170,gluc:230,lip:70};S.dayMeals[S.today]=["+JSON.stringify(repas('A',1200,80))+"];");
