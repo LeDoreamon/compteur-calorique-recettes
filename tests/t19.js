@@ -55,7 +55,7 @@ t('la marge basse pour la barre home est conservee',()=>{
   if(!/env\(safe-area-inset-bottom/.test(bnav))throw new Error('safe-area basse perdue');
 });
 t('le contenu garde sa reserve sous la barre',()=>{
-  if(!/\.container \{ padding-bottom: calc\(96px \+ env\(safe-area-inset-bottom/.test(src))
+  if(!/\.container \{ padding-bottom: calc\((96|150)px \+ env\(safe-area-inset-bottom/.test(src))
     throw new Error('reserve du container perdue');
 });
 

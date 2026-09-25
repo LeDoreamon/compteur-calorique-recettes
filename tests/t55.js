@@ -14,16 +14,32 @@ function prepa(){
 }
 
 console.log('\n=== VA. Bouton + et volet d\'ajout ===');
-t('*** le + est au centre, entre Recettes et Inventaire ***',()=>{
+t('*** le + est un bouton flottant, hors de la barre du bas ***',()=>{
   X('_bnavPose=false;');X('renderBnav()');
   const h=docEl('bnav').innerHTML;
-  const iR=h.indexOf('bnav-b-recipes'),iP=h.indexOf('bnav-plus'),iI=h.indexOf('bnav-b-inventory');
-  if(!(iR<iP&&iP<iI))throw new Error('ordre : '+[iR,iP,iI]);
-  if(!/data-action="menu-ajout"/.test(h))throw new Error('action absente');
+  if(/bnav-plus|menu-ajout/.test(h))throw new Error('encore dans la barre');
+  eq((h.match(/class="bnav-b/g)||[]).length,5,'cinq onglets');
+  const src=require('fs').readFileSync('index.html','utf8');
+  if(!/<button id="fab-ajout" onclick="ouvrirMenuAjout\(\)"/.test(src))throw new Error('bouton flottant absent');
+  if(!/#fab-ajout \{ position: fixed;[^}]*right: calc\(16px \+ env\(safe-area-inset-right/.test(src))throw new Error('pas en bas a droite');
+  if(!/<svg viewBox="0 0 24 24"[^>]*><path d="M12 5v14M5 12h14"/.test(src))throw new Error('+ non dessine en SVG');
 });
-t('le + n\'est pas un onglet : il ne prend jamais la marque active',()=>{
-  X("S.mainTab='accueil';");X('renderBnav()');
-  if(/bnav-plus[^"]*on/.test(docEl('bnav').innerHTML))throw new Error('marque sur le +');
+t('le contenu garde de la place sous le bouton flottant',()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  if(!/\.container \{ padding-bottom: calc\(150px/.test(src))throw new Error('marge basse');
+});
+t('*** Accueil -> recette : la page defile jusqu\'a la fiche ***',()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  const i=src.indexOf("else if(action==='go-recipe')");
+  if(!/_allerVersRecette\(el\.dataset\.val\)/.test(src.slice(i,i+400)))throw new Error('pas de defilement');
+  const f=src.slice(src.indexOf('function _allerVersRecette'),src.indexOf('function _animateTabs'));
+  if(!/closest\('\.rcard'\)/.test(f)||!/apphead/.test(f)||!/scrollTo/.test(f))throw new Error('calcul incomplet');
+});
+t('barre Reste cachee = retiree du rendu, sans flou d\'arriere-plan',()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  const c=src.slice(src.indexOf('#barre-reste {'),src.indexOf('#barre-reste.vis'));
+  if(/backdrop-filter/.test(c))throw new Error('flou present');
+  if(!/#barre-reste:not\(\.vis\) \{ display: none; \}/.test(src))throw new Error('pas retiree');
 });
 t('le volet propose les six parcours',()=>{
   prepa();X('ouvrirMenuAjout()');
