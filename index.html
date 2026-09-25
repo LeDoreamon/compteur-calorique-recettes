@@ -3048,9 +3048,11 @@ function getMissingFor2(r){return(r.used||[]).filter(({id,qty,n})=>{const it=res
 async function analyzeCustomDessert(rid,text){
   S.customDesserts[rid]={loading:true};render();
   try{
-    const resp=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,system:'Tu es nutritionniste. Réponds UNIQUEMENT avec un JSON valide (sans markdown): {"name":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}. Si non comestible: {"error":"non comestible"}. name = nom court décrivant les aliments (ex. « Omelette jambon fromage »), JAMAIS « Repas » ni un nom générique.',messages:[{role:'user',content:text}]})});
-    const data=await resp.json();const raw=data.content.map(i=>i.text||'').join('');const clean=raw.replace(/```json|```/g,'').trim();const p=JSON.parse(clean);
-    S.customDesserts[rid]=p.error?{error:p.error}:{name:p.name||text,kcal:Math.round(p.kcal)||0,prot:Math.round(p.prot)||0,gluc:Math.round(p.gluc)||0,lip:Math.round(p.lip)||0};
+    // Passait par l'API Anthropic sans cle : toujours en erreur. Groq, comme le reste de l'app.
+    const data=await callAI([{role:'user',content:text}],500,'Tu es nutritionniste. Réponds UNIQUEMENT avec un JSON valide (sans markdown): {"name":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer}. Si non comestible: {"error":"non comestible"}. name = nom court décrivant les aliments (ex. « Omelette jambon fromage »), JAMAIS « Repas » ni un nom générique.');
+    if(data.empty)throw new Error('vide');
+    const p=extractJSON(data.content.map(i=>i.text||'').join(''));   /* neutralise la reponse */
+    S.customDesserts[rid]=p.error?{error:p.error}:{name:p.name||_neutre(text),kcal:Math.round(p.kcal)||0,prot:Math.round(p.prot)||0,gluc:Math.round(p.gluc)||0,lip:Math.round(p.lip)||0};
   }catch(e){S.customDesserts[rid]={error:e.message==='NO_KEY'?'Configure ta clé API (⚙)':'Erreur — réessaie'};}
   render();
 }
@@ -5480,7 +5482,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h42</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 02h52</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>

@@ -69,6 +69,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t53.js` | Confirmation avant suppression d’un repas, service worker (délai de 6 s, erreurs serveur, hors ligne) |
 | `t54.js` | Fenêtres de dialogue maison (file d’attente, texte non interprété, Échap), plus de fenêtres système, lisibilité (tailles, contraste) |
 | `t55.js` | Bouton + et volet d’ajout, repas habituels, cible conseillée par étapes de 300 kcal, barre « Reste » de Recettes |
+| `t56.js` | Dessert « autre » : analyse par Groq (plus d’appel Anthropic), réponse neutralisée |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
