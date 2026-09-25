@@ -55,12 +55,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t59.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1139 tests au 25/09/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t60.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1154 tests au 25/09/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t59` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t60` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -95,13 +95,15 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 9. Synchronisation : révision (`state.rev`) et volume (`state.vol`) protègent contre l'écrasement entre appareils (`_saveStateNow`, `_onSaveConflict`, `_checkFresherOnResume`). Les `saveState()` sont mis en file.
 10. Fenêtres : ne jamais utiliser `alert`, `confirm` ou `prompt` (boîte système grise sur iPhone). Utiliser `_alerte(msg)` et `_confirmer(msg,{ok,annuler,danger})`, qui renvoient une promesse : `.then(function(ok){…})` dans une fonction synchrone, `await` dans une fonction `async`. Le premier paragraphe du message (avant une ligne vide) sert de titre. Dans les tests, `sb.js` les fait répondre tout de suite via `sb.confirm` / `sb.alert` (`t54.js` vérifie qu'il ne reste aucune fenêtre système).
 11. Tailles de texte : 11 px minimum ; 10 px seulement pour les libellés en majuscules. `--text3` doit garder un contraste d'au moins 4,5:1 sur `--bg`, `--bg2` et `--bg3`. `t54.js` le vérifie.
-12. Réseau du bac à sable cloud : Firebase, Groq et `github.io` sont bloqués par le proxy (vérifié le 25/09/2026). On ne peut donc pas tester en direct : simuler les réponses. `raw.githubusercontent.com` et `git clone` fonctionnent.
+12. Fibres : champ `fib` facultatif (g) dans `mac100`, `macPiece`, les lignes `ings` et `macros` d'un repas. Absent = inconnu, jamais 0 par défaut. Repli : table `FIBRES_PAR_NOM` (familles, premier motif gagnant). Calcul d'un repas par `_fibRepas`, d'une journée par `getDayFibres` ; `getDayMacros` ne les compte pas. Repère fixe `FIBRES_CIBLE=30` g, hors de `TARGETS`.
+13. Réseau du bac à sable cloud : Firebase, Groq et `github.io` sont bloqués par le proxy (vérifié le 25/09/2026). On ne peut donc pas tester en direct : simuler les réponses. `raw.githubusercontent.com` et `git clone` fonctionnent.
 
 ## 7. Ce que l'app sait faire
 
 - Accueil : objectif du jour, prochain repas, recettes qui rentrent dans le reste, pas et activités.
 - Ajout : bouton + au centre de la barre du bas (`ouvrirMenuAjout`) : décrire, photo, code-barres, inventaire, pas et activités, pesée, et « Refaire un repas habituel » (`_repasHabituels` : 30 derniers jours, fréquence puis récence).
 - Suivi : anneau calorique, marge = cible + dépense − consommé, macros, tracker par jour (en tête de Recettes, avec la barre « Reste » qui reste collée sous l'en-tête quand il sort de l'écran), repas libres (texte, photo, code-barres, manuel), édition, copie vers un autre jour, repas triés par moment.
+- Fibres : barre et explication (ⓘ) dans le tracker et sur l'accueil, « ≥ » quand un aliment du jour n'a pas de valeur ; champ Fibres dans la fiche article, l'ajout d'article et la fenêtre d'ajout de repas ; OpenFoodFacts (`fiber_100g`) et les invites IA les renseignent.
 - Recettes : catalogue v6 (30 recettes, visible si `S.catalogue='liam'`), recettes perso et IA, favoris, cuisson avec remplacement, desserts. Illustration SVG générée pour chaque recette sans photo (`illustrationRecette`, `_composition`).
 - Inventaire : catégories, DLC, unités, diagnostic, fusion de doublons. Courses : liste par rayon, scanner, complétion auto.
 - Dépense : pas (seuil `pasBase()` = `S.pasBase`, fixé à l'inscription ; 9679 pour l'ancien profil `liam`, repris à la migration), activités, séances du programme de musculation (`PROGRAMME_SEANCES`, sans cardio), estimation IA avec repli MET.
