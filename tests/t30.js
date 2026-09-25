@@ -78,7 +78,7 @@ t('la couche de composition dediee est conservee',()=>{
   if(!/translateZ\(0\)/.test(src.slice(i,i+700)))throw new Error('translateZ perdu');
 });
 t('la reserve sous la barre est conservee',()=>{
-  if(!/\.container \{ padding-bottom: calc\(96px/.test(src))throw new Error('reserve perdue');
+  if(!/\.container \{ padding-bottom: calc\((96|150)px/.test(src))throw new Error('reserve perdue');
 });
 t('la marge pour la barre home est conservee',()=>{
   const i=src.indexOf('.bnav { position: fixed');

@@ -140,16 +140,19 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .bnav-b.on .bnav-i { transform: translateY(-2px) scale(1.14); }
 .bnav-b:active { transform: none; }
 .bnav-b:active .bnav-i { transform: scale(.9); }
-.container { padding-bottom: calc(96px + env(safe-area-inset-bottom, 12px));
+.container { padding-bottom: calc(150px + env(safe-area-inset-bottom, 12px));   /* place pour le bouton + flottant */
   padding-left: calc(12px + env(safe-area-inset-left, 0px)); padding-right: calc(12px + env(safe-area-inset-right, 0px)); }
 .bnav { padding-left: calc(4px + env(safe-area-inset-left, 0px)); padding-right: calc(4px + env(safe-area-inset-right, 0px)); }
 
 /* ═══ BOUTON + CENTRAL ET VOLET D'AJOUT ════════════════════════════════ */
-.bnav-plus { flex: 0 0 60px; display: flex; align-items: flex-start; justify-content: center; background: none; border: none; padding: 0; }
-.bnav-plus-i { width: 48px; height: 48px; margin-top: -6px; border-radius: 50%; background: var(--gold); color: #1a120b;
-  font-size: 30px; font-weight: 400; line-height: 1; display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 6px 18px rgba(233,161,59,.32), 0 0 0 4px rgba(14,10,7,.92); transition: transform .15s var(--ease); }
-.bnav-plus:active .bnav-i, .bnav-plus:active .bnav-plus-i { transform: scale(.92); }
+/* Bouton flottant, en bas a droite au-dessus de la barre : au centre de la barre,
+   il cassait l'alignement des onglets. Le + est dessine en SVG pour etre centre au pixel. */
+#fab-ajout { position: fixed; z-index: 185; right: calc(16px + env(safe-area-inset-right, 0px));
+  bottom: calc(80px + env(safe-area-inset-bottom, 12px)); width: 54px; height: 54px; border-radius: 50%;
+  border: none; padding: 0; background: var(--gold); color: #1a120b; display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 22px rgba(0,0,0,.45), 0 2px 10px rgba(233,161,59,.3); cursor: pointer; transition: transform .15s var(--ease); }
+#fab-ajout svg { display: block; }
+#fab-ajout:active { transform: scale(.93); }
 .ma-grille { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 .ma-b { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; min-height: 76px;
   padding: 10px 4px; background: var(--bg3); border: 0.5px solid var(--border); border-radius: 12px; color: var(--text);
@@ -161,13 +164,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .ma-habit:active { transform: scale(.99); }
 /* Barre « Reste » : pend sous l'en-tete dans Recettes quand le tracker sort de l'ecran */
 #barre-reste { position: absolute; left: 12px; right: 12px; top: calc(100% + 6px); display: flex; align-items: center; gap: 10px;
-  padding: 8px 12px; background: rgba(34,26,20,.94); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px);
+  padding: 8px 12px; background: rgba(34,26,20,.97);
   border: 0.5px solid rgba(246,237,227,.14); border-radius: 999px; box-shadow: 0 6px 18px rgba(0,0,0,.35);
-  font-size: 12.5px; color: var(--text2); cursor: pointer; opacity: 0; transform: translateY(-6px); pointer-events: none;
-  transition: opacity .2s var(--ease), transform .2s var(--ease); }
-#barre-reste.vis { opacity: 1; transform: none; pointer-events: auto; }
+  font-size: 12.5px; color: var(--text2); cursor: pointer; }
+/* Cachee = retiree du rendu : sur iPhone, un element transparent a flou d'arriere-plan peut rester dessine */
+#barre-reste:not(.vis) { display: none; }
+#barre-reste.vis { animation: dzDlgFond .2s var(--ease); }
 
 /* ═══ EN-TETE COLLANT ══════════════════════════════════════════════════ */
+/* App installee sur iPhone : iOS assombrit le haut de l'ecran sous l'heure ; le
+   contenu de l'en-tete descend un peu pour sortir de ce degrade. */
+@media (display-mode: standalone) { .apphead { padding-top: calc(22px + env(safe-area-inset-top, 0px)) !important; } }
 .apphead { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 12px;
   margin: -14px -12px 12px; padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 12px; background: rgba(14,10,7,.82);
   -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
@@ -502,6 +509,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
   <div id="profil-panneau" style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-top-left-radius:16px;border-top-right-radius:16px;padding:18px 18px calc(24px + env(safe-area-inset-bottom, 0px));width:100%;max-width:480px;max-height:calc(100vh - 16px - env(safe-area-inset-top, 0px));overflow-y:auto;box-sizing:border-box;"></div>
 </div>
 <nav class="bnav" id="bnav"></nav>
+<button id="fab-ajout" onclick="ouvrirMenuAjout()" aria-label="Ajouter" title="Ajouter"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
 <div id="root" class="container"><div style="padding:2rem;text-align:center;color:var(--text3);">Chargement...</div></div>
 <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:300;flex-direction:column;align-items:center;justify-content:center;">
   <div style="position:absolute;top:0;left:0;right:0;padding:calc(16px + env(safe-area-inset-top, 0px)) calc(16px + env(safe-area-inset-right, 0px)) 16px calc(16px + env(safe-area-inset-left, 0px));display:flex;align-items:center;justify-content:space-between;background:linear-gradient(rgba(0,0,0,.85),rgba(0,0,0,.45) 70%,transparent);z-index:3;">
@@ -5388,6 +5396,19 @@ function renderAccueil(){
 
 const _NAVORDER=['accueil','recipes','inventory','courses','weight'];
 let _lastMainTab='',_lastMealTab='',_lastDay='',_lastRingKey='';
+// Amene la fiche d'une recette a l'ecran, juste sous l'en-tete collant
+// (l'onglet s'ouvrait en haut de page, la fiche restait plus bas).
+function _allerVersRecette(id){
+  var aller=function(){
+    var tete=null;
+    document.querySelectorAll('[data-action="toggle-recipe"]').forEach(function(x){if(!tete&&x.dataset&&x.dataset.val===id)tete=x;});
+    var carte=tete&&tete.closest?tete.closest('.rcard'):null;if(!carte)return;
+    var hd=document.querySelector('.apphead'),dec=(hd?hd.getBoundingClientRect().height:0)+58;   /* + la barre « Reste », qui apparait une fois le tracker passe */
+    var y=carte.getBoundingClientRect().top+(window.scrollY||0)-dec;
+    try{window.scrollTo({top:Math.max(0,y),behavior:'smooth'});}catch(e){try{window.scrollTo(0,Math.max(0,y));}catch(e2){}}
+  };
+  try{requestAnimationFrame(function(){setTimeout(aller,40);});}catch(e){aller();}
+}
 function _animateTabs(){
   var cls='',pane=null;
   if(_lastMainTab&&_lastMainTab!==S.mainTab){
@@ -5435,8 +5456,6 @@ function renderBnav(){
       return '<button id="bnav-b-'+t[0]+'" data-action="main-tab" data-val="'+t[0]+'" class="bnav-b'
         +(S.mainTab===t[0]?' on':'')+'"><span class="bnav-i">'+t[1]+'</span><span>'+t[2]+'</span></button>';
     });
-    // + au centre, entre Recettes et Inventaire : ajouter un repas, une activite, une pesee
-    _bt.splice(2,0,'<button id="bnav-plus" data-action="menu-ajout" class="bnav-plus" aria-label="Ajouter" title="Ajouter"><span class="bnav-plus-i">+</span></button>');
     n.innerHTML=_bt.join('');
     _bnavPose=true;
     return;
@@ -5874,7 +5893,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 03h10</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_enPriseDeMasse()?'Prise de masse':'Sèche'} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 03h15</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -5935,6 +5954,7 @@ function _onActionClick(e){
     if(_r&&_r.slots&&_r.slots.length)S.mealTab=_r.slots[0];
     S.openRec=el.dataset.val;   /* deplie la recette a l'arrivee */
     render();
+    _allerVersRecette(el.dataset.val);
   }
   else if(action==='open-burn'){openBurnLog(S.today);}
   else if(action==='rec-tri'){setRecTri(el.dataset.val);}

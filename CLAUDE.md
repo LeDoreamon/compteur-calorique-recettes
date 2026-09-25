@@ -56,7 +56,7 @@ bash tests/run.sh      # depuis la racine du depot
 ```
 
 - Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t60.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1154 tests au 25/09/2026).
+- Attendu : 0 échec (1156 tests au 25/09/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
@@ -101,7 +101,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 ## 7. Ce que l'app sait faire
 
 - Accueil : objectif du jour, prochain repas, recettes qui rentrent dans le reste, pas et activités.
-- Ajout : bouton + au centre de la barre du bas (`ouvrirMenuAjout`) : décrire, photo, code-barres, inventaire, pas et activités, pesée, et « Refaire un repas habituel » (`_repasHabituels` : 30 derniers jours, fréquence puis récence).
+- Ajout : bouton + flottant en bas à droite, au-dessus de la barre (`#fab-ajout` → `ouvrirMenuAjout`) : décrire, photo, code-barres, inventaire, pas et activités, pesée, et « Refaire un repas habituel » (`_repasHabituels` : 30 derniers jours, fréquence puis récence).
 - Suivi : anneau calorique, marge = cible + dépense − consommé, macros, tracker par jour (en tête de Recettes, avec la barre « Reste » qui reste collée sous l'en-tête quand il sort de l'écran), repas libres (texte, photo, code-barres, manuel), édition, copie vers un autre jour, repas triés par moment.
 - Fibres : barre et explication (ⓘ) dans le tracker et sur l'accueil, « ≥ » quand un aliment du jour n'a pas de valeur ; champ Fibres dans la fiche article, l'ajout d'article et la fenêtre d'ajout de repas ; OpenFoodFacts (`fiber_100g`) et les invites IA les renseignent.
 - Recettes : catalogue v6 (30 recettes, visible si `S.catalogue='liam'`), recettes perso et IA, favoris, cuisson avec remplacement, desserts. Illustration SVG générée pour chaque recette sans photo (`illustrationRecette`, `_composition`).
@@ -115,3 +115,4 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 
 - Code de rattachement et mode « profil hérité » devenus inutiles avec les nouvelles règles : à retirer proprement si je le demande.
 - Tester sur iPhone la lisibilité des illustrations SVG à 52 px.
+- Fondu en haut de l'écran sur iPhone (25/09/2026) : en-tête descendu en mode app installée et barre « Reste » sans flou ; à confirmer sur l'appareil.
