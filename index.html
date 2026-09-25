@@ -5426,53 +5426,10 @@ function renderAccueil(){
     +'</div>';
   h+='<div style="margin-top:11px;padding-top:10px;border-top:0.5px solid var(--border);display:flex;justify-content:flex-end;">'
     +'<span id="sync-badge-accueil">'+_syncBadge()+'</span></div>';
-  if(dep>0){
-    var _acts=(b&&b.activities)||[];
-    var _kcalPas=(b&&b.steps>0&&typeof burnStepKcal==='function')?Math.round(burnStepKcal(b.steps)):0;
-    h+='<div style="margin-top:9px;padding-top:9px;border-top:0.5px solid var(--border);">'
-      +'<div style="display:flex;justify-content:space-between;align-items:baseline;">'
-        +'<span style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Activité du jour</span>'
-        +'<span style="font-size:13px;font-weight:600;color:var(--orange);">'+dep+' kcal</span></div>';
-    if(b&&b.steps>0){
-      var _base=(typeof pasBase==='function')?pasBase():0;
-      var _sup=Math.max(0,b.steps-_base);
-      h+='<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-top:6px;">'
-        +'<span>\ud83d\udc5f '+b.steps.toLocaleString('fr-FR')+' pas</span>'
-        +'<span style="color:var(--text3);">'+_kcalPas+' kcal</span></div>';
-      if(_base>0)h+='<div style="font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4;">'
-        +(_sup>0?('dont '+_sup.toLocaleString('fr-FR')+' au-dessus de ta routine de '+_base.toLocaleString('fr-FR'))
-                :('sous ta routine de '+_base.toLocaleString('fr-FR')+', déjà comptée dans ta cible'))
-        +'</div>';
-    }
-    _acts.forEach(function(a){
-      h+='<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-top:4px;">'
-        +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">\ud83c\udfcb '+((a&&(a.name||a.n))||'Activité')+'</span>'
-        +'<span style="color:var(--text3);flex:0 0 auto;">'+Math.round((a&&a.kcal)||0)+' kcal</span></div>';
-    });
-    if(_objectif()==='perte'){
-      h+='<div style="margin-top:8px;font-size:11.5px;color:var(--text3);">Ta cible ne bouge pas : ces '+dep+' kcal <span style="color:var(--green);">creusent ton déficit du jour</span>.</div>';
-    }else{
-      var _marge=Math.round(_cibleDuJour(jour)-r.pris.kcal);
-      h+='<div style="margin-top:8px;font-size:11.5px;color:var(--text3);">Activité à compenser : il te reste '
-        +'<span style="color:var('+(_marge>=0?'--green':'--red')+');">'+(_marge>=0?(_marge+' kcal'):('\u2212'+Math.abs(_marge)+' kcal'))+'</span>.</div>';
-    }
-    h+='</div>';
-  }
   h+='</div>';
 
-  // ── Prochain repas ──
-  if(sug.moment){
-    h+='<div class="rcard" style="padding:13px 15px;margin-bottom:12px;border-left:3px solid '+sug.moment.couleur+';">'
-      +'<div style="font-size:11px;color:'+sug.moment.couleur+';text-transform:uppercase;letter-spacing:.07em;">Prochain repas</div>'
-      +'<div style="font-size:15px;font-weight:600;color:var(--text);margin-top:3px;">'+sug.moment.nom+'</div>'
-      +'<div style="font-size:11.5px;color:var(--text3);margin-top:4px;line-height:1.45;">'
-      +(r.kcal>0?('Il te reste <span style="color:var(--gold);">'+r.kcal+' kcal</span> et <span style="color:var(--green);">'+r.prot+' g</span> de protéines.')
-               :'Ta cible calorique est atteinte.')
-      +'</div></div>';
-  }else{
-    h+='<div class="rcard" style="padding:13px 15px;margin-bottom:12px;">'
-      +'<div style="font-size:13px;color:var(--text2);">Les quatre moments de la journée sont enregistrés.</div></div>';
-  }
+  // ── Ta journee : le point du coach sur aujourd'hui ──
+  h+=renderCoachJour(jour,r,sug,b);
 
   // ── Ce qui rentre encore ──
   if(sug.recettes&&sug.recettes.length){
@@ -5492,11 +5449,105 @@ function renderAccueil(){
     }).join('');
   }
 
-  // ── Activité du jour ──
-  h+='<button data-action="open-burn" style="width:100%;padding:12px;margin-top:4px;background:rgba(233,161,59,.1);'
-    +'border:0.5px solid rgba(233,161,59,.35);border-radius:11px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">'
-    +'\ud83d\udc5f '+(dep>0?'Modifier mon activité du jour':'Ajouter mes pas et activités')+'</button>';
   return h;
+}
+// Jours consecutifs dans la cible, en remontant depuis hier
+function _serieCible(){
+  var n=0;for(var i=1;i<=60;i++){var d=shiftDate(S.today,-i);if(_etatJour(d).etat==='cible')n++;else break;}
+  return n;
+}
+// Message du coach pour aujourd'hui, selon le moment de la journee. Meme ton que
+// le reste du coach : un cap le matin, un point d'etape l'apres-midi, un bilan le
+// soir, jamais de reproche.
+function coachJour(jour){
+  var m=getDayMacros(jour),cible=_cibleDuJour(jour),T=TARGETS,obj=_objectif();
+  var phase=_phaseJournee(jour),rienMange=!(m.kcal>0);
+  var pk=cible>0?Math.round(m.kcal/cible*100):0,pp=T.prot>0?Math.round(m.prot/T.prot*100):0;
+  var resteK=Math.round(cible-m.kcal),resteP=Math.max(0,Math.round(T.prot-m.prot));
+  var serie=_serieCible();
+  var o={titre:'',corps:'',ton:'ok'};
+  if(rienMange){
+    o.titre=phase==='debut'?'Nouvelle journée':'Rien de noté pour l\'instant';
+    o.corps=T.prot+' g de protéines à caser aujourd\'hui'+(phase==='debut'?' : commence fort au petit-déj, c\'est le plus simple.':'. Note ce que tu as déjà mangé pour que le suivi reste juste.');
+    if(serie>=2)o.corps+=' Tu restes sur '+serie+' jours d\'affilée dans ta cible.';
+    o.ton=phase==='debut'?'ok':'mixte';
+    return o;
+  }
+  if(phase==='debut'||phase==='milieu'){
+    o.titre=phase==='debut'?'Bien lancé':'Point d\'étape';
+    o.corps='Tu as couvert '+pp+' % de tes protéines et '+pk+' % de tes calories.';
+    if(resteK<=0){o.corps+=' Ta cible calorique est déjà atteinte : si la faim revient, reste sur du léger et protéiné.';o.ton='mixte';}
+    else if(pp<pk-15)o.corps+=' Les protéines sont un peu en retard : mise sur un repas qui en apporte beaucoup ensuite.';
+    else o.corps+=' Rythme équilibré, continue comme ça.';
+    return o;
+  }
+  // Soir : bilan
+  var e=_etatJour(jour),protOk=_protOk(m.prot);
+  if(e.etat==='cible'){
+    o.titre=protOk?'Journée réussie':'Calories tenues';
+    o.corps='Dans ta cible'+(protOk?' avec tes protéines':'')+'.'+(serie>=1?' Ça fait '+(serie+1)+' jours d\'affilée.':' Bonne base pour demain.');
+    if(!protOk)o.corps+=' Il manque '+resteP+' g de protéines : un laitage ou un shaker suffit.';
+  }else if(e.etat==='dessus'){
+    o.titre='Un peu au-dessus aujourd\'hui';o.ton='mixte';
+    o.corps='+'+Math.round(m.kcal-cible)+' kcal. Ça ne casse rien sur la semaine : reprends simplement ton rythme demain.'+(protOk?' Tes protéines sont au rendez-vous.':'');
+  }else if(e.etat==='dessous'){
+    o.titre=obj==='perte'?'Journée légère':'Journée un peu courte';o.ton='mixte';
+    o.corps=(obj==='perte'?'Tu es '+resteK+' kcal sous ta cible. Si c\'est voulu, pas de souci ; sinon, un en-cas protéiné ce soir.':'Il te manque '+resteK+' kcal pour ta cible : pense à un en-cas.')+(protOk?'':' Et '+resteP+' g de protéines.');
+  }else{
+    o.titre='Journée pas encore complète';o.ton='mixte';
+    o.corps='Il manque sûrement un repas ou deux : note-les pour garder un suivi juste.';
+  }
+  return o;
+}
+function renderCoachJour(jour,r,sug,b){
+  var c=coachJour(jour),m=r.pris,dep=(b&&b.total)||0,obj=_objectif();
+  var col=c.ton==='ok'?'var(--green)':'var(--gold)';
+  var chiffre=function(lbl,val,cl){return '<div style="flex:1;min-width:0;text-align:center;"><div style="font-size:16px;font-weight:600;color:'+(cl||'var(--text)')+';">'+val+'</div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em;">'+lbl+'</div></div>';};
+  var h='<div class="rcard" style="padding:13px 15px;margin-bottom:12px;border-left:3px solid '+col+';">'
+    +'<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">\ud83d\udcac Ta journée</div>'
+    +'<div style="font-size:15px;font-weight:600;color:var(--text);margin-top:3px;">'+c.titre+'</div>'
+    +'<div style="font-size:12.5px;color:var(--text2);margin-top:4px;line-height:1.5;">'+c.corps+'</div>'
+    +'<div style="display:flex;gap:6px;margin-top:11px;padding:9px 4px;background:var(--bg3);border-radius:10px;">'
+      +chiffre('Reste',Math.max(0,r.kcal)+'<span style="font-size:11px;color:var(--text3);font-weight:400;"> kcal</span>','var(--gold)')
+      +chiffre('Protéines',r.prot>0?r.prot+'<span style="font-size:11px;color:var(--text3);font-weight:400;"> g</span>':'\u2713','var(--green)')
+      +chiffre('Activité',dep>0?dep+'<span style="font-size:11px;color:var(--text3);font-weight:400;"> kcal</span>':'\u2014',dep>0?'var(--orange)':'var(--text3)')
+    +'</div>';
+  // Activite : detail (pas au-dessus de la routine, seances) et ce qu'elle devient selon l'objectif
+  if(dep>0){
+    var _acts=(b&&b.activities)||[];
+    var _kcalPas=(b&&b.steps>0&&typeof burnStepKcal==='function')?Math.round(burnStepKcal(b.steps)):0;
+    h+='<div style="margin-top:10px;padding-top:9px;border-top:0.5px solid var(--border);">'
+      +'<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Activité du jour</div>';
+    if(b&&b.steps>0){
+      var _base=(typeof pasBase==='function')?pasBase():0;
+      var _sup=Math.max(0,b.steps-_base);
+      h+='<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-top:6px;">'
+        +'<span>\ud83d\udc5f '+b.steps.toLocaleString('fr-FR')+' pas</span>'
+        +'<span style="color:var(--text3);">'+_kcalPas+' kcal</span></div>';
+      if(_base>0)h+='<div style="font-size:11px;color:var(--text3);margin-top:2px;line-height:1.4;">'
+        +(_sup>0?('dont '+_sup.toLocaleString('fr-FR')+' au-dessus de ta routine de '+_base.toLocaleString('fr-FR'))
+                :('sous ta routine de '+_base.toLocaleString('fr-FR')+', déjà comptée dans ta cible'))
+        +'</div>';
+    }
+    _acts.forEach(function(a){
+      h+='<div style="display:flex;justify-content:space-between;font-size:11.5px;color:var(--text2);margin-top:4px;">'
+        +'<span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">\ud83c\udfcb '+((a&&(a.name||a.n))||'Activité')+'</span>'
+        +'<span style="color:var(--text3);flex:0 0 auto;">'+Math.round((a&&a.kcal)||0)+' kcal</span></div>';
+    });
+    if(obj==='perte'){
+      h+='<div style="margin-top:8px;font-size:11.5px;color:var(--text3);">Ta cible ne bouge pas : ces '+dep+' kcal <span style="color:var(--green);">creusent ton déficit du jour</span>.</div>';
+    }else{
+      var _marge=Math.round(_cibleDuJour(jour)-m.kcal);
+      h+='<div style="margin-top:8px;font-size:11.5px;color:var(--text3);">Activité à compenser : il te reste '
+        +'<span style="color:var('+(_marge>=0?'--green':'--red')+');">'+(_marge>=0?(_marge+' kcal'):('\u2212'+Math.abs(_marge)+' kcal'))+'</span>.</div>';
+    }
+    h+='</div>';
+  }
+  // Prochain repas
+  if(sug&&sug.moment&&r.kcal>0)h+='<div style="font-size:11.5px;color:var(--text3);margin-top:6px;">Prochain repas : <span style="color:'+sug.moment.couleur+';">'+sug.moment.nom+'</span></div>';
+  h+='<button data-action="open-burn" style="width:100%;margin-top:10px;padding:10px;background:rgba(233,161,59,.1);border:0.5px solid rgba(233,161,59,.35);border-radius:10px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">'
+    +'\ud83d\udc5f '+(dep>0?'Modifier mon activité du jour':'Ajouter mes pas et activités')+'</button>';
+  return h+'</div>';
 }
 
 const _NAVORDER=['accueil','recipes','inventory','courses','weight'];
@@ -6014,7 +6065,7 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 11h32</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 11h44</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
