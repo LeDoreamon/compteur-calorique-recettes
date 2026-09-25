@@ -70,6 +70,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t54.js` | Fenêtres de dialogue maison (file d’attente, texte non interprété, Échap), plus de fenêtres système, lisibilité (tailles, contraste) |
 | `t55.js` | Bouton + et volet d’ajout, repas habituels, cible conseillée par étapes de 300 kcal, barre « Reste » de Recettes |
 | `t56.js` | Dessert « autre » : analyse par Groq (plus d’appel Anthropic), réponse neutralisée |
+| `t57.js` | Calendrier du mois : état des journées (cible, dessus, dessous, incomplète), navigation, détail d’un jour |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
