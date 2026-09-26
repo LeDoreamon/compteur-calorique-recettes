@@ -108,6 +108,16 @@ t('*** les epices masquent la quantite ***',()=>{
   G('openAddItem')('frigo');
   eq(docEl('ai-qtyrow').style.display,'grid','la quantite devrait revenir');
 });
+t('*** emballage : la case reste en place, une seule rangee alterne ***',()=>{
+  G('openAddItem')('frigo');
+  const src=require('fs').readFileSync('index.html','utf8');
+  const i=src.indexOf('id="ai-pkg-wrap"'),q=src.indexOf('id="ai-qtyfields"'),k=src.indexOf('id="ai-pkg-fields"');
+  if(!(i>0&&i<q&&q<k))throw new Error('ordre case / rangees');
+  docEl('ai-pkg-on').checked=true;G('toggleAIPkg')();
+  eq(docEl('ai-pkg-fields').style.display,'grid');eq(docEl('ai-qtyfields').style.display,'none');eq(docEl('ai-qtyrow').style.display,'grid','bloc masque a tort');
+  docEl('ai-pkg-on').checked=false;G('toggleAIPkg')();
+  eq(docEl('ai-pkg-fields').style.display,'none');eq(docEl('ai-qtyfields').style.display,'grid');
+});
 t('ouvrir sans categorie retombe sur le frigo',()=>{
   G('openAddItem')();
   eq(docEl('aicat-frigo').style.borderColor,'var(--blue)');
