@@ -55,12 +55,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t66.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1209 tests au 26/09/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t67.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1219 tests au 26/09/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t66` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t67` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -108,6 +108,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 - Fibres : barre et explication (ⓘ) dans le tracker et sur l'accueil, « ≥ » quand un aliment du jour n'a pas de valeur ; champ Fibres dans la fiche article, l'ajout d'article et la fenêtre d'ajout de repas ; OpenFoodFacts (`fiber_100g`) et les invites IA les renseignent.
 - Recettes : catalogue v6 (30 recettes, visible si `S.catalogue='liam'`), recettes perso et IA, favoris, cuisson avec remplacement, desserts. Illustration SVG générée pour chaque recette sans photo (`illustrationRecette`, `_composition`).
 - Inventaire : catégories, DLC, unités, diagnostic, fusion de doublons, articles « À ranger » après les courses (`S.waiting`). Courses : liste par rayon, scanner, complétion auto ; 🧾 = acheté sans passer par l'inventaire ; « Déjà achetés » (`S.shop.graveyard`, ancien « cimetière ») pour racheter en un geste.
+- Plats maison (26/09/2026) : « Préparer un plat » (menu + et carte « 🍳 Plats maison » en tête de l'Inventaire, `ouvrirPreparerPlat` / `creerPlat`). Ingrédients du stock (déduits) ou hors stock (macros à la main ou IA), découpage en parts, poids par part estimé par la somme des ingrédients (on ne pèse pas). L'article porte `plat:{creeLe,parts,poidsEstime,ings}`, `unit:'parts'`, `macPiece` = une part, `pieceG`. Rien n'est compté à la préparation ; on mange via Mon inventaire en parts ou en grammes (`_invPickG`). Jamais aux courses (`_stockBas`), hors diagnostic (`invIssues`), hors listes de catégories ; fini : masqué 3 jours puis retiré par `_nettoyerPlats` (appelé par `saveState`).
 - Dépense : pas (seuil `pasBase()` = `S.pasBase`, fixé à l'inscription ; 9679 pour l'ancien profil `liam`, repris à la migration), activités, séances du programme de musculation (`PROGRAMME_SEANCES`, sans cardio), estimation IA avec repli MET.
 - Bilan : bilan de la semaine précédente le lundi et le mardi (`renderBilanSemaine`, masquable, `S.bilanVu`), coach (tuile « Déficit/jour » estimé par le TDEE, affiché « Dépense réelle estimée », sinon « Reste » ; fibres), poids et moyenne mobile, TDEE estimé, bouton « Appliquer » la cible conseillée (TDEE − 550 ≈ −0,5 kg/semaine, baisse seulement, étapes de 300 kcal au plus, protéines et lipides gardés), calendrier du mois (`renderCalendrier`, `_etatJour` : vert ±10 % de cible + activité, orange au-dessus, bleu en dessous, pointillés sous 50 %), mensurations (`S.mesures`, en cm) et photos de progression (vignettes chargées à l'ouverture du Bilan, photos pleines seulement pour comparer, pas de copie locale : réseau requis).
 - Comptes : inscription guidée (prénom, emoji, objectifs Mifflin-St Jeor, régime, matériel, puis étape facultative de la clé Groq avec mode d'emploi et « Passer cette étape » : `_secCleGroq`, `_cleGroqValide`, `passerCleGroq`), modification du profil, de l'identifiant, de l'e-mail et du mot de passe, déconnexion.
