@@ -175,6 +175,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 /* App installee sur iPhone : iOS assombrit le haut de l'ecran sous l'heure ; le
    contenu de l'en-tete descend un peu pour sortir de ce degrade. */
 @media (display-mode: standalone) { .apphead { padding-top: calc(22px + env(safe-area-inset-top, 0px)) !important; } }
+/* Cle API masquee sans type="password" : sinon le navigateur la prend pour
+   un mot de passe et propose de l'enregistrer */
+.champ-cle { -webkit-text-security: disc; }
 .apphead { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 12px;
   margin: -14px -12px 12px; padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 12px; background: rgba(14,10,7,.82);
   -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
@@ -267,7 +270,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
   <div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:14px;padding:22px;width:100%;max-width:400px;max-height:88vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><div style="font-size:17px;font-weight:600;color:var(--text);">⚙️ Réglages</div><button onclick="closeSettings()" style="background:none;border:none;color:var(--text3);font-size:19px;cursor:pointer;line-height:1;">✕</button></div><div id="set-profile" style="padding:11px 12px;background:var(--bg3);border-radius:10px;margin-bottom:16px;"></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">🧠 Clé API Groq</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.45;">Sert à l'analyse des repas et à la génération de recettes. Gratuite sur <a href="https://console.groq.com" target="_blank" style="color:var(--blue);">console.groq.com</a>.</div>
-    <input type="password" id="api-key-input" placeholder="gsk_..." style="width:100%;padding:10px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
+    <input type="text" id="api-key-input" class="champ-cle" name="groq-api-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore placeholder="gsk_..." style="width:100%;padding:10px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
     <button onclick="saveApiKey()" style="width:100%;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">Enregistrer la clé</button>
     <button onclick="clearApiKey()" style="width:100%;margin-top:8px;padding:9px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;">Supprimer la clé</button>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">💾 Sauvegardes automatiques</div>
@@ -2825,7 +2828,7 @@ function openSettings(){
   if(ex){try{ex.innerHTML=renderDataExport();}catch(e){ex.innerHTML='';}}
   renderBackupList();
 }
-function closeSettings(){document.getElementById('set-overlay').style.display='none';}
+function closeSettings(){document.getElementById('set-overlay').style.display='none';var k=document.getElementById('api-key-input');if(k)k.value='';}   /* la cle ne reste pas dans la page */
 function saveApiKey(){
   const v=document.getElementById('api-key-input').value.trim();
   if(v){localStorage.setItem('anthropic_key',v);closeSettings();render();}
@@ -6105,7 +6108,7 @@ function render(){
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
       <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-25 16h00</span></div></div>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-26 09h30</span></div></div>
       ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
@@ -7669,7 +7672,7 @@ function _secCleGroq(){
     +'<li '+li+'>Dans <strong style="color:var(--text);">API Keys</strong>, touche <strong style="color:var(--text);">Create API Key</strong> et donne-lui un nom, par exemple « Dorayaki ».</li>'
     +'<li '+li+'>Copie la clé (elle commence par <span style="font-family:monospace;color:var(--text);">gsk_</span>) : elle ne s\'affiche qu\'une fois.</li>'
     +'<li>Reviens ici et colle-la ci-dessous.</li></ol>'
-    +_champ('Clé API Groq',_inp('au-groq','password',_ins.groq,'gsk_…','autocomplete="off" autocapitalize="none" spellcheck="false"'))
+    +_champ('Clé API Groq',_inp('au-groq','text',_ins.groq,'gsk_…','class="champ-cle" name="groq-api-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore'))
     +'<div style="font-size:11px;color:var(--text3);line-height:1.45;margin:-4px 0 12px;">Elle reste liée à ton compte et n\'est jamais incluse dans les exports. Tu pourras l\'ajouter ou la changer plus tard dans Réglages \u2699.</div>';
 }
 function passerCleGroq(){if(_auth.occupe)return;_ins.groq='';_auth.err='';return finaliserInscription();}

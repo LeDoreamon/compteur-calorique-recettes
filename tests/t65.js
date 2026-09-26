@@ -52,5 +52,25 @@ await t('champ vide + Créer mon compte = pas de cle, pas d\'erreur',async()=>{
 await t('format de cle',()=>{
   const v=G('_cleGroqValide');eq(v(CLE),true);eq(v('gsk_court'),false);eq(v('gsk_'+'a'.repeat(20)+'<x>'),false);eq(v(''),false);
 });
+console.log('\n=== XVB. La cle n\'est pas prise pour un mot de passe ===');
+await t('*** aucun champ de cle en type password (Reglages et inscription) ***',()=>{
+  const m=src.match(/<input[^>]*id="api-key-input"[^>]*>/);if(!m)throw new Error('champ absent');
+  if(/type="password"/.test(m[0]))throw new Error('Reglages : type password');
+  if(!/class="champ-cle"/.test(m[0])||!/autocomplete="off"/.test(m[0]))throw new Error('Reglages : masquage ou autocomplete');
+  prepa();const h=ecran().match(/<input[^>]*id="au-groq"[^>]*>/)[0];
+  if(/type="password"/.test(h))throw new Error('inscription : type password');
+  if(!/champ-cle/.test(h))throw new Error('inscription : non masque');
+  if(!/\.champ-cle\s*\{\s*-webkit-text-security:\s*disc/.test(src))throw new Error('regle CSS absente');
+});
+await t('*** fermer les Reglages retire la cle de la page ***',()=>{
+  const el={value:''},ov={style:{}};const vrai=sb.document.getElementById;
+  sb.document.getElementById=id=>id==='api-key-input'?el:(id==='set-overlay'?ov:vrai.call(sb.document,id));
+  try{el.value=CLE;G('closeSettings')();eq(el.value,'');eq(ov.style.display,'none');}finally{sb.document.getElementById=vrai;}
+});
+await t('enregistrer la cle lit le champ avant de le vider',()=>{
+  const el={value:' '+CLE+' '},ov={style:{}};const vrai=sb.document.getElementById;
+  sb.document.getElementById=id=>id==='api-key-input'?el:(id==='set-overlay'?ov:vrai.call(sb.document,id));
+  try{delete LS.anthropic_key;G('saveApiKey')();eq(LS.anthropic_key,CLE);eq(el.value,'');}finally{sb.document.getElementById=vrai;}
+});
 console.log('---- '+pass+' ok, '+fail+' KO');
 })();
