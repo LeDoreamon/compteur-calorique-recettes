@@ -56,7 +56,7 @@ bash tests/run.sh      # depuis la racine du depot
 ```
 
 - Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t65.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1204 tests au 25/09/2026).
+- Attendu : 0 échec (1207 tests au 26/09/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
@@ -98,6 +98,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 12. Fibres : champ `fib` facultatif (g) dans `mac100`, `macPiece`, les lignes `ings` et `macros` d'un repas. Absent = inconnu, jamais 0 par défaut. Repli : table `FIBRES_PAR_NOM` (familles, premier motif gagnant). Mon inventaire a reçu ses valeurs article par article une seule fois (`FIBRES_INVENTAIRE`, drapeau `S.fibInv`) : un champ vidé ensuite reste vide. Calcul d'un repas par `_fibRepas`, d'une journée par `getDayFibres` ; `getDayMacros` ne les compte pas. Repère fixe `FIBRES_CIBLE=30` g, hors de `TARGETS`.
 13. Objectif : `_objectif()` renvoie `perte`, `maintien` ou `prise` (profil, sinon poids cible, sinon `perte`) ; `_libObjectif()` donne le libellé (Sèche, Maintien, Prise de masse). Ne pas tester l'objectif par `_enPriseDeMasse()` seul : le maintien n'est pas une sèche. Les moyennes du Bilan portent sur les journées complètes (`_jourComplet` : hors aujourd'hui, au moins 50 % de la cible). Cible du jour : `_cibleDuJour(jour)` ; en sèche l'activité ne s'ajoute pas (elle creuse le déficit), en maintien et en prise elle est à compenser (décision du 25/09/2026). Protéines « atteintes » : `_protOk` (95 % de la cible), partout.
 14. Réseau du bac à sable cloud : Firebase, Groq et `github.io` sont bloqués par le proxy (vérifié le 25/09/2026). On ne peut donc pas tester en direct : simuler les réponses. `raw.githubusercontent.com` et `git clone` fonctionnent.
+15. Champ de clé API : jamais `type="password"` (le navigateur propose d'enregistrer la clé comme mot de passe). `type="text"` + classe `champ-cle` (`-webkit-text-security: disc`) + `autocomplete="off"` ; `closeSettings` vide le champ. Vérifié par `t65.js`.
 
 ## 7. Ce que l'app sait faire
 
