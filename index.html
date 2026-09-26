@@ -278,11 +278,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <button onclick="forceBackup()" style="width:100%;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:9px;">💾 Sauvegarder maintenant</button>
     <button id="set-backups-toggle" onclick="toggleBackupList()" style="width:100%;padding:9px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;">Voir les sauvegardes</button>
     <div id="set-backups" style="display:none;margin-top:4px;"></div>
-    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">📤 Export</div>
-    <div id="set-export"></div>
+    <div id="set-export" style="margin-top:20px;"></div>
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-09-26 11h30</div>
   </div>
 </div>
 
@@ -779,7 +779,7 @@ const CINFO={frigo:{label:'Frigo',sym:'🌡'},congelateur:{label:'Congélateur',
 const MEAL_TABS=[{k:'breakfast',l:'Petit-déj'},{k:'lunch',l:'Déjeuner'},{k:'snack',l:'Collation'},{k:'dinner',l:'Dîner'},{k:'perso',l:'👨‍🍳 Mes recettes'},{k:'urgent',l:'⚠ DLC'},{k:'favs',l:'⭐ Favoris'}];
 // Tri de la liste de recettes. Les favoris restent epingles en tete quel que
 // soit le critere ; le tri ne joue qu'entre recettes de meme statut.
-const REC_TRIS=[{k:'az',l:'A-Z',d:1},{k:'kcal',l:'kcal',d:1},{k:'prot',l:'Prot.',d:-1},{k:'dens',l:'P/100kcal',d:-1}];
+const REC_TRIS=[{k:'az',l:'A-Z',d:1},{k:'kcal',l:'kcal',d:1},{k:'prot',l:'Prot.',d:-1},{k:'dens',l:'Prot./100 kcal',d:-1}];
 function _densProt(r){var k=r&&r.kcal||0;return k>0?(r.prot||0)*100/k:0;}
 function _triRecettes(a,b){
   var by=S.recTri||'',dir=(S.recTriDir===-1?-1:1);
@@ -3459,7 +3459,7 @@ function renderMacros(){
     ${list?`<div style="margin-top:8px;">${list}</div>`:''}
     ${rem}
     ${meals.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text3);">Copier vers</span><input type="date" id="copy-day-target" value="${shiftDate(dd,1)}" style="font-size:11px;padding:2px 5px;background:var(--bg);border:0.5px solid var(--border);border-radius:5px;color:var(--text2);"><button onclick="copyDayTo(document.getElementById('copy-day-target').value)" style="font-size:11px;padding:3px 10px;background:var(--blue);color:#fff;border:0;border-radius:5px;cursor:pointer;font-weight:500;">⧉ Jour entier</button></div><div style="font-size:11px;color:var(--text3);margin-top:4px;">Astuce : le ⧉ à côté d'un repas le copie seul vers cette date.</div>`:''}
-    <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:11px;color:var(--text3);">J−7 à J+1</span></div>
+    <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:11px;color:var(--text3);">Modifiable de J−7 à J+1</span></div>
   </div>`;
 }
 
@@ -3526,7 +3526,7 @@ function renderCard(r){
   const open=S.openRec===r.id,wc=weekCount(r.id),done=cookedToday(r.id);
   const rm=recipeMacros(r);
   const bc=done?'var(--green)':'var(--border)';
-  const wb=wc>0?`<span class="chip" style="background:var(--green-bg);color:var(--green);">↺ ×${wc}/sem.</span>`:'';
+  const wb=wc>0?`<span class="chip" style="background:var(--green-bg);color:var(--green);">↺ ${wc}× cette semaine</span>`:'';
   const _ph=photoRecette(r.id);
   const _vig=`<div style="width:52px;height:52px;border-radius:10px;overflow:hidden;flex-shrink:0;border:0.5px solid var(--border);">`
     +(_ph?`<img src="${_ph}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`:_vignetteDefaut(r,22))
@@ -3774,7 +3774,7 @@ function renderInvCats(){
   const _del=getDeletedItems();
   const histSection=S.editMode&&_del.length?`<div style="margin-top:16px;padding:12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🗑 Récemment supprimés · récupérables 24h, sinon définitif</div>${_del.map((d,i)=>{const hh=Math.floor((Date.now()-d.deletedAt)/3600000);const left=Math.max(1,24-hh);const ci=CINFO[d.cat];return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--border);"><span style="flex:1;font-size:12px;color:var(--text2);">${d.item.name} <span style="color:var(--text3);font-size:11px;">· ${ci?ci.label:d.cat} · encore ${left}h pour récupérer</span></span><button onclick="restoreDeletedItem(${i})" style="padding:4px 10px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;flex-shrink:0;">↩ Restaurer</button></div>`;}).join('')}</div>`:'';
   const bottomAdd=S.editMode?`<button onclick="openAddItem('frigo')" style="width:100%;padding:11px;margin-top:14px;background:linear-gradient(135deg,var(--green),var(--green));border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button>`:'';
-  const waitSection=(S.waiting&&S.waiting.length)?`<div style="background:rgba(192,87,70,.07);border:0.5px solid rgba(192,87,70,.25);border-radius:12px;padding:12px;margin-bottom:14px;"><div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:2px;">\ud83d\uded2 Salle d'attente \u00b7 ${S.waiting.length}</div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Articles achet\u00e9s \u00e0 ranger. Tape un article pour le placer ; \u2715 pour le retirer.</div>${S.waiting.map(w=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;"><span onclick="openWaitingItem('${w.id}')" style="flex:1;font-size:13px;color:var(--text);cursor:pointer;">${w.name}</span><span onclick="openWaitingItem('${w.id}')" style="font-size:15px;color:var(--accent);cursor:pointer;">\u2192</span><button onclick="deleteWaiting('${w.id}')" style="background:none;border:0;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:2px 6px;">\u2715</button></div>`).join('')}</div>`:'';
+  const waitSection=(S.waiting&&S.waiting.length)?`<div style="background:rgba(192,87,70,.07);border:0.5px solid rgba(192,87,70,.25);border-radius:12px;padding:12px;margin-bottom:14px;"><div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:2px;">\ud83d\uded2 À ranger \u00b7 ${S.waiting.length}</div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Articles achet\u00e9s \u00e0 ranger. Tape un article pour le placer ; \u2715 pour le retirer.</div>${S.waiting.map(w=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;"><span onclick="openWaitingItem('${w.id}')" style="flex:1;font-size:13px;color:var(--text);cursor:pointer;">${w.name}</span><span onclick="openWaitingItem('${w.id}')" style="font-size:15px;color:var(--accent);cursor:pointer;">\u2192</span><button onclick="deleteWaiting('${w.id}')" style="background:none;border:0;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:2px 6px;">\u2715</button></div>`).join('')}</div>`:'';
   return waitSection+cats+bottomAdd+histSection;
 }
 // ─── 🛒 Complétion automatique de la liste de courses ───────────────────────
@@ -3878,25 +3878,25 @@ function renderCoursesHTML(){
   let html='<div style="margin-bottom:14px;">';
   html+=renderShopAuto();
   html+='<div style="display:flex;gap:6px;margin-bottom:14px;"><input id="shop-add-name" placeholder="Ajouter un article\u2026" style="flex:1;min-width:0;padding:9px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><select id="shop-add-rayon" style="padding:9px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:11px;max-width:120px;">'+SHOP_CATS.map(c=>`<option value="${c.k}">${c.label}</option>`).join('')+'</select><button onclick="addShopItem()" style="padding:9px 13px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:15px;cursor:pointer;">+</button><button onclick="openScanner(\'shop\')" title="Scanner un code-barres" style="padding:9px 12px;background:transparent;border:0.5px solid rgba(192,87,70,.5);border-radius:8px;color:var(--accent2);font-size:15px;cursor:pointer;">\ud83d\udcf7</button></div>';
-  if(waitN)html+=`<div style="background:rgba(233,161,59,.08);border:0.5px solid rgba(233,161,59,.25);border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12px;color:var(--orange);">\u23f3 ${waitN} article(s) en salle d'attente (onglet Inventaire) \u00e0 placer.</div>`;
+  if(waitN)html+=`<div style="background:rgba(233,161,59,.08);border:0.5px solid rgba(233,161,59,.25);border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12px;color:var(--orange);">\u23f3 ${waitN} article(s) à ranger dans l'onglet Inventaire.</div>`;
   SHOP_CATS.forEach(c=>{
     const items=byR[c.k];if(!items.length)return;
-    html+=`<div style="margin-bottom:14px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;font-weight:600;">${c.label}${!shopTransfer(c.k)?' <span style="color:var(--text3);text-transform:none;">· cimetière</span>':''}</span>${c.t?`<button onclick="toggleGraveRayon('${c.k}')" title="Cimetière direct pour ce rayon" style="background:none;border:0;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;opacity:${(S.shop.graveRayons||[]).indexOf(c.k)>=0?1:0.3};">🪦</button>`:''}</div>`;
+    html+=`<div style="margin-bottom:14px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;font-weight:600;">${c.label}${!shopTransfer(c.k)?' <span style="color:var(--text3);text-transform:none;">· hors inventaire</span>':''}</span>${c.t?`<button onclick="toggleGraveRayon('${c.k}')" title="Tout ce rayon : acheté sans passer par l'inventaire" style="background:none;border:0;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;opacity:${(S.shop.graveRayons||[]).indexOf(c.k)>=0?1:0.3};">🧾</button>`:''}</div>`;
     items.forEach(it=>{
-      html+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid rgba(246,237,227,.05);"><div onclick="toggleShopItem('${it.id}')" style="width:20px;height:20px;border-radius:5px;border:1.5px solid ${it.checked?'var(--green)':'rgba(246,237,227,.25)'};background:${it.checked?'var(--green)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">${it.checked?'<span style=\"color:var(--bg);font-size:13px;\">\u2713</span>':''}</div><span onclick="openShopItem('${it.id}')" style="flex:1;font-size:13px;color:${it.checked?'var(--text3)':'var(--text)'};text-decoration:${it.checked?'line-through':'none'};cursor:pointer;">${it.name}</span><button onclick="toggleGraveItem('${it.id}')" title="Cimetière direct (pas en salle d'attente)" style="background:none;border:0;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;flex-shrink:0;opacity:${it.graveOnly?1:0.28};">🪦</button></div>`;
+      html+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid rgba(246,237,227,.05);"><div onclick="toggleShopItem('${it.id}')" style="width:20px;height:20px;border-radius:5px;border:1.5px solid ${it.checked?'var(--green)':'rgba(246,237,227,.25)'};background:${it.checked?'var(--green)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">${it.checked?'<span style=\"color:var(--bg);font-size:13px;\">\u2713</span>':''}</div><span onclick="openShopItem('${it.id}')" style="flex:1;font-size:13px;color:${it.checked?'var(--text3)':'var(--text)'};text-decoration:${it.checked?'line-through':'none'};cursor:pointer;">${it.name}</span><button onclick="toggleGraveItem('${it.id}')" title="Acheté sans passer par l'inventaire" style="background:none;border:0;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;flex-shrink:0;opacity:${it.graveOnly?1:0.28};">🧾</button></div>`;
     });
     html+='</div>';
   });
   if(!(S.shop.list||[]).length)html+='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">Liste vide. Ajoute des articles ci-dessus.</div>';
-  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;">🪦 = direct au cimetière (sans salle d’attente)</div>';html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">\u2713 Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
-  html+=`<button onclick="S.coursesGrave=!S.coursesGrave;render();" style="width:100%;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;margin-top:8px;">Cimeti\u00e8re des articles (${graveN})</button>`;
+  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;">🧾 activé = acheté sans passer par l’inventaire (il va directement dans « Déjà achetés »)</div>';html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">\u2713 Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
+  html+=`<button onclick="S.coursesGrave=!S.coursesGrave;render();" style="width:100%;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;margin-top:8px;">Déjà achetés (${graveN})</button>`;
   if(S.coursesGrave)html+=renderGraveyardHTML();
   html+='</div>';
   return html;
 }
 function renderGraveyardHTML(){
   const g=S.shop.graveyard||[];
-  if(!g.length)return '<div style="margin-top:10px;color:var(--text3);font-size:12px;text-align:center;padding:14px;">Cimeti\u00e8re vide. Les articles valid\u00e9s y resteront pour \u00eatre rachet\u00e9s plus tard.</div>';
+  if(!g.length)return '<div style="margin-top:10px;color:var(--text3);font-size:12px;text-align:center;padding:14px;">Aucun article pour l\u2019instant. Les articles achet\u00e9s hors inventaire ou \u00e9puis\u00e9s restent ici pour \u00eatre rachet\u00e9s en un geste.</div>';
   const lbl=k=>{const c=SHOP_CATS.find(x=>x.k===k);return c?c.label:k;};
   let html='<div style="margin-top:10px;border-top:0.5px solid rgba(246,237,227,.08);padding-top:10px;"><div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Articles d\u00e9j\u00e0 achet\u00e9s \u2014 rach\u00e8te en un tap ou supprime d\u00e9finitivement.</div>';
   g.forEach(it=>{
@@ -3920,7 +3920,7 @@ function deleteWaiting(id){
   saveState();render();
 }
 function graveDelete(id){
-  _confirmer('Supprimer d\u00e9finitivement cet article du cimeti\u00e8re ?',{ok:'Supprimer',danger:true}).then(function(ok){
+  _confirmer('Retirer d\u00e9finitivement cet article de \u00ab\u00a0D\u00e9j\u00e0 achet\u00e9s\u00a0\u00bb ?',{ok:'Supprimer',danger:true}).then(function(ok){
     if(!ok)return;
     S.shop.graveyard=(S.shop.graveyard||[]).filter(g=>g.id!==id);
     saveState();render();
@@ -3979,7 +3979,7 @@ function validateCourses(){
   });
   S.shop.list=(S.shop.list||[]).filter(i=>!i.checked);
   saveState();render();
-  _alerte(placed?(placed+' article(s) en salle d\'attente (onglet Inventaire) \u00e0 ranger.'):'Articles valid\u00e9s (non transf\u00e9r\u00e9s vers l\'inventaire).');
+  _alerte(placed?(placed+' article(s) \u00e0 ranger dans l\'onglet Inventaire.'):'Articles valid\u00e9s (non transf\u00e9r\u00e9s vers l\'inventaire).');
 }
 function openShopItem(id){
   const it=(S.shop.list||[]).find(i=>i.id===id);if(!it)return;
@@ -4253,7 +4253,7 @@ function renderWeightHTML(){
         '<span style="font-size:32px;font-weight:700;color:var(--text);">'+cur.toFixed(1)+'</span>'+
         '<span style="font-size:14px;color:var(--text3);">kg</span><span style="flex:1;"></span>'+
         '<span style="font-size:11px;color:var(--text3);">le '+_wDateLabel(last.d)+'</span></div>';
-  var chips=[chip('Depuis dernière',dPrev),chip('7 jours',d7),chip('30 jours',d30)].filter(Boolean).join('');
+  var chips=[chip('Dernière pesée',dPrev),chip('7 jours',d7),chip('30 jours',d30)].filter(Boolean).join('');
   if(chips)html+='<div style="display:flex;gap:8px;margin-bottom:14px;">'+chips+'</div>';
   html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:12px 10px 6px;margin-bottom:14px;">'+
         '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:0 0 4px 6px;">Tendance — moyenne 7 j en vert</div>'+
@@ -4374,7 +4374,7 @@ function renderTDEEBlock(t){
       msg='Logue plus de repas sur la période ('+(t.logs||0)+'/'+(t.need||10)+' jours complets) pour estimer ta dépense';
       if(t.ecartes&&t.ecartes.length)msg+='. '+t.ecartes.length+' journée'+(t.ecartes.length>1?'s':'')+' écartée'+(t.ecartes.length>1?'s':'')+' car sous '+t.seuil+' kcal — probablement des saisies incomplètes';
     }
-    return '<div style="background:var(--bg2);border:0.5px dashed var(--border);border-radius:12px;padding:14px;font-size:12px;color:var(--text3);line-height:1.5;"><strong style="color:var(--text2);">⚙ Dépense énergétique (TDEE)</strong><br>'+msg+'.</div>';
+    return '<div style="background:var(--bg2);border:0.5px dashed var(--border);border-radius:12px;padding:14px;font-size:12px;color:var(--text3);line-height:1.5;"><strong style="color:var(--text2);">⚙ Dépense réelle estimée</strong><br>'+msg+'.</div>';
   }
   var rec=Math.round((t.tdee-550)/10)*10;
   var perWeekTxt=(t.perWeek>0?'−':'+')+Math.abs(t.perWeek).toFixed(2)+' kg/sem';
@@ -4407,7 +4407,7 @@ function renderTDEEBlock(t){
     ?'Tu prends du poids : ta dépense réelle tourne autour de '+t.tdee+' kcal/j. Repasse en déficit, vise ~'+rec+' kcal/j, par étapes.'
     :'Tu prends du poids alors que ta cible ('+TARGETS.kcal+' kcal) est sous ta dépense réelle (~'+t.tdee+' kcal/j) : c\'est l\'écart à la cible qui coince.';
   return '<div style="background:linear-gradient(135deg,rgba(192,87,70,.13),rgba(99,102,241,.05));border:0.5px solid rgba(192,87,70,.35);border-radius:12px;padding:14px;">'+
-    '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Dépense estimée (TDEE)</div>'+
+    '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Dépense réelle estimée</div>'+
     '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:27px;font-weight:700;color:var(--text);">'+t.tdee+'</span><span style="font-size:12px;color:var(--text3);">kcal/j</span></div>'+
     '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+t.days+' j : ~'+t.avgCal+' kcal/j sur '+t.logs+' journée'+(t.logs>1?'s':'')+' complète'+(t.logs>1?'s':'')+' · '+perWeekTxt+'</div>'+
     ((t.ecartes&&t.ecartes.length)?'<div style="font-size:11px;color:var(--gold);margin-top:5px;line-height:1.4;">'+t.ecartes.length+' journée'+(t.ecartes.length>1?'s':'')+' écartée'+(t.ecartes.length>1?'s':'')+' (sous '+t.seuil+' kcal, saisie probablement incomplète) : '+t.ecartes.slice(0,6).join(', ')+(t.ecartes.length>6?'…':'')+'</div>':'')+
@@ -4460,7 +4460,7 @@ function renderBurnBlock(){
       +'<div style="display:flex;gap:8px;">'
       +(tb?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Aujourd\u2019hui</div><div style="font-size:16px;font-weight:600;color:var(--orange);margin-top:3px;">'+tb.total+'</div><div style="font-size:11px;color:var(--text3);">kcal</div></div>':'')
       +'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Moy. '+n+' j</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-top:3px;">'+avg+'</div><div style="font-size:11px;color:var(--text3);">kcal</div></div>'
-      +(estK?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">TDEE estim\u00e9</div><div style="font-size:16px;font-weight:600;color:var(--text2);margin-top:3px;">'+estK+'</div><div style="font-size:11px;color:var(--text3);">kcal (poids)</div></div>':'')
+      +(estK?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">D\u00e9pense r\u00e9elle</div><div style="font-size:16px;font-weight:600;color:var(--text2);margin-top:3px;">'+estK+'</div><div style="font-size:11px;color:var(--text3);">kcal/j (estim\u00e9e)</div></div>':'')
       +'</div>'
       +(tb&&(tb.steps||tb.activities.length)?'<div style="margin-top:9px;padding-top:8px;border-top:0.5px solid rgba(246,237,227,.06);font-size:11px;color:var(--text3);line-height:1.6;">'+(tb.steps?('\ud83d\udc5f '+tb.steps.toLocaleString('fr-FR')+' pas \u2192 '+(tb.stepKcalBrut||tb.stepKcal)+' kcal'
       +((tb.stepKcalBrut&&tb.stepKcal!==tb.stepKcalBrut)?(' <span style="color:var(--text3);opacity:.75;">('+tb.stepKcal+' au-dessus de ta routine)</span>'):'')
@@ -4531,7 +4531,7 @@ function renderCoachSummary(){
       +tuile('Mangé',Math.round(m.kcal),'kcal','var(--gold)')
       +tuile('Dépensé',brule||'—','kcal',brule?'var(--orange)':'var(--text3)')
       +(ecartTdee!==null
-        ?tuile(ecartTdee>=0?'Déficit/j':'Surplus/j',Math.abs(ecartTdee),'kcal (est.)',((obj==='prise')?ecartTdee<0:(obj==='perte'?ecartTdee>0:Math.abs(ecartTdee)<150))?'var(--green)':'var(--text2)')
+        ?tuile(ecartTdee>=0?'Déficit/jour':'Surplus/jour',Math.abs(ecartTdee),'kcal (est.)',((obj==='prise')?ecartTdee<0:(obj==='perte'?ecartTdee>0:Math.abs(ecartTdee)<150))?'var(--green)':'var(--text2)')
         :tuile('Reste',Math.max(0,Math.round(_cibleDuJour(S.today)-m.kcal)),'kcal','var(--text)'))
       +tuile('Moy. 7 j',mk||'—','kcal','var(--text)')
       +'</div>'
@@ -4855,7 +4855,7 @@ function exportWeightCSV(){
 
 function renderDataExport(){
   return '<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-top:6px;margin-bottom:18px;">'+
-    '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">💾 Sauvegarde de tes données</div>'+
+    '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📁 Fichier de sauvegarde (export / import)</div>'+
     '<div style="display:flex;gap:8px;flex-wrap:wrap;">'+
     '<button onclick="exportBackup()" style="flex:1;min-width:140px;padding:10px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">⬇ Sauvegarde complète (.json)</button>'+
     '<button onclick="importBackup()" style="flex:1;min-width:140px;padding:10px;background:var(--bg);border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;">\u21a9\ufe0f Restaurer une sauvegarde</button>'+
@@ -5012,8 +5012,10 @@ function renderCalendrier(){
     +'</div>';
   return html;
 }
-function _kcalColor(v){var t=TARGETS.kcal;if(v>t*1.1)return 'var(--orange)';if(v<t*0.9)return 'rgba(140,151,171,.55)';return 'var(--green)';}
-function _protColor(v){return _protOk(v)?'var(--green)':'rgba(140,151,171,.55)';}
+/* Memes couleurs que le calendrier : bleu = en dessous, gris = journee non saisie ou incomplete */
+var _COUL_GRIS='rgba(140,151,171,.55)',_COUL_DESSOUS='rgba(95,168,201,.75)';
+function _kcalColor(v){var t=TARGETS.kcal;if(!(v>=t*TDEE_SEUIL_JOUR))return _COUL_GRIS;if(v>t*1.1)return 'var(--orange)';if(v<t*0.9)return _COUL_DESSOUS;return 'var(--green)';}
+function _protColor(v){if(!(v>0))return _COUL_GRIS;return _protOk(v)?'var(--green)':_COUL_DESSOUS;}
 function _mtChart(hist,key,target,unit,colorFn){
   var W=320,H=86,padL=2,padR=34,top=6,bottom=14;
   var chartW=W-padL-padR,chartH=H-top-bottom;
@@ -5061,7 +5063,7 @@ function renderMacroTrend(){
   html+=_mtChart(hist,'kcal',TARGETS.kcal,'',_kcalColor);
   html+='<div style="font-size:11px;color:var(--text2);margin:10px 0 2px;">Protéines <span style="color:var(--text3);">· cible '+TARGETS.prot+' g</span></div>';
   html+=_mtChart(hist,'prot',TARGETS.prot,'g',_protColor);
-  html+='<div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;">Vert = dans la cible (±10 % kcal, ≥ cible prot) · orange = au-dessus · gris = en dessous / jour non loggé.</div>';
+  html+='<div style="font-size:11px;color:var(--text3);margin-top:8px;line-height:1.5;">Vert = dans la cible (±10 % en calories, protéines atteintes) · orange = au-dessus · bleu = en dessous · gris = journée non saisie ou incomplète.</div>';
   html+='</div>';
   return html;
 }
@@ -6106,15 +6108,15 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <button onclick="${sessionActive()?'deconnexion()':'quitterProfilHerite()'}" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
-      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal <span style="opacity:.4;">· build 2026-09-26 10h15</span></div></div>
-      ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} urgents</span>`:''}
+      <button onclick="deconnexion()" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
+      <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal</div></div>
+      ${urgTotal?`<span class="chip" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;">⚠ ${urgTotal} à consommer</span>`:''}
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
     <div id="tabpane">
     ${S.mainTab==='accueil'?renderAccueil():''}
     ${S.mainTab==='courses'?renderCoursesHTML():''}
-    ${S.mainTab==='weight'?renderCockpit()+renderMacroTrend()+renderCalendrier()+renderGoalBlock()+renderWeightHTML()+renderMesuresHTML()+renderProgresHTML()+renderDataExport():''}
+    ${S.mainTab==='weight'?renderCockpit()+renderMacroTrend()+renderCalendrier()+renderGoalBlock()+renderWeightHTML()+renderMesuresHTML()+renderProgresHTML():''}
     ${S.mainTab==='recipes'?`
       ${!getApiKey()?`<div style="background:rgba(233,161,59,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:var(--bg);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
@@ -7346,7 +7348,6 @@ function _vignetteDefaut(r,taille){
 // posees. L'identifiant est converti en adresse technique, seul format que
 // Firebase accepte.
 const PROFIL_HERITE='liam';
-const CODE_RATTACHEMENT_SHA256='43c16034572ba630dc094d8871929844a4c2f222d989a996e03edd7e13dfbb93';
 const INV_VIDE={frigo:[],placards:[],congelateur:[],epices:[]};
 const CIBLES_PAR_DEFAUT={kcal:2000,prot:110,gluc:250,lip:65};
 const EMOJIS_PROFIL=['\ud83c\udfcb\ufe0f','\ud83c\udfc3','\ud83d\udeb4','\ud83e\uddd8','\ud83e\udd4a','\ud83c\udfca','\u26f9\ufe0f','\ud83e\udd38',
@@ -7374,7 +7375,6 @@ function _msgErreurAuth(code){
   if(/TOO_MANY_ATTEMPTS/.test(code))return 'Trop de tentatives. Réessaie dans quelques minutes.';
   if(/OPERATION_NOT_ALLOWED/.test(code))return 'La connexion par mot de passe n\'est pas activée côté Firebase.';
   if(/USER_DISABLED/.test(code))return 'Ce compte est désactivé.';
-  if(/CODE_INVALIDE/.test(code))return 'Code de rattachement incorrect.';
   if(/IDENTIFIANT_INVALIDE/.test(code))return 'Identifiant invalide : 3 à 30 caractères (lettres, chiffres, point, tiret), ou une adresse e-mail.';
   if(/RESET_SANS_EMAIL/.test(code))return 'La récupération n\'est possible qu\'avec une adresse e-mail. Avec un identifiant simple, le mot de passe ne peut pas être réinitialisé.';
   if(/CREDENTIAL_TOO_OLD|TOKEN_EXPIRED/.test(code))return 'Pour cette modification, déconnecte-toi puis reconnecte-toi, et réessaie.';
@@ -7435,15 +7435,7 @@ function _deconnecter(){
   _fbTok=null;_fbTokExp=0;
   try{location.reload();}catch(e){}
 }
-async function _sha256Hex(txt){
-  var b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(String(txt)));
-  return Array.prototype.map.call(new Uint8Array(b),function(x){return ('0'+x.toString(16)).slice(-2);}).join('');
-}
-async function codeRattachementValide(code){
-  var c=String(code||'').trim().toUpperCase();
-  if(!c)return false;
-  try{return (await _sha256Hex(c))===CODE_RATTACHEMENT_SHA256;}catch(e){return false;}
-}
+
 
 // ── Profil utilisateur et cibles ──
 function ageDe(naissance){
@@ -7516,39 +7508,19 @@ async function _initNouveauProfil(cle,profil,groq){
   var r=await fetch(await fbUrl(cle+'/state'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)});
   if(!r.ok)throw new Error('HTTP '+r.status);
 }
-// Copie le profil historique dans le compte. Rien n'est supprime a la source.
-async function rattacherAncienProfil(cle,profil){
-  var lire=async function(n){var r=await fetch(await fbUrl(PROFIL_HERITE+'/'+n));if(!r.ok)throw new Error('HTTP '+r.status);return r.json();};
-  var ecrire=async function(n,v){var r=await fetch(await fbUrl(cle+'/'+n),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(v)});if(!r.ok)throw new Error('HTTP '+r.status);};
-  var st=await lire('state');
-  if(!st||typeof st!=='object'||!(st.inv||st.dayMeals))throw new Error('ancien profil introuvable');
-  var burn=null,photos=null;
-  try{burn=await lire('burn');}catch(e){}
-  try{photos=await lire('photos');}catch(e){}
-  st._profile=cle;                              // sinon _applyState ignorerait l'etat
-  st.catalogue=PROFIL_HERITE;                   // les recettes du catalogue restent visibles
-  st.tz=st.tz||'Europe/Paris';
-  if(typeof st.pasBase!=='number')st.pasBase=PAS_BASE_DEFAUT[PROFIL_HERITE]||0;
-  if(profil)st.profil=Object.assign({},st.profil||{},profil);
-  await ecrire('state',st);
-  if(burn&&typeof burn==='object')await ecrire('burn',burn);
-  if(photos&&typeof photos==='object')await ecrire('photos',_photosSures(photos));
-  return true;
-}
 
 // ── Demarrage ──
 function demarrerApp(){
   var s=sessionActive();
   if(s){selectProfile('users/'+s.uid);return 'compte';}
-  var herite=false;try{herite=localStorage.getItem('dz_herite')==='1';}catch(e){}
-  if(herite){selectProfile(PROFIL_HERITE);return 'herite';}
+  try{localStorage.removeItem('dz_herite');}catch(e){}   /* ancien acces sans compte, retire le 26/09/2026 */
   afficherEcranConnexion('accueil');
   return 'connexion';
 }
 
 // ═══ INTERFACE DES COMPTES ════════════════════════════════════════════════
 var _auth={mode:'accueil',err:'',occupe:false};
-var _ins={etape:0,login:'',mdp:'',code:'',avecCode:false,p:{},groq:''};
+var _ins={etape:0,login:'',mdp:'',p:{},groq:''};
 var _pfChoix={allergies:[],equipement:[]},_pfEmoji='\ud83c\udfcb\ufe0f';
 var _LISTES={allergies:ALLERGENES,equipement:EQUIPEMENTS};
 var _ST_IN='width:100%;box-sizing:border-box;padding:10px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.15);border-radius:9px;color:var(--text);font-size:14px;outline:none;font-family:inherit;';
@@ -7632,7 +7604,7 @@ function afficherEcranConnexion(mode){
   ps.style.display='flex';ps.style.alignItems='flex-start';ps.style.overflowY='auto';
   renderAuth();
 }
-function _authMode(m){_auth.mode=m;_auth.err='';if(m==='inscription'){_ins={etape:0,login:'',mdp:'',code:'',avecCode:false,p:{},groq:''};_chargerChoix(null);}renderAuth();}
+function _authMode(m){_auth.mode=m;_auth.err='';if(m==='inscription'){_ins={etape:0,login:'',mdp:'',p:{},groq:''};_chargerChoix(null);}renderAuth();}
 function renderAuth(){
   var ps=document.getElementById('profile-screen');if(!ps)return;
   var err=_auth.err?'<div style="font-size:12.5px;color:var(--red);background:rgba(192,87,70,.1);border:0.5px solid rgba(192,87,70,.35);border-radius:9px;padding:9px 11px;margin-bottom:12px;">'+_auth.err+'</div>':'';
@@ -7642,17 +7614,12 @@ function renderAuth(){
   var h='';
   if(_auth.mode==='accueil'){
     h=tete+'<button onclick="_authMode(\'connexion\')" style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;margin-bottom:10px;">Se connecter</button>'
-      +'<button onclick="_authMode(\'inscription\')" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.25);color:var(--text);">Créer un compte</button>'
-      +'<button onclick="_authMode(\'herite\')" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;margin-top:22px;width:100%;text-decoration:underline;">Accéder à un ancien profil</button>';
+      +'<button onclick="_authMode(\'inscription\')" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.25);color:var(--text);">Créer un compte</button>';
   }else if(_auth.mode==='connexion'){
     h=tete+err+_champ('Identifiant ou e-mail',_inp('au-login','text',_auth.login||'','','autocomplete="username" autocapitalize="none"'))
       +_champ('Mot de passe',_inp('au-mdp','password','','','autocomplete="current-password"'))
       +'<button onclick="validerConnexion()"'+dis+' style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;">'+(_auth.occupe?'Connexion\u2026':'Se connecter')+'</button>'
       +'<button onclick="demanderReinitialisation()" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;margin-top:12px;width:100%;text-decoration:underline;">Mot de passe oublié ?</button>'+retour;
-  }else if(_auth.mode==='herite'){
-    h=tete+err+'<div style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:12px;">Entre ton code de rattachement pour ouvrir l\'ancien profil, sans compte. Solution de transition : crée plutôt un compte avec ce code pour y rapatrier tes données.</div>'
-      +_champ('Code',_inp('au-code','text','','XXXX-XXXX-XXXX-XXXX','autocapitalize="characters"'))
-      +'<button onclick="accederAncienProfil()"'+dis+' style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;">Ouvrir</button>'+retour;
   }else{
     h=_renderInscription(err,dis,retour);
   }
@@ -7686,18 +7653,15 @@ function _renderInscription(err,dis,retour){
     corps=_champ('Identifiant ou e-mail',_inp('au-login','text',_ins.login,'ex. liam ou liam@mail.fr','autocomplete="username" autocapitalize="none"'))
       +'<div style="font-size:11px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;">Avec une <strong style="color:var(--text2);">adresse e-mail</strong>, tu pourras récupérer ton mot de passe en cas d\'oubli. Avec un simple identifiant, ce ne sera pas possible.</div>'
       +_champ('Mot de passe',_inp('au-mdp','password',_ins.mdp,'6 caractères minimum','autocomplete="new-password"'))
-      +_champ('Confirmation',_inp('au-mdp2','password',_ins.mdp,'','autocomplete="new-password"'))
-      +(_ins.avecCode?_champ('Code de rattachement',_inp('au-code','text',_ins.code,'XXXX-XXXX-XXXX-XXXX','autocapitalize="characters"'))
-        :'<button onclick="_ins.avecCode=true;renderAuth()" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;text-decoration:underline;padding:0;margin-bottom:12px;">J\'ai un code pour rapatrier un ancien profil</button>');
+      +_champ('Confirmation',_inp('au-mdp2','password',_ins.mdp,'','autocomplete="new-password"'));
   }else if(e===1)corps=_secToi(p);
   else if(e===2)corps=_secObjectif(p);
   else if(e===3)corps=_secAlim(p);
   else if(e===5)corps=_secCleGroq();
   else{
-    var c=_ins.avecCode?LIAM_TARGETS:(calculerCibles(p)||CIBLES_PAR_DEFAUT);
+    var c=calculerCibles(p)||CIBLES_PAR_DEFAUT;
     if(p.cibles&&_ciblesValides(p.cibles))c=p.cibles;
-    corps=_secCibles(c,_ins.avecCode?'Ce sont tes cibles actuelles, reprises telles quelles.'
-      :'Estimation de départ à partir de tes infos (formule Mifflin-St Jeor). Ajuste si besoin : c\'est un repère, pas un avis médical.');
+    corps=_secCibles(c,'Estimation de départ à partir de tes infos (formule Mifflin-St Jeor). Ajuste si besoin : c\'est un repère, pas un avis médical.');
   }
   var nav='<div style="display:flex;gap:8px;margin-top:6px;">'
     +(e>0?'<button onclick="etapeInscription(-1)" style="'+_ST_BTN+'flex:1;background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);">Précédent</button>':'')
@@ -7708,8 +7672,7 @@ function _renderInscription(err,dis,retour){
 }
 function _memoriserEtape(){
   var e=_ins.etape;
-  if(e===0){_ins.login=_val('au-login');_ins.mdp=(document.getElementById('au-mdp')||{}).value||'';
-    var c=document.getElementById('au-code');if(c)_ins.code=_val('au-code');}
+  if(e===0){_ins.login=_val('au-login');_ins.mdp=(document.getElementById('au-mdp')||{}).value||'';}
   else if(e===1)Object.assign(_ins.p,_lireToi());
   else if(e===2)Object.assign(_ins.p,_lireObjectif());
   else if(e===3)Object.assign(_ins.p,_lireAlim());
@@ -7727,8 +7690,6 @@ async function etapeInscription(sens){
       if(!loginValide(_ins.login)){_auth.err=_msgErreurAuth('IDENTIFIANT_INVALIDE');return renderAuth();}
       if(String(_ins.mdp).length<6){_auth.err='Mot de passe trop court : 6 caractères minimum.';return renderAuth();}
       if(m2!==_ins.mdp){_auth.err='Les deux mots de passe ne correspondent pas.';return renderAuth();}
-      if(_ins.avecCode&&_ins.code&&!(await codeRattachementValide(_ins.code))){_auth.err=_msgErreurAuth('CODE_INVALIDE');return renderAuth();}
-      if(_ins.avecCode&&!_ins.code)_ins.avecCode=false;
     }
     if(e===1){var er=validerProfil(Object.assign({},_ins.p,{poidsVise:''}));
       if(er.length){_auth.err='À vérifier : '+er.join(', ')+'.';return renderAuth();}}
@@ -7742,18 +7703,16 @@ async function finaliserInscription(){
   var p=_ins.p;
   var er=validerProfil(p);
   if(er.length){_auth.err='À vérifier : '+er.join(', ')+'.';return renderAuth();}
-  if(!_ciblesValides(p.cibles))p.cibles=_ins.avecCode?LIAM_TARGETS:(calculerCibles(p)||CIBLES_PAR_DEFAUT);
+  if(!_ciblesValides(p.cibles))p.cibles=calculerCibles(p)||CIBLES_PAR_DEFAUT;
   _auth.occupe=true;renderAuth();
   try{
     var uid=await creerCompte(_ins.login,_ins.mdp);
     var cle='users/'+uid;
     var profil=_neutre(Object.assign({},p,{login:_loginNorm(_ins.login),creeLe:new Date().toISOString()}));
     var _cg=_cleGroqValide(_ins.groq)?_ins.groq:'';
-    if(_ins.avecCode)await rattacherAncienProfil(cle,profil);
-    else await _initNouveauProfil(cle,profil,_cg);
+    await _initNouveauProfil(cle,profil,_cg);
     /* La cle d'un compte precedent ne doit pas suivre le nouveau */
     try{if(_cg)localStorage.setItem('anthropic_key',_cg);else localStorage.removeItem('anthropic_key');}catch(e){}
-    try{localStorage.removeItem('dz_herite');}catch(e){}
     try{location.reload();}catch(e){}
   }catch(e){
     _auth.occupe=false;
@@ -7769,7 +7728,7 @@ async function validerConnexion(){
   // Reconnexion apres une session expiree : si c'est un autre compte, la cle
   // Groq du precedent ne doit pas le suivre (meme menage que deconnexion()).
   var _ancien=(sessionActive()||{}).login||'';
-  try{await connexion(l,m);try{localStorage.removeItem('dz_herite');}catch(e){}
+  try{await connexion(l,m);
     try{if(_ancien&&_ancien!==_loginNorm(l))localStorage.removeItem('anthropic_key');}catch(e){}try{location.reload();}catch(e){}}
   catch(e){_auth.occupe=false;_auth.err=_msgErreurAuth(e&&e.message);renderAuth();}
 }
@@ -7781,22 +7740,12 @@ async function demanderReinitialisation(){
     _alerte('Si un compte existe pour cette adresse, un e-mail de réinitialisation vient d\'être envoyé. Pense à regarder les indésirables.');}
   catch(e){_auth.err=_msgErreurAuth(e&&e.message);renderAuth();}
 }
-async function accederAncienProfil(){
-  if(!(await codeRattachementValide(_val('au-code')))){_auth.err=_msgErreurAuth('CODE_INVALIDE');return renderAuth();}
-  try{localStorage.setItem('dz_herite','1');}catch(e){}
-  try{location.reload();}catch(e){}
-}
-function quitterProfilHerite(){
-  _confirmer('Quitter l\'ancien profil ?',{ok:'Quitter'}).then(function(ok){
-    if(!ok)return;
-    try{localStorage.removeItem('dz_herite');}catch(e){}
-    try{location.reload();}catch(e){}
-  });
-}
 
 // ── Edition du profil (Reglages) ──
 function ouvrirEditionProfil(){
-  var p=S.profil||{};
+  var p=Object.assign({},S.profil||{});
+  /* Compte migre sans « pas » dans le profil : afficher le seuil reellement utilise */
+  if(!(typeof p.pas==='number'&&p.pas>0)&&pasBase()>0)p.pas=pasBase();
   _chargerChoix(p);
   var c=_ciblesValides(p.cibles)?p.cibles:TARGETS;
   var h='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">'
@@ -7818,9 +7767,6 @@ function ouvrirEditionProfil(){
       +'<button onclick="modifierIdentifiant()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:12px;">Changer l\'identifiant</button>'
       +_deux(_champ('Nouveau',_inp('pf-mdp1','password','','','autocomplete="new-password"')),_champ('Confirmation',_inp('pf-mdp2','password','','','autocomplete="new-password"')))
       +'<button onclick="modifierMotDePasse()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:6px;">Changer le mot de passe</button>';
-    if(_catalogue()!==PROFIL_HERITE)h+='<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Rapatrier un ancien profil</div>'
-      +_champ('Code de rattachement',_inp('pf-code','text','','XXXX-XXXX-XXXX-XXXX','autocapitalize="characters"'))
-      +'<button onclick="rattacherDepuisReglages()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:6px;">Rapatrier</button>';
   }
   h+='<div style="display:flex;gap:8px;margin-top:16px;">'
     +'<button onclick="fermerEditionProfil()" style="'+_ST_BTN+'flex:1;background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);">Annuler</button>'
@@ -7867,12 +7813,6 @@ async function modifierMotDePasse(){
   if(a!==b){_errProfil('Les deux mots de passe ne correspondent pas.');return;}
   try{await changerMotDePasse(a);_errProfil('Mot de passe modifié.',true);
     ['pf-mdp1','pf-mdp2'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});}
-  catch(e){_errProfil(_msgErreurAuth(e&&e.message));}
-}
-async function rattacherDepuisReglages(){
-  if(!(await codeRattachementValide(_val('pf-code')))){_errProfil(_msgErreurAuth('CODE_INVALIDE'));return;}
-  if(!(await _confirmer('Rapatrier l\'ancien profil dans ce compte ?\n\nSes repas, son inventaire, ses recettes et son historique remplaceront les données actuelles du compte. L\'ancien profil n\'est pas supprimé.',{ok:'Rapatrier',danger:true})))return;
-  try{await rattacherAncienProfil(ACTIVE_PROFILE,S.profil||null);try{location.reload();}catch(e){}}
   catch(e){_errProfil(_msgErreurAuth(e&&e.message));}
 }
 // ─── PAGE D'ACCUEIL ─────────────────────────────────────────────────────

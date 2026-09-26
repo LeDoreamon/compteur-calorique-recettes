@@ -72,45 +72,11 @@ await t('un jeton de compte refuse ne declenche pas de repli anonyme',async()=>{
   if(appels.some(a=>/accounts:signUp/.test(a.url)))throw new Error('repli anonyme');
 });
 
-console.log('\n=== GJ. Code de rattachement ===');
-await t('*** le bon code est reconnu, casse et espaces ignores ***',async()=>{
-  if(!(await G('codeRattachementValide')(' vhpq-u2gl-9c7w-qkqa ')))throw new Error('code refuse');
-});
-await t('un mauvais code est refuse',async()=>{
-  if(await G('codeRattachementValide')('AAAA-BBBB-CCCC-DDDD'))throw new Error('accepte');
-  if(await G('codeRattachementValide')(''))throw new Error('vide accepte');
-});
-await t('*** le code n\'apparait jamais en clair dans le source ***',()=>{
-  if(/VHPQ-U2GL-9C7W-QKQA/i.test(src))throw new Error('code en clair');
-});
-
-console.log('\n=== GK. Rapatriement de l\'ancien profil ===');
-await t('*** l\'ancien profil est copie dans le compte, reetiquete ***',async()=>{
-  LS.dz_auth=JSON.stringify({uid:'UID123',rtok:'rtokA',login:'liam'});
-  sb.window._fbTok='tok';sb.window._fbTokExp=Date.now()+3600000;
-  serveur([
-    {m:/\/liam\/state\.json/,meth:'GET',d:{_profile:'liam',rev:42,inv:{frigo:[{id:'p',name:'Poulet',qty:500}]},dayMeals:{'2026-09-01':[{rid:'x'}]},groqKey:'k'}},
-    {m:/\/liam\/burn\.json/,meth:'GET',d:{'2026-09-01':{steps:12000}}},
-    {m:/\/liam\/photos\.json/,meth:'GET',d:{a:'data:image/jpeg;base64,AAAA',b:'x" onerror="1'}}
-  ]);
-  await G('rattacherAncienProfil')('users/UID123',{prenom:'Liam',emoji:'🔥'});
-  const put=n=>appels.find(a=>a.method==='PUT'&&new RegExp('users/UID123/'+n+'\\.json').test(a.url));
-  const st=JSON.parse(put('state').body);
-  eq(st._profile,'users/UID123','etiquette non reecrite : l\'etat serait ignore');
-  eq(st.catalogue,'liam','les recettes du catalogue disparaitraient');
-  eq(st.tz,'Europe/Paris');eq(st.pasBase,9679);
-  eq(st.profil.prenom,'Liam');eq(st.inv.frigo[0].name,'Poulet');eq(st.groqKey,'k');
-  eq(JSON.parse(put('burn').body)['2026-09-01'].steps,12000);
-  eq(Object.keys(JSON.parse(put('photos').body)).join(','),'a','photo piegee non filtree');
-});
-await t('*** rien n\'est ecrit ni supprime dans l\'ancien profil ***',()=>{
-  if(appels.some(a=>/\/liam\//.test(a.url)&&a.method!=='GET'))throw new Error('ecriture dans l\'ancien profil');
-});
-await t('un ancien profil introuvable interrompt proprement',async()=>{
-  serveur([{m:/\/liam\/state\.json/,d:null}]);
-  let msg='';try{await G('rattacherAncienProfil')('users/UID123',null);}catch(e){msg=e.message;}
-  if(!/introuvable/.test(msg))throw new Error('pas d\'erreur : '+msg);
-  if(appels.some(a=>a.method==='PUT'))throw new Error('ecriture malgre l\'echec');
+console.log('\n=== GJ. Ancien acces sans compte (retire) ===');
+await t('*** plus de code de rattachement ni de rapatriement dans l\'app ***',()=>{
+  ['codeRattachementValide','rattacherAncienProfil','accederAncienProfil','quitterProfilHerite','rattacherDepuisReglages','CODE_RATTACHEMENT_SHA256'].forEach(n=>{
+    if(new RegExp('\\b'+n+'\\b').test(src))throw new Error(n+' encore present');});
+  if(/Accéder à un ancien profil|rapatrier un ancien profil|Code de rattachement/i.test(src))throw new Error('texte encore visible');
 });
 
 console.log('\n=== GL. Nouveau compte ===');
@@ -226,10 +192,10 @@ await t('*** avec une session : ouverture directe du compte ***',()=>{
   eq(G('demarrerApp')(),'compte');
   eq(sb.window.ACTIVE_PROFILE||G('__profil')&&G('__profil')(),'users/UID9');
 });
-await t('le passage par l\'ancien profil reste possible pendant la transition',()=>{
+await t('un ancien acces sans compte memorise ne rouvre plus rien',()=>{
   delete LS.dz_auth;LS.dz_herite='1';
-  eq(G('demarrerApp')(),'herite');
-  delete LS.dz_herite;
+  eq(G('demarrerApp')(),'connexion');eq(LS.dz_herite,undefined,'marqueur non efface');
+  if(/ancien profil/i.test(docEl('profile-screen').innerHTML))throw new Error('lien ancien profil');
 });
 await t('*** chaque ecran d\'inscription se rend sans erreur ***',()=>{
   G('afficherEcranConnexion')('accueil');G('_authMode')('inscription');
@@ -256,7 +222,7 @@ await t('un bon debut passe a l\'etape suivante',async()=>{
   eq(sb.window._ins.etape,1);
 });
 await t('*** le bouton de deconnexion remplace l\'ancien bouton de profil ***',()=>{
-  if(!/sessionActive\(\)\?'deconnexion\(\)':'quitterProfilHerite\(\)'/.test(src))throw new Error('bouton absent de l\'en-tete');
+  if(!/<button onclick="deconnexion\(\)" title="Se déconnecter"/.test(src))throw new Error('bouton absent de l\'en-tete');
 });
 await t('le bouton Modifier le profil est en bas des reglages',()=>{
   if(!/closeSettings\(\);ouvrirEditionProfil\(\)/.test(src))throw new Error('absent');

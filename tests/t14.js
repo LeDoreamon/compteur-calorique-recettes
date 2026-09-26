@@ -115,7 +115,7 @@ console.log('\n=== AU. Rendu du trieur ===');
 t('les quatre puces sont presentes',()=>{
   S.recTri='';
   const h=G('renderRecTri')();
-  ['A-Z','kcal','Prot.','P/100kcal'].forEach(l=>{if(!h.includes(l))throw new Error(l+' absent');});
+  ['A-Z','kcal','Prot.','Prot./100 kcal'].forEach(l=>{if(!h.includes(l))throw new Error(l+' absent');});
 });
 t('pas de fleche tant qu\'aucun critere n\'est choisi',()=>{
   S.recTri='';

@@ -21,9 +21,9 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 - La session est stockée dans `localStorage.dz_auth = {uid, rtok, login}`. Le mot de passe n'est jamais stocké.
 - Adresse technique `login@dorayaki.app` (`_emailDe`), sauf si l'identifiant est déjà un e-mail.
 - Données de chaque compte sous `users/<uid>/` : `state`, `burn`, `photos`, `filet`, `backups`, `progres` et `progresMini` (photos de progression, hors de l'état : clé `AAAA-MM-JJ_pose`, pose = face, profil ou dos).
-- Règles Firebase en place : seul `users/$uid` est accessible (`auth.uid === $uid`), tout le reste est fermé. Conséquence : `/liam` (ancien profil) et `/maureen` sont verrouillés. Le code de rattachement et le mode « profil hérité » ne fonctionnent donc plus ; c'est normal, la migration est terminée. **Ne pas supprimer ces nœuds** : c'est à moi d'en décider.
+- Règles Firebase en place : seul `users/$uid` est accessible (`auth.uid === $uid`), tout le reste est fermé. Conséquence : `/liam` (ancien profil) et `/maureen` sont verrouillés. **Ne pas supprimer ces nœuds** : c'est à moi d'en décider.
 - `fbUrl(path)` ajoute `?auth=<idToken>`. Si `securetoken` refuse le jeton pour de bon (400 `TOKEN_EXPIRED`, `INVALID_REFRESH_TOKEN`, `MISSING_REFRESH_TOKEN`, `USER_DISABLED`, `USER_NOT_FOUND`, `INVALID_GRANT`), `_sessionExpiree()` rouvre l'écran de connexion.
-- Code de rattachement : seule son empreinte SHA-256 figure dans le code (`CODE_RATTACHEMENT_SHA256`). **Ne jamais écrire le code en clair.**
+- Code de rattachement et accès « ancien profil » sans compte : retirés le 26/09/2026 (migration terminée). `PROFIL_HERITE='liam'` reste l'identifiant de mon catalogue (`S.catalogue`), de mes cibles et de mes migrations. Un ancien marqueur `dz_herite` est effacé au démarrage. **Ne jamais écrire l'ancien code en clair.**
 - La clé Groq est stockée dans `localStorage.anthropic_key` et synchronisée dans `state.groqKey` (lisible par moi seul grâce aux règles). Elle est retirée des exports `.json`, ignorée à l'import, et effacée à la déconnexion ainsi qu'à la reconnexion sur un autre compte après une session expirée.
 
 ## 3. Modèles Groq
@@ -55,12 +55,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t65.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1208 tests au 26/09/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t66.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1209 tests au 26/09/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t65` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t66` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -77,7 +77,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 
 ### c. Publier
 
-- Incrémenter le build à trois endroits : `build AAAA-MM-JJ HHhMM` dans `index.html` (bloc profil), et dans `sw.js` la ligne `// build …` ainsi que `const CACHE='macros-AAAA-MM-JJ-HHMM';`.
+- Incrémenter le build à trois endroits : `build AAAA-MM-JJ HHhMM` dans `index.html` (bas de la fenêtre Réglages), et dans `sw.js` la ligne `// build …` ainsi que `const CACHE='macros-AAAA-MM-JJ-HHMM';`.
 - Terminer chaque message de commit par les lignes d'attribution demandées par la session.
 - GitHub Pages republie depuis `main`. Si la session ne peut pousser que sur une branche : ouvrir une PR, puis la fusionner (voir section 4).
 - Une fois la PR fusionnée, repartir de `main` pour la suite (`git fetch origin main && git checkout -B <branche> origin/main`).
@@ -107,15 +107,16 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 - Suivi : anneau calorique, marge (hors sèche) = cible + dépense − consommé, macros, tracker par jour (en tête de Recettes, avec la barre « Reste » qui reste collée sous l'en-tête quand il sort de l'écran), repas libres (texte, photo, code-barres, manuel), édition, copie vers un autre jour, repas triés par moment.
 - Fibres : barre et explication (ⓘ) dans le tracker et sur l'accueil, « ≥ » quand un aliment du jour n'a pas de valeur ; champ Fibres dans la fiche article, l'ajout d'article et la fenêtre d'ajout de repas ; OpenFoodFacts (`fiber_100g`) et les invites IA les renseignent.
 - Recettes : catalogue v6 (30 recettes, visible si `S.catalogue='liam'`), recettes perso et IA, favoris, cuisson avec remplacement, desserts. Illustration SVG générée pour chaque recette sans photo (`illustrationRecette`, `_composition`).
-- Inventaire : catégories, DLC, unités, diagnostic, fusion de doublons. Courses : liste par rayon, scanner, complétion auto.
+- Inventaire : catégories, DLC, unités, diagnostic, fusion de doublons, articles « À ranger » après les courses (`S.waiting`). Courses : liste par rayon, scanner, complétion auto ; 🧾 = acheté sans passer par l'inventaire ; « Déjà achetés » (`S.shop.graveyard`, ancien « cimetière ») pour racheter en un geste.
 - Dépense : pas (seuil `pasBase()` = `S.pasBase`, fixé à l'inscription ; 9679 pour l'ancien profil `liam`, repris à la migration), activités, séances du programme de musculation (`PROGRAMME_SEANCES`, sans cardio), estimation IA avec repli MET.
-- Bilan : bilan de la semaine précédente le lundi et le mardi (`renderBilanSemaine`, masquable, `S.bilanVu`), coach (tuile « Déficit/j » estimé par le TDEE, sinon « Reste » ; fibres), poids et moyenne mobile, TDEE estimé, bouton « Appliquer » la cible conseillée (TDEE − 550 ≈ −0,5 kg/semaine, baisse seulement, étapes de 300 kcal au plus, protéines et lipides gardés), calendrier du mois (`renderCalendrier`, `_etatJour` : vert ±10 % de cible + activité, orange au-dessus, bleu en dessous, pointillés sous 50 %), mensurations (`S.mesures`, en cm) et photos de progression (vignettes chargées à l'ouverture du Bilan, photos pleines seulement pour comparer, pas de copie locale : réseau requis).
+- Bilan : bilan de la semaine précédente le lundi et le mardi (`renderBilanSemaine`, masquable, `S.bilanVu`), coach (tuile « Déficit/jour » estimé par le TDEE, affiché « Dépense réelle estimée », sinon « Reste » ; fibres), poids et moyenne mobile, TDEE estimé, bouton « Appliquer » la cible conseillée (TDEE − 550 ≈ −0,5 kg/semaine, baisse seulement, étapes de 300 kcal au plus, protéines et lipides gardés), calendrier du mois (`renderCalendrier`, `_etatJour` : vert ±10 % de cible + activité, orange au-dessus, bleu en dessous, pointillés sous 50 %), mensurations (`S.mesures`, en cm) et photos de progression (vignettes chargées à l'ouverture du Bilan, photos pleines seulement pour comparer, pas de copie locale : réseau requis).
 - Comptes : inscription guidée (prénom, emoji, objectifs Mifflin-St Jeor, régime, matériel, puis étape facultative de la clé Groq avec mode d'emploi et « Passer cette étape » : `_secCleGroq`, `_cleGroqValide`, `passerCleGroq`), modification du profil, de l'identifiant, de l'e-mail et du mot de passe, déconnexion.
-- Technique : sauvegardes auto quotidiennes (`BACKUP_KEEP=14`), export/import `.json` (format 2), filet avant écrasement.
+- Technique : sauvegardes auto quotidiennes (`BACKUP_KEEP=14`), export/import `.json` (format 2, bloc unique dans Réglages), filet avant écrasement.
+- Libellés : pas de jargon interne à l'écran (cimetière, salle d'attente, TDEE, urgents…) ; `t66.js` le vérifie.
 
 ## 8. Points ouverts
 
-- Code de rattachement et mode « profil hérité » devenus inutiles avec les nouvelles règles : à retirer proprement si je le demande.
+- Historique git : l'ancien code de rattachement figurait en clair dans `tests/t48.js` jusqu'au 26/09/2026 (retiré du fichier, mais toujours lisible dans l'historique public). Inoffensif tant que les règles Firebase restent fermées ; réécrire l'historique est à ma décision.
 - Tester sur iPhone la lisibilité des illustrations SVG à 52 px.
 - Clé Groq partagée avec les autres comptes : en suspens (25/09/2026), on laisse chaque compte avec sa propre clé. Options étudiées : clé lisible par tous les comptes via Firebase (simple, mais récupérable par un utilisateur) ou petit serveur relais (clé cachée, usage limitable).
 - Fondu en haut de l'écran sur iPhone (25/09/2026) : en-tête descendu en mode app installée et barre « Reste » sans flou ; à confirmer sur l'appareil.
