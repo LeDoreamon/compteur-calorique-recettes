@@ -80,6 +80,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t64.js` | Fibres de l’inventaire remplies une fois par article (`FIBRES_INVENTAIRE`, `S.fibInv`), bouton de déconnexion à gauche |
 | `t65.js` | Inscription : étape facultative de la clé Groq (explications, format, passer l’étape, clé d’un autre compte effacée) |
 | `t66.js` | Audit de clarté du 26/09 : libellés sans jargon, build dans les Réglages, export unique, couleurs de la tendance alignées sur le calendrier, pas préremplis |
+| `t67.js` | Plats maison : préparation (stock déduit, parts, poids estimé, IA hors stock), manger en parts ou en grammes, jamais aux courses ni au diagnostic, retrait 3 jours après la fin |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

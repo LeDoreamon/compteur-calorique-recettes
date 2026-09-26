@@ -282,7 +282,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-09-26 11h30</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-09-26 14h00</div>
   </div>
 </div>
 
@@ -2637,6 +2637,7 @@ function _infoToast(titre,corps){
 // distante et le second ecrasait le premier. On les met a la queue leu leu.
 let _saveChain=Promise.resolve(),_saveQueued=false;
 function saveState(){
+  try{_nettoyerPlats();}catch(e){}   /* plats maison finis : masques puis retires */
   if(_saveQueued)return _saveChain;   // un enregistrement attend deja : il prendra l'etat le plus recent
   _saveQueued=true;
   var go=function(){_saveQueued=false;return _saveStateNow();};
@@ -3558,6 +3559,7 @@ function renderCard(r){
 
 function qtyLabel(it){
   if(it.qty===null)return 'présent';
+  if(it.plat)return _libParts(it.qty);
   let s=it.qty+' '+it.unit;
   // Un emballage se compte en poids. Sur un article denombrable, « 12 pc »
   // divise par une taille de 100 donnait « 0.1 × 100pc », qui ne veut rien dire.
@@ -3621,7 +3623,7 @@ function invIssues(){
   var zero=[],dupes={},expires=[],suspects=[],vus={};
   Object.keys(S.inv||{}).forEach(function(cat){
     (S.inv[cat]||[]).forEach(function(it){
-      if(!it)return;
+      if(!it||it.plat)return;   /* plats maison : hors diagnostic */
       var actif=(it.qty===null||it.qty>0);
       // 1. macros impossibles a calculer
       var k=(it.mac100&&it.mac100.kcal)||0;
@@ -3737,12 +3739,12 @@ function renderInv(){
   const editBtn=_invDlcBar()+`<button onclick="toggleEditMode()" style="padding:6px 14px;background:${S.editMode?'rgba(95,168,201,.2)':'transparent'};border:0.5px solid ${S.editMode?'var(--blue)':'var(--border)'};border-radius:8px;color:${S.editMode?'var(--blue)':'var(--text2)'};font-size:13px;cursor:pointer;margin-bottom:14px;display:block;width:100%;">${S.editMode?'\u2713 Terminer l\'édition':'\u270f\ufe0f Éditer l\'inventaire'}</button>`;
   // Ajouter depuis le haut, sans avoir a derouler jusqu'a la bonne categorie
   const topAdd=S.editMode?'<button onclick="openAddItem(\'frigo\')" style="width:100%;padding:11px;margin:2px 0 12px;background:rgba(111,191,115,.14);border:0.5px solid rgba(111,191,115,.45);border-radius:10px;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un article</button>':'';
-  return editBtn+topAdd+renderInvDiag()+invSearchBox()+'<div id="inv-list">'+renderInvCats()+'</div>';
+  return editBtn+topAdd+renderInvDiag()+renderPlatsMaison()+invSearchBox()+'<div id="inv-list">'+renderInvCats()+'</div>';
 }
 function renderInvCats(){
   const q=_normNom(S.invSearch||'');
   const cats=Object.entries(S.inv||{}).map(([cat,items])=>{
-    items=(Array.isArray(items)?items:[]).filter(Boolean);   // tableaux troues Firebase
+    items=(Array.isArray(items)?items:[]).filter(function(i){return i&&!i.plat;});   // tableaux troues Firebase ; plats maison a part
     let base=(S.editMode?items.slice():items.filter(i=>i.qty===null||i.qty>0));
     if(q)base=base.filter(i=>_normNom(i.name).indexOf(q)>=0);
     const visible=base.sort((a,b)=>(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'}));
@@ -3780,6 +3782,7 @@ function renderInvCats(){
 // ─── 🛒 Complétion automatique de la liste de courses ───────────────────────
 function _stockBas(it){
   if(!it||it.qty===null)return null;                 // illimité : jamais
+  if(it.plat)return null;                            // plat maison : jamais aux courses
   var q=+it.qty||0;
   if(q<=0)return 'épuisé';
   var seuil;
@@ -6002,7 +6005,8 @@ function ouvrirMenuAjout(){
     +'<div class="ma-grille">'
     +b('texte','\u270d\ufe0f','Décrire un repas')+b('photo','\ud83d\udcf7','Photo')+b('code','\u25a5','Code-barres')
     +b('inventaire','\ud83d\udce6','Mon inventaire')+b('activite','\ud83d\udd25','Pas et activités')+b('pesee','\u2696\ufe0f','Pesée')
-    +'</div>';
+    +'</div>'
+    +'<button class="ma-habit" onclick="fermerMenuAjout();ouvrirPreparerPlat()" style="margin-top:10px;"><span style="font-size:20px;">\ud83c\udf73</span><span style="flex:1;min-width:0;"><span style="display:block;font-size:13px;color:var(--text);">Préparer un plat</span><span style="font-size:11px;color:var(--text3);">Gâteau, lasagnes\u2026 à manger en plusieurs fois</span></span><span style="flex-shrink:0;color:var(--gold);font-size:16px;">\u203a</span></button>';
   var hab=_repasHabituels(6);
   if(hab.length){
     h+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:18px 0 2px;">Refaire un repas habituel</div>';
@@ -6427,7 +6431,7 @@ var _addMealFreeItems=[];                           // lignes estimées par l'IA
 var _invPick={};                                    // id -> quantité saisie
 var _invPickFromInput=false;                        // ouvert directement depuis l'écran d'entrée
 function openInvPick(){
-  _invPick={};
+  _invPick={};_invPickG={};
   (_addMealInvSuggestions||[]).forEach(function(s,i){
     var cb=document.getElementById('inv-cb-'+i);
     if(cb&&!cb.checked)return;
@@ -6492,7 +6496,17 @@ function renderInvPick(){
       var sel=_invPick[it.id]||'';
       var reste=(it.qty===null)?'\u221e':(Math.round((+it.qty||0)*10)/10)+(it.unit||'');
       var unit=it.macPiece?(it.unit||'pc'):(it.unit||'g');
-      var trop=(it.qty!==null&&sel>0&&sel>it.qty);
+      var trop=(it.qty!==null&&sel>0&&sel>it.qty+1e-9);
+      if(it.plat){
+        var enG=!!_invPickG[it.id]&&it.pieceG>0,val=sel?(enG?Math.round(sel*it.pieceG):Math.round(sel*100)/100):'';
+        return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid rgba(246,237,227,.05);">'
+          +'<span style="flex:1;min-width:0;font-size:12.5px;color:'+(sel>0?'var(--text)':'var(--gold)')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">\ud83c\udf73 '+_attr(it.name)+'</span>'
+          +'<span style="font-size:11px;color:'+(trop?'var(--red)':'var(--text3)')+';white-space:nowrap;">reste '+_libParts(it.qty)+'</span>'
+          +'<input type="number" min="0" step="'+(enG?'10':'0.5')+'" inputmode="decimal" value="'+val+'" oninput="invPickQtyPlat(\''+it.id+'\',this.value)" placeholder="0" style="width:62px;flex:0 0 auto;box-sizing:border-box;padding:5px;background:var(--bg);border:0.5px solid '+(trop?'var(--red)':'var(--border)')+';border-radius:7px;color:var(--text);font-size:12px;text-align:center;outline:none;">'
+          +(it.pieceG>0?'<button onclick="invPickUnitePlat(\''+it.id+'\')" title="Changer d\u2019unité" style="width:44px;flex:0 0 auto;padding:4px 0;background:var(--gold-bg);border:0.5px solid rgba(233,161,59,.45);border-radius:6px;color:var(--gold);font-size:11px;cursor:pointer;">'+(enG?'g':'parts')+' \u21c4</button>'
+            :'<span style="font-size:11px;color:var(--text3);width:44px;">parts</span>')
+          +'</div>';
+      }
       return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid rgba(246,237,227,.05);">'
         +'<span style="flex:1;min-width:0;font-size:12.5px;color:'+(sel>0?'var(--text)':'var(--text2)')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+it.name+'</span>'
         +'<span style="font-size:11px;color:'+(trop?'var(--red)':'var(--text3)')+';white-space:nowrap;">reste '+reste+'</span>'
@@ -7814,6 +7828,294 @@ async function modifierMotDePasse(){
   try{await changerMotDePasse(a);_errProfil('Mot de passe modifié.',true);
     ['pf-mdp1','pf-mdp2'].forEach(function(id){var e=document.getElementById(id);if(e)e.value='';});}
   catch(e){_errProfil(_msgErreurAuth(e&&e.message));}
+}
+// ─── 🍳 PLATS MAISON ────────────────────────────────────────────────────────
+// Un plat prepare en une fois et mange en plusieurs fois (gateau, lasagnes,
+// chili...). Les ingredients sortent du stock a la preparation ; le plat entre
+// dans l'inventaire compte en parts (article.plat), avec un poids par part
+// estime depuis les ingredients (on ne pese pas le plat). Rien n'est compte
+// dans la journee tant qu'on n'en mange pas. Un plat fini n'est jamais propose
+// aux courses ; il reste masque 3 jours (pour qu'un repas supprime puisse
+// rendre sa part), puis il disparait.
+var _plat=null;
+var PLAT_DLC_JOURS={frigo:4,congelateur:60};
+var PLAT_GARDE_FINI=3;
+function _estPlat(it){return !!(it&&it.plat);}
+function _r1(v){return Math.round((+v||0)*10)/10;}
+function _platPoidsIng(it,q){
+  var u=it.unit;q=+q||0;
+  if(u==='g'||u==='ml'||!u)return q;
+  if(it.pieceG>0)return q*it.pieceG;
+  if(it.pkg&&it.pkg.size>0)return q*it.pkg.size;
+  return 0;
+}
+function _platIngMacros(g){
+  if(g.id){
+    var it=findItem(g.id);if(!it)return null;
+    var m=itemMealMacros(it,g.qty)||{};
+    return {kcal:m.kcal||0,prot:m.prot||0,gluc:m.gluc||0,lip:m.lip||0,fib:(typeof m.fib==='number'?m.fib:null),poids:_platPoidsIng(it,g.qty)};
+  }
+  var f=(+g.qty||0)/100,m1=g.m100||{};
+  return {kcal:(+m1.kcal||0)*f,prot:(+m1.prot||0)*f,gluc:(+m1.gluc||0)*f,lip:(+m1.lip||0)*f,
+          fib:(typeof m1.fib==='number'?m1.fib*f:null),poids:+g.qty||0};
+}
+function _platTotaux(){
+  var t={kcal:0,prot:0,gluc:0,lip:0,fib:0,fibInc:false,poids:0,poidsInc:false};
+  ((_plat&&_plat.ings)||[]).forEach(function(g){
+    var m=_platIngMacros(g);if(!m)return;
+    t.kcal+=m.kcal;t.prot+=m.prot;t.gluc+=m.gluc;t.lip+=m.lip;
+    if(m.fib===null)t.fibInc=true;else t.fib+=m.fib;
+    if(m.poids>0)t.poids+=m.poids;else t.poidsInc=true;
+  });
+  return t;
+}
+function ouvrirPreparerPlat(){
+  _plat={nom:'',ings:[],parts:8,cat:'frigo',dlc:shiftDate(S.today,PLAT_DLC_JOURS.frigo),dessert:false,occupe:false,err:''};
+  var ov=document.getElementById('plat-overlay');
+  if(!ov){
+    ov=document.createElement('div');ov.id='plat-overlay';
+    ov.setAttribute('style','display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:210;align-items:center;justify-content:center;padding:12px;');
+    ov.onclick=function(ev){overlayBackdrop(ev,ov,fermerPreparerPlat);};
+    document.body.appendChild(ov);
+  }
+  renderPlat();
+  ov.style.display='flex';
+}
+function fermerPreparerPlat(){var ov=document.getElementById('plat-overlay');if(ov)ov.style.display='none';_plat=null;}
+var _PL_LBL='font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin:0 0 5px;';
+var _PL_IN='width:100%;box-sizing:border-box;padding:9px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;';
+function _platOptionsStock(){
+  var out='<option value="">Choisir dans l’inventaire…</option>';
+  Object.keys(S.inv||{}).forEach(function(cat){
+    var items=(S.inv[cat]||[]).filter(function(i){return i&&i.name&&!_estPlat(i)&&(i.qty===null||i.qty>0);})
+      .sort(function(a,b){return (a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'});});
+    if(!items.length)return;
+    out+='<optgroup label="'+_attr((CINFO[cat]&&CINFO[cat].label)||cat)+'">'
+      +items.map(function(i){return '<option value="'+_attr(i.id)+'">'+_attr(i.name)+'</option>';}).join('')+'</optgroup>';
+  });
+  return out;
+}
+function _platUniteIng(it){return it?(it.macPiece?(it.unit||'pc'):(it.unit||'g')):'';}
+function renderPlat(){
+  var ov=document.getElementById('plat-overlay');if(!ov||!_plat)return;
+  var p=_plat,h='';
+  h+='<div style="background:var(--bg2);border:0.5px solid rgba(233,161,59,.35);border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;box-sizing:border-box;">';
+  h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div style="font-size:16px;font-weight:600;color:var(--text);">🍳 Préparer un plat</div>'
+    +'<button onclick="fermerPreparerPlat()" style="background:none;border:0;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;">✕</button></div>';
+  // Mode d'emploi, toujours visible
+  h+='<div style="background:rgba(233,161,59,.08);border:0.5px solid rgba(233,161,59,.3);border-radius:10px;padding:11px 12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.5;">'
+    +'<div style="color:var(--gold);font-weight:600;margin-bottom:4px;">Comment ça marche</div>'
+    +'Pour un plat que tu ne manges pas en une fois : gâteau, lasagnes, chili, meal prep…'
+    +'<ol style="margin:6px 0 0;padding-left:18px;">'
+    +'<li>Indique les ingrédients utilisés. Ceux de ton inventaire sont <strong style="color:var(--text);">retirés du stock</strong>.</li>'
+    +'<li>Choisis en combien de <strong style="color:var(--text);">parts</strong> tu le découpes. Pas besoin de peser : le poids d’une part est estimé à partir des ingrédients.</li>'
+    +'<li>Le plat entier rejoint ton inventaire, dans <strong style="color:var(--text);">🍳 Plats maison</strong>. Il ne compte pas dans ta journée.</li>'
+    +'<li>Pour en manger : <strong style="color:var(--text);">+ › Mon inventaire</strong> › ton plat, en parts ou en grammes. Seul ce que tu manges est compté.</li>'
+    +'</ol><div style="margin-top:6px;">Quand il est fini, il disparaît tout seul : il n’est jamais ajouté aux courses.</div></div>';
+  if(p.err)h+='<div style="font-size:12px;color:var(--red);background:rgba(192,87,70,.1);border:0.5px solid rgba(192,87,70,.35);border-radius:8px;padding:8px 10px;margin-bottom:12px;">'+_attr(p.err)+'</div>';
+  // Nom
+  h+='<label style="'+_PL_LBL+'">Nom du plat</label><input id="plat-nom" type="text" maxlength="60" value="'+_attr(p.nom)+'" placeholder="Ex : Cheesecake" oninput="_plat.nom=this.value" style="'+_PL_IN+'margin-bottom:14px;">';
+  // Ingredients
+  h+='<div style="'+_PL_LBL+'">Ingrédients</div>';
+  if(!p.ings.length)h+='<div style="font-size:12px;color:var(--text3);margin-bottom:8px;">Aucun ingrédient pour l’instant.</div>';
+  else h+=p.ings.map(function(g,i){
+    var m=_platIngMacros(g)||{kcal:0};
+    var unite=g.id?_platUniteIng(findItem(g.id)):'g';
+    return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(246,237,227,.06);">'
+      +'<span style="flex:1;min-width:0;font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_attr(g.name)
+      +(g.id?'':' <span style="font-size:11px;color:var(--text3);">(hors stock)</span>')+'</span>'
+      +'<span style="font-size:12px;color:var(--text2);white-space:nowrap;">'+_fmtMacG(g.qty)+' '+unite+'</span>'
+      +'<span style="font-size:12px;color:var(--orange);white-space:nowrap;width:62px;text-align:right;">'+Math.round(m.kcal)+' kcal</span>'
+      +'<button onclick="retirerIngPlat('+i+')" title="Retirer" style="background:none;border:0;color:var(--text3);font-size:14px;cursor:pointer;padding:2px 4px;">✕</button></div>';
+  }).join('');
+  // Ajout depuis l'inventaire
+  h+='<div style="display:flex;gap:6px;align-items:center;margin:10px 0 6px;">'
+    +'<select id="plat-sel" onchange="majUnitePlat()" style="'+_PL_IN+'flex:1;min-width:0;padding:8px;">'+_platOptionsStock()+'</select>'
+    +'<input id="plat-q" type="number" min="0" step="any" inputmode="decimal" placeholder="qté" style="'+_PL_IN+'width:70px;flex:0 0 auto;padding:8px;">'
+    +'<span id="plat-u" style="font-size:11px;color:var(--text3);width:30px;"></span>'
+    +'<button onclick="ajouterIngStockPlat()" style="padding:8px 11px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:12px;font-weight:700;cursor:pointer;">OK</button></div>';
+  // Ajout hors inventaire
+  h+='<details style="margin-bottom:14px;"><summary style="font-size:12px;color:var(--accent2);cursor:pointer;padding:4px 0;">+ Un ingrédient qui n’est pas dans ton inventaire</summary>'
+    +'<div style="padding:8px 0 0;">'
+    +'<div style="display:flex;gap:6px;margin-bottom:6px;"><input id="plat-l-nom" type="text" maxlength="50" placeholder="Ex : Spéculoos" style="'+_PL_IN+'flex:1;min-width:0;padding:8px;">'
+    +'<input id="plat-l-q" type="number" min="0" step="any" inputmode="decimal" placeholder="g" style="'+_PL_IN+'width:70px;flex:0 0 auto;padding:8px;"><span style="font-size:11px;color:var(--text3);align-self:center;">g</span></div>'
+    +'<div style="font-size:11px;color:var(--text3);margin-bottom:5px;">Macros pour 100 g : laisse vide pour une estimation par l’IA.</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-bottom:8px;">'
+    +['kcal','prot','gluc','lip'].map(function(k){return '<input id="plat-l-'+k+'" type="number" min="0" step="any" inputmode="decimal" placeholder="'+({kcal:'kcal',prot:'prot.',gluc:'gluc.',lip:'lip.'})[k]+'" style="'+_PL_IN+'padding:7px;font-size:12px;">';}).join('')
+    +'</div><button id="plat-l-btn" onclick="ajouterIngLibrePlat()" style="width:100%;padding:8px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">Ajouter cet ingrédient</button>'
+    +'<div id="plat-l-st" style="font-size:11px;color:var(--text3);margin-top:5px;min-height:14px;"></div></div></details>';
+  // Decoupage
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;"><label for="plat-parts" style="'+_PL_LBL+'margin:0;flex:1;">Nombre de parts</label>'
+    +'<input id="plat-parts" type="number" min="1" max="60" step="1" inputmode="numeric" value="'+p.parts+'" oninput="_plat.parts=Math.max(1,Math.round(+this.value||1));majResumePlat()" style="'+_PL_IN+'width:80px;text-align:center;"></div>';
+  h+='<div id="plat-resume" style="background:var(--bg3);border-radius:10px;padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--text2);line-height:1.55;">'+_resumePlatHTML()+'</div>';
+  // Rangement
+  h+='<div style="'+_PL_LBL+'">Rangement</div><div style="display:flex;gap:6px;margin-bottom:10px;">'
+    +['frigo','congelateur'].map(function(c){var on=p.cat===c;
+      return '<button onclick="catPlat(\''+c+'\')" style="flex:1;padding:8px;border-radius:8px;cursor:pointer;font-size:12px;background:'+(on?'rgba(95,168,201,.15)':'transparent')+';border:0.5px solid '+(on?'var(--blue)':'rgba(246,237,227,.12)')+';color:'+(on?'var(--blue)':'var(--text2)')+';">'+CINFO[c].sym+' '+CINFO[c].label+'</button>';}).join('')
+    +'</div>';
+  h+='<label style="'+_PL_LBL+'">À consommer avant le</label><input id="plat-dlc" type="date" value="'+_attr(p.dlc)+'" onchange="_plat.dlc=this.value" style="'+_PL_IN+'margin-bottom:10px;">';
+  h+='<label style="display:flex;align-items:center;gap:8px;font-size:12.5px;color:var(--text2);cursor:pointer;margin-bottom:16px;"><input type="checkbox" id="plat-dessert" '+(p.dessert?'checked ':'')+'onchange="_plat.dessert=this.checked" style="width:16px;height:16px;accent-color:var(--gold);"> C’est un dessert (proposé en fin de repas)</label>';
+  h+='<div style="display:flex;gap:8px;"><button onclick="creerPlat()"'+(p.occupe?' disabled':'')+' style="flex:1;padding:11px;background:var(--gold);border:0;border-radius:9px;color:#1a120b;font-size:14px;font-weight:700;cursor:pointer;">✓ Créer le plat</button>'
+    +'<button onclick="fermerPreparerPlat()" style="padding:11px 14px;background:transparent;border:0.5px solid rgba(246,237,227,.15);border-radius:9px;color:var(--text3);font-size:13px;cursor:pointer;">Annuler</button></div>';
+  h+='</div>';
+  ov.innerHTML=h;
+  majUnitePlat();
+}
+function _resumePlatHTML(){
+  if(!_plat||!_plat.ings.length)return 'Ajoute des ingrédients : les macros du plat entier et d’une part s’affichent ici.';
+  var t=_platTotaux(),n=Math.max(1,_plat.parts||1);
+  var mac=function(k,pr,g,l){return '<strong style="color:var(--orange);">'+Math.round(k)+' kcal</strong> · '+_fmtMacG(pr)+' g prot. · '+_fmtMacG(g)+' g gluc. · '+_fmtMacG(l)+' g lip.';};
+  return '<div><span style="color:var(--text3);">Plat entier :</span> '+mac(t.kcal,t.prot,t.gluc,t.lip)+(t.poids>0?' · ≈ '+Math.round(t.poids)+' g':'')+'</div>'
+    +'<div style="margin-top:3px;"><span style="color:var(--text3);">Par part ('+n+') :</span> '+mac(t.kcal/n,t.prot/n,t.gluc/n,t.lip/n)+(t.poids>0?' · ≈ '+Math.round(t.poids/n)+' g':'')+'</div>'
+    +(t.poidsInc?'<div style="font-size:11px;color:var(--text3);margin-top:3px;">Poids approximatif : certains ingrédients n’ont pas de poids connu.</div>':'');
+}
+function majResumePlat(){var r=document.getElementById('plat-resume');if(r)r.innerHTML=_resumePlatHTML();}
+function majUnitePlat(){
+  var s=document.getElementById('plat-sel'),u=document.getElementById('plat-u');if(!s||!u)return;
+  u.textContent=_platUniteIng(findItem(s.value));
+}
+function _lireSaisiesPlat(){var n=document.getElementById('plat-nom');if(n&&_plat)_plat.nom=n.value;}
+function ajouterIngStockPlat(){
+  if(!_plat)return;_lireSaisiesPlat();
+  var s=document.getElementById('plat-sel'),qi=document.getElementById('plat-q');
+  var it=findItem(s&&s.value),q=parseFloat(String((qi&&qi.value)||'').replace(',','.'));
+  if(!it){_plat.err='Choisis un article dans la liste.';return renderPlat();}
+  if(!(q>0)){_plat.err='Indique la quantité utilisée.';return renderPlat();}
+  var ex=_plat.ings.find(function(g){return g.id===it.id;});
+  if(ex)ex.qty=_r1(ex.qty+q);else _plat.ings.push({id:it.id,name:it.name,qty:q});
+  _plat.err='';renderPlat();
+}
+async function ajouterIngLibrePlat(){
+  if(!_plat||_plat.occupe)return;_lireSaisiesPlat();
+  var nom=_neutre(String((document.getElementById('plat-l-nom')||{}).value||'').trim());
+  var q=parseFloat(String((document.getElementById('plat-l-q')||{}).value||'').replace(',','.'));
+  var st=document.getElementById('plat-l-st');
+  if(!nom||!(q>0)){if(st){st.style.color='var(--red)';st.textContent='Indique un nom et un poids en grammes.';}return;}
+  var lire=function(k){var v=parseFloat(String((document.getElementById('plat-l-'+k)||{}).value||'').replace(',','.'));return v>=0?v:null;};
+  var m100={kcal:lire('kcal'),prot:lire('prot'),gluc:lire('gluc'),lip:lire('lip')};
+  if(m100.kcal===null){
+    if(!getApiKey()){if(st){st.style.color='var(--red)';st.textContent='Renseigne au moins les kcal, ou ajoute une clé Groq dans Réglages pour l’estimation.';}return;}
+    var btn=document.getElementById('plat-l-btn');if(btn)btn.disabled=true;
+    if(st){st.style.color='var(--text3)';st.textContent='🔍 Estimation en cours…';}
+    try{
+      var sys="Base de données nutritionnelles. Retourne UNIQUEMENT un JSON pour 100g: {\"kcal\":integer,\"prot\":number,\"gluc\":number,\"lip\":number,\"fib\":number} (fib = fibres en g).";
+      var data=await callAI([{role:'user',content:'Macros 100g de: '+nom}],700,sys,null,0,7);
+      if(data.empty)throw new Error('réponse vide, réessaie');
+      var p=extractJSON(data.content.map(function(b){return b.text||'';}).join(''));
+      if(!p||!(+p.kcal>=0))throw new Error('réponse illisible, réessaie');
+      m100={kcal:+p.kcal||0,prot:+p.prot||0,gluc:+p.gluc||0,lip:+p.lip||0};
+      if(typeof p.fib==='number'&&p.fib>=0)m100.fib=_r1(p.fib);
+    }catch(e){
+      if(btn)btn.disabled=false;
+      if(st){st.style.color='var(--red)';st.textContent='Estimation impossible : '+String((e&&e.message)||'').slice(0,60)+'. Saisis les macros à la main.';}
+      return;
+    }
+    if(!_plat)return;   // fenetre fermee pendant l'attente
+  }else{
+    ['prot','gluc','lip'].forEach(function(k){if(m100[k]===null)m100[k]=0;});
+    var fn=_fibParNom(nom);if(fn!==null)m100.fib=fn;
+  }
+  _plat.ings.push({id:null,name:nom,qty:q,m100:m100});
+  _plat.err='';renderPlat();
+}
+function retirerIngPlat(i){if(!_plat)return;_lireSaisiesPlat();_plat.ings.splice(i,1);renderPlat();}
+function catPlat(c){
+  if(!_plat||!PLAT_DLC_JOURS[c])return;_lireSaisiesPlat();
+  var d=document.getElementById('plat-dlc');if(d)_plat.dlc=d.value;
+  // La date suit le rangement tant qu'elle n'a pas ete changee a la main
+  if(_plat.dlc===shiftDate(S.today,PLAT_DLC_JOURS[_plat.cat]))_plat.dlc=shiftDate(S.today,PLAT_DLC_JOURS[c]);
+  _plat.cat=c;renderPlat();
+}
+async function creerPlat(){
+  if(!_plat||_plat.occupe)return;_lireSaisiesPlat();
+  var p=_plat,nom=_neutre(String(p.nom||'').trim());
+  var dl=document.getElementById('plat-dlc');if(dl)p.dlc=dl.value;
+  var ds=document.getElementById('plat-dessert');if(ds)p.dessert=ds.checked;
+  if(!nom){p.err='Donne un nom à ton plat.';return renderPlat();}
+  if(!p.ings.length){p.err='Ajoute au moins un ingrédient.';return renderPlat();}
+  var n=Math.max(1,Math.round(+p.parts||1)),t=_platTotaux();
+  if(!(t.kcal>0)){p.err='Les ingrédients n’ont pas de calories connues : vérifie leurs macros.';return renderPlat();}
+  // Plus que le stock disponible : on previent, le stock tombera a zero
+  var trop=p.ings.filter(function(g){var it=g.id&&findItem(g.id);return it&&it.qty!==null&&g.qty>it.qty+1e-9;});
+  if(trop.length){
+    p.occupe=true;
+    var ok=await _confirmer('Plus que ton stock ?\n\n'+trop.map(function(g){var it=findItem(g.id);return g.name+' : '+_fmtMacG(g.qty)+' utilisé(s), '+_fmtMacG(it.qty)+' en stock';}).join('\n')+'\n\nLe stock de ces articles passera à zéro.',{ok:'Continuer'});
+    if(!_plat)return;p.occupe=false;
+    if(!ok)return;
+  }
+  // 1. Les ingredients sortent du stock
+  p.ings.forEach(function(g){var it=g.id&&findItem(g.id);if(it&&it.qty!==null)it.qty=Math.max(0,_r1(it.qty-g.qty));});
+  // 2. Le plat entre dans l'inventaire, compte en parts
+  var poids=t.poids>0?t.poids:0,pg=poids>0?Math.round(poids/n):0;
+  var part={kcal:Math.round(t.kcal/n),prot:_r1(t.prot/n),gluc:_r1(t.gluc/n),lip:_r1(t.lip/n)};
+  if(!t.fibInc)part.fib=_r1(t.fib/n);
+  var it={id:'plat_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:nom,qty:n,unit:'parts',urgent:0,
+    added:S.today,dlc:p.dlc||undefined,dlcAuto:false,macSource:'manual',macPiece:part,
+    macManual:{kcal:part.kcal,prot:part.prot,gluc:part.gluc,lip:part.lip},
+    plat:{creeLe:S.today,parts:n,poidsEstime:Math.round(poids),ings:p.ings.map(function(g){return {n:g.name,q:_r1(g.qty),u:g.id?_platUniteIng(findItem(g.id)):'g'};})}};
+  if(!it.dlc)delete it.dlc;
+  if(pg>0){
+    it.pieceG=pg;
+    it.mac100={kcal:Math.round(t.kcal/poids*100),prot:_r1(t.prot/poids*100),gluc:_r1(t.gluc/poids*100),lip:_r1(t.lip/poids*100)};
+    if(!t.fibInc)it.mac100.fib=_r1(t.fib/poids*100);
+  }
+  if(p.dessert){it.dessert=true;it.dessertQty=1;}
+  if(!S.inv[p.cat])S.inv[p.cat]=[];
+  S.inv[p.cat].push(it);
+  fermerPreparerPlat();
+  saveState();render();
+  try{_infoToast('🍳 '+nom+' est au '+(CINFO[p.cat]||CINFO.frigo).label.toLowerCase(),n+' part'+(n>1?'s':'')+' de '+part.kcal+' kcal. Pour en manger : + › Mon inventaire.');}catch(e){}
+}
+// Un plat fini reste masque quelques jours (un repas supprime peut rendre sa
+// part), puis disparait. Jamais de passage par les courses ni « Deja achetes ».
+function _nettoyerPlats(){
+  if(!S||!S.inv)return;
+  Object.keys(S.inv).forEach(function(cat){
+    var arr=S.inv[cat];if(!Array.isArray(arr))return;
+    S.inv[cat]=arr.filter(function(it){
+      if(!_estPlat(it))return true;
+      if(it.qty===null||it.qty>0.01){delete it.plat.finiLe;return true;}
+      if(!it.plat.finiLe){it.plat.finiLe=S.today;return true;}
+      return shiftDate(it.plat.finiLe,PLAT_GARDE_FINI)>S.today;
+    });
+  });
+}
+function _platsEnStock(){
+  var out=[];
+  Object.keys(S.inv||{}).forEach(function(cat){(S.inv[cat]||[]).forEach(function(it){if(_estPlat(it)&&(it.qty===null||it.qty>0.01))out.push({cat:cat,it:it});});});
+  return out.sort(function(a,b){return String(a.it.dlc||'9999').localeCompare(String(b.it.dlc||'9999'));});
+}
+function _libParts(q){var v=_r1(q);return String(v).replace('.',',')+' part'+(v>1?'s':'');}
+function renderPlatsMaison(){
+  var pl=_platsEnStock();
+  var h='<div style="background:rgba(233,161,59,.06);border:0.5px solid rgba(233,161,59,.4);border-radius:12px;padding:12px 14px;margin-bottom:14px;">'
+    +'<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:'+(pl.length?'8':'0')+'px;">'
+    +'<span style="font-size:13px;font-weight:600;color:var(--gold);">🍳 Plats maison'+(pl.length?' · '+pl.length:'')+'</span>'
+    +'<button onclick="ouvrirPreparerPlat()" style="padding:6px 11px;background:var(--gold-bg);border:0.5px solid rgba(233,161,59,.5);border-radius:8px;color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;">+ Préparer un plat</button></div>';
+  if(!pl.length)h+='<div style="font-size:11.5px;color:var(--text3);margin-top:6px;line-height:1.45;">Un gâteau, des lasagnes, un chili pour la semaine ? Prépare-le ici : les ingrédients sortent du stock et tu piocheras dedans part par part.</div>';
+  h+=pl.map(function(x){
+    var it=x.it,d=it.dlc?getDlcStatus(effDlc(it)):null,mp=it.macPiece||{};
+    return '<div onclick="openItemDetail(\''+x.cat+'\',\''+it.id+'\')" style="display:flex;align-items:center;gap:8px;padding:7px 0;border-top:0.5px solid rgba(233,161,59,.15);cursor:pointer;">'
+      +'<span style="flex:1;min-width:0;"><span style="display:block;font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_attr(it.name)+(it.dessert?' <span style="font-size:11px;">🍰</span>':'')+'</span>'
+      +'<span style="font-size:11px;color:var(--text3);">'+(CINFO[x.cat]?CINFO[x.cat].sym+' '+CINFO[x.cat].label+' · ':'')+Math.round(mp.kcal||0)+' kcal / part'+(it.pieceG?' (≈ '+it.pieceG+' g)':'')+'</span></span>'
+      +'<span style="font-size:12.5px;color:var(--gold);font-weight:600;white-space:nowrap;">'+_libParts(it.qty)+'</span>'
+      +(d?'<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:'+d.bg+';color:'+d.color+';white-space:nowrap;">'+d.label+'</span>':'')
+      +'</div>';
+  }).join('');
+  return h+'</div>';
+}
+// Choix « Mon inventaire » : un plat se prend en parts ou en grammes
+var _invPickG={};   // id -> true : saisie en grammes (la selection reste en parts)
+function invPickUnitePlat(id){
+  var it=findItem(id);if(!it||!(it.pieceG>0))return;
+  if(_invPickG[id])delete _invPickG[id];else _invPickG[id]=true;
+  renderInvPick();
+}
+function invPickQtyPlat(id,v){
+  var it=findItem(id);if(!it)return;
+  var q=parseFloat(String(v).replace(',','.'))||0;
+  if(_invPickG[id]&&it.pieceG>0)q=q/it.pieceG;
+  invPickQty(id,q>0?Math.round(q*1000)/1000:0);
 }
 // ─── PAGE D'ACCUEIL ─────────────────────────────────────────────────────
 // Le prochain repas suit l'ordre reel de la journee et saute ce qui est deja
