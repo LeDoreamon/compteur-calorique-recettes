@@ -83,5 +83,19 @@ t('accessible depuis le menu + et l\'onglet Inventaire',()=>{
   if(!/onclick="fermerMenuAjout\(\);ouvrirPreparerPlat\(\)"/.test(src))throw new Error('menu +');
   if(X('renderPlatsMaison()').indexOf('ouvrirPreparerPlat()')<0)throw new Error('inventaire');
 });
+console.log('\n=== XVIIB. Deficit du jour en seche ===');
+t('*** sous la cible : activite en plus du deficit ; au-dessus : reduit ou surplus ***',()=>{
+  X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");
+  const vrai=X('estimateTDEE');
+  try{
+    X("estimateTDEE=function(){return {ok:true,tdee:2520};}");
+    const f=X('_ligneDeficitJour');
+    if(!/en plus de ton déficit/.test(f(2000,774)))throw new Error('sous la cible');
+    const r=f(2400,774);if(!/déficit réduit à ≈ 120 kcal/.test(r)||/en plus/.test(r))throw new Error('reduit : '+r);
+    const s=f(3639,774);if(!/pas de déficit : surplus ≈ 1119 kcal/.test(s))throw new Error('surplus : '+s);
+    X("estimateTDEE=function(){return {ok:false};}");
+    if(!/au-dessus de ta cible de 1329 kcal/.test(f(3639,774)))throw new Error('sans TDEE');
+  }finally{sb.estimateTDEE=vrai;X('estimateTDEE=globalThis.estimateTDEE');}
+});
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();

@@ -300,7 +300,7 @@ t('*** tracker : marge avec l\'activite hors seche, deficit en seche ***',()=>{
   if(i<0)throw new Error('libelle absent');
   const b=src.slice(i-700,i);
   if(!/_cibleDuJour\(dd\)-m\.kcal/.test(b))throw new Error('formule incorrecte');
-  if(!/en plus de ton déficit/.test(b))throw new Error('branche seche absente');
+  if(!/_ligneDeficitJour\(m\.kcal,b\.total\)/.test(b))throw new Error('branche seche absente');
 });
 t('la marge du tracker et celle de l\'accueil passent par la meme cible du jour',()=>{
   if(src.indexOf('_cibleDuJour(dd)-m.kcal')<0||src.indexOf('_cibleDuJour(jour)-m.kcal')<0)throw new Error('une des deux formules est absente');

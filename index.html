@@ -282,7 +282,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-09-26 14h00</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-09-27 10h00</div>
   </div>
 </div>
 
@@ -3434,6 +3434,19 @@ function _copierJourVers(src,target){
   S.displayDate=target;
   saveState();render();
 }
+// En seche, l'activite ne releve pas la cible : sous la cible, elle creuse le
+// deficit. Au-dessus, dire « en plus de ton deficit » etait faux : on compare
+// alors a la depense reelle estimee (TDEE, activite habituelle comprise).
+function _ligneDeficitJour(kcal,act){
+  var dep='🔥 <strong style="color:var(--text);">'+act+' kcal</strong> d\'activité';
+  var s=function(c,t){return '<span style="font-size:11px;color:var(--text2);">'+dep+' · <span style="color:'+c+';">'+t+'</span></span>';};
+  if(kcal<=TARGETS.kcal)return s('var(--green)','en plus de ton déficit');
+  var td=null;try{td=estimateTDEE();}catch(e){}
+  if(!(td&&td.ok))return s('var(--orange)','au-dessus de ta cible de '+Math.round(kcal-TARGETS.kcal)+' kcal : déficit réduit ou nul');
+  var ecart=Math.round(td.tdee-kcal),ref=' (dépense réelle ≈ '+td.tdee+' kcal/j, activité habituelle comprise)';
+  if(ecart>0)return s('var(--orange)','au-dessus de ta cible · déficit réduit à ≈ '+ecart+' kcal'+ref);
+  return s('var(--red)','pas de déficit : surplus ≈ '+Math.abs(ecart)+' kcal'+ref);
+}
 function renderMacros(){
   const dd=S.displayDate;const m=getDayMacros(dd);const meals=S.dayMeals[dd]||[];
   const isToday=dd===S.today,isTomorrow=dd===TOMORROW;
@@ -3445,7 +3458,7 @@ function renderMacros(){
     const _lis=_mo?`border-left:3px solid ${_mo.couleur};padding-left:7px;`:'border-left:3px solid transparent;padding-left:7px;';
     return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);${_lis}"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(base.kcal+dm.kcal+ex.kcal)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round((base.prot+dm.prot+ex.prot)*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" title="Supprimer ce repas" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;width:40px;height:40px;margin:-10px -10px -10px -6px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;">✕</button></div>`;}).filter(Boolean).join('');
   const rem=meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text2);">${isToday?'Reste':'Écart'} : <strong style="color:var(--text);">${isToday?(Math.round(Math.max(0,TARGETS.kcal-m.kcal))+' kcal'):((m.kcal>TARGETS.kcal?'+':'')+Math.round(m.kcal-TARGETS.kcal)+' kcal')}</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${isToday?(Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10+'g'):(Math.round(m.prot*10)/10+'/'+TARGETS.prot+'g')}</strong></span>${(()=>{const b=getBurn(dd);if(!b||!b.total)return '';
-    if(_objectif()==='perte')return `<span style="font-size:11px;color:var(--text2);">🔥 <strong style="color:var(--text);">${b.total} kcal</strong> d'activité · <span style="color:var(--green);">en plus de ton déficit</span></span>`;
+    if(_objectif()==='perte')return _ligneDeficitJour(m.kcal,b.total);
     const marge=Math.round(_cibleDuJour(dd)-m.kcal);
     const lib=isToday?"Avec l'activité":"Marge";
     return `<span style="font-size:11px;color:var(--text2);">🔥 <strong style="color:var(--text);">${b.total} kcal</strong> · ${lib} : <strong style="color:${marge>=0?'var(--green)':'var(--red)'};">${marge>=0?marge+' kcal':'dépassement de '+Math.abs(marge)+' kcal'}</strong></span>`;})()}</div>`:'';
