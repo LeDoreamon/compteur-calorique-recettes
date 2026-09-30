@@ -282,7 +282,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-09-27 10h00</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-09-30 10h00</div>
   </div>
 </div>
 
@@ -870,7 +870,7 @@ const S={
   shop:{list:[],graveyard:[],graveRayons:[]},
   waiting:[],
   shopSeeded:false,
-  coursesGrave:false
+  coursesVoirAchetes:false
 };
 const ROOT=document.getElementById('root');
 
@@ -2390,6 +2390,7 @@ function _applyState(d){
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it&&MACROS_PIECE[it.id]&&!it.macPiece){const _p=MACROS_PIECE[it.id];it.macPiece={kcal:_p.kcal,prot:_p.prot,gluc:_p.gluc,lip:_p.lip};it.pieceG=_p.g;it.mac100={kcal:+(_p.kcal*100/_p.g).toFixed(1),prot:+(_p.prot*100/_p.g).toFixed(1),gluc:+(_p.gluc*100/_p.g).toFixed(1),lip:+(_p.lip*100/_p.g).toFixed(1)};}}));
   // Courses + salle d'attente
   S.shop=(d.shop&&Array.isArray(d.shop.list))?{list:d.shop.list,graveyard:Array.isArray(d.shop.graveyard)?d.shop.graveyard:[],graveRayons:Array.isArray(d.shop.graveRayons)?d.shop.graveRayons:[]}:{list:[],graveyard:[],graveRayons:[]};
+  if(_migrerDejaAchetes())_etatCorrige=true;
   S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.mesures=Array.isArray(d.mesures)?d.mesures.filter(function(m){return m&&/^\d{4}-\d\d-\d\d$/.test(m.d);}):[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
   S.shopSeeded=d.shopSeeded||false;
   S.bilanVu=(typeof d.bilanVu==='string'&&/^\d{4}-\d\d-\d\d$/.test(d.bilanVu))?d.bilanVu:null;
@@ -3806,7 +3807,7 @@ function _stockBas(it){
 }
 function shopSuggestions(){
   var deja={};
-  (S.shop&&S.shop.list||[]).forEach(function(x){deja[_normNom(x.name)]=1;});
+  (S.shop&&S.shop.list||[]).forEach(function(x){if(!x.achete)deja[_normNom(x.name)]=1;});
   var out=[];
   Object.keys(S.inv||{}).forEach(function(cat){
     (S.inv[cat]||[]).forEach(function(it){
@@ -3878,7 +3879,7 @@ function applyShopSuggestions(){
   s.forEach(function(x,i){
     var cb=document.getElementById('sa-'+i);
     if(cb&&!cb.checked)return;
-    S.shop.list.push({id:'sh_'+Date.now().toString(36)+'_'+i,name:x.name,rayon:x.rayon,checked:false});
+    _ajouterAuxCourses(x.name,x.rayon);
     n++;
   });
   S.shopAutoOpen=0;
@@ -3886,63 +3887,81 @@ function applyShopSuggestions(){
   if(n)_alerte('\u2713 '+n+' article'+(n>1?'s ajout\u00e9s':' ajout\u00e9')+' \u00e0 ta liste de courses.');
 }
 function renderCoursesHTML(){
+  const voir=!!S.coursesVoirAchetes;
+  const cache=it=>!!(it.checked||it.achete);
   const byR={};SHOP_CATS.forEach(c=>byR[c.k]=[]);
-  (S.shop.list||[]).forEach(it=>{(byR[it.rayon]||byR['divers']).push(it);});
-  SHOP_CATS.forEach(c=>byR[c.k].sort((a,b)=>(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'})));
-  const checkedN=(S.shop.list||[]).filter(i=>i.checked).length;
-  const waitN=(S.waiting||[]).length;const graveN=(S.shop.graveyard||[]).length;
+  (S.shop.list||[]).forEach(it=>{if(voir||!cache(it))(byR[it.rayon]||byR['divers']).push(it);});
+  // Tri : a acheter d'abord, puis panier, puis achetes ; alphabetique dans chaque groupe
+  const rang=it=>it.achete?2:(it.checked?1:0);
+  SHOP_CATS.forEach(c=>byR[c.k].sort((a,b)=>(rang(a)-rang(b))||(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'})));
+  const checkedN=(S.shop.list||[]).filter(i=>i.checked&&!i.achete).length;
+  const acheteN=(S.shop.list||[]).filter(i=>i.achete).length;
+  const actifN=(S.shop.list||[]).filter(i=>!cache(i)).length;
+  const waitN=(S.waiting||[]).length;
   let html='<div style="margin-bottom:14px;">';
   html+=renderShopAuto();
-  html+='<div style="display:flex;gap:6px;margin-bottom:14px;"><input id="shop-add-name" placeholder="Ajouter un article\u2026" style="flex:1;min-width:0;padding:9px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><select id="shop-add-rayon" style="padding:9px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:11px;max-width:120px;">'+SHOP_CATS.map(c=>`<option value="${c.k}">${c.label}</option>`).join('')+'</select><button onclick="addShopItem()" style="padding:9px 13px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:15px;cursor:pointer;">+</button><button onclick="openScanner(\'shop\')" title="Scanner un code-barres" style="padding:9px 12px;background:transparent;border:0.5px solid rgba(192,87,70,.5);border-radius:8px;color:var(--accent2);font-size:15px;cursor:pointer;">\ud83d\udcf7</button></div>';
-  if(waitN)html+=`<div style="background:rgba(233,161,59,.08);border:0.5px solid rgba(233,161,59,.25);border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12px;color:var(--orange);">\u23f3 ${waitN} article(s) à ranger dans l'onglet Inventaire.</div>`;
+  html+='<div style="display:flex;gap:6px;margin-bottom:10px;"><input id="shop-add-name" placeholder="Ajouter un article…" style="flex:1;min-width:0;padding:9px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><select id="shop-add-rayon" style="padding:9px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:11px;max-width:120px;">'+SHOP_CATS.map(c=>`<option value="${c.k}">${c.label}</option>`).join('')+'</select><button onclick="addShopItem()" style="padding:9px 13px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:15px;cursor:pointer;">+</button><button onclick="openScanner(\'shop\')" title="Scanner un code-barres" style="padding:9px 12px;background:transparent;border:0.5px solid rgba(192,87,70,.5);border-radius:8px;color:var(--accent2);font-size:15px;cursor:pointer;">📷</button></div>';
+  // Afficher / masquer les articles coches et achetes, comme dans Rappels
+  if(checkedN+acheteN)html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;font-size:12px;color:var(--text3);"><span>${checkedN?checkedN+' dans le panier':''}${checkedN&&acheteN?' · ':''}${acheteN?acheteN+' acheté'+(acheteN>1?'s':''):''}</span><button onclick="basculerAchetes()" style="padding:6px 11px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--blue);font-size:12px;cursor:pointer;">${voir?'Masquer les cochés':'Afficher les cochés'}</button></div>`;
+  if(waitN)html+=`<div style="background:rgba(233,161,59,.08);border:0.5px solid rgba(233,161,59,.25);border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12px;color:var(--orange);">⏳ ${waitN} article(s) à ranger dans l'onglet Inventaire.</div>`;
   SHOP_CATS.forEach(c=>{
     const items=byR[c.k];if(!items.length)return;
     html+=`<div style="margin-bottom:14px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;font-weight:600;">${c.label}${!shopTransfer(c.k)?' <span style="color:var(--text3);text-transform:none;">· hors inventaire</span>':''}</span>${c.t?`<button onclick="toggleGraveRayon('${c.k}')" title="Tout ce rayon : acheté sans passer par l'inventaire" style="background:none;border:0;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;opacity:${(S.shop.graveRayons||[]).indexOf(c.k)>=0?1:0.3};">🧾</button>`:''}</div>`;
     items.forEach(it=>{
-      html+=`<div style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid rgba(246,237,227,.05);"><div onclick="toggleShopItem('${it.id}')" style="width:20px;height:20px;border-radius:5px;border:1.5px solid ${it.checked?'var(--green)':'rgba(246,237,227,.25)'};background:${it.checked?'var(--green)':'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">${it.checked?'<span style=\"color:var(--bg);font-size:13px;\">\u2713</span>':''}</div><span onclick="openShopItem('${it.id}')" style="flex:1;font-size:13px;color:${it.checked?'var(--text3)':'var(--text)'};text-decoration:${it.checked?'line-through':'none'};cursor:pointer;">${it.name}</span><button onclick="toggleGraveItem('${it.id}')" title="Acheté sans passer par l'inventaire" style="background:none;border:0;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;flex-shrink:0;opacity:${it.graveOnly?1:0.28};">🧾</button></div>`;
+      const pan=it.checked&&!it.achete,ach=!!it.achete,fait=pan||ach;
+      const coul=ach?'var(--text3)':'var(--green)';
+      const tag=pan?'<span style="font-size:11px;color:var(--green);margin-left:6px;">dans le panier</span>':(ach?'<span style="font-size:11px;color:var(--text3);margin-left:6px;">acheté'+(/^\d{4}-\d\d-\d\d$/.test(it.achete)?' le '+it.achete.slice(8,10)+'/'+it.achete.slice(5,7):'')+'</span>':'');
+      html+=`<div class="shop-row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid rgba(246,237,227,.05);opacity:${ach?.6:1};"><div onclick="toggleShopItem('${it.id}')" title="${ach?'Remettre sur la liste':(pan?'Retirer du panier':'Mettre dans le panier')}" style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${fait?coul:'rgba(246,237,227,.25)'};background:${fait?coul:'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">${fait?'<span style="color:var(--bg);font-size:12px;">✓</span>':''}</div><span onclick="openShopItem('${it.id}')" style="flex:1;min-width:0;font-size:13px;color:${fait?'var(--text3)':'var(--text)'};text-decoration:${fait?'line-through':'none'};cursor:pointer;">${it.name}</span>${tag}${ach?`<button onclick="retirerAchete('${it.id}')" title="Retirer de la liste" style="background:none;border:0;color:var(--text3);font-size:13px;cursor:pointer;padding:2px 5px;flex-shrink:0;">✕</button>`:`<button onclick="toggleGraveItem('${it.id}')" title="Acheté sans passer par l'inventaire" style="background:none;border:0;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;flex-shrink:0;opacity:${it.graveOnly?1:0.28};">🧾</button>`}</div>`;
     });
     html+='</div>';
   });
-  if(!(S.shop.list||[]).length)html+='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">Liste vide. Ajoute des articles ci-dessus.</div>';
-  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;">🧾 activé = acheté sans passer par l’inventaire (il va directement dans « Déjà achetés »)</div>';html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">\u2713 Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
-  html+=`<button onclick="S.coursesGrave=!S.coursesGrave;render();" style="width:100%;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;margin-top:8px;">Déjà achetés (${graveN})</button>`;
-  if(S.coursesGrave)html+=renderGraveyardHTML();
+  if(!actifN&&!voir)html+='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">'+((checkedN+acheteN)?'Rien d’autre à acheter. 🎉':'Liste vide. Ajoute des articles ci-dessus.')+'</div>';
+  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;line-height:1.45;">Coche un article pour le mettre dans le panier : il se masque. « Valider les courses » envoie le panier dans « À ranger » (onglet Inventaire), sauf les articles 🧾, achetés sans passer par l’inventaire.</div>';
+  html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">✓ Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
+  if(voir&&acheteN)html+=`<button onclick="effacerAchetes()" style="width:100%;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.35);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;margin-top:8px;">Effacer les ${acheteN} article${acheteN>1?'s':''} acheté${acheteN>1?'s':''}</button>`;
   html+='</div>';
   return html;
 }
-function renderGraveyardHTML(){
-  const g=S.shop.graveyard||[];
-  if(!g.length)return '<div style="margin-top:10px;color:var(--text3);font-size:12px;text-align:center;padding:14px;">Aucun article pour l\u2019instant. Les articles achet\u00e9s hors inventaire ou \u00e9puis\u00e9s restent ici pour \u00eatre rachet\u00e9s en un geste.</div>';
-  const lbl=k=>{const c=SHOP_CATS.find(x=>x.k===k);return c?c.label:k;};
-  let html='<div style="margin-top:10px;border-top:0.5px solid rgba(246,237,227,.08);padding-top:10px;"><div style="font-size:11px;color:var(--text3);margin-bottom:8px;">Articles d\u00e9j\u00e0 achet\u00e9s \u2014 rach\u00e8te en un tap ou supprime d\u00e9finitivement.</div>';
-  g.forEach(it=>{
-    html+=`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(246,237,227,.04);"><div style="flex:1;min-width:0;"><div style="font-size:13px;color:var(--text2);">${it.name}</div><div style="font-size:11px;color:var(--text3);">${lbl(it.rayon)}</div></div><button onclick="regraveAdd('${it.id}')" style="padding:5px 10px;background:rgba(192,87,70,.15);border:0.5px solid rgba(192,87,70,.4);border-radius:6px;color:var(--accent2);font-size:12px;cursor:pointer;white-space:nowrap;">\u21bb Racheter</button><button onclick="graveDelete('${it.id}')" style="padding:5px 9px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text2);font-size:12px;cursor:pointer;">\u2715</button></div>`;
-  });
-  return html+'</div>';
-}
-function regraveAdd(id){
-  const it=(S.shop.graveyard||[]).find(g=>g.id===id);if(!it)return;
-  const nm=it.name.toLowerCase(),ry=it.rayon;
+// Anciens « Deja achetes » (liste a part) : ranges dans leur rayon, achetes et masques
+function _migrerDejaAchetes(){
+  var g=(S.shop&&S.shop.graveyard)||[];if(!g.length)return false;
   S.shop.list=S.shop.list||[];
-  if(!S.shop.list.some(x=>x.name.toLowerCase()===nm&&x.rayon===ry)){
-    S.shop.list.push({id:'sh_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:it.name,rayon:it.rayon,checked:false});
-  }
-  S.shop.graveyard=(S.shop.graveyard||[]).filter(g=>g.id!==id);
-  S.waiting=(S.waiting||[]).filter(w=>!(w.name.toLowerCase()===nm&&w.rayon===ry));
-  saveState();render();
+  g.forEach(function(x){
+    if(!x||!x.name)return;
+    var k=_normNom(x.name);
+    if(S.shop.list.some(function(i){return _normNom(i.name)===k;}))return;
+    S.shop.list.push({id:x.id||('sh_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),name:x.name,rayon:x.rayon||_guessRayon(x.name),checked:false,achete:'avant'});
+  });
+  S.shop.graveyard=[];
+  return true;
+}
+// Ajout sans doublon : un article achete (masque) du meme nom revient sur la liste
+function _ajouterAuxCourses(name,rayon,extra){
+  S.shop=S.shop||{list:[],graveyard:[]};S.shop.list=S.shop.list||[];
+  var k=_normNom(name),ex=S.shop.list.find(function(i){return _normNom(i.name)===k;});
+  if(ex){delete ex.achete;ex.checked=false;if(rayon)ex.rayon=rayon;if(extra)Object.assign(ex,extra);return ex.id;}
+  var id='sh_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
+  S.shop.list.push(Object.assign({id:id,name:name,rayon:rayon||_guessRayon(name),checked:false},extra||{}));
+  return id;
+}
+function basculerAchetes(){S.coursesVoirAchetes=!S.coursesVoirAchetes;render();}
+function retirerAchete(id){S.shop.list=(S.shop.list||[]).filter(function(i){return i.id!==id;});saveState();render();}
+function effacerAchetes(){
+  var n=(S.shop.list||[]).filter(function(i){return i.achete;}).length;if(!n)return;
+  _confirmer('Effacer les '+n+' article'+(n>1?'s':'')+' acheté'+(n>1?'s':'')+' ?\n\nIls disparaissent de la liste. Tu pourras toujours les rajouter.',{ok:'Effacer',danger:true}).then(function(ok){
+    if(!ok)return;
+    S.shop.list=(S.shop.list||[]).filter(function(i){return !i.achete;});
+    saveState();render();
+  });
 }
 function deleteWaiting(id){
   S.waiting=(S.waiting||[]).filter(w=>w.id!==id);
   saveState();render();
 }
-function graveDelete(id){
-  _confirmer('Retirer d\u00e9finitivement cet article de \u00ab\u00a0D\u00e9j\u00e0 achet\u00e9s\u00a0\u00bb ?',{ok:'Supprimer',danger:true}).then(function(ok){
-    if(!ok)return;
-    S.shop.graveyard=(S.shop.graveyard||[]).filter(g=>g.id!==id);
-    saveState();render();
-  });
-}
-function toggleShopItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(it){it.checked=!it.checked;saveState();render();}}
+function toggleShopItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(!it)return;
+  if(it.achete){delete it.achete;it.checked=false;}   /* achete : remis sur la liste */
+  else it.checked=!it.checked;                         /* panier, masque jusqu'a validation */
+  saveState();render();}
   function toggleGraveItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(it){it.graveOnly=!it.graveOnly;saveState();render();}}
   function toggleGraveRayon(k){S.shop.graveRayons=S.shop.graveRayons||[];const _i=S.shop.graveRayons.indexOf(k);if(_i>=0)S.shop.graveRayons.splice(_i,1);else S.shop.graveRayons.push(k);saveState();render();}
 function _guessRayon(name){
@@ -3970,32 +3989,27 @@ function _guessRayon(name){
   return 'divers';
 }
 function addScannedToShop(name,macros,qtyStr){
-  S.shop=S.shop||{list:[],graveyard:[]};S.shop.list=S.shop.list||[];
-  var id='sh_'+Date.now().toString(36);
-  S.shop.list.push({id:id,name:name,rayon:_guessRayon(name),checked:false,mac100:macros||null,pkg:qtyStr||''});
+  var id=_ajouterAuxCourses(name,_guessRayon(name),{mac100:macros||null,pkg:qtyStr||''});
   saveState();
   S.mainTab='courses';
   render();
   openShopItem(id);
 }
-function addShopItem(){const nm=document.getElementById('shop-add-name');const ry=document.getElementById('shop-add-rayon');if(!nm||!nm.value.trim())return;S.shop.list.push({id:'sh_'+Date.now().toString(36),name:nm.value.trim(),rayon:ry?ry.value:'divers',checked:false});saveState();render();}
+function addShopItem(){const nm=document.getElementById('shop-add-name');const ry=document.getElementById('shop-add-rayon');if(!nm||!nm.value.trim())return;_ajouterAuxCourses(nm.value.trim(),ry?ry.value:'divers');saveState();render();}
 function validateCourses(){
-  const checked=(S.shop.list||[]).filter(i=>i.checked);
-  if(!checked.length){_alerte('Coche au moins un article \u00e0 valider.');return;}
-  S.shop.graveyard=S.shop.graveyard||[];S.waiting=S.waiting||[];
+  const panier=(S.shop.list||[]).filter(i=>i.checked&&!i.achete);
+  if(!panier.length){_alerte('Coche d’abord les articles mis dans ton panier.');return;}
+  S.waiting=S.waiting||[];
   let placed=0;
-  checked.forEach(it=>{
-    if(!S.shop.graveyard.some(g=>g.name.toLowerCase()===it.name.toLowerCase()&&g.rayon===it.rayon)){
-      S.shop.graveyard.push({id:'gh_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:it.name,rayon:it.rayon});
-    }
+  panier.forEach(it=>{
     if(shopTransfer(it.rayon)&&!it.graveOnly){
       S.waiting.push({id:'wt_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:it.name,rayon:it.rayon});
       placed++;
     }
+    it.checked=false;it.achete=S.today;   /* reste dans son rayon, masque */
   });
-  S.shop.list=(S.shop.list||[]).filter(i=>!i.checked);
   saveState();render();
-  _alerte(placed?(placed+' article(s) \u00e0 ranger dans l\'onglet Inventaire.'):'Articles valid\u00e9s (non transf\u00e9r\u00e9s vers l\'inventaire).');
+  _alerte(placed?(placed+' article(s) à ranger dans l\'onglet Inventaire.\n\nLes articles achetés restent dans leur rayon, masqués : « Afficher les cochés » pour les racheter.'):'Courses validées.\n\nLes articles restent dans leur rayon, masqués : « Afficher les cochés » pour les racheter.');
 }
 function openShopItem(id){
   const it=(S.shop.list||[]).find(i=>i.id===id);if(!it)return;

@@ -35,7 +35,7 @@ t('*** modifier le profil affiche le seuil de pas reellement utilise ***',()=>{
   if(X("typeof S.profil.pas")!=='undefined')throw new Error('profil modifie a l\'ouverture');
 });
 t('nouveaux libelles presents',()=>{
-  ['Déjà achetés','À ranger','Prot./100 kcal','cette semaine','Modifiable de J−7 à J+1','Dépense réelle estimée','Déficit/jour','à consommer</span>','Dernière pesée'].forEach(x=>{if(src.indexOf(x)<0)throw new Error(x+' absent');});
+  ['Afficher les cochés','À ranger','Prot./100 kcal','cette semaine','Modifiable de J−7 à J+1','Dépense réelle estimée','Déficit/jour','à consommer</span>','Dernière pesée'].forEach(x=>{if(src.indexOf(x)<0)throw new Error(x+' absent');});
 });
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();
