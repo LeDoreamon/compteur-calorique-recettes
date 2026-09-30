@@ -282,7 +282,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-09-30 10h00</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-09-30 11h00</div>
   </div>
 </div>
 
@@ -3888,7 +3888,7 @@ function applyShopSuggestions(){
 }
 function renderCoursesHTML(){
   const voir=!!S.coursesVoirAchetes;
-  const cache=it=>!!(it.checked||it.achete);
+  const cache=it=>!!it.achete;   /* le panier reste visible jusqu'a la validation */
   const byR={};SHOP_CATS.forEach(c=>byR[c.k]=[]);
   (S.shop.list||[]).forEach(it=>{if(voir||!cache(it))(byR[it.rayon]||byR['divers']).push(it);});
   // Tri : a acheter d'abord, puis panier, puis achetes ; alphabetique dans chaque groupe
@@ -3896,13 +3896,13 @@ function renderCoursesHTML(){
   SHOP_CATS.forEach(c=>byR[c.k].sort((a,b)=>(rang(a)-rang(b))||(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'})));
   const checkedN=(S.shop.list||[]).filter(i=>i.checked&&!i.achete).length;
   const acheteN=(S.shop.list||[]).filter(i=>i.achete).length;
-  const actifN=(S.shop.list||[]).filter(i=>!cache(i)).length;
+  const actifN=(S.shop.list||[]).filter(i=>!cache(i)&&!i.checked).length;
   const waitN=(S.waiting||[]).length;
   let html='<div style="margin-bottom:14px;">';
   html+=renderShopAuto();
   html+='<div style="display:flex;gap:6px;margin-bottom:10px;"><input id="shop-add-name" placeholder="Ajouter un article…" style="flex:1;min-width:0;padding:9px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><select id="shop-add-rayon" style="padding:9px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:11px;max-width:120px;">'+SHOP_CATS.map(c=>`<option value="${c.k}">${c.label}</option>`).join('')+'</select><button onclick="addShopItem()" style="padding:9px 13px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:15px;cursor:pointer;">+</button><button onclick="openScanner(\'shop\')" title="Scanner un code-barres" style="padding:9px 12px;background:transparent;border:0.5px solid rgba(192,87,70,.5);border-radius:8px;color:var(--accent2);font-size:15px;cursor:pointer;">📷</button></div>';
   // Afficher / masquer les articles coches et achetes, comme dans Rappels
-  if(checkedN+acheteN)html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;font-size:12px;color:var(--text3);"><span>${checkedN?checkedN+' dans le panier':''}${checkedN&&acheteN?' · ':''}${acheteN?acheteN+' acheté'+(acheteN>1?'s':''):''}</span><button onclick="basculerAchetes()" style="padding:6px 11px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--blue);font-size:12px;cursor:pointer;">${voir?'Masquer les cochés':'Afficher les cochés'}</button></div>`;
+  if(acheteN)html+=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:12px;font-size:12px;color:var(--text3);"><span>${acheteN} acheté${acheteN>1?'s':''} (masqué${acheteN>1?'s':''})</span><button onclick="basculerAchetes()" style="padding:6px 11px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--blue);font-size:12px;cursor:pointer;">${voir?'Masquer les achetés':'Afficher les achetés'}</button></div>`;
   if(waitN)html+=`<div style="background:rgba(233,161,59,.08);border:0.5px solid rgba(233,161,59,.25);border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12px;color:var(--orange);">⏳ ${waitN} article(s) à ranger dans l'onglet Inventaire.</div>`;
   SHOP_CATS.forEach(c=>{
     const items=byR[c.k];if(!items.length)return;
@@ -3915,8 +3915,8 @@ function renderCoursesHTML(){
     });
     html+='</div>';
   });
-  if(!actifN&&!voir)html+='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">'+((checkedN+acheteN)?'Rien d’autre à acheter. 🎉':'Liste vide. Ajoute des articles ci-dessus.')+'</div>';
-  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;line-height:1.45;">Coche un article pour le mettre dans le panier : il se masque. « Valider les courses » envoie le panier dans « À ranger » (onglet Inventaire), sauf les articles 🧾, achetés sans passer par l’inventaire.</div>';
+  if(!actifN&&!checkedN&&!voir)html+='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">'+(acheteN?'Rien d’autre à acheter. 🎉':'Liste vide. Ajoute des articles ci-dessus.')+'</div>';
+  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;line-height:1.45;">Coche un article pour le mettre dans le panier. « Valider les courses » envoie le panier dans « À ranger » (onglet Inventaire), sauf les articles 🧾, achetés sans passer par l’inventaire. Les articles achetés se masquent ensuite dans leur rayon.</div>';
   html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">✓ Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
   if(voir&&acheteN)html+=`<button onclick="effacerAchetes()" style="width:100%;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.35);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;margin-top:8px;">Effacer les ${acheteN} article${acheteN>1?'s':''} acheté${acheteN>1?'s':''}</button>`;
   html+='</div>';
@@ -3960,7 +3960,7 @@ function deleteWaiting(id){
 }
 function toggleShopItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(!it)return;
   if(it.achete){delete it.achete;it.checked=false;}   /* achete : remis sur la liste */
-  else it.checked=!it.checked;                         /* panier, masque jusqu'a validation */
+  else it.checked=!it.checked;                         /* panier, visible jusqu'a validation */
   saveState();render();}
   function toggleGraveItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(it){it.graveOnly=!it.graveOnly;saveState();render();}}
   function toggleGraveRayon(k){S.shop.graveRayons=S.shop.graveRayons||[];const _i=S.shop.graveRayons.indexOf(k);if(_i>=0)S.shop.graveRayons.splice(_i,1);else S.shop.graveRayons.push(k);saveState();render();}
@@ -4009,7 +4009,7 @@ function validateCourses(){
     it.checked=false;it.achete=S.today;   /* reste dans son rayon, masque */
   });
   saveState();render();
-  _alerte(placed?(placed+' article(s) à ranger dans l\'onglet Inventaire.\n\nLes articles achetés restent dans leur rayon, masqués : « Afficher les cochés » pour les racheter.'):'Courses validées.\n\nLes articles restent dans leur rayon, masqués : « Afficher les cochés » pour les racheter.');
+  _alerte(placed?(placed+' article(s) à ranger dans l\'onglet Inventaire.\n\nLes articles achetés restent dans leur rayon, masqués : « Afficher les achetés » pour les racheter.'):'Courses validées.\n\nLes articles restent dans leur rayon, masqués : « Afficher les achetés » pour les racheter.');
 }
 function openShopItem(id){
   const it=(S.shop.list||[]).find(i=>i.id===id);if(!it)return;
