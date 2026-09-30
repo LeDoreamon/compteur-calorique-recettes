@@ -10,16 +10,14 @@ function prepa(){X(`_loaded=true;S.today='2026-09-30';S.mainTab='courses';S.cour
 const it=id=>X("S.shop.list.find(function(i){return i.id==='"+id+"'})");
 const vue=()=>X('renderCoursesHTML()');
 console.log('\n=== XVIII. Courses facon Rappels ===');
-t('*** cocher = panier : l\'article se masque mais reste dans la liste ***',()=>{
+t('*** cocher = panier : l\'article reste visible jusqu\'a la validation ***',()=>{
   prepa();X("toggleShopItem('a')");eq(it('a').checked,true);
-  if(vue().indexOf('Lait')>=0)throw new Error('encore visible');
-  if(vue().indexOf('1 dans le panier')<0)throw new Error('compteur');
+  const h=vue();if(h.indexOf('Lait')<0||h.indexOf('dans le panier</span>')<0)throw new Error('masque trop tot');
+  if(h.indexOf('Afficher les achetés')>=0)throw new Error('bouton sans achete');
   eq(X('S.waiting.length'),0,'part a ranger avant validation');
 });
-t('*** afficher les coches : panier visible dans son rayon, decocher le remet ***',()=>{
-  X('basculerAchetes()');const h=vue();if(h.indexOf('Lait')<0||h.indexOf('dans le panier')<0)throw new Error('non affiche');
-  if(h.indexOf('Masquer les cochés')<0)throw new Error('bouton');
-  X("toggleShopItem('a')");eq(it('a').checked,false);X('basculerAchetes()');if(vue().indexOf('Lait')<0)throw new Error('pas revenu');
+t('*** decocher un article du panier le remet a acheter ***',()=>{
+  X("toggleShopItem('a')");eq(it('a').checked,false);if(vue().indexOf('dans le panier</span>')>=0)throw new Error('encore au panier');
 });
 t('*** valider : panier -> achete (masque, garde son rayon) + A ranger, sauf 🧾 et hors inventaire ***',()=>{
   prepa();X("toggleShopItem('a');toggleShopItem('b');toggleShopItem('c');toggleGraveItem('b');validateCourses()");
@@ -30,7 +28,7 @@ t('*** valider : panier -> achete (masque, garde son rayon) + A ranger, sauf �
   if(vue().indexOf('Rien d’autre à acheter')<0)throw new Error('message liste vide');
 });
 t('*** racheter : decocher un achete le remet sur la liste ***',()=>{
-  X('basculerAchetes()');const h=vue();if(h.indexOf('acheté le 30/09')<0)throw new Error('date achat');
+  if(vue().indexOf('Afficher les achetés')<0)throw new Error('bouton afficher');X('basculerAchetes()');const h=vue();if(h.indexOf('acheté le 30/09')<0||h.indexOf('Masquer les achetés')<0)throw new Error('date achat / bouton');
   X("toggleShopItem('a')");eq(it('a').achete,undefined);eq(it('a').checked,false);
   X('basculerAchetes()');if(vue().indexOf('Lait')<0)throw new Error('pas revenu');
 });
