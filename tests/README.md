@@ -82,6 +82,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t66.js` | Audit de clarté du 26/09 : libellés sans jargon, build dans les Réglages, export unique, couleurs de la tendance alignées sur le calendrier, pas préremplis |
 | `t67.js` | Plats maison : préparation (stock déduit, parts, poids estimé, IA hors stock), manger en parts ou en grammes, jamais aux courses ni au diagnostic, retrait 3 jours après la fin |
 | `t68.js` | Courses façon Rappels : cocher = panier masqué, afficher/masquer les cochés, valider (achetés dans leur rayon + À ranger), racheter en décochant, effacer, migration des anciens « Déjà achetés » |
+| `t69.js` | Photo d’un repas : choix inventaire / hors inventaire avant l’appareil ; fiche article : scanner un code-barres pour importer les macros (100 g ou par pièce) |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
