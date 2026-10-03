@@ -52,8 +52,29 @@ t('message brut inconnu : identifiant d\'organisation retire',()=>{
 t('*** ecran d\'ajout de repas : le message des deux IA s\'affiche ***',async()=>{
   LS.anthropic_key='gsk_x';LS.gemini_key=GK;serveur(REFUS,[TROP,TROP]);
   X("_addMealUseStock=false");await X('runAddMealAI')(photo);
-  const ph=docEl('addmeal-textarea').placeholder;
-  if(!/Aucune IA n’a pu répondre/.test(ph)||!/Gemini :/.test(ph)||!/Groq :/.test(ph))throw new Error(ph);
+  const e=docEl('addmeal-err'),ph=e.textContent;eq(e.style.display,'block','encadre visible');
+  if(!/Aucune IA n’a pu répondre/.test(ph)||!/• Gemini :/.test(ph)||!/• Groq :/.test(ph)||!/décris le repas/.test(ph))throw new Error(ph);
+  if(/^⚠/.test(docEl('addmeal-textarea').placeholder||''))throw new Error('erreur encore dans le champ');
+  X("openAddMeal('photo')");eq(e.style.display,'none','encadre efface a la reouverture');
+});
+const SATURE={error:{code:503,message:'This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later.',status:'UNAVAILABLE'}};
+const OKG={candidates:[{content:{parts:[{text:'{"via":"lite"}'}]},finishReason:'STOP'}]};
+function serveurGem(parModele){appels=[];sb.fetch=async(url,opt)=>{appels.push({url});
+  if(/generativelanguage/.test(url)){const m=(url.match(/models\/([^:]+):/)||[])[1];return {ok:true,status:200,json:async()=>parModele[m]};}
+  return {ok:true,status:200,json:async()=>OK};};}
+t('*** Gemini sature (503) : Flash-Lite prend le relais avant Groq ***',async()=>{
+  LS.anthropic_key='gsk_x';LS.gemini_key=GK;serveurGem({'gemini-2.5-flash':SATURE,'gemini-flash-lite-latest':OKG});
+  const r=await X('callAI')(photo,1300,'s');eq(r.content[0].text,'{"via":"lite"}');eq(X('_derniereIA'),'gemini');
+  if(appels.some(a=>/groq/.test(a.url)))throw new Error('Groq appele');
+});
+t('Flash-Lite echoue aussi : erreur de saturation d\'origine, puis Groq en secours',async()=>{
+  LS.anthropic_key='gsk_x';LS.gemini_key=GK;serveurGem({'gemini-2.5-flash':SATURE,'gemini-flash-lite-latest':SATURE});
+  const r=await X('callAI')(photo,1300,'s');eq(X('_derniereIA'),'groq');
+  eq(appels.filter(a=>/generativelanguage/.test(a.url)).length,2,'pas de boucle');
+});
+t('message de saturation traduit',()=>{
+  const s=X('_aiFriendly')('GEMINI:This model is currently experiencing high demand. Spikes in demand are usually temporary. Please try again later. [UNAVAILABLE]');
+  if(!/Gemini est saturé/.test(s))throw new Error(s);
 });
 t('repli recettes 120b -> 20b toujours declenche (message de la derniere IA conserve)',async()=>{
   LS.anthropic_key='gsk_x';delete LS.gemini_key;serveur(null,[{error:{message:'Request too large for model `openai/gpt-oss-120b` on tokens per minute (TPM): Limit 8000, Requested 9000'}}]);
