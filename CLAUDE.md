@@ -56,12 +56,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t72.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1266 tests au 03/10/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t73.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1278 tests au 03/10/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t72` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t73` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -78,7 +78,8 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 
 ### c. Publier
 
-- Incrémenter le build à trois endroits : `build AAAA-MM-JJ HHhMM` dans `index.html` (bas de la fenêtre Réglages), et dans `sw.js` la ligne `// build …` ainsi que `const CACHE='macros-AAAA-MM-JJ-HHMM';`.
+- Incrémenter le build à quatre endroits : `build AAAA-MM-JJ HHhMM` dans `index.html` (bas de la fenêtre Réglages), `const BUILD_ID='AAAA-MM-JJ-HHMM'` dans `index.html`, et dans `sw.js` la ligne `// build …` ainsi que `const CACHE='macros-AAAA-MM-JJ-HHMM';`.
+- Ajouter en tête de `NOUVEAUTES` une entrée `{b:BUILD_ID, points:[…]}` : ce qui change pour l'utilisateur, en clair, sans jargon. Fenêtre « Quoi de neuf dans Dorayaki ? » montrée une fois par appareil après la mise à jour (`_verifierNouveautes`, `localStorage.dz_nouveautes`), rien pour un compte qui vient d'être créé ; lien « Quoi de neuf ? » en bas des Réglages. `t73.js` échoue si l'entrée manque ou si les quatre builds ne concordent pas.
 - Terminer chaque message de commit par les lignes d'attribution demandées par la session.
 - GitHub Pages republie depuis `main`. Si la session ne peut pousser que sur une branche : ouvrir une PR, puis la fusionner (voir section 4).
 - Une fois la PR fusionnée, repartir de `main` pour la suite (`git fetch origin main && git checkout -B <branche> origin/main`).
