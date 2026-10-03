@@ -25,12 +25,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 - `fbUrl(path)` ajoute `?auth=<idToken>`. Si `securetoken` refuse le jeton pour de bon (400 `TOKEN_EXPIRED`, `INVALID_REFRESH_TOKEN`, `MISSING_REFRESH_TOKEN`, `USER_DISABLED`, `USER_NOT_FOUND`, `INVALID_GRANT`), `_sessionExpiree()` rouvre l'écran de connexion.
 - Code de rattachement et accès « ancien profil » sans compte : retirés le 26/09/2026 (migration terminée). `PROFIL_HERITE='liam'` reste l'identifiant de mon catalogue (`S.catalogue`), de mes cibles et de mes migrations. Un ancien marqueur `dz_herite` est effacé au démarrage. **Ne jamais écrire l'ancien code en clair.**
 - La clé Groq est stockée dans `localStorage.anthropic_key` et synchronisée dans `state.groqKey` (lisible par moi seul grâce aux règles). Elle est retirée des exports `.json`, ignorée à l'import, et effacée à la déconnexion ainsi qu'à la reconnexion sur un autre compte après une session expirée.
-- Clé Gemini (facultative, 03/10/2026) : même traitement, dans `localStorage.gemini_key` et `state.geminiKey` (`getGeminiKey`, format vérifié par `_cleGeminiValide` : `AIza…`). Saisie dans Réglages et à l'étape « Les IA » de l'inscription, qui explique pourquoi deux services.
+- Clé Gemini (facultative, 03/10/2026) : même traitement, dans `localStorage.gemini_key` et `state.geminiKey` (`getGeminiKey`, format vérifié par `_cleGeminiValide` : `AQ.…` (nouveau format 2026) ou `AIza…`). Saisie dans Réglages et à l'étape « Les IA » de l'inscription, qui explique pourquoi deux services.
 
 ## 3. Modèles Groq
 
 - `openai/gpt-oss-20b` par défaut, `openai/gpt-oss-120b` pour l'analyse de repas et la génération de recettes (`MODELE_RECETTES`, raisonnement `medium`, repli sur le 20b si le quota refuse une requête trop grosse).
-- Photos : `callAI` envoie d'abord à Gemini (`_callGemini`, REST `generateContent`, `MODELE_GEMINI='gemini-2.5-flash'`, alias `gemini-flash-latest` si 404) quand une clé Gemini existe ; en cas d'échec (quota, réseau, réponse vide), repli silencieux sur Groq `MODELE_VISION='qwen/qwen3.8-27b'`. `_derniereIA` indique le moteur utilisé. Le texte ne passe jamais par Gemini.
+- Deux IA qui s'entraident (`callAI` = aiguilleur ; Groq brut : `_callGroq` ; Gemini : `_callGemini`, REST `generateContent`, clé dans l'en-tête `x-goog-api-key`, `MODELE_GEMINI='gemini-2.5-flash'`, alias `gemini-flash-latest` si 404). Photo : Gemini puis Groq (`MODELE_VISION='qwen/qwen3.8-27b'`). Texte : Groq puis Gemini. Une erreur (quota, réseau) ou une réponse vide passe la main à l'autre ; une seule clé suffit. `_derniereIA` = moteur utilisé. Avant une analyse de repas, l'écran annonce l'IA prévue et son secours (`_iaPrevue`, `_libIA`) ; après, celle qui a répondu (`_iaAnalyse`).
 - `reasoning_effort` : gpt-oss n'accepte que `low`, `medium` ou `high` ; seul qwen accepte `none`.
 - Piège : chez gpt-oss, la réflexion compte dans `max_tokens`. Un budget trop juste donne une réponse vide avec `finish_reason: "length"`. `callAI` relance alors une fois avec un budget plus large. Ne pas redescendre les budgets sous environ 400 (tous les appels actuels sont à 400 ou plus).
 - `callAI` renvoie `{content:[{type:'text',text}], finish_reason, truncated, empty}`. Le texte s'obtient par `rep.content.map(b=>b.text).join('')`. Tester `rep.empty` **avant** `extractJSON`, qui lève une exception sur un texte vide.
@@ -57,7 +57,7 @@ bash tests/run.sh      # depuis la racine du depot
 ```
 
 - Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t72.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1259 tests au 03/10/2026).
+- Attendu : 0 échec (1265 tests au 03/10/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
