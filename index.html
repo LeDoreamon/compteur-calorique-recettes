@@ -273,6 +273,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <input type="text" id="api-key-input" class="champ-cle" name="groq-api-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore placeholder="gsk_..." style="width:100%;padding:10px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
     <button onclick="saveApiKey()" style="width:100%;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">Enregistrer la clé</button>
     <button onclick="clearApiKey()" style="width:100%;margin-top:8px;padding:9px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;">Supprimer la clé</button>
+    <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">📷 Clé Gemini (facultative)</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.45;">Pour l'analyse des <strong style="color:var(--text2);">photos de repas</strong>, plus précise que Groq. Gratuite sur <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--blue);">aistudio.google.com</a> (« Create API key »). Sans elle, ou si Gemini ne répond pas, les photos passent par Groq.</div>
+    <input type="text" id="gemini-key-input" class="champ-cle" name="gemini-api-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore placeholder="AIza..." style="width:100%;padding:10px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:6px;box-sizing:border-box;">
+    <div id="gemini-key-st" style="font-size:11px;color:var(--text3);margin-bottom:8px;min-height:14px;"></div>
+    <div style="display:flex;gap:8px;"><button onclick="saveGeminiKey()" style="flex:1;padding:9px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">Enregistrer</button><button onclick="clearGeminiKey()" style="padding:9px 12px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;">Supprimer</button></div>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">💾 Sauvegardes automatiques</div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.45;">Un instantané par jour, les 14 derniers conservés.</div>
     <button onclick="forceBackup()" style="width:100%;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;margin-bottom:9px;">💾 Sauvegarder maintenant</button>
@@ -282,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 14h00</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 16h30</div>
   </div>
 </div>
 
@@ -2020,6 +2025,13 @@ const FB = 'https://bouffe-frigo-default-rtdb.europe-west1.firebasedatabase.app'
 // régulièrement : qwen3.6-27b est décommissionné le 14/09/2026, remplacé par
 // qwen3.8-27b. Un seul endroit à changer la prochaine fois.
 const MODELE_VISION='qwen/qwen3.8-27b';
+const MODELE_RECETTES='openai/gpt-oss-120b';
+// Photos de repas : Gemini Flash (cle facultative, Google AI Studio), plus precis
+// que la vision Groq. Sans cle ou en cas d'echec, repli sur Groq.
+const MODELE_GEMINI='gemini-2.5-flash',MODELE_GEMINI_REPLI='gemini-flash-latest';
+function getGeminiKey(){try{return localStorage.getItem('gemini_key')||'';}catch(e){return '';}}
+function _cleGeminiValide(k){return /^AIza[0-9A-Za-z_-]{30,}$/.test(String(k||''));}
+var _derniereIA='';   // 'gemini' | 'groq' : moteur de la derniere analyse photo
 // ─── Auth anonyme Firebase (REST) — s'active dès que _FBK.key est renseignée ─
 const _FBK={key:'AIzaSyBKAKZ4iGE9-t7rIseyJhXOCj2KbehU7iI'};
 let _fbTok=null,_fbTokExp=0;
@@ -2460,6 +2472,7 @@ function _applyState(d){
   }
   // Clé Groq
   if(d.groqKey&&!localStorage.getItem('anthropic_key'))localStorage.setItem('anthropic_key',d.groqKey);
+  if(_cleGeminiValide(d.geminiKey)&&!getGeminiKey()){try{localStorage.setItem('gemini_key',d.geminiKey);}catch(e){}}
   // Recettes IA → re-pousser dans RCP
   for(let _i=RCP.length-1;_i>=0;_i--){if(RCP[_i]&&RCP[_i].ai)RCP.splice(_i,1);}
   if(d.aiRecipes&&Array.isArray(d.aiRecipes)){S.aiRecipes=d.aiRecipes;S.aiRecipes.forEach(r=>{r.profile=ACTIVE_PROFILE;if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
@@ -2738,6 +2751,7 @@ async function _saveStateNow(){
     paires0k:S.paires0k||{},
     ingNames:S.ingNames||{},
     groqKey:localStorage.getItem('anthropic_key')||'',
+    geminiKey:getGeminiKey(),
     _profile:ACTIVE_PROFILE,
     rev:_newRev,
     vol:_volumeEtat(S),
@@ -2843,6 +2857,8 @@ function openSettings(){
   const ov=document.getElementById('set-overlay');
   ov.style.display='flex';
   document.getElementById('api-key-input').value=getApiKey();
+  var _gk=document.getElementById('gemini-key-input');if(_gk)_gk.value=getGeminiKey();
+  var _gs=document.getElementById('gemini-key-st');if(_gs){_gs.style.color='var(--text3)';_gs.textContent=getGeminiKey()?'\u2713 Clé enregistrée : les photos passent par Gemini.':'';}
   var p=document.getElementById('set-profile');
   if(p){
     var but=_libObjectif();
@@ -2858,7 +2874,21 @@ function openSettings(){
   if(ex){try{ex.innerHTML=renderDataExport();}catch(e){ex.innerHTML='';}}
   renderBackupList();
 }
-function closeSettings(){document.getElementById('set-overlay').style.display='none';var k=document.getElementById('api-key-input');if(k)k.value='';}   /* la cle ne reste pas dans la page */
+function closeSettings(){document.getElementById('set-overlay').style.display='none';['api-key-input','gemini-key-input'].forEach(function(id){var k=document.getElementById(id);if(k)k.value='';});}
+function saveGeminiKey(){
+  var el=document.getElementById('gemini-key-input'),v=String((el&&el.value)||'').replace(/\s+/g,'');
+  var st=document.getElementById('gemini-key-st');
+  if(!_cleGeminiValide(v)){if(st){st.style.color='var(--red)';st.textContent='Cette clé ne ressemble pas à une clé Gemini : elle commence par AIza.';}return;}
+  try{localStorage.setItem('gemini_key',v);}catch(e){}
+  saveState();closeSettings();render();
+}
+function clearGeminiKey(){
+  _confirmer('Supprimer la clé Gemini ?\n\nLes photos de repas seront de nouveau analysées par Groq.',{ok:'Supprimer',danger:true}).then(function(ok){
+    if(!ok)return;
+    try{localStorage.removeItem('gemini_key');}catch(e){}
+    saveState();closeSettings();render();
+  });
+}   /* la cle ne reste pas dans la page */
 function saveApiKey(){
   const v=document.getElementById('api-key-input').value.trim();
   if(v){localStorage.setItem('anthropic_key',v);closeSettings();render();}
@@ -2971,16 +3001,24 @@ RÈGLES ABSOLUES:
 - recettes vari\u00e9es, savoureuses et COH\u00c9RENTES : de vrais plats \u00e9quilibr\u00e9s, pas de simples assemblages. Associe intelligemment prot\u00e9ines + f\u00e9culents + l\u00e9gumes/sauce.
 - privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : mieux vaut 6 excellentes recettes que 12 m\u00e9diocres.`;
   try{
+    // gpt-oss-120b avec un vrai temps de reflexion : recettes bien plus coherentes
+    // (03/10/2026). Repli sur le 20b si le quota gratuit refuse une requete trop grosse.
     const _ask=async(n,tok)=>{
-      const d=await callAI([{role:'user',content:'Génère '+n+' recettes variées et cohérentes maintenant, en JSON compact. Pas de texte hors du tableau JSON.'}],tok,sys,'openai/gpt-oss-20b',0.2,null,false,{reasoning:'low'});
+      const q=[{role:'user',content:'Génère '+n+' recettes variées et cohérentes maintenant, en JSON compact. Pas de texte hors du tableau JSON.'}];
+      let d;
+      try{d=await callAI(q,tok,sys,MODELE_RECETTES,0.2,null,false,{reasoning:'medium'});}
+      catch(e){
+        if(!/^API:/.test(e.message||'')||!/too large|tokens per minute|TPM|rate.?limit|model/i.test(e.message))throw e;
+        d=await callAI(q,Math.min(tok,3000),sys,'openai/gpt-oss-20b',0.2,null,false,{reasoning:'low'});
+      }
       return{raw:d.content.map(i=>i.text||'').join(''),d:d};
     };
-    let recipes=null,att=await _ask(6,3000);
+    let recipes=null,att=await _ask(6,4000);
     try{recipes=extractJSONArray(att.raw);}catch(pe){recipes=null;}
     if((!recipes||!recipes.length)&&(att.d.truncated||att.d.empty)){
       // Reponse coupee ou vide : on redemande plus court
       if(btn)btn.textContent='✨ Nouvelle tentative…';
-      att=await _ask(3,2200);
+      att=await _ask(3,3000);
       try{recipes=extractJSONArray(att.raw);}catch(pe2){recipes=null;}
     }
     if(!recipes||!recipes.length){
@@ -3129,9 +3167,14 @@ function _aiFriendly(msg){
 }
 async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temperature=0.2,seed=null,_retried=false,opts){
   const key=getApiKey();
-  if(!key){openSettings();throw new Error('NO_KEY');}
   // Détecte si la requête contient une image
   const hasImg=messages.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'));
+  if(hasImg&&!_retried&&getGeminiKey()){
+    try{const g=await _callGemini(messages,maxTokens,system,temperature);if(!g.empty){_derniereIA='gemini';return g;}}
+    catch(ge){try{console.warn('Gemini indisponible, repli sur Groq :',ge&&ge.message);}catch(e){}if(!key)throw ge;}
+  }
+  if(!key){openSettings();throw new Error('NO_KEY');}
+  if(hasImg)_derniereIA='groq';
   const model=modelOverride||(hasImg?MODELE_VISION:'openai/gpt-oss-20b');
   // Construire les messages au format OpenAI (compatible Groq)
   const msgs=[];
@@ -3190,6 +3233,40 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Appel Gemini (REST generateContent) avec le meme format d'entree et de sortie
+// que callAI. Les images arrivent en {type:'image',source:{media_type,data}}.
+async function _callGemini(messages,maxTokens,system,temperature,_modele){
+  const key=getGeminiKey();if(!key)throw new Error('NO_GEMINI_KEY');
+  const modele=_modele||MODELE_GEMINI;
+  const contents=messages.map(function(m){
+    var parts=[];
+    if(typeof m.content==='string')parts.push({text:m.content});
+    else (m.content||[]).forEach(function(p){
+      if(p.type==='text')parts.push({text:p.text});
+      else if(p.type==='image'&&p.source)parts.push({inline_data:{mime_type:p.source.media_type||'image/jpeg',data:p.source.data}});
+    });
+    return {role:m.role==='assistant'?'model':'user',parts:parts};
+  });
+  // Les modeles 2.5 « reflechissent » dans le budget de sortie : on le garde large
+  const body={contents:contents,generationConfig:{temperature:temperature==null?0.2:temperature,maxOutputTokens:Math.max(2048,(maxTokens||300)*4)}};
+  if(system)body.systemInstruction={parts:[{text:system}]};
+  const ctrl=new AbortController(),tid=setTimeout(function(){ctrl.abort();},45000);
+  let resp,data;
+  try{
+    resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+modele+':generateContent?key='+encodeURIComponent(key),
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});
+    data=await resp.json();
+  }catch(e){throw new Error(e.name==='AbortError'?'NETWORK:timeout':'NETWORK:'+e.message);}finally{clearTimeout(tid);}
+  if(data&&data.error){
+    // Modele retire ou renomme : on tente l'alias « dernier Flash » une fois
+    if(!_modele&&(data.error.code===404||/not found|NOT_FOUND/i.test(data.error.status||data.error.message||'')))return _callGemini(messages,maxTokens,system,temperature,MODELE_GEMINI_REPLI);
+    throw new Error('GEMINI:'+(data.error.message||data.error.status||'erreur'));
+  }
+  const cand=(data&&data.candidates&&data.candidates[0])||{};
+  const text=((cand.content&&cand.content.parts)||[]).map(function(p){return p.text||'';}).join('');
+  const fin=cand.finishReason||'';
+  return{content:[{type:'text',text:text}],finish_reason:fin==='MAX_TOKENS'?'length':(fin||'').toLowerCase(),truncated:fin==='MAX_TOKENS',empty:!text.trim()};
+}
 // ─── PHOTO ANALYSIS ───────────────────────────────────────────────────────────
 
 
@@ -4870,7 +4947,7 @@ async function exportBackup(){
   try{await saveState();}catch(e){}
   var raw=localStorage.getItem(ACTIVE_PROFILE+'_st')||'{}';
   var st;try{st=JSON.parse(raw);}catch(e){st={};}
-  delete st.groqKey;                       // la cle d'API ne quitte jamais l'app
+  delete st.groqKey;delete st.geminiKey;   // les cles d'API ne quittent jamais l'app
   // Photos de progression : lues sur le cloud (elles ne sont pas en local)
   var progres=null,progresMini=null;
   try{
@@ -4926,7 +5003,7 @@ async function _restaurerSauvegarde(sv){
   // meme s'il a ete exporte sous un autre (ancien profil, autre compte).
   // Sans ce reetiquetage, _applyState l'ignorait en silence.
   var _st=Object.assign({},sv.state,{_profile:ACTIVE_PROFILE});
-  delete _st.groqKey;
+  delete _st.groqKey;delete _st.geminiKey;
   _applyState(_st);                 // passe par la neutralisation des entrees
   if(sv.burn){
     _burnData=_neutre(sv.burn);
@@ -7561,7 +7638,7 @@ function _deconnecter(){
   // La cle Groq est rangee hors profil : sans ce menage, le compte suivant
   // sur cet appareil s'en servirait et l'enverrait dans ses propres donnees.
   // Elle revient a la reconnexion, depuis l'etat du compte.
-  try{localStorage.removeItem('dz_auth');localStorage.removeItem('dz_herite');localStorage.removeItem('anthropic_key');}catch(e){}
+  try{localStorage.removeItem('dz_auth');localStorage.removeItem('dz_herite');localStorage.removeItem('anthropic_key');localStorage.removeItem('gemini_key');}catch(e){}
   _fbTok=null;_fbTokExp=0;
   try{location.reload();}catch(e){}
 }
@@ -7633,11 +7710,12 @@ function validerProfil(p){
 }
 
 // ── Donnees d'un compte ──
-async function _initNouveauProfil(cle,profil,groq){
+async function _initNouveauProfil(cle,profil,groq,gemini){
   var tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}
   var st={rev:1,savedAt:new Date().toISOString(),_profile:cle,profil:profil,catalogue:null,
           tz:tz||null,pasBase:(+profil.pas>0?Math.round(+profil.pas):0),inv:INV_VIDE,dayMeals:{}};
   if(_cleGroqValide(groq))st.groqKey=groq;
+  if(_cleGeminiValide(gemini))st.geminiKey=gemini;
   var r=await fetch(await fbUrl(cle+'/state'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)});
   if(!r.ok)throw new Error('HTTP '+r.status);
 }
@@ -7760,21 +7838,37 @@ function renderAuth(){
   // de l'ecran, les marges automatiques tombent a zero et rien n'est coupe.
   ps.innerHTML='<div style="width:100%;max-width:420px;margin:auto;padding:calc(24px + env(safe-area-inset-top, 0px)) 20px calc(30px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">'+h+'</div>';
 }
-var _ETAPES=['Ton compte','Toi','Ton objectif','Ton alimentation','Tes cibles','L\u2019IA (facultatif)'];
+var _ETAPES=['Ton compte','Toi','Ton objectif','Ton alimentation','Tes cibles','Les IA (facultatif)'];
 // Cle Groq : format gsk_ suivi de caracteres alphanumeriques (pas de verification en ligne)
 function _cleGroqValide(k){return /^gsk_[A-Za-z0-9]{20,}$/.test(String(k||''));}
 function _secCleGroq(){
-  var li='style="margin-bottom:6px;"';
-  return '<div style="font-size:12.5px;color:var(--text2);line-height:1.5;margin-bottom:12px;">Avec une clé Groq, Dorayaki peut analyser un repas décrit en quelques mots ou pris en photo, créer des recettes avec ce que tu as, et estimer la dépense d\'une activité. C\'est <strong style="color:var(--text);">gratuit</strong>, sans carte bancaire.</div>'
-    +'<ol style="font-size:12.5px;color:var(--text2);line-height:1.45;margin:0 0 14px;padding-left:20px;">'
+  var li='style="margin-bottom:5px;"',ol='style="font-size:12.5px;color:var(--text2);line-height:1.45;margin:0 0 12px;padding-left:20px;"';
+  var titre=function(t,s){return '<div style="display:flex;align-items:baseline;gap:8px;margin:4px 0 8px;"><span style="font-size:14px;font-weight:600;color:var(--text);">'+t+'</span><span style="font-size:11px;color:var(--text3);">'+s+'</span></div>';};
+  var attrs=function(n){return 'class="champ-cle" name="'+n+'" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore';};
+  return '<div style="background:rgba(233,161,59,.08);border:0.5px solid rgba(233,161,59,.3);border-radius:10px;padding:11px 12px;margin-bottom:16px;font-size:12.5px;color:var(--text2);line-height:1.5;">'
+    +'<div style="color:var(--gold);font-weight:600;margin-bottom:4px;">Pourquoi deux services ?</div>'
+    +'Dorayaki s\'appuie sur deux IA gratuites, chacune pour ce qu\'elle fait le mieux :'
+    +'<div style="margin-top:6px;">⚡ <strong style="color:var(--text);">Groq</strong> : très rapide. Analyse les repas décrits en quelques mots, crée des recettes avec ce que tu as et estime la dépense d\'une activité. C\'est la clé principale.</div>'
+    +'<div style="margin-top:4px;">📷 <strong style="color:var(--text);">Gemini</strong> (Google) : plus précis pour reconnaître un plat en <strong style="color:var(--text);">photo</strong>. Facultatif : sans lui, les photos passent par Groq.</div>'
+    +'<div style="margin-top:6px;">Les deux sont <strong style="color:var(--text);">gratuits</strong>, sans carte bancaire. Tu peux aussi passer cette étape et les ajouter plus tard dans Réglages ⚙.</div></div>'
+    // 1. Groq
+    +titre('1. Clé Groq','recommandée')
+    +'<ol '+ol+'>'
     +'<li '+li+'>Ouvre <a href="https://console.groq.com/keys" target="_blank" rel="noopener" style="color:var(--blue);">console.groq.com</a> et crée un compte (Google ou e-mail).</li>'
     +'<li '+li+'>Dans <strong style="color:var(--text);">API Keys</strong>, touche <strong style="color:var(--text);">Create API Key</strong> et donne-lui un nom, par exemple « Dorayaki ».</li>'
     +'<li '+li+'>Copie la clé (elle commence par <span style="font-family:monospace;color:var(--text);">gsk_</span>) : elle ne s\'affiche qu\'une fois.</li>'
-    +'<li>Reviens ici et colle-la ci-dessous.</li></ol>'
-    +_champ('Clé API Groq',_inp('au-groq','text',_ins.groq,'gsk_…','class="champ-cle" name="groq-api-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore'))
-    +'<div style="font-size:11px;color:var(--text3);line-height:1.45;margin:-4px 0 12px;">Elle reste liée à ton compte et n\'est jamais incluse dans les exports. Tu pourras l\'ajouter ou la changer plus tard dans Réglages \u2699.</div>';
+    +'<li>Colle-la ci-dessous.</li></ol>'
+    +_champ('Clé API Groq',_inp('au-groq','text',_ins.groq,'gsk_…',attrs('groq-api-key')))
+    // 2. Gemini
+    +titre('2. Clé Gemini','facultative, pour les photos')
+    +'<ol '+ol+'>'
+    +'<li '+li+'>Ouvre <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--blue);">aistudio.google.com</a> et connecte-toi avec un compte Google.</li>'
+    +'<li '+li+'>Touche <strong style="color:var(--text);">Create API key</strong>.</li>'
+    +'<li>Copie la clé (elle commence par <span style="font-family:monospace;color:var(--text);">AIza</span>) et colle-la ci-dessous.</li></ol>'
+    +_champ('Clé Gemini',_inp('au-gemini','text',_ins.gemini||'','AIza… (facultatif)',attrs('gemini-api-key')))
+    +'<div style="font-size:11px;color:var(--text3);line-height:1.45;margin:-4px 0 12px;">Tes clés restent liées à ton compte et ne sont jamais incluses dans les exports. Tu pourras les ajouter ou les changer plus tard dans Réglages ⚙.</div>';
 }
-function passerCleGroq(){if(_auth.occupe)return;_ins.groq='';_auth.err='';return finaliserInscription();}
+function passerCleGroq(){if(_auth.occupe)return;_ins.groq='';_ins.gemini='';_auth.err='';return finaliserInscription();}
 function _renderInscription(err,dis,retour){
   var e=_ins.etape,p=_ins.p;
   var barre='<div style="display:flex;gap:4px;margin-bottom:14px;">'+_ETAPES.map(function(x,i){
@@ -7809,7 +7903,7 @@ function _memoriserEtape(){
   else if(e===1)Object.assign(_ins.p,_lireToi());
   else if(e===2)Object.assign(_ins.p,_lireObjectif());
   else if(e===3)Object.assign(_ins.p,_lireAlim());
-  else if(e===5)_ins.groq=_val('au-groq').replace(/\s+/g,'');
+  else if(e===5){_ins.groq=_val('au-groq').replace(/\s+/g,'');_ins.gemini=_val('au-gemini').replace(/\s+/g,'');}
   else _ins.p.cibles=_lireCibles();
 }
 async function etapeInscription(sens){
@@ -7826,6 +7920,7 @@ async function etapeInscription(sens){
     }
     if(e===1){var er=validerProfil(Object.assign({},_ins.p,{poidsVise:''}));
       if(er.length){_auth.err='À vérifier : '+er.join(', ')+'.';return renderAuth();}}
+    if(e===5&&_ins.gemini&&!_cleGeminiValide(_ins.gemini)){_auth.err='La clé Gemini ne ressemble pas à une clé Google : elle commence par AIza. Vérifie le copier-coller, ou laisse le champ vide.';return renderAuth();}
     if(e===5&&_ins.groq&&!_cleGroqValide(_ins.groq)){_auth.err='Cette clé ne ressemble pas à une clé Groq : elle commence par gsk_. Vérifie le copier-coller, ou passe cette étape.';return renderAuth();}
     if(e===_ETAPES.length-1)return finaliserInscription();
   }
@@ -7843,9 +7938,10 @@ async function finaliserInscription(){
     var cle='users/'+uid;
     var profil=_neutre(Object.assign({},p,{login:_loginNorm(_ins.login),creeLe:new Date().toISOString()}));
     var _cg=_cleGroqValide(_ins.groq)?_ins.groq:'';
-    await _initNouveauProfil(cle,profil,_cg);
+    await _initNouveauProfil(cle,profil,_cg,_cleGeminiValide(_ins.gemini)?_ins.gemini:'');
     /* La cle d'un compte precedent ne doit pas suivre le nouveau */
     try{if(_cg)localStorage.setItem('anthropic_key',_cg);else localStorage.removeItem('anthropic_key');}catch(e){}
+    try{if(_cleGeminiValide(_ins.gemini))localStorage.setItem('gemini_key',_ins.gemini);else localStorage.removeItem('gemini_key');}catch(e){}
     try{location.reload();}catch(e){}
   }catch(e){
     _auth.occupe=false;
@@ -7862,7 +7958,7 @@ async function validerConnexion(){
   // Groq du precedent ne doit pas le suivre (meme menage que deconnexion()).
   var _ancien=(sessionActive()||{}).login||'';
   try{await connexion(l,m);
-    try{if(_ancien&&_ancien!==_loginNorm(l))localStorage.removeItem('anthropic_key');}catch(e){}try{location.reload();}catch(e){}}
+    try{if(_ancien&&_ancien!==_loginNorm(l)){localStorage.removeItem('anthropic_key');localStorage.removeItem('gemini_key');}}catch(e){}try{location.reload();}catch(e){}}
   catch(e){_auth.occupe=false;_auth.err=_msgErreurAuth(e&&e.message);renderAuth();}
 }
 async function demanderReinitialisation(){

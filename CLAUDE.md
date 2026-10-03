@@ -11,7 +11,7 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 - En ligne : https://ledoreamon.github.io/compteur-calorique-recettes/
 - Architecture : un unique `index.html` (~550 ko, HTML + CSS + JS inline), plus `sw.js`, `manifest.json` et `zxing.min.js` (chargé à la demande)
 - Données : Firebase Realtime Database, via l'API REST (`fetch`, pas de SDK)
-- IA : Groq (analyse de repas, génération de recettes, analyse photo, macros, estimation d'activité)
+- IA : Groq (analyse de repas, génération de recettes, macros, estimation d'activité, photos en repli) et Gemini Flash, facultatif, pour les photos de repas
 - J'utilise : iPhone (PWA installée) et PC Windows
 - Build en ligne : celui de `sw.js` sur `main` (ligne `// build …`)
 
@@ -25,11 +25,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 - `fbUrl(path)` ajoute `?auth=<idToken>`. Si `securetoken` refuse le jeton pour de bon (400 `TOKEN_EXPIRED`, `INVALID_REFRESH_TOKEN`, `MISSING_REFRESH_TOKEN`, `USER_DISABLED`, `USER_NOT_FOUND`, `INVALID_GRANT`), `_sessionExpiree()` rouvre l'écran de connexion.
 - Code de rattachement et accès « ancien profil » sans compte : retirés le 26/09/2026 (migration terminée). `PROFIL_HERITE='liam'` reste l'identifiant de mon catalogue (`S.catalogue`), de mes cibles et de mes migrations. Un ancien marqueur `dz_herite` est effacé au démarrage. **Ne jamais écrire l'ancien code en clair.**
 - La clé Groq est stockée dans `localStorage.anthropic_key` et synchronisée dans `state.groqKey` (lisible par moi seul grâce aux règles). Elle est retirée des exports `.json`, ignorée à l'import, et effacée à la déconnexion ainsi qu'à la reconnexion sur un autre compte après une session expirée.
+- Clé Gemini (facultative, 03/10/2026) : même traitement, dans `localStorage.gemini_key` et `state.geminiKey` (`getGeminiKey`, format vérifié par `_cleGeminiValide` : `AIza…`). Saisie dans Réglages et à l'étape « Les IA » de l'inscription, qui explique pourquoi deux services.
 
 ## 3. Modèles Groq
 
-- `openai/gpt-oss-20b` par défaut, `openai/gpt-oss-120b` pour l'analyse de repas.
-- `MODELE_VISION='qwen/qwen3.8-27b'` pour les photos.
+- `openai/gpt-oss-20b` par défaut, `openai/gpt-oss-120b` pour l'analyse de repas et la génération de recettes (`MODELE_RECETTES`, raisonnement `medium`, repli sur le 20b si le quota refuse une requête trop grosse).
+- Photos : `callAI` envoie d'abord à Gemini (`_callGemini`, REST `generateContent`, `MODELE_GEMINI='gemini-2.5-flash'`, alias `gemini-flash-latest` si 404) quand une clé Gemini existe ; en cas d'échec (quota, réseau, réponse vide), repli silencieux sur Groq `MODELE_VISION='qwen/qwen3.8-27b'`. `_derniereIA` indique le moteur utilisé. Le texte ne passe jamais par Gemini.
 - `reasoning_effort` : gpt-oss n'accepte que `low`, `medium` ou `high` ; seul qwen accepte `none`.
 - Piège : chez gpt-oss, la réflexion compte dans `max_tokens`. Un budget trop juste donne une réponse vide avec `finish_reason: "length"`. `callAI` relance alors une fois avec un budget plus large. Ne pas redescendre les budgets sous environ 400 (tous les appels actuels sont à 400 ou plus).
 - `callAI` renvoie `{content:[{type:'text',text}], finish_reason, truncated, empty}`. Le texte s'obtient par `rep.content.map(b=>b.text).join('')`. Tester `rep.empty` **avant** `extractJSON`, qui lève une exception sur un texte vide.
@@ -55,12 +56,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t71.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1248 tests au 03/10/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t72.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1259 tests au 03/10/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t71` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t72` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -98,7 +99,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 12. Fibres : champ `fib` facultatif (g) dans `mac100`, `macPiece`, les lignes `ings` et `macros` d'un repas. Absent = inconnu, jamais 0 par défaut. Repli : table `FIBRES_PAR_NOM` (familles, premier motif gagnant). Mon inventaire a reçu ses valeurs article par article une seule fois (`FIBRES_INVENTAIRE`, drapeau `S.fibInv`) : un champ vidé ensuite reste vide. Calcul d'un repas par `_fibRepas`, d'une journée par `getDayFibres` ; `getDayMacros` ne les compte pas. Repère fixe `FIBRES_CIBLE=30` g, hors de `TARGETS`.
 13. Objectif : `_objectif()` renvoie `perte`, `maintien` ou `prise` (profil, sinon poids cible, sinon `perte`) ; `_libObjectif()` donne le libellé (Sèche, Maintien, Prise de masse). Ne pas tester l'objectif par `_enPriseDeMasse()` seul : le maintien n'est pas une sèche. Les moyennes du Bilan portent sur les journées complètes (`_jourComplet` : hors aujourd'hui, au moins 50 % de la cible). Cible du jour : `_cibleDuJour(jour)` ; en sèche l'activité ne s'ajoute pas (elle creuse le déficit), en maintien et en prise elle est à compenser (décision du 25/09/2026). Protéines « atteintes » : `_protOk` (95 % de la cible), partout.
 14. Réseau du bac à sable cloud : Firebase, Groq et `github.io` sont bloqués par le proxy (vérifié le 25/09/2026). On ne peut donc pas tester en direct : simuler les réponses. `raw.githubusercontent.com` et `git clone` fonctionnent.
-15. Champ de clé API : jamais `type="password"` (le navigateur propose d'enregistrer la clé comme mot de passe). `type="text"` + classe `champ-cle` (`-webkit-text-security: disc`) + `autocomplete="off"` ; `closeSettings` vide le champ. Vérifié par `t65.js`.
+15. Champs de clé API (Groq et Gemini) : jamais `type="password"` (le navigateur propose d'enregistrer la clé comme mot de passe). `type="text"` + classe `champ-cle` (`-webkit-text-security: disc`) + `autocomplete="off"` ; `closeSettings` vide les champs. Vérifié par `t65.js`.
 
 ## 7. Ce que l'app sait faire
 
