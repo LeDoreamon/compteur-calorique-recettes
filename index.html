@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 18h30</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 19h10</div>
   </div>
 </div>
 
@@ -4617,7 +4617,7 @@ function renderTDEEBlock(t){
   return '<div style="background:linear-gradient(135deg,rgba(192,87,70,.13),rgba(99,102,241,.05));border:0.5px solid rgba(192,87,70,.35);border-radius:12px;padding:14px;">'+
     '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Dépense réelle estimée</div>'+
     '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:27px;font-weight:700;color:var(--text);">'+t.tdee+'</span><span style="font-size:12px;color:var(--text3);">kcal/j</span></div>'+
-    '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+t.days+' j : ~'+t.avgCal+' kcal/j sur '+t.logs+' journée'+(t.logs>1?'s':'')+' complète'+(t.logs>1?'s':'')+' · '+perWeekTxt+'</div>'+
+    '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+(t.days+1)+' j : ~'+t.avgCal+' kcal/j sur '+t.logs+' journée'+(t.logs>1?'s':'')+' complète'+(t.logs>1?'s':'')+' · '+perWeekTxt+'</div>'+
     ((t.ecartes&&t.ecartes.length)?'<div style="font-size:11px;color:var(--gold);margin-top:5px;line-height:1.4;">'+t.ecartes.length+' journée'+(t.ecartes.length>1?'s':'')+' écartée'+(t.ecartes.length>1?'s':'')+' (sous '+t.seuil+' kcal, saisie probablement incomplète) : '+t.ecartes.slice(0,6).join(', ')+(t.ecartes.length>6?'…':'')+'</div>':'')+
     '<div style="font-size:12px;color:var(--accent2);margin-top:9px;line-height:1.45;">💡 '+tip+'</div>'+
     // Conseil chiffre : on peut l'appliquer d'un geste (cible modifiable ensuite dans le profil)

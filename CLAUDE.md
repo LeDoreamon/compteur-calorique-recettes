@@ -57,7 +57,7 @@ bash tests/run.sh      # depuis la racine du depot
 ```
 
 - Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t72.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1265 tests au 03/10/2026).
+- Attendu : 0 échec (1266 tests au 03/10/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.

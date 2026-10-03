@@ -124,3 +124,11 @@ t('apres l\'analyse : l\'IA qui a vraiment repondu est indiquee',()=>{
 });
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();
+
+console.log('\n=== Bilan : periode de la depense reelle coherente avec le nombre de jours ===');
+t('TDEE : la periode affichee couvre au moins les journees comptees',()=>{
+  const html=X("renderTDEEBlock({ok:true,tdee:2500,avgCal:2150,deltaW:0.5,days:28,logs:29,perWeek:-0.12,ecartes:[],seuil:1150})");
+  const m=/Sur (\d+) j : ~\d+ kcal\/j sur (\d+) journ/.exec(html);
+  if(!m)throw new Error('libelle introuvable');
+  if(+m[2]>+m[1])throw new Error('Sur '+m[1]+' j mais '+m[2]+' journees');
+});
