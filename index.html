@@ -274,8 +274,8 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <button onclick="saveApiKey()" style="width:100%;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">Enregistrer la clé</button>
     <button onclick="clearApiKey()" style="width:100%;margin-top:8px;padding:9px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;">Supprimer la clé</button>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">📷 Clé Gemini (facultative)</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.45;">Pour l'analyse des <strong style="color:var(--text2);">photos de repas</strong>, plus précise que Groq. Gratuite sur <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--blue);">aistudio.google.com</a> (« Create API key »). Sans elle, ou si Gemini ne répond pas, les photos passent par Groq.</div>
-    <input type="text" id="gemini-key-input" class="champ-cle" name="gemini-api-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore placeholder="AIza..." style="width:100%;padding:10px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:6px;box-sizing:border-box;">
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.45;">Pour l'analyse des <strong style="color:var(--text2);">photos de repas</strong>, plus précise que Groq. Gratuite sur <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--blue);">aistudio.google.com</a> (« Create API key », puis « Copier la clé »). Gemini analyse les photos et sert de secours à Groq pour le reste ; sans elle, tout passe par Groq.</div>
+    <input type="text" id="gemini-key-input" class="champ-cle" name="gemini-api-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore placeholder="AQ.… ou AIza…" style="width:100%;padding:10px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:6px;box-sizing:border-box;">
     <div id="gemini-key-st" style="font-size:11px;color:var(--text3);margin-bottom:8px;min-height:14px;"></div>
     <div style="display:flex;gap:8px;"><button onclick="saveGeminiKey()" style="flex:1;padding:9px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">Enregistrer</button><button onclick="clearGeminiKey()" style="padding:9px 12px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;">Supprimer</button></div>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:20px 0 7px;">💾 Sauvegardes automatiques</div>
@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 16h30</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 18h30</div>
   </div>
 </div>
 
@@ -316,6 +316,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div id="addmeal-daynote" style="display:none;margin:-8px 0 14px;padding:8px 11px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.4);border-radius:8px;font-size:12px;color:var(--blue);"></div>
     <img id="addmeal-photo-preview" style="display:none;width:100%;border-radius:8px;margin-bottom:12px;max-height:200px;object-fit:cover;">
     <div id="addmeal-photo-choix" style="display:none;">
+      <div id="addmeal-ia-photo" style="font-size:11.5px;color:var(--text3);margin-bottom:10px;"></div>
       <div style="font-size:14px;color:var(--text);font-weight:600;margin-bottom:4px;">Ce repas vient-il de ton inventaire ?</div>
       <div style="font-size:12px;color:var(--text3);line-height:1.45;margin-bottom:14px;">Oui : les aliments reconnus sur la photo seront retirés de ton stock. Non : le repas est seulement compté (restaurant, chez quelqu'un, plat acheté…).</div>
       <button onclick="choixPhotoRepas(true)" style="width:100%;padding:12px;margin-bottom:8px;background:rgba(111,191,115,.14);border:0.5px solid rgba(111,191,115,.5);border-radius:10px;color:var(--green);font-size:14px;font-weight:600;cursor:pointer;">📦 Oui, avec mon inventaire</button>
@@ -323,6 +324,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     </div>
     <!-- Input state -->
     <div id="addmeal-input">
+      <div id="addmeal-ia" style="font-size:11.5px;color:var(--text3);margin-bottom:10px;line-height:1.45;"></div>
       <div style="display:flex;align-items:center;gap:6px;margin-bottom:12px;padding:9px 11px;background:rgba(192,87,70,.06);border:0.5px solid rgba(192,87,70,.2);border-radius:8px;"><span style="flex:1;font-size:12px;color:var(--accent2);">Stock de l'inventaire utilisé ?</span><button id="ms-yes" onclick="setMealStock(true)" style="padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:var(--accent);border:0;color:#fff;">Oui</button><button id="ms-no" onclick="setMealStock(false)" style="padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;border:0.5px solid rgba(246,237,227,.15);color:var(--text2);">Non</button></div>
       <div style="margin-bottom:12px;">
         <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Moment de la journée</div>
@@ -342,10 +344,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <!-- Analyzing state -->
     <div id="addmeal-analyzing" style="display:none;text-align:center;padding:24px 0;">
       <div style="font-size:28px;margin-bottom:10px;">🔍</div>
-      <div style="font-size:13px;color:var(--text2);">Analyse en cours…</div>
+      <div id="addmeal-analyzing-txt" style="font-size:13px;color:var(--text2);">Analyse en cours…</div>
     </div>
     <!-- Confirm state -->
-    <div id="addmeal-verify" style="display:none;"><div id="mverify-q" style="font-size:13px;color:var(--text2);margin-bottom:6px;">Est-ce bien :</div><div id="mverify-name" style="font-size:17px;color:var(--text);font-weight:600;margin-bottom:6px;line-height:1.3;">—</div><div id="mverify-macros" style="font-size:12px;color:var(--accent);margin-bottom:18px;">—</div><div style="display:flex;gap:8px;"><button onclick="verifyMealYes()" style="flex:1;padding:12px;background:var(--green);border:0;border-radius:10px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">Oui, c'est ça</button><button onclick="verifyMealNo()" style="flex:1;padding:12px;background:transparent;border:0.5px solid rgba(246,237,227,.15);border-radius:10px;color:var(--text2);font-size:14px;cursor:pointer;">Non, je reformule</button></div></div><div id="addmeal-confirm" style="display:none;">
+    <div id="addmeal-verify" style="display:none;"><div id="mverify-q" style="font-size:13px;color:var(--text2);margin-bottom:6px;">Est-ce bien :</div><div id="mverify-name" style="font-size:17px;color:var(--text);font-weight:600;margin-bottom:6px;line-height:1.3;">—</div><div id="mverify-macros" style="font-size:12px;color:var(--accent);margin-bottom:18px;">—</div><div style="display:flex;gap:8px;"><button onclick="verifyMealYes()" style="flex:1;padding:12px;background:var(--green);border:0;border-radius:10px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">Oui, c'est ça</button><button onclick="verifyMealNo()" style="flex:1;padding:12px;background:transparent;border:0.5px solid rgba(246,237,227,.15);border-radius:10px;color:var(--text2);font-size:14px;cursor:pointer;">Non, je reformule</button></div></div><div id="addmeal-confirm" style="display:none;"><div id="addmeal-ia-faite" style="display:none;font-size:11.5px;color:var(--text3);margin-bottom:8px;"></div>
       <div style="margin-bottom:10px;">
         <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:4px;">Repas</label>
         <input id="addmeal-name" type="text" style="width:100%;padding:8px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;box-sizing:border-box;">
@@ -2030,7 +2032,8 @@ const MODELE_RECETTES='openai/gpt-oss-120b';
 // que la vision Groq. Sans cle ou en cas d'echec, repli sur Groq.
 const MODELE_GEMINI='gemini-2.5-flash',MODELE_GEMINI_REPLI='gemini-flash-latest';
 function getGeminiKey(){try{return localStorage.getItem('gemini_key')||'';}catch(e){return '';}}
-function _cleGeminiValide(k){return /^AIza[0-9A-Za-z_-]{30,}$/.test(String(k||''));}
+// Deux formats Google : historique « AIza… » et nouveau « AQ.… » (2026)
+function _cleGeminiValide(k){return /^(AIza[0-9A-Za-z_-]{30,}|AQ\.[0-9A-Za-z_.-]{20,})$/.test(String(k||''));}
 var _derniereIA='';   // 'gemini' | 'groq' : moteur de la derniere analyse photo
 // ─── Auth anonyme Firebase (REST) — s'active dès que _FBK.key est renseignée ─
 const _FBK={key:'AIzaSyBKAKZ4iGE9-t7rIseyJhXOCj2KbehU7iI'};
@@ -2878,7 +2881,7 @@ function closeSettings(){document.getElementById('set-overlay').style.display='n
 function saveGeminiKey(){
   var el=document.getElementById('gemini-key-input'),v=String((el&&el.value)||'').replace(/\s+/g,'');
   var st=document.getElementById('gemini-key-st');
-  if(!_cleGeminiValide(v)){if(st){st.style.color='var(--red)';st.textContent='Cette clé ne ressemble pas à une clé Gemini : elle commence par AIza.';}return;}
+  if(!_cleGeminiValide(v)){if(st){st.style.color='var(--red)';st.textContent='Cette clé ne ressemble pas à une clé Gemini : elle commence par AQ. ou AIza.';}return;}
   try{localStorage.setItem('gemini_key',v);}catch(e){}
   saveState();closeSettings();render();
 }
@@ -3165,16 +3168,34 @@ function _aiFriendly(msg){
   if(msg.indexOf('NETWORK:')===0)return 'Pas de connexion \u2014 r\u00e9essaie';
   return msg.indexOf('API:')===0?msg.slice(4,120):msg;
 }
+// Les deux IA cohabitent (03/10/2026) : chacune fait ce qu'elle fait le mieux et
+// sert de secours a l'autre. Photo : Gemini puis Groq. Texte : Groq puis Gemini.
+// Une seule cle suffit ; une erreur (quota, reseau) ou une reponse vide passe la main.
 async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temperature=0.2,seed=null,_retried=false,opts){
-  const key=getApiKey();
-  // Détecte si la requête contient une image
+  const gq=getApiKey(),gm=getGeminiKey();
   const hasImg=messages.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'));
-  if(hasImg&&!_retried&&getGeminiKey()){
-    try{const g=await _callGemini(messages,maxTokens,system,temperature);if(!g.empty){_derniereIA='gemini';return g;}}
-    catch(ge){try{console.warn('Gemini indisponible, repli sur Groq :',ge&&ge.message);}catch(e){}if(!key)throw ge;}
+  if(!gq&&!gm){openSettings();throw new Error('NO_KEY');}
+  const parGemini=async()=>{const g=await _callGemini(messages,maxTokens,system,temperature);_derniereIA='gemini';return g;};
+  const parGroq=async()=>{const r=await _callGroq(messages,maxTokens,system,modelOverride,temperature,seed,_retried,opts);_derniereIA='groq';return r;};
+  const ordre=(hasImg?[gm&&parGemini,gq&&parGroq]:[gq&&parGroq,gm&&parGemini]).filter(Boolean);
+  let err=null;
+  for(let i=0;i<ordre.length;i++){
+    const dernier=(i===ordre.length-1);
+    try{
+      const r=await ordre[i]();
+      if(r.empty&&!dernier)continue;     // reponse vide : on laisse sa chance a l'autre IA
+      return r;
+    }catch(e){
+      if(e&&e.message==='NO_KEY')throw e;
+      err=e;if(!dernier){try{console.warn('IA indisponible, l\'autre prend le relais :',e&&e.message);}catch(_){}}
+    }
   }
-  if(!key){openSettings();throw new Error('NO_KEY');}
-  if(hasImg)_derniereIA='groq';
+  throw err||new Error('API:aucune réponse');
+}
+async function _callGroq(messages,maxTokens=300,system=null,modelOverride=null,temperature=0.2,seed=null,_retried=false,opts){
+  const key=getApiKey();
+  if(!key)throw new Error('NO_KEY');
+  const hasImg=messages.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'));
   const model=modelOverride||(hasImg?MODELE_VISION:'openai/gpt-oss-20b');
   // Construire les messages au format OpenAI (compatible Groq)
   const msgs=[];
@@ -3218,7 +3239,7 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
       const _w=Math.min(50,parseFloat(_wm[1])+1.5);
       if(typeof _aiRetryNotice==='function')_aiRetryNotice(_w);
       await new Promise(r=>setTimeout(r,_w*1000));
-      return callAI(messages,maxTokens,system,modelOverride,temperature,seed,true,opts);
+      return _callGroq(messages,maxTokens,system,modelOverride,temperature,seed,true,opts);
     }
     throw new Error('API:'+_em);
   }
@@ -3227,7 +3248,7 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   // gpt-oss compte sa reflexion dans max_tokens : un budget trop juste donne
   // une reponse vide coupee (« length »). On retente une fois, plus large.
   if(!_retried&&fin==='length'&&!text.trim()&&model.indexOf('gpt-oss')>=0){
-    return callAI(messages,Math.min(4000,Math.max(800,maxTokens*3)),system,modelOverride,temperature,seed,true,opts);
+    return _callGroq(messages,Math.min(4000,Math.max(800,maxTokens*3)),system,modelOverride,temperature,seed,true,opts);
   }
   return{content:[{type:'text',text}],finish_reason:fin,truncated:fin==='length',empty:!text.trim()};
 }
@@ -3253,8 +3274,8 @@ async function _callGemini(messages,maxTokens,system,temperature,_modele){
   const ctrl=new AbortController(),tid=setTimeout(function(){ctrl.abort();},45000);
   let resp,data;
   try{
-    resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+modele+':generateContent?key='+encodeURIComponent(key),
-      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body),signal:ctrl.signal});
+    resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+modele+':generateContent',
+      {method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify(body),signal:ctrl.signal});
     data=await resp.json();
   }catch(e){throw new Error(e.name==='AbortError'?'NETWORK:timeout':'NETWORK:'+e.message);}finally{clearTimeout(tid);}
   if(data&&data.error){
@@ -6486,6 +6507,7 @@ function openAddMeal(type) {_scanBase=null;
     renderAmSlots();
   }catch(e){}
   setMealStock(true);
+  _iaAnalyse='';try{_majIAPrevue();}catch(e){}
   var _ch=document.getElementById('addmeal-photo-choix');if(_ch)_ch.style.display='none';
   // Photo : on demande d'abord si le repas vient de l'inventaire. Le bouton
   // choisi ouvre l'appareil (iOS exige un geste direct de l'utilisateur).
@@ -6493,6 +6515,22 @@ function openAddMeal(type) {_scanBase=null;
     document.getElementById('addmeal-input').style.display = 'none';
     if(_ch)_ch.style.display='block';
   }
+}
+// IA qui fera l'analyse, d'apres les cles presentes (affiche avant l'analyse)
+function _iaPrevue(photo){
+  var gq=!!getApiKey(),gm=!!getGeminiKey();
+  if(photo)return gm?{nom:'Gemini',secours:gq?'Groq':''}:(gq?{nom:'Groq',secours:''}:null);
+  return gq?{nom:'Groq',secours:gm?'Gemini':''}:(gm?{nom:'Gemini',secours:''}:null);
+}
+function _libIA(photo){
+  var p=_iaPrevue(photo);
+  if(!p)return '\u26a0 Aucune IA configurée : ajoute une clé Groq ou Gemini dans Réglages \u2699.';
+  return (photo?'\ud83d\udcf7 Photo analysée par ':'\u270d\ufe0f Texte analysé par ')+'<strong style="color:var(--text2);">'+p.nom+'</strong>'+(p.secours?' (secours : '+p.secours+')':'');
+}
+var _iaAnalyse='';   // IA qui a reellement fait la derniere analyse de repas
+function _majIAPrevue(){
+  var a=document.getElementById('addmeal-ia');if(a)a.innerHTML=_libIA(false)+'<br>'+_libIA(true);
+  var b=document.getElementById('addmeal-ia-photo');if(b)b.innerHTML=_libIA(true);
 }
 function choixPhotoRepas(stock){
   setMealStock(!!stock);
@@ -6967,6 +7005,7 @@ async function startAddMealAnalysis(type) {
   if (!text) return;
   document.getElementById('addmeal-input').style.display = 'none';
   document.getElementById('addmeal-analyzing').style.display = 'block';
+  {var _at=document.getElementById('addmeal-analyzing-txt');if(_at){var _p=_iaPrevue(false);_at.textContent='Analyse en cours'+(_p?' avec '+_p.nom:'')+'\u2026';}}
   await runAddMealAI([{role:'user', content:text}]);
 }
 
@@ -6990,6 +7029,7 @@ async function handleAddMealPhoto(input) {
     prev.src = dataUrl; prev.style.display = 'block';
     document.getElementById('addmeal-input').style.display = 'none';
     document.getElementById('addmeal-analyzing').style.display = 'block';
+  {var _at=document.getElementById('addmeal-analyzing-txt');if(_at){var _p=_iaPrevue(true);_at.textContent='Analyse en cours'+(_p?' avec '+_p.nom:'')+'\u2026';}}
     await runAddMealAI([{role:'user', content:[
       {type:'image', source:{type:'base64', media_type:'image/jpeg', data:b64}},
       {type:'text', text:'Analyse ce repas.'}
@@ -7864,8 +7904,8 @@ function _secCleGroq(){
     +'<ol '+ol+'>'
     +'<li '+li+'>Ouvre <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener" style="color:var(--blue);">aistudio.google.com</a> et connecte-toi avec un compte Google.</li>'
     +'<li '+li+'>Touche <strong style="color:var(--text);">Create API key</strong>.</li>'
-    +'<li>Copie la clé (elle commence par <span style="font-family:monospace;color:var(--text);">AIza</span>) et colle-la ci-dessous.</li></ol>'
-    +_champ('Clé Gemini',_inp('au-gemini','text',_ins.gemini||'','AIza… (facultatif)',attrs('gemini-api-key')))
+    +'<li>Touche <strong style="color:var(--text);">Copier la clé</strong> (elle commence par <span style="font-family:monospace;color:var(--text);">AQ.</span> ou <span style="font-family:monospace;color:var(--text);">AIza</span>) et colle-la ci-dessous.</li></ol>'
+    +_champ('Clé Gemini',_inp('au-gemini','text',_ins.gemini||'','AQ.… ou AIza… (facultatif)',attrs('gemini-api-key')))
     +'<div style="font-size:11px;color:var(--text3);line-height:1.45;margin:-4px 0 12px;">Tes clés restent liées à ton compte et ne sont jamais incluses dans les exports. Tu pourras les ajouter ou les changer plus tard dans Réglages ⚙.</div>';
 }
 function passerCleGroq(){if(_auth.occupe)return;_ins.groq='';_ins.gemini='';_auth.err='';return finaliserInscription();}
@@ -7920,7 +7960,7 @@ async function etapeInscription(sens){
     }
     if(e===1){var er=validerProfil(Object.assign({},_ins.p,{poidsVise:''}));
       if(er.length){_auth.err='À vérifier : '+er.join(', ')+'.';return renderAuth();}}
-    if(e===5&&_ins.gemini&&!_cleGeminiValide(_ins.gemini)){_auth.err='La clé Gemini ne ressemble pas à une clé Google : elle commence par AIza. Vérifie le copier-coller, ou laisse le champ vide.';return renderAuth();}
+    if(e===5&&_ins.gemini&&!_cleGeminiValide(_ins.gemini)){_auth.err='La clé Gemini ne ressemble pas à une clé Google : elle commence par AQ. ou AIza. Vérifie le copier-coller, ou laisse le champ vide.';return renderAuth();}
     if(e===5&&_ins.groq&&!_cleGroqValide(_ins.groq)){_auth.err='Cette clé ne ressemble pas à une clé Groq : elle commence par gsk_. Vérifie le copier-coller, ou passe cette étape.';return renderAuth();}
     if(e===_ETAPES.length-1)return finaliserInscription();
   }
@@ -8421,7 +8461,7 @@ function renderAmSlots(){
     if(el)el.innerHTML=html;
   });
 }
-function invAddMeal(){_scanBase=null;_titreAutoPose='';_addMealFreeItems=[];
+function invAddMeal(){_scanBase=null;_iaAnalyse='';_titreAutoPose='';_addMealFreeItems=[];
   setMealStock(true);   // choisir l'inventaire, c'est vouloir le déduire
   _pendingMeal={name:'',kcal:0,prot:0,gluc:0,lip:0,items:[]};
   applyPendingMealToConfirm();
@@ -8431,7 +8471,7 @@ function invAddMeal(){_scanBase=null;_titreAutoPose='';_addMealFreeItems=[];
   _invPickFromInput=true;
   openInvPick();
 }
-function manualAddMeal(){_scanBase=null;_addMealFreeItems=[];
+function manualAddMeal(){_scanBase=null;_iaAnalyse='';_addMealFreeItems=[];
   _pendingMeal={name:'',kcal:0,prot:0,gluc:0,lip:0,items:[]};
   applyPendingMealToConfirm();
   var n=document.getElementById('addmeal-name');
@@ -8447,6 +8487,7 @@ function applyPendingMealToConfirm(){
   document.getElementById('addmeal-gluc').value=_pendingMeal.gluc;
   document.getElementById('addmeal-lip').value=_pendingMeal.lip;
   _majFibAjout((typeof _pendingMeal.fib==='number')?_pendingMeal.fib:null,!!_pendingMeal.fibPartiel);
+  {var _f=document.getElementById('addmeal-ia-faite');if(_f){if(_iaAnalyse){_f.style.display='block';_f.textContent='\ud83e\udd16 Analysé par '+(_iaAnalyse==='gemini'?'Gemini':'Groq')+'. Vérifie avant d\u2019ajouter.';}else _f.style.display='none';}}
   _addMealInvSuggestions=[];
   // Si le detail existe, ce sont les lignes qui portent le total : la base
   // repart de zero, sans quoi tout serait compte deux fois.
@@ -8552,6 +8593,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
   }
   try {
     const data = await callAI(msgs, 1300, sys, msgs.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'))?null:'openai/gpt-oss-120b');
+    _iaAnalyse=_derniereIA;
     const raw = data.content.map(i=>i.text||'').join('');
     if(data.empty)throw new Error('Réponse vide, réessaie.');
     // extractJSON : balises <think>, texte autour du JSON, et surtout _neutre
