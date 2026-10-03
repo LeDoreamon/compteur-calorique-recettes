@@ -39,13 +39,14 @@ t('*** Courses : rayon « Auto » par defaut, le rayon est devine (plus de poule
   docEl('shop-add-name').value='Sopalin';docEl('shop-add-rayon').value='menager';X('addShopItem()');
   eq(X("S.shop.list.find(function(i){return i.name==='Sopalin'}).rayon"),'menager','choix manuel respecte');
 });
-t('*** Courses : 🧾 seulement sur les articles concernes, reglable dans la fiche ***',()=>{
+t('*** Courses : 🧾 par article (estompe s\'il va dans « À ranger »), reglable aussi dans la fiche ***',()=>{
   prepa();X("S.mainTab='courses'");
-  const n=h=>(h.match(/toggleGraveItem\(/g)||[]).length;
-  eq(n(X('renderCoursesHTML()')),0,'icone sur un article normal');
+  const n=h=>(h.match(/aria-pressed="true"/g)||[]).length;
+  if(!/toggleGraveItem\('a'\)" aria-pressed="false"/.test(X('renderCoursesHTML()')))throw new Error('bouton estompe absent');
+  eq(n(X('renderCoursesHTML()')),0,'marque sur un article normal');
   X("openShopItem('a')");eq(docEl('shopitem-grave').checked,false);
   docEl('shopitem-grave').checked=true;X('moveShopItem()');eq(X("S.shop.list[0].graveOnly"),true);
-  eq(n(X('renderCoursesHTML()')),1,'icone sur l\'article 🧾');
+  eq(n(X('renderCoursesHTML()')),1,'article 🧾 marque');
   X("openShopItem('a')");eq(docEl('shopitem-grave').checked,true);docEl('shopitem-grave').checked=false;X('moveShopItem()');
   eq(X("S.shop.list[0].graveOnly"),undefined);
 });

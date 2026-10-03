@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 20h40 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 21h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -464,9 +464,18 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
       <input id="burn-act-min" type="number" min="1" placeholder="min" style="width:64px;padding:8px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;text-align:center;">
     </div>
     <button id="burn-est-btn" onclick="burnEstimateActivity()" style="width:100%;margin-top:8px;padding:9px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">✨ Estimer les calories & ajouter</button>
-    <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:8px;">L'IA estime les calories selon ton poids, l'activité et la durée. Chaque activité ajoutée s'additionne.</div>
+    <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:8px;">L'IA estime les calories selon ton poids, l'activité et la durée, sans compter ce que ton corps dépense au repos (déjà dans ta cible). Chaque activité ajoutée s'additionne.</div>
     <div id="burn-total" style="font-size:12px;color:var(--text2);margin-top:14px;padding-top:10px;border-top:0.5px solid var(--border);"></div>
     <button onclick="saveBurnLog()" style="width:100%;margin-top:14px;padding:12px;background:var(--orange);border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">✓ Enregistrer</button>
+  </div>
+</div>
+<div id="prog-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:270;align-items:center;justify-content:center;padding:20px;" onclick="overlayBackdrop(event,this,fermerProgramme)">
+  <div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:88vh;overflow-y:auto;box-sizing:border-box;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+      <div style="font-size:16px;font-weight:600;color:var(--text);">🏋️ Mon programme</div>
+      <button onclick="fermerProgramme()" aria-label="Fermer" style="background:none;border:none;color:var(--text3);font-size:18px;cursor:pointer;line-height:1;">✕</button>
+    </div>
+    <div id="prog-corps"></div>
   </div>
 </div>
 <div id="editmeal-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:260;align-items:center;justify-content:center;padding:20px;">
@@ -543,8 +552,14 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-03-2040';
+const BUILD_ID='2026-10-03-2130';
 const NOUVEAUTES=[
+  {b:'2026-10-03-2130',points:[
+    'Nouveau : ton propre programme de séances. Dans « Dépense du jour » (bouton +, Pas et activités), crée tes séances (nom, exercices, durée) ; l’IA estime leur intensité. Ensuite, tu choisis la séance du jour et sa dépense s’ajoute à ton bilan.',
+    'Pas et activités : la dépense suit maintenant ton poids du jour. Les activités estimées par l’IA ne recomptent plus ce que ton corps dépense au repos (déjà dans ta cible) : elles baissent un peu.',
+    'Recettes par IA : l’IA en propose selon ce qui te manque. Elle vise 4 recettes faisables avec ton stock pour chaque repas ; s’il y en a déjà assez, elle te demande avant d’en ajouter 2.',
+    'Courses : le 🧾 se règle article par article, avec le petit bouton à droite (estompé = va dans « À ranger », net = acheté sans passer par l’inventaire). Le réglage par rayon disparaît ; ce que tu avais coché pour un rayon a été reporté sur ses articles.'
+  ]},
   {b:'2026-10-03-2040',points:[
     'Photo de repas : quand Gemini est saturé, une version plus légère de Gemini prend le relais avant Groq.',
     'Quand une analyse échoue, la raison s’affiche en entier dans un encadré au-dessus du champ, en français, et disparaît à la tentative suivante.'
@@ -2133,15 +2148,24 @@ function pasBase(){
   var v=(S&&typeof S.pasBase==='number')?S.pasBase:PAS_BASE_DEFAUT[ACTIVE_PROFILE];
   return (typeof v==='number'&&v>=0)?v:0;
 }
-function burnStepKcal(steps){
+// Poids a une date : derniere pesee a cette date ou avant (sinon la premiere, le profil, 80 kg)
+function _poidsDuJour(day){
+  var w=(S.weights||[]).filter(function(x){return x&&x.w>0;}).sort(function(a,b){return a.d<b.d?-1:1;});
+  if(w.length){var av=w.filter(function(x){return !day||x.d<=day;});return +(av.length?av[av.length-1]:w[0]).w;}
+  if(S.profil&&+S.profil.poids>0)return +S.profil.poids;
+  return 80;
+}
+// Cout net d'un pas, proportionnel au poids : 0,04 kcal a 80 kg (repere historique de l'app)
+function _kcalParPas(day){return 0.0005*_poidsDuJour(day);}
+function burnStepKcal(steps,day){
   var n=(+steps||0)-pasBase();
-  return Math.round(Math.max(0,n)*0.04);
+  return Math.round(Math.max(0,n)*_kcalParPas(day));
 }
 function burnDayTotal(day){
   var d=_burnData[day];if(!d)return null;
   var a=+(d.active||0),r=+(d.rest||0);
-  var st=burnStepKcal(d.steps);                         // net : au-dessus de la routine
-  var stBrut=Math.round((+d.steps||0)*0.04);            // brut : tous les pas
+  var st=burnStepKcal(d.steps,day);                     // net : au-dessus de la routine
+  var stBrut=Math.round((+d.steps||0)*_kcalParPas(day)); // brut : tous les pas
   var act=(d.activities||[]).reduce(function(s,x){return s+(+x.kcal||0);},0);
   var t=Math.round(a+r+st+act);
   var tBrut=Math.round(a+r+stBrut+act);
@@ -2188,7 +2212,7 @@ function majInfoPasBase(){
   var sup=Math.max(0,pas-b);
   el.textContent=pas>0
     ? (sup>0
-        ? (sup.toLocaleString('fr-FR')+' pas au-dessus de ta routine, soit '+Math.round(sup*0.04)+' kcal.')
+        ? (sup.toLocaleString('fr-FR')+' pas au-dessus de ta routine, soit '+Math.round(sup*_kcalParPas(_burnCurDay()))+' kcal (pour '+Math.round(_poidsDuJour(_burnCurDay()))+' kg).')
         : ('Sous ta routine de '+b.toLocaleString('fr-FR')+' pas : déjà compris dans ta cible.'))
     : ('Seuls les pas au-dessus de '+b.toLocaleString('fr-FR')+' comptent — les autres sont déjà dans ta cible.');
 }
@@ -2217,24 +2241,45 @@ function _poidsCourant(){
   if(S.profil&&+S.profil.poids>0)return +S.profil.poids;
   return 80;
 }
-function kcalSeance(s,min){
+function kcalSeance(s,min,day){
   if(!s)return 0;
   var m=(+min>0)?+min:s.min;
-  return Math.round((s.met-1)*_poidsCourant()*m/60);
+  var w=day?_poidsDuJour(day):_poidsCourant();
+  return Math.round((s.met-1)*w*m/60);
 }
-function _programmeVisible(){return _catalogue()===PROFIL_HERITE;}
+// Intensites proposees (MET du Compendium) : l'IA choisit, l'utilisateur peut corriger
+const NIVEAUX_SEANCE=[{k:'legere',lib:'Légère',met:3,ex:'mobilité, gainage, machines légères'},
+  {k:'moderee',lib:'Modérée',met:4,ex:'musculation classique, repos complets'},
+  {k:'soutenue',lib:'Soutenue',met:5,ex:'gros exercices lourds, jambes, peu de repos'},
+  {k:'intense',lib:'Intense',met:6.5,ex:'circuit, enchaînements, cross-training'}];
+function _niveauDe(met){var b=NIVEAUX_SEANCE[0];NIVEAUX_SEANCE.forEach(function(n){if(Math.abs(n.met-met)<Math.abs(b.met-met))b=n;});return b;}
+function _programmeSur(a){
+  return (Array.isArray(a)?a:[]).filter(function(x){return x&&typeof x==='object'&&x.nom;}).slice(0,20).map(function(x,i){
+    return {id:(/^[A-Za-z0-9_]{1,24}$/.test(x.id||'')?x.id:'s'+i),nom:_neutre(String(x.nom)).slice(0,60),
+      min:Math.min(180,Math.max(10,Math.round(+x.min||60))),met:Math.min(12,Math.max(2,+x.met||4)),
+      exos:_neutre(String(x.exos||'')).slice(0,500)};
+  });
+}
+function _programme(){return Array.isArray(S.programme)?S.programme:[];}
 function renderProgramme(){
   var c=document.getElementById('burn-programme');if(!c)return;
-  if(!_programmeVisible()){c.style.display='none';c.innerHTML='';return;}
   c.style.display='block';
+  var P=_programme(),jour=_burnCurDay();
+  if(!P.length){
+    c.innerHTML='<div style="display:flex;align-items:center;gap:10px;"><div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--gold);">\ud83c\udfcb\ufe0f Ton programme de séances</div>'
+      +'<div style="font-size:11px;color:var(--text3);line-height:1.45;margin-top:3px;">Note tes séances une fois : l\u2019IA estime leur dépense, tu n\u2019auras plus qu\u2019à les choisir.</div></div>'
+      +'<button onclick="ouvrirProgramme()" style="flex:0 0 auto;padding:8px 11px;background:var(--gold-bg);border:0.5px solid rgba(233,161,59,.5);border-radius:8px;color:var(--gold);font-size:12px;font-weight:600;cursor:pointer;">Créer</button></div>';
+    return;
+  }
   var sel=document.getElementById('burn-prog-sel');
   var cur=sel?sel.value:'';
-  var s=PROGRAMME_SEANCES.find(function(x){return x.id===cur;});
-  c.innerHTML='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">\ud83c\udfcb\ufe0f Séance du programme</div>'
+  var s=P.find(function(x){return x.id===cur;});
+  c.innerHTML='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">\ud83c\udfcb\ufe0f Séance du programme</span>'
+    +'<button onclick="ouvrirProgramme()" style="background:none;border:0;padding:2px 0;color:var(--blue);font-size:11px;cursor:pointer;">Modifier mon programme</button></div>'
     +'<div style="display:flex;gap:8px;">'
       +'<select id="burn-prog-sel" onchange="renderProgramme()" style="flex:1;min-width:0;box-sizing:border-box;padding:9px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;">'
         +'<option value="">Choisir une séance\u2026</option>'
-        +PROGRAMME_SEANCES.map(function(x){return '<option value="'+x.id+'"'+(x.id===cur?' selected':'')+'>'+x.nom+' \u00b7 ~'+kcalSeance(x)+' kcal</option>';}).join('')
+        +P.map(function(x){return '<option value="'+x.id+'"'+(x.id===cur?' selected':'')+'>'+x.nom+' \u00b7 ~'+kcalSeance(x,null,jour)+' kcal</option>';}).join('')
       +'</select>'
       +'<input id="burn-prog-min" type="number" min="10" max="180" value="'+(s?s.min:'')+'" placeholder="min" oninput="renderProgrammeApercu()" style="width:62px;flex:0 0 auto;box-sizing:border-box;padding:9px 8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;text-align:center;outline:none;">'
     +'</div>'
@@ -2243,21 +2288,99 @@ function renderProgramme(){
 }
 function renderProgrammeApercu(){
   var a=document.getElementById('burn-prog-apercu');if(!a)return;
-  var s=PROGRAMME_SEANCES.find(function(x){return x.id===_valSel();});
+  var s=_programme().find(function(x){return x.id===_valSel();});
   if(!s){a.innerHTML='';return;}
-  var min=parseFloat((document.getElementById('burn-prog-min')||{}).value)||s.min;
-  a.innerHTML='<div style="font-size:11px;color:var(--text3);line-height:1.45;margin:7px 0 8px;">'+s.exos+'.</div>'
+  var min=parseFloat((document.getElementById('burn-prog-min')||{}).value)||s.min,jour=_burnCurDay();
+  a.innerHTML=(s.exos?'<div style="font-size:11px;color:var(--text3);line-height:1.45;margin:7px 0 8px;">'+s.exos+'.</div>':'<div style="height:8px;"></div>')
     +'<button onclick="ajouterSeanceProgramme()" style="width:100%;padding:10px;background:rgba(233,161,59,.12);border:0.5px solid rgba(233,161,59,.45);border-radius:9px;color:var(--gold);font-size:13px;font-weight:600;cursor:pointer;">'
-    +'Ajouter \u00b7 '+Math.round(min)+' min \u00b7 ~'+kcalSeance(s,min)+' kcal</button>'
-    +'<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4;">Estimation nette, hors cardio, pour '+Math.round(_poidsCourant())+' kg : le métabolisme de repos est déjà dans ta cible.</div>';
+    +'Ajouter \u00b7 '+Math.round(min)+' min \u00b7 ~'+kcalSeance(s,min,jour)+' kcal</button>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.4;">Estimation pour '+Math.round(_poidsDuJour(jour))+' kg, sans ce que ton corps dépense au repos (déjà dans ta cible).</div>';
+}
+// ─── Mon programme : creer, modifier, faire estimer par l'IA ─────────────────
+var _progEdit=null;   // id de la seance en cours de modification (null = nouvelle)
+function ouvrirProgramme(){_progEdit=null;renderEditeurProgramme();document.getElementById('prog-overlay').style.display='flex';}
+function fermerProgramme(){document.getElementById('prog-overlay').style.display='none';_progEdit=null;try{renderProgramme();}catch(e){}}
+function _champProg(id){var e=document.getElementById(id);return e?(e.value||''):'';}
+function renderEditeurProgramme(){
+  var c=document.getElementById('prog-corps');if(!c)return;
+  var P=_programme(),s=_progEdit?P.find(function(x){return x.id===_progEdit;}):null,w=Math.round(_poidsCourant());
+  var lst=P.map(function(x){
+    return '<div style="padding:9px 0;border-top:0.5px solid var(--border);">'
+      +'<div style="display:flex;align-items:center;gap:8px;"><span style="flex:1;min-width:0;font-size:13.5px;font-weight:600;color:var(--text);">'+x.nom+'</span>'
+      +'<button onclick="modifierSeanceProg(\''+x.id+'\')" style="background:none;border:0;color:var(--blue);font-size:12px;cursor:pointer;padding:2px 4px;">Modifier</button>'
+      +'<button onclick="supprimerSeanceProg(\''+x.id+'\')" aria-label="Supprimer" style="background:none;border:0;color:var(--red);font-size:14px;cursor:pointer;padding:2px 4px;">\u2715</button></div>'
+      +'<div style="font-size:11.5px;color:var(--text3);margin-top:2px;">'+x.min+' min \u00b7 intensité '+_niveauDe(x.met).lib.toLowerCase()+' \u00b7 ~'+kcalSeance(x)+' kcal</div>'
+      +(x.exos?'<div style="font-size:11.5px;color:var(--text2);margin-top:3px;line-height:1.4;">'+x.exos+'</div>':'')
+      +'</div>';
+  }).join('');
+  var champ='width:100%;box-sizing:border-box;padding:9px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;font-family:inherit;';
+  var lab='font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:10px 0 4px;';
+  var met=s?s.met:4;
+  c.innerHTML='<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:6px;">Note chaque séance une fois. Ensuite, dans « Dépense du jour » (bouton +, Pas et activités), tu la choisis et sa dépense s\u2019ajoute à ta journée, calculée pour ton poids ('+w+' kg).</div>'
+    +(lst||'<div style="font-size:12px;color:var(--text3);padding:8px 0;border-top:0.5px solid var(--border);">Aucune séance pour l\u2019instant.</div>')
+    +'<div style="margin-top:12px;padding:12px;background:var(--bg3);border-radius:10px;">'
+      +'<div style="font-size:13px;font-weight:600;color:var(--text);">'+(s?'Modifier la séance':'Nouvelle séance')+'</div>'
+      +'<div style="'+lab+'">Nom</div><input id="prog-nom" type="text" maxlength="60" placeholder="ex. Push, Jambes, Full body\u2026" value="'+(s?s.nom:'')+'" style="'+champ+'">'
+      +'<div style="'+lab+'">Exercices</div><textarea id="prog-exos" rows="3" maxlength="500" placeholder="ex. Développé couché 4×8, rowing 4×10, curl 3×12\u2026" style="'+champ+'resize:vertical;">'+(s?s.exos:'')+'</textarea>'
+      +'<div style="display:flex;gap:8px;"><div style="flex:0 0 92px;"><div style="'+lab+'">Durée (min)</div><input id="prog-min" type="number" min="10" max="180" placeholder="60" value="'+(s?s.min:'')+'" oninput="majApercuProg()" style="'+champ+'text-align:center;"></div>'
+      +'<div style="flex:1;min-width:0;"><div style="'+lab+'">Intensité</div><select id="prog-niv" onchange="majApercuProg()" style="'+champ+'">'
+        +NIVEAUX_SEANCE.map(function(n){return '<option value="'+n.met+'"'+(_niveauDe(met).k===n.k?' selected':'')+'>'+n.lib+'</option>';}).join('')+'</select></div></div>'
+      +'<div id="prog-apercu" style="font-size:11.5px;color:var(--text3);margin-top:7px;line-height:1.45;"></div>'
+      +'<button id="prog-ia" onclick="estimerSeanceIA()" style="width:100%;margin-top:10px;padding:9px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:8px;color:var(--blue);font-size:12.5px;font-weight:600;cursor:pointer;">\u2728 Estimer l\u2019intensité et la durée avec l\u2019IA</button>'
+      +'<div style="display:flex;gap:8px;margin-top:8px;">'
+        +(s?'<button onclick="_progEdit=null;renderEditeurProgramme()" style="flex:0 0 auto;padding:10px 14px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:13px;cursor:pointer;">Annuler</button>':'')
+        +'<button onclick="enregistrerSeanceProg()" style="flex:1;padding:10px;background:var(--gold);border:0;border-radius:8px;color:var(--bg);font-size:13.5px;font-weight:700;cursor:pointer;">'+(s?'Enregistrer':'Ajouter au programme')+'</button></div>'
+    +'</div>';
+  majApercuProg();
+}
+function majApercuProg(){
+  var a=document.getElementById('prog-apercu');if(!a)return;
+  var met=parseFloat(_champProg('prog-niv'))||4,min=parseFloat(_champProg('prog-min'))||0,n=_niveauDe(met);
+  a.textContent=n.lib+' : '+n.ex+'.'+(min>0?' Environ '+kcalSeance({met:met,min:min})+' kcal pour '+Math.round(min)+' min.':'');
+}
+async function estimerSeanceIA(){
+  var nom=_champProg('prog-nom').trim(),exos=_champProg('prog-exos').trim(),min=parseInt(_champProg('prog-min'),10)||0;
+  if(!nom&&!exos){_alerte('Indique au moins le nom ou les exercices de la séance.');return;}
+  var b=document.getElementById('prog-ia'),old=b?b.textContent:'';if(b){b.textContent='\u23f3 Estimation\u2026';b.disabled=true;}
+  try{
+    var sys='Tu estimes l\'intensité d\'une séance de sport à partir de ses exercices. Réponds UNIQUEMENT en JSON sans markdown : {"met":number,"min":integer}. '
+      +'"met" = MET moyen de la séance entière, repos entre les séries compris (Compendium of Physical Activities) : musculation légère 3, classique 3.5 à 4.5, lourde avec gros exercices 5 à 6, circuit ou cross-training 6 à 8. '
+      +'"min" = durée totale réaliste en minutes, échauffement et repos compris.';
+    var q='Séance : '+(nom||'?')+'. Exercices : '+(exos||'non précisés')+'.'+(min>0?' Durée prévue : '+min+' min.':'');
+    var rep=await callAI([{role:'user',content:q}],400,sys,null,0);
+    if(rep.empty)throw new Error('Réponse vide, réessaie.');
+    var j=extractJSON(rep.content.map(function(x){return x.text||'';}).join(''));
+    var met=+j.met,dm=Math.round(+j.min);
+    if(met>0){var n=_niveauDe(Math.min(12,Math.max(2,met)));var sel=document.getElementById('prog-niv');if(sel)sel.value=String(n.met);}
+    if(!(min>0)&&dm>=10&&dm<=180){var mi=document.getElementById('prog-min');if(mi)mi.value=dm;}
+    majApercuProg();
+  }catch(e){if(e&&e.message!=='NO_KEY')_alerte('\u26a0 '+_aiFriendlyErr(e)+'\n\nChoisis l\u2019intensité toi-même dans la liste.');}
+  finally{if(b){b.textContent=old;b.disabled=false;}}
+}
+function enregistrerSeanceProg(){
+  var nom=_champProg('prog-nom').trim(),min=parseInt(_champProg('prog-min'),10);
+  if(!nom){_alerte('Donne un nom à la séance.');return;}
+  if(!(min>=10&&min<=180)){_alerte('Indique une durée entre 10 et 180 minutes (ou laisse l\u2019IA l\u2019estimer).');return;}
+  var x=_programmeSur([{id:_progEdit||('s'+Date.now().toString(36)+Math.random().toString(36).slice(2,5)),nom:nom,min:min,met:parseFloat(_champProg('prog-niv'))||4,exos:_champProg('prog-exos').trim()}])[0];
+  S.programme=_programme().slice();
+  var i=S.programme.findIndex(function(y){return y.id===x.id;});
+  if(i>=0)S.programme[i]=x;else S.programme.push(x);
+  _progEdit=null;saveState();renderEditeurProgramme();
+}
+function modifierSeanceProg(id){_progEdit=id;renderEditeurProgramme();var e=document.getElementById('prog-nom');if(e&&e.scrollIntoView)try{e.scrollIntoView({block:'center'});}catch(_){}}
+function supprimerSeanceProg(id){
+  var s=_programme().find(function(x){return x.id===id;});if(!s)return;
+  _confirmer('Supprimer « '+s.nom+' » de ton programme ?\n\nLes séances déjà enregistrées dans tes journées restent comptées.',{ok:'Supprimer',danger:true}).then(function(ok){
+    if(!ok)return;S.programme=_programme().filter(function(x){return x.id!==id;});if(_progEdit===id)_progEdit=null;saveState();renderEditeurProgramme();
+  });
 }
 function _valSel(){var e=document.getElementById('burn-prog-sel');return e?e.value:'';}
 function ajouterSeanceProgramme(){
-  var s=PROGRAMME_SEANCES.find(function(x){return x.id===_valSel();});
+  var s=_programme().find(function(x){return x.id===_valSel();});
   if(!s)return;
   var min=Math.round(parseFloat((document.getElementById('burn-prog-min')||{}).value)||s.min);
   if(!(min>=10&&min<=180))min=s.min;
-  _burnActs.push({name:'Muscu \u2014 '+s.nom,min:min,kcal:kcalSeance(s,min)});
+  _burnActs.push({name:'Séance \u2014 '+s.nom,min:min,kcal:kcalSeance(s,min,_burnCurDay())});
   var e=document.getElementById('burn-prog-sel');if(e)e.value='';
   renderProgramme();renderBurnActs();updateBurnTotals();
 }
@@ -2271,7 +2394,7 @@ function burnRemoveAct(i){_burnActs.splice(i,1);renderBurnActs();updateBurnTotal
 function updateBurnTotals(){
   try{majInfoPasBase();}catch(e){}
   var steps=parseInt(document.getElementById('burn-steps').value,10)||0;
-  var sk=burnStepKcal(steps);
+  var sk=burnStepKcal(steps,_burnCurDay());
   var ak=_burnActs.reduce(function(s,a){return s+(+a.kcal||0);},0);
   var el=document.getElementById('burn-total');
   if(el)el.innerHTML='Estimation dépense : <span style="color:var(--orange);font-weight:600;">'+Math.round(sk+ak)+' kcal</span> <span style="color:var(--text3);font-size:11px;">('+steps+' pas → '+sk+' · activités → '+Math.round(ak)+')</span>';
@@ -2329,7 +2452,7 @@ async function burnEstimateActivity(){
   if(btn){btn.textContent='⏳ Estimation…';btn.disabled=true;}
   var kcal=null;
   try{
-    var w=_poidsCourant();          // la pesee la plus recente en date, pas la derniere saisie
+    var w=_poidsDuJour(_burnCurDay());  // le poids du jour saisi (derniere pesee a cette date)
     var sys='Tu estimes les calories brûlées lors d\'une activité physique. Réponds UNIQUEMENT par un nombre entier (kcal), sans texte ni unité. Base-toi sur le poids et la durée. Sois réaliste (MET standards).';
     var prompt='Poids: '+w+' kg. Activité: "'+name+'". Durée: '+min+' minutes. Combien de calories brûlées ? Réponds juste le nombre.';
     var data=await callAI([{role:'user',content:prompt}],400,sys,'openai/gpt-oss-20b',0);
@@ -2338,6 +2461,9 @@ async function burnEstimateActivity(){
     else if(typeof data==='string')txt=data;
     var m=(''+txt).match(/\d+/);
     if(m)kcal=parseInt(m[0],10);
+    // L'IA donne la depense totale ; le repos (1 MET = poids x heures) est deja dans
+    // la cible : on ne garde que le surplus, comme pour les seances du programme.
+    if(kcal!==null&&!isNaN(kcal))kcal=Math.max(0,Math.round(kcal-w*min/60));
   }catch(e){}
   if(kcal===null||isNaN(kcal)){kcal=_burnFallbackKcal(name,min);}
   if(btn){btn.textContent=old;btn.disabled=false;}
@@ -2347,7 +2473,7 @@ async function burnEstimateActivity(){
   renderBurnActs();updateBurnTotals();renderActHistory();
 }
 function _burnFallbackKcal(name,min){
-  var w=(S.weights&&S.weights.length)?(S.weights[S.weights.length-1].w||75):75;
+  var w=_poidsDuJour(_burnCurDay());   /* et non la derniere pesee saisie */
   var n=(name||'').toLowerCase();
   var met=4;
   if(/course|courir|run|footing|jogg/.test(n))met=9.8;
@@ -2360,7 +2486,7 @@ function _burnFallbackKcal(name,min){
   else if(/corde|hiit|burpee|crossfit/.test(n))met=11;
   else if(/yoga|[ée]tirement|stretch|pilate/.test(n))met=3;
   else if(/escalier|mont[ée]e/.test(n))met=8;
-  return Math.round(met*(+w||75)*(min/60));
+  return Math.round((met-1)*(+w||75)*(min/60));   /* net : le repos est deja dans la cible */
 }
 function saveBurnLog(){
   var day=_burnCurDay();
@@ -2455,6 +2581,7 @@ function _applyState(d){
   // Courses + salle d'attente
   S.shop=(d.shop&&Array.isArray(d.shop.list))?{list:d.shop.list,graveyard:Array.isArray(d.shop.graveyard)?d.shop.graveyard:[],graveRayons:Array.isArray(d.shop.graveRayons)?d.shop.graveRayons:[]}:{list:[],graveyard:[],graveRayons:[]};
   if(_migrerDejaAchetes())_etatCorrige=true;
+  if(_migrerRayonsTicket())_etatCorrige=true;
   S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.mesures=Array.isArray(d.mesures)?d.mesures.filter(function(m){return m&&/^\d{4}-\d\d-\d\d$/.test(m.d);}):[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
   S.shopSeeded=d.shopSeeded||false;
   S.bilanVu=(typeof d.bilanVu==='string'&&/^\d{4}-\d\d-\d\d$/.test(d.bilanVu))?d.bilanVu:null;
@@ -2463,6 +2590,10 @@ function _applyState(d){
   if(typeof d.pasBase==='number'&&d.pasBase>=0)S.pasBase=d.pasBase;
   S.profil=(d.profil&&typeof d.profil==='object')?d.profil:(S.profil||null);
   S.catalogue=(typeof d.catalogue==='string'&&d.catalogue)?d.catalogue:(S.catalogue||null);
+  // Programme de seances : propre a chaque compte. Le mien (ancien programme fixe)
+  // est recopie une seule fois dans mon compte (drapeau progMigre).
+  S.programme=_programmeSur(d.programme);S.progMigre=!!d.progMigre;
+  if(!S.progMigre){if(!S.programme.length&&_catalogue()===PROFIL_HERITE)S.programme=_programmeSur(PROGRAMME_SEANCES);S.progMigre=true;_etatCorrige=true;}
   if(typeof d.tz==='string'&&d.tz)S.tz=d.tz;
   TARGETS=_ciblesProfil();
   S.paires0k=(d.paires0k&&typeof d.paires0k==='object')?_assainirCles(d.paires0k):{};
@@ -2787,6 +2918,7 @@ async function _saveStateNow(){
     shopSeeded:S.shopSeeded||false,bilanVu:S.bilanVu||null,
     recTri:S.recTri||'',recTriDir:S.recTriDir||1,
     pasBase:(typeof S.pasBase==='number')?S.pasBase:null,
+    programme:S.programme||[],progMigre:!!S.progMigre,
     profil:S.profil||null,catalogue:S.catalogue||null,tz:S.tz||null,
     pasRacheter:S.pasRacheter||{},
     paires0k:S.paires0k||{},
@@ -2993,6 +3125,28 @@ function _extractJSONArrayBrut(text){
 
 
 // ─── GÉNÉRATION RECETTES IA SELON STOCK ──────────────────────────────────────
+// Combien de recettes demander : on vise RECETTES_PAR_REPAS recettes faisables
+// (visibles et cuisinables avec le stock) par repas ; l'IA ne comble que le manque.
+const RECETTES_PAR_REPAS=4,RECETTES_MAX_IA=8;
+const _LIB_REPAS={breakfast:'petit-déjeuner',lunch:'déjeuner',snack:'collation',dinner:'dîner'};
+function _besoinRecettes(){
+  var dispo={},manque={},n=0;
+  Object.keys(_LIB_REPAS).forEach(function(s){
+    dispo[s]=RCP.filter(function(r){return recetteVisible(r)&&Array.isArray(r.slots)&&r.slots.indexOf(s)>=0&&canCook(r,1);}).length;
+    manque[s]=Math.max(0,RECETTES_PAR_REPAS-dispo[s]);n+=manque[s];
+  });
+  return {dispo:dispo,manque:manque,n:Math.min(RECETTES_MAX_IA,n)};
+}
+// Assez de recettes partout : sur demande, 2 de plus pour les repas les moins fournis
+function _besoinMinimal(b){
+  var ord=Object.keys(_LIB_REPAS).sort(function(x,y){return b.dispo[x]-b.dispo[y];});
+  var m={};Object.keys(_LIB_REPAS).forEach(function(s){m[s]=0;});m[ord[0]]=1;m[ord[1]]=1;
+  return {dispo:b.dispo,manque:m,n:2};
+}
+function _consigneNombre(b){
+  var l=Object.keys(_LIB_REPAS).filter(function(s){return b.manque[s]>0;}).map(function(s){return b.manque[s]+' pour le '+_LIB_REPAS[s];});
+  return 'Génère EXACTEMENT '+b.n+' recette'+(b.n>1?'s':'')+' au total'+(l.length?' : '+l.join(', '):'')+'. Une recette qui convient à plusieurs repas compte pour chacun.';
+}
 async function generateStockRecipes(){
   const allItems=Object.values(S.inv).flat();
   const foodItems=['frigo','congelateur','placards'].flatMap(c=>(S.inv[c]||[])).filter(i=>i.qty===null||i.qty>0);
@@ -3001,8 +3155,15 @@ async function generateStockRecipes(){
     _alerte('Il faut au moins 5 ingrédients en stock pour générer des recettes cohérentes. Ajoute des aliments à ton inventaire d\'abord !');
     return;
   }
+  let besoin=_besoinRecettes();
+  if(!besoin.n){
+    const det=Object.keys(_LIB_REPAS).map(function(s){return _LIB_REPAS[s]+' : '+besoin.dispo[s];}).join(', ');
+    const ok=await _confirmer('Tu as déjà assez de recettes faisables\n\nAvec ton stock actuel : '+det+'. En proposer 2 de plus quand même ?',{ok:'Oui, 2 de plus',annuler:'Non merci'});
+    if(!ok)return;
+    besoin=_besoinMinimal(besoin);
+  }
   const btn=document.getElementById('gen-recipes-btn');
-  if(btn){btn.disabled=true;btn.textContent='✨ Génération en cours… (15-30s)';}
+  if(btn){btn.disabled=true;btn.textContent='✨ Génération de '+besoin.n+' recette'+(besoin.n>1?'s':'')+'… (15-30s)';}
   const invList=foodItems.map(i=>{let m='';if(i.macPiece){m=`, PAR PIÈCE: ${i.macPiece.kcal}kcal ${i.macPiece.prot}P ${i.macPiece.gluc}G ${i.macPiece.lip}L (pièces ENTIÈRES)`;}else if(i.mac100){m=`, pour 100${i.unit==='ml'?'ml':'g'}: ${i.mac100.kcal}kcal ${i.mac100.prot}P ${i.mac100.gluc}G ${i.mac100.lip}L`;}if(i.pkg&&i.pkg.size>0){m+=`, EMBALLAGE ${i.pkg.size}${i.unit} (multiples de ${i.pkg.size}${i.unit})`;}return `${i.id} = ${i.name} (${i.qty===null?'en stock':i.qty+i.unit+' dispo'}${m})`;}).join('\n');
   const spiceList=spices.length?spices.join(', '):'aucune';
   const _soon=[];Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{const e=effDlc(it);if(!e)return;const dd=Math.round((new Date(e)-new Date(getToday()))/864e5);if(dd>=0&&dd<14&&(it.qty===null||it.qty>0))_soon.push(it.name+' ('+dd+'j)');}));
@@ -3012,7 +3173,7 @@ async function generateStockRecipes(){
   // Objectif decrit a partir des cibles reelles, plus de texte fige par profil
   const diet=(_objectif()==='prise'?'PRISE DE MASSE : repas caloriques et rassasiants':(_objectif()==='maintien'?'MAINTIEN : repas \u00e9quilibr\u00e9s, riches en prot\u00e9ines':'S\u00c8CHE / RECOMPOSITION : repas riches en prot\u00e9ines, mod\u00e9r\u00e9s en calories'))
     +', ~'+TARGETS.kcal+' kcal/jour, '+TARGETS.prot+'g prot\u00e9ines. '+_contexteProfil();
-  const sys=`Tu es un chef nutritionniste. Génère un MAXIMUM de recettes RÉALISTES et VARIÉES (jusqu'à 4 par type de repas) en utilisant UNIQUEMENT les ingrédients ci-dessous. Régime: ${diet}
+  const sys=`Tu es un chef nutritionniste. Génère des recettes RÉALISTES et VARIÉES en utilisant UNIQUEMENT les ingrédients ci-dessous. ${_consigneNombre(besoin)} Régime: ${diet}
 
 INGRÉDIENTS DISPONIBLES (utilise EXACTEMENT l'identifiant avant le "="):
 ${invList}
@@ -3026,7 +3187,7 @@ Retourne UNIQUEMENT un tableau JSON valide, rien d'autre:
 [{"name":"Bowl poulet curry","slots":["lunch","dinner"],"kcal":650,"prot":55,"gluc":70,"lip":12,"ingredients":[{"id":"poulet","name":"Poulet","qty":200,"unit":"g"},{"id":"riz","name":"Riz","qty":100,"unit":"g"}],"steps":["Cuire 100g de riz 12 min dans l'eau bouillante salée.","Couper le poulet en morceaux et le poêler 6-7 min à feu moyen.","Ajouter le curry et 50ml d'eau, laisser mijoter 3 min.","Servir le poulet sur le riz."]}]
 
 RÈGLES ABSOLUES:
-- Génère jusqu'à 4 recettes par type de repas pertinent (breakfast, lunch, snack, dinner). Vise 8 à 12 recettes au total.
+- NOMBRE : ${_consigneNombre(besoin)} Pas plus : l'utilisateur a déjà d'autres recettes faisables.
 - INTERDICTION de proposer une recette déjà listée dans "RECETTES DÉJÀ EXISTANTES", ni une variante trop proche (même ingrédient principal + même format). Sois créatif, propose autre chose.
 - Une recette peut convenir à plusieurs repas → mets plusieurs valeurs dans "slots".
 - "id" = identifiant EXACT de la liste (partie avant le "=").
@@ -3040,7 +3201,7 @@ RÈGLES ABSOLUES:
 - macros calculées \u00e0 partir des valeurs « pour 100g/ml » de CHAQUE ingr\u00e9dient indiqu\u00e9es ci-dessus, multipli\u00e9es par la quantit\u00e9 utilis\u00e9e, puis additionn\u00e9es pour 1 portion. Ne devine pas au hasard si les valeurs sont fournies.
 - Assaisonne les plats SALÉS avec l'épice PERTINENTE (curry sur un curry, paprika sur une viande, ail dans un wok...), mais JAMAIS de la salade au hasard. Les plats SUCRÉS (bowls sucrés, shakes, compotes, fruits) ne reçoivent PAS d'épices salées.
 - recettes vari\u00e9es, savoureuses et COH\u00c9RENTES : de vrais plats \u00e9quilibr\u00e9s, pas de simples assemblages. Associe intelligemment prot\u00e9ines + f\u00e9culents + l\u00e9gumes/sauce.
-- privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : mieux vaut 6 excellentes recettes que 12 m\u00e9diocres.`;
+- privil\u00e9gie la qualit\u00e9 \u00e0 la quantit\u00e9 : chaque recette doit \u00eatre excellente.`;
   try{
     // gpt-oss-120b avec un vrai temps de reflexion : recettes bien plus coherentes
     // (03/10/2026). Repli sur le 20b si le quota gratuit refuse une requete trop grosse.
@@ -3054,12 +3215,12 @@ RÈGLES ABSOLUES:
       }
       return{raw:d.content.map(i=>i.text||'').join(''),d:d};
     };
-    let recipes=null,att=await _ask(6,4000);
+    let recipes=null,att=await _ask(besoin.n,Math.min(5000,1500+besoin.n*450));
     try{recipes=extractJSONArray(att.raw);}catch(pe){recipes=null;}
     if((!recipes||!recipes.length)&&(att.d.truncated||att.d.empty)){
       // Reponse coupee ou vide : on redemande plus court
       if(btn)btn.textContent='✨ Nouvelle tentative…';
-      att=await _ask(3,3000);
+      att=await _ask(Math.max(1,Math.ceil(besoin.n/2)),3000);
       try{recipes=extractJSONArray(att.raw);}catch(pe2){recipes=null;}
     }
     if(!recipes||!recipes.length){
@@ -4184,17 +4345,17 @@ function renderCoursesHTML(){
   if(waitN)html+=`<div style="background:rgba(233,161,59,.08);border:0.5px solid rgba(233,161,59,.25);border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12px;color:var(--orange);">⏳ ${waitN} article(s) à ranger dans l'onglet Inventaire.</div>`;
   SHOP_CATS.forEach(c=>{
     const items=byR[c.k];if(!items.length)return;
-    html+=`<div style="margin-bottom:14px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;font-weight:600;">${c.label}${!shopTransfer(c.k)?' <span style="color:var(--text3);text-transform:none;">· hors inventaire</span>':''}</span>${c.t?`<button onclick="toggleGraveRayon('${c.k}')" title="Tout ce rayon : acheté sans passer par l'inventaire" style="background:none;border:0;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;opacity:${(S.shop.graveRayons||[]).indexOf(c.k)>=0?1:0.3};">🧾</button>`:''}</div>`;
+    html+=`<div style="margin-bottom:14px;"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;"><span style="font-size:11px;color:var(--accent);text-transform:uppercase;letter-spacing:.06em;font-weight:600;">${c.label}${!shopTransfer(c.k)?' <span style="color:var(--text3);text-transform:none;">· hors inventaire</span>':''}</span></div>`;
     items.forEach(it=>{
       const pan=it.checked&&!it.achete,ach=!!it.achete,fait=pan||ach;
       const coul=ach?'var(--text3)':'var(--green)';
       const tag=pan?'<span style="font-size:11px;color:var(--green);margin-left:6px;">dans le panier</span>':(ach?'<span style="font-size:11px;color:var(--text3);margin-left:6px;">acheté'+(/^\d{4}-\d\d-\d\d$/.test(it.achete)?' le '+it.achete.slice(8,10)+'/'+it.achete.slice(5,7):'')+'</span>':'');
-      html+=`<div class="shop-row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid rgba(246,237,227,.05);opacity:${ach?.6:1};"><div onclick="toggleShopItem('${it.id}')" title="${ach?'Remettre sur la liste':(pan?'Retirer du panier':'Mettre dans le panier')}" style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${fait?coul:'rgba(246,237,227,.25)'};background:${fait?coul:'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">${fait?'<span style="color:var(--bg);font-size:12px;">✓</span>':''}</div><span onclick="openShopItem('${it.id}')" style="flex:1;min-width:0;font-size:13px;color:${fait?'var(--text3)':'var(--text)'};text-decoration:${fait?'line-through':'none'};cursor:pointer;">${it.name}</span>${tag}${ach?`<button onclick="retirerAchete('${it.id}')" title="Retirer de la liste" style="background:none;border:0;color:var(--text3);font-size:13px;cursor:pointer;padding:2px 5px;flex-shrink:0;">✕</button>`:(it.graveOnly?`<button onclick="toggleGraveItem('${it.id}')" title="Acheté sans passer par l'inventaire (toucher pour annuler)" style="background:none;border:0;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;flex-shrink:0;">🧾</button>`:'')}</div>`;
+      html+=`<div class="shop-row" style="display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:0.5px solid rgba(246,237,227,.05);opacity:${ach?.6:1};"><div onclick="toggleShopItem('${it.id}')" title="${ach?'Remettre sur la liste':(pan?'Retirer du panier':'Mettre dans le panier')}" style="width:20px;height:20px;border-radius:50%;border:1.5px solid ${fait?coul:'rgba(246,237,227,.25)'};background:${fait?coul:'transparent'};display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0;">${fait?'<span style="color:var(--bg);font-size:12px;">✓</span>':''}</div><span onclick="openShopItem('${it.id}')" style="flex:1;min-width:0;font-size:13px;color:${fait?'var(--text3)':'var(--text)'};text-decoration:${fait?'line-through':'none'};cursor:pointer;">${it.name}</span>${tag}${ach?`<button onclick="retirerAchete('${it.id}')" title="Retirer de la liste" style="background:none;border:0;color:var(--text3);font-size:13px;cursor:pointer;padding:2px 5px;flex-shrink:0;">✕</button>`:(shopTransfer(it.rayon)?`<button onclick="toggleGraveItem('${it.id}')" aria-pressed="${it.graveOnly?'true':'false'}" title="${it.graveOnly?'Ne va pas dans « À ranger » (toucher pour l’y envoyer)':'Va dans « À ranger » (toucher pour l’en dispenser)'}" style="background:none;border:0;font-size:14px;cursor:pointer;padding:6px 6px;margin:-6px -4px -6px 0;line-height:1;flex-shrink:0;opacity:${it.graveOnly?1:0.3};filter:${it.graveOnly?'none':'grayscale(1)'};">🧾</button>`:'')}</div>`;
     });
     html+='</div>';
   });
   if(!actifN&&!checkedN&&!voir)html+='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">'+(acheteN?'Rien d’autre à acheter. 🎉':'Liste vide. Ajoute des articles ci-dessus.')+'</div>';
-  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;line-height:1.45;">Coche un article pour le mettre dans le panier. « Valider les courses » envoie le panier dans « À ranger » (onglet Inventaire), sauf les articles 🧾, achetés sans passer par l’inventaire (réglage dans la fiche de l’article : touche son nom). Les articles achetés se masquent ensuite dans leur rayon.</div>';
+  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;line-height:1.45;">Coche un article pour le mettre dans le panier. « Valider les courses » envoie le panier dans « À ranger » (onglet Inventaire), sauf les articles marqués 🧾 (achetés sans passer par l’inventaire) : touche le 🧾 à droite d’un article pour le marquer ou non. Les articles achetés se masquent ensuite dans leur rayon.</div>';
   html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">✓ Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
   if(voir&&acheteN)html+=`<button onclick="effacerAchetes()" style="width:100%;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.35);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;margin-top:8px;">Effacer les ${acheteN} article${acheteN>1?'s':''} acheté${acheteN>1?'s':''}</button>`;
   html+='</div>';
@@ -4212,6 +4373,12 @@ function _migrerDejaAchetes(){
   });
   S.shop.graveyard=[];
   return true;
+}
+// Ancien reglage « tout le rayon 🧾 » : reporte sur chaque article du rayon, puis retire
+function _migrerRayonsTicket(){
+  var r=(S.shop&&S.shop.graveRayons)||[];if(!r.length)return false;
+  (S.shop.list||[]).forEach(function(i){if(i&&r.indexOf(i.rayon)>=0&&!i.achete)i.graveOnly=true;});
+  S.shop.graveRayons=[];return true;
 }
 // Ajout sans doublon : un article achete (masque) du meme nom revient sur la liste
 function _ajouterAuxCourses(name,rayon,extra){
@@ -4241,7 +4408,6 @@ function toggleShopItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(!it
   else it.checked=!it.checked;                         /* panier, visible jusqu'a validation */
   saveState();render();}
   function toggleGraveItem(id){const it=(S.shop.list||[]).find(i=>i.id===id);if(it){it.graveOnly=!it.graveOnly;saveState();render();}}
-  function toggleGraveRayon(k){S.shop.graveRayons=S.shop.graveRayons||[];const _i=S.shop.graveRayons.indexOf(k);if(_i>=0)S.shop.graveRayons.splice(_i,1);else S.shop.graveRayons.push(k);saveState();render();}
 function _guessRayon(name){
   var n=normMac(name||'');
   var R=[
@@ -5865,7 +6031,7 @@ function renderCoachJour(jour,r,sug,b){
   // Activite : detail (pas au-dessus de la routine, seances) et ce qu'elle devient selon l'objectif
   if(dep>0){
     var _acts=(b&&b.activities)||[];
-    var _kcalPas=(b&&b.steps>0&&typeof burnStepKcal==='function')?Math.round(burnStepKcal(b.steps)):0;
+    var _kcalPas=(b&&b.steps>0&&typeof burnStepKcal==='function')?Math.round(b.stepKcal||0):0;   /* calcule pour CE jour (poids du jour) */
     h+='<div style="margin-top:10px;padding-top:9px;border-top:0.5px solid var(--border);">'
       +'<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Activité du jour</div>';
     if(b&&b.steps>0){

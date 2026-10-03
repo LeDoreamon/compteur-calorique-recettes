@@ -124,7 +124,7 @@ t('budgets releves dans le code',()=>{
 });
 t('*** l\'estimation d\'activite prend la pesee la plus recente en date ***',()=>{
   const i=src.indexOf('async function burnEstimateActivity');
-  if(src.slice(i,i+1400).indexOf('_poidsCourant()')<0)throw new Error('pas _poidsCourant');
+  if(!/_poidsCourant\(\)|_poidsDuJour\(_burnCurDay\(\)\)/.test(src.slice(i,i+1400)))throw new Error('ni _poidsCourant ni le poids du jour');
 });
 
 (async()=>{

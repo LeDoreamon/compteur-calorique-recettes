@@ -88,6 +88,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t72.js` | Photos via Gemini (clé facultative, repli Groq, alias si modèle retiré), clé jamais exportée et effacée à la déconnexion, inscription « deux services », recettes sur gpt-oss-120b avec repli 20b |
 | `t73.js` | Audit ergonomie du 03/10 : Bilan sans doublons, moyenne d'activité dès 3 jours, Courses rayon « Auto » et 🧾 dans la fiche, inventaire compact, pastille « à consommer » vers l'inventaire ; fenêtre « Quoi de neuf » une fois par appareil après chaque build |
 | `t74.js` | Photo : Gemini saturé (503) → Flash-Lite avant Groq ; erreurs dans un encadré visible ; Groq « Request too large » → image réduite et renvoyée une fois ; les deux IA en échec → raison de chacune en clair (clé Gemini refusée, quota), sans identifiant d'organisation |
+| `t75.js` | Pas et activités selon le poids du jour (activités IA et repli nets du repos) ; Courses 🧾 article par article (ancien réglage par rayon reporté) ; programme de séances par compte (reprise du mien une fois, neutralisé, éditeur, intensité par IA, ajout à la journée) |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
