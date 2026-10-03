@@ -87,6 +87,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t71.js` | Recettes IA incohérentes écartées (ingrédient non utilisé, aliment cité absent, omelette sans œufs, whey cuite, identifiant contredit par le nom), sans faux positif sur le catalogue |
 | `t72.js` | Photos via Gemini (clé facultative, repli Groq, alias si modèle retiré), clé jamais exportée et effacée à la déconnexion, inscription « deux services », recettes sur gpt-oss-120b avec repli 20b |
 | `t73.js` | Audit ergonomie du 03/10 : Bilan sans doublons, moyenne d'activité dès 3 jours, Courses rayon « Auto » et 🧾 dans la fiche, inventaire compact, pastille « à consommer » vers l'inventaire ; fenêtre « Quoi de neuf » une fois par appareil après chaque build |
+| `t74.js` | Photo : Groq « Request too large » → image réduite et renvoyée une fois ; les deux IA en échec → raison de chacune en clair (clé Gemini refusée, quota), sans identifiant d'organisation |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
