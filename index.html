@@ -282,7 +282,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 10h00</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 14h00</div>
   </div>
 </div>
 
@@ -2963,6 +2963,8 @@ RÈGLES ABSOLUES:
 - Si un ingrédient indique un EMBALLAGE, sa "qty" doit être un MULTIPLE de la taille d'emballage (ex. emballage de 100g → 100, 200… JAMAIS 120), pour ne pas forcer l'ouverture d'un emballage pour quelques grammes.
 - Si un ingrédient est PAR PIÈCE, sa "qty" est un nombre ENTIER de pièces (ex. 2 œufs, jamais 1.5) avec "unit":"pcs".
 - INTERDIT d'utiliser ou même de MENTIONNER un aliment ABSENT de la liste — ni dans le nom, ni dans les étapes. AUCUNE exception : pas d'épinards, tomates, riz, pain, huile… s'ils ne sont pas listés. Le NOM de la recette ne doit citer QUE des ingrédients de "used". Si le plat classique demande un aliment absent, ADAPTE la recette (bol, assiette, poêlée) et renomme-la en conséquence.
+- La whey et la clear whey ne se CUISENT PAS (grumeaux) : shaker, ou mélangée à froid / tiède (fromage blanc, skyr, porridge hors du feu). Une omelette, une crêpe ou une quiche exige des œufs de la liste.
+- Chaque ingrédient de "ingredients" doit apparaître dans les étapes, et les étapes ne citent AUCUN aliment absent de "ingredients".
 - "steps" = TABLEAU de 3 à 5 étapes SÉPARÉES. UNE seule action par étape. Ne JAMAIS tout mettre dans une seule étape.
 - macros calculées \u00e0 partir des valeurs « pour 100g/ml » de CHAQUE ingr\u00e9dient indiqu\u00e9es ci-dessus, multipli\u00e9es par la quantit\u00e9 utilis\u00e9e, puis additionn\u00e9es pour 1 portion. Ne devine pas au hasard si les valeurs sont fournies.
 - Assaisonne les plats SALÉS avec l'épice PERTINENTE (curry sur un curry, paprika sur une viande, ail dans un wok...), mais JAMAIS de la salade au hasard. Les plats SUCRÉS (bowls sucrés, shakes, compotes, fruits) ne reçoivent PAS d'épices salées.
@@ -2988,7 +2990,10 @@ RÈGLES ABSOLUES:
     }
     if(!Array.isArray(recipes)||!recipes.length)throw new Error('Aucune recette générée. Réessaie.');
     const resolveId=(g)=>{
-      if(g.id&&findItem(g.id))return g.id;
+      const parId=g.id&&findItem(g.id);
+      // L'IA accole parfois le mauvais identifiant au bon nom (« fromage blanc »
+      // -> id des lentilles) : si le nom ne correspond pas a l'article, le nom gagne.
+      if(parId&&(!g.name||_nomsCompatibles(g.name,parId.name)))return g.id;
       const m=matchIngToInventory(g.name||g.id||'');
       return m?m.id:null;
     };
@@ -3014,7 +3019,7 @@ RÈGLES ABSOLUES:
         kcal:Math.round(r.kcal)||0,prot:Math.round(r.prot)||0,gluc:Math.round(r.gluc)||0,lip:Math.round(r.lip)||0,
         steps,used,extras:[]
       };
-    }).filter(r=>r.used.length>0&&r.slots.length>0&&!_aiPhantomFood(r));
+    }).filter(r=>r.used.length>0&&r.slots.length>0&&!_aiPhantomFood(r)&&!_aiRecetteIncoherente(r));
     if(newRecipes.length===0)throw new Error('Les recettes générées ne correspondent pas à ton inventaire. Réessaie.');
     // On conserve les recettes IA mises en favori, on retire seulement les autres
     const favs=S.favs||[];
@@ -3032,6 +3037,52 @@ RÈGLES ABSOLUES:
   }
 }
 
+// Deux noms designent-ils le meme article ? (un mot significatif en commun)
+var _MOTS_VIDES={avec:1,sans:1,pour:1,nature:1,leger:1,legere:1,light:1,maison:1,les:1,des:1,aux:1,une:1,the:1,bio:1,pack:1};
+function _nmIA(s){return normMac(String(s||'').replace(/œ/g,'oe').replace(/Œ/g,'Oe').replace(/æ/g,'ae'));}
+function _motsNom(n){return _nmIA(n).split(' ').filter(function(w){return w.length>=3&&!_MOTS_VIDES[w]&&!/^\d/.test(w);}).map(function(w){return w.replace(/s$/,'');});}
+function _nomsCompatibles(a,b){
+  var na=_nmIA(a),nb=_nmIA(b);if(!na||!nb)return false;
+  if(na.indexOf(nb)>=0||nb.indexOf(na)>=0)return true;
+  var wb=_motsNom(b);return _motsNom(a).some(function(w){return wb.indexOf(w)>=0;});
+}
+// Recette IA incoherente : ingredient liste mais jamais utilise dans les
+// etapes, aliment de l'inventaire cite dans les etapes sans figurer dans la
+// liste, plat qui exige un ingredient absent (omelette sans oeufs), whey cuite.
+// Renvoie la raison, ou null si la recette tient debout.
+var _PLATS_EXIGENCES=[[/\bomelette|\bquiche|\bcrepe|oeufs? brouille/,/\boeuf/,'œufs'],[/\bpancake/,/\boeuf|farine|avoine|flocon/,'œufs ou farine']];
+function _aiRecetteIncoherente(r){
+  var sing=function(s){return s.split(' ').map(function(w){return w.replace(/s$/,'');}).join(' ');};
+  var txt=_nmIA((r.name||'')+' '+(r.steps||[]).join(' ')),etapes=_nmIA((r.steps||[]).join(' '));
+  var txtS=' '+sing(txt)+' ',etapesS=' '+sing(etapes)+' ';
+  var usedIds={},nomsUsed=[];
+  for(var i=0;i<(r.used||[]).length;i++){
+    var u=r.used[i],it=(typeof resolveInv==='function'?resolveInv(u.id,u.n||u.name):null)||findItem(u.id);
+    if(!it){if(u.n||u.name)nomsUsed.push(_nmIA(u.n||u.name));continue;}   /* article epuise ou renomme : son nom compte */
+    usedIds[it.id]=1;nomsUsed.push(_nmIA(it.name));
+    if(_catDeLArticle(it.id)==='epices')continue;
+    var mots=_motsNom(it.name);
+    if(mots.length&&!mots.some(function(w){return etapesS.indexOf(' '+w)>=0;}))return 'ingrédient non utilisé : '+it.name;
+  }
+  // Aliment de l'inventaire cite dans le texte mais absent de la liste
+  var deja=' '+sing(nomsUsed.join(' '))+' ';
+  var arts=[].concat.apply([],Object.keys(S.inv||{}).filter(function(c){return c!=='epices';}).map(function(c){return S.inv[c]||[];}));
+  for(var j=0;j<arts.length;j++){
+    var a=arts[j];if(!a||!a.name||usedIds[a.id]||a.plat)continue;
+    var mw=_motsNom(a.name);if(!mw.length)continue;
+    var cle=mw.slice(0,2).join(' ');
+    if(cle.length<5)continue;
+    // deja couvert par un ingredient utilise du meme nom (« fromage blanc » nature / vanille)
+    if(deja.indexOf(' '+mw[0])>=0)continue;
+    if(txtS.indexOf(' '+cle)>=0)return 'aliment cité mais absent des ingrédients : '+a.name;
+  }
+  for(var k=0;k<_PLATS_EXIGENCES.length;k++){
+    var p=_PLATS_EXIGENCES[k];
+    if(p[0].test(txt)&&!p[1].test(deja))return 'plat sans '+p[2];
+  }
+  if(/\bwhey\b/.test(deja)&&/(cuire|cuit|poele|revenir|griller|four)[^.]{0,40}whey|whey[^.]{0,40}(cuire|cuit|poele)/.test(etapes))return 'whey cuite';
+  return null;
+}
 function _aiPhantomFood(r){
   const FOOD=['abricot','agneau','ail','amande','ananas','anchois','artichaut','asperge','aubergine','avocat','avoine','bacon','bagel','baguette','banane','betterave','beurre','biscotte','boeuf','boulgour','brioche','brocoli','cabillaud','cacahuete','cacao','cajou','carotte','celeri','cerise','champignon','cheddar','chevre','chia','chocolat','chorizo','citron','clementine','colin','comte','concombre','confiture','cornichon','courge','courgette','couscous','crabe','creme','crevette','cuisse','datte','dinde','echalote','emmental','endive','epinard','escalope','farine','fenouil','feta','figue','flocon','fraise','framboise','fromage','galette','gnocchi','granola','gruyere','haricot','jambon','kiwi','lait','laitue','lardon','lentille','mache','mandarine','mangue','maquereau','mascarpone','melon','merguez','merlu','miel','moule','mozzarella','muesli','myrtille','naan','navet','noisette','nouille','oeuf','oignon','olive','orange','pain','pamplemousse','parmesan','pasteque','patate','peche','penne','pistache','pita','poire','poireau','pois','poivron','polenta','pomme','porc','potiron','poulet','prune','quinoa','radis','raisin','ricotta','riz','roquette','sardine','saucisse','saumon','seitan','semoule','sesame','skyr','spaghetti','steak','surimi','tagliatelle','thon','toast','tofu','tomate','tortilla','truite','veau','vermicelle','wrap','yaourt'];
   const sing=w=>w.replace(/eaux$/,'eau').replace(/aux$/,'al').replace(/s$/,'');
