@@ -282,7 +282,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-02 10h00</div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 10h00</div>
   </div>
 </div>
 
@@ -7551,7 +7551,10 @@ function _ciblesProfil(){
   return calculerCibles(p)||CIBLES_PAR_DEFAUT;
 }
 function _catalogue(){return (S&&S.catalogue)||(ACTIVE_PROFILE===PROFIL_HERITE?PROFIL_HERITE:null);}
-function recetteVisible(r){return !!r&&(!r.profile||r.profile===_catalogue());}
+// Visible : recette commune, recette du catalogue rattache au compte, ou recette
+// creee dans ce compte (IA, perso : etiquetees ACTIVE_PROFILE = 'users/<uid>').
+// Avant le 03/10/2026, ces dernieres etaient filtrees : invisibles mais supprimables.
+function recetteVisible(r){return !!r&&(!r.profile||r.profile===_catalogue()||r.profile===ACTIVE_PROFILE);}
 function _nomAffiche(){
   var p=S&&S.profil;
   return ((p&&p.emoji)||'\ud83c\udfcb\ufe0f')+' '+((p&&p.prenom)||(ACTIVE_PROFILE===PROFIL_HERITE?'Liam':'Moi'));

@@ -55,12 +55,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t69.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1236 tests au 02/10/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t70.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1240 tests au 03/10/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t69` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t70` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -90,7 +90,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 4. `qty: -1` en base signifie un stock illimité (`null` en mémoire). La conversion se fait au chargement et à l'enregistrement.
 5. Neutralisation : tout ce qui vient de Firebase, d'un import, de l'IA (`extractJSON`) ou d'OpenFoodFacts passe par `_neutre` (`<`→`‹`, `>`→`›`, `"`→`”`). Le HTML est construit par concaténation et `innerHTML` : ne jamais y insérer une donnée externe non neutralisée.
 6. Clés Firebase interdites (`. # $ / [ ]`) : neutralisées par `_cleFB` et `_assainirCles`, sinon Firebase refuse tout l'état en HTTP 400.
-7. `_applyState` ignore un état dont `_profile` ne correspond pas au profil ouvert. Les restaurations volontaires réétiquettent l'état (`_restaurerSauvegarde`).
+7. Visibilité des recettes (`recetteVisible`) : commune (sans `profile`), catalogue rattaché (`profile === _catalogue()`) ou créée dans le compte (`profile === ACTIVE_PROFILE`, recettes IA et perso). Oublier ce dernier cas les rend invisibles mais supprimables (bug corrigé le 03/10/2026, `t70.js`). `_applyState` ignore un état dont `_profile` ne correspond pas au profil ouvert. Les restaurations volontaires réétiquettent l'état (`_restaurerSauvegarde`).
 8. Photos : cascade photo de l'utilisateur, puis `LIENS_IMAGES` (Wikimedia, vérifiés au démarrage), puis `illustrationRecette(r)`. Seules des `data:image/(jpeg|png|webp);base64` sont acceptées (`_photosSures`). Le compteur `_photosGen` empêche un chargement périmé d'écraser une restauration.
 9. Synchronisation : révision (`state.rev`) et volume (`state.vol`) protègent contre l'écrasement entre appareils (`_saveStateNow`, `_onSaveConflict`, `_checkFresherOnResume`). Les `saveState()` sont mis en file.
 10. Fenêtres : ne jamais utiliser `alert`, `confirm` ou `prompt` (boîte système grise sur iPhone). Utiliser `_alerte(msg)` et `_confirmer(msg,{ok,annuler,danger})`, qui renvoient une promesse : `.then(function(ok){…})` dans une fonction synchrone, `await` dans une fonction `async`. Le premier paragraphe du message (avant une ligne vide) sert de titre. Dans les tests, `sb.js` les fait répondre tout de suite via `sb.confirm` / `sb.alert` (`t54.js` vérifie qu'il ne reste aucune fenêtre système).
