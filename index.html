@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 19h40 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 20h10 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -543,8 +543,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-03-1940';
+const BUILD_ID='2026-10-03-2010';
 const NOUVEAUTES=[
+  {b:'2026-10-03-2010',points:[
+    'Photo de repas : si Groq la trouve trop lourde pour son quota gratuit, elle est réduite automatiquement puis renvoyée, au lieu d’échouer.',
+    'Quand aucune IA ne répond, l’écran dit pourquoi pour chacune (clé Gemini refusée, quota atteint, réseau…), sans message technique en anglais.'
+  ]},
   {b:'2026-10-03-1940',points:[
     'Nouveau : cette fenêtre. Après chaque mise à jour, elle résume ce qui a changé (une seule fois par appareil).',
     'Bilan allégé : la dépense réelle et le déficit ne sont plus répétés d’une carte à l’autre. Le point du coach affiche ce qu’il te reste aujourd’hui.',
@@ -3104,7 +3108,7 @@ RÈGLES ABSOLUES:
     saveState();render();
   }catch(e){
     if(btn){btn.disabled=false;btn.textContent='✨ Générer des recettes selon mon stock';}
-    if(e.message!=='NO_KEY')_alerte('⚠ '+_aiFriendly(e.message));
+    if(e.message!=='NO_KEY')_alerte('⚠ '+_aiFriendlyErr(e));
   }
 }
 
@@ -3196,7 +3200,21 @@ function _aiFriendly(msg){
   }
   if(msg.indexOf('NETWORK:timeout')>=0)return 'Trop long \u2014 r\u00e9seau lent, r\u00e9essaie';
   if(msg.indexOf('NETWORK:')===0)return 'Pas de connexion \u2014 r\u00e9essaie';
-  return msg.indexOf('API:')===0?msg.slice(4,120):msg;
+  if(/Request too large|reduce your message size/i.test(msg))return 'photo trop lourde pour le quota gratuit de Groq';
+  if(/^GEMINI:/.test(msg)){
+    if(/ACCESS_TOKEN_TYPE_UNSUPPORTED|API_KEY_INVALID|API key not valid|invalid authentication|UNAUTHENTICATED|API_KEY_SERVICE_BLOCKED|PERMISSION_DENIED|SERVICE_DISABLED|has not been used|is disabled/i.test(msg))
+      return 'cl\u00e9 Gemini refus\u00e9e par Google (v\u00e9rifie-la dans R\u00e9glages, et que l\u2019API Gemini est activ\u00e9e sur son projet)';
+    if(/RESOURCE_EXHAUSTED|quota/i.test(msg))return 'quota Gemini atteint, r\u00e9essaie plus tard';
+    return msg.slice(7,120).replace(/\s*\[[A-Z_]+\]$/,'');
+  }
+  /* jamais d'identifiant d'organisation ou de detail technique a l'ecran */
+  return (msg.indexOf('API:')===0?msg.slice(4):msg).replace(/\s*in organization `[^`]*`/,'').replace(/\s*service tier `[^`]*`/,'').slice(0,120);
+}
+// Les deux IA ont echoue : la raison de chacune, en clair
+function _aiFriendlyErr(err){
+  if(err&&err.toutes&&err.toutes.length>1)
+    return 'Aucune IA n\u2019a pu r\u00e9pondre.\n'+err.toutes.map(function(x){return x.ia+' : '+_aiFriendly(x.m);}).join('\n');
+  return _aiFriendly(err&&err.message);
 }
 // Les deux IA cohabitent (03/10/2026) : chacune fait ce qu'elle fait le mieux et
 // sert de secours a l'autre. Photo : Gemini puis Groq. Texte : Groq puis Gemini.
@@ -3208,19 +3226,39 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   const parGemini=async()=>{const g=await _callGemini(messages,maxTokens,system,temperature);_derniereIA='gemini';return g;};
   const parGroq=async()=>{const r=await _callGroq(messages,maxTokens,system,modelOverride,temperature,seed,_retried,opts);_derniereIA='groq';return r;};
   const ordre=(hasImg?[gm&&parGemini,gq&&parGroq]:[gq&&parGroq,gm&&parGemini]).filter(Boolean);
-  let err=null;
+  let err=null;const toutes=[];
+  const noms=(hasImg?[gm&&'Gemini',gq&&'Groq']:[gq&&'Groq',gm&&'Gemini']).filter(Boolean);
   for(let i=0;i<ordre.length;i++){
     const dernier=(i===ordre.length-1);
     try{
       const r=await ordre[i]();
-      if(r.empty&&!dernier)continue;     // reponse vide : on laisse sa chance a l'autre IA
+      if(r.empty&&!dernier){toutes.push({ia:noms[i],m:'Réponse vide'});continue;}     // reponse vide : on laisse sa chance a l'autre IA
       return r;
     }catch(e){
       if(e&&e.message==='NO_KEY')throw e;
-      err=e;if(!dernier){try{console.warn('IA indisponible, l\'autre prend le relais :',e&&e.message);}catch(_){}}
+      err=e;toutes.push({ia:noms[i],m:(e&&e.message)||'erreur'});
+      if(!dernier){try{console.warn('IA indisponible, l\'autre prend le relais :',e&&e.message);}catch(_){}}
     }
   }
-  throw err||new Error('API:aucune réponse');
+  err=err||new Error('API:aucune réponse');
+  err.toutes=toutes;   /* le message reste celui de la derniere IA (les appelants le testent) */
+  throw err;
+}
+// Reduit une image base64 (facteur sur chaque cote), en JPEG. Remplacable dans les tests.
+function _reduireImageB64(b64,mime,ech){
+  return new Promise(function(ok,ko){
+    try{
+      var img=new Image();
+      img.onload=function(){try{
+        var cv=document.createElement('canvas');
+        cv.width=Math.max(1,Math.round(img.width*ech));cv.height=Math.max(1,Math.round(img.height*ech));
+        cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+        ok(cv.toDataURL('image/jpeg',0.7).split(',')[1]);
+      }catch(e){ko(e);}};
+      img.onerror=function(){ko(new Error('API:image illisible'));};
+      img.src='data:'+(mime||'image/jpeg')+';base64,'+b64;
+    }catch(e){ko(e);}
+  });
 }
 async function _callGroq(messages,maxTokens=300,system=null,modelOverride=null,temperature=0.2,seed=null,_retried=false,opts){
   const key=getApiKey();
@@ -3271,6 +3309,27 @@ async function _callGroq(messages,maxTokens=300,system=null,modelOverride=null,t
       await new Promise(r=>setTimeout(r,_w*1000));
       return _callGroq(messages,maxTokens,system,modelOverride,temperature,seed,true,opts);
     }
+    const _tl=_em.match(/Limit (\d+), Requested (\d+)/i);
+    if(!_retried&&hasImg&&/Request too large/i.test(_em)&&_tl){
+      // Le quota gratuit compte texte + image + max_tokens. On estime la part
+      // de l'image et on la reduit (surface proportionnelle) pour tenir sous ~85 % de la limite.
+      const lim=+_tl[1],dem=+_tl[2],tok=Math.min(maxTokens,900);
+      const txt=JSON.stringify(msgs.map(m=>typeof m.content==='string'?m.content:(m.content||[]).filter(x=>x.type==='text').map(x=>x.text).join(' '))).length;
+      const horsImage=Math.round(txt/3.5)+maxTokens,img=Math.max(1,dem-horsImage);
+      const budget=lim*0.85-Math.round(txt/3.5)-tok;
+      const ech=budget>0?Math.min(0.9,Math.sqrt(budget/img)):0;
+      if(ech>=0.2){
+        const reduits=await Promise.all(messages.map(async m=>{
+          if(!Array.isArray(m.content))return m;
+          return {role:m.role,content:await Promise.all(m.content.map(async x=>{
+            if(x.type!=='image'||!x.source)return x;
+            const d=await _reduireImageB64(x.source.data,x.source.media_type,ech);
+            return {type:'image',source:{type:'base64',media_type:'image/jpeg',data:d}};
+          }))};
+        }));
+        return _callGroq(reduits,tok,system,modelOverride,temperature,seed,true,opts);
+      }
+    }
     throw new Error('API:'+_em);
   }
   const text=data.choices?.[0]?.message?.content||'';
@@ -3311,7 +3370,8 @@ async function _callGemini(messages,maxTokens,system,temperature,_modele){
   if(data&&data.error){
     // Modele retire ou renomme : on tente l'alias « dernier Flash » une fois
     if(!_modele&&(data.error.code===404||/not found|NOT_FOUND/i.test(data.error.status||data.error.message||'')))return _callGemini(messages,maxTokens,system,temperature,MODELE_GEMINI_REPLI);
-    throw new Error('GEMINI:'+(data.error.message||data.error.status||'erreur'));
+    var _rs=((data.error.details||[]).map(function(d){return d&&d.reason;}).filter(Boolean)[0])||data.error.status||'';
+    throw new Error('GEMINI:'+(data.error.message||'erreur')+(_rs?' ['+_rs+']':''));
   }
   const cand=(data&&data.candidates&&data.candidates[0])||{};
   const text=((cand.content&&cand.content.parts)||[]).map(function(p){return p.text||'';}).join('');
@@ -8684,7 +8744,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
     const ta = document.getElementById('addmeal-textarea');
     ta.placeholder = err.message === 'NO_KEY'
       ? "⚠ Configure ta clé API d'abord (bouton ⚙)"
-      : "⚠ " + _aiFriendly(err.message);
+      : "⚠ " + _aiFriendlyErr(err);
   }
 }
 
