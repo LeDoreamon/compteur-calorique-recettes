@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 22h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 22h15 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -553,8 +553,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-03-2200';
+const BUILD_ID='2026-10-03-2215';
 const NOUVEAUTES=[
+  {b:'2026-10-03-2215',points:[
+    '« À racheter » : un article n’est plus « presque fini » juste parce qu’il ne reste qu’un paquet. L’appli retient ton stock après chaque rachat et ne le signale que s’il en reste un quart ou moins (et moins d’un emballage entier).'
+  ]},
   {b:'2026-10-03-2200',points:[
     'Recharger un article déjà en stock garde maintenant la date limite que tu indiques (si l’article était épuisé, l’ancienne date est oubliée), ainsi que les macros importées par le scan si l’article n’en avait pas.'
   ]},
@@ -2962,6 +2965,7 @@ function _infoToast(titre,corps){
 let _saveChain=Promise.resolve(),_saveQueued=false;
 function saveState(){
   try{_nettoyerPlats();}catch(e){}   /* plats maison finis : masques puis retires */
+  try{_majPleins();}catch(e){}       /* stock apres rachat : reference du « presque fini » */
   if(_saveQueued)return _saveChain;   // un enregistrement attend deja : il prendra l'etat le plus recent
   _saveQueued=true;
   var go=function(){_saveQueued=false;return _saveStateNow();};
@@ -4342,16 +4346,36 @@ function renderInvCats(){
   return waitSection+cats+bottomAdd+histSection;
 }
 // ─── 🛒 Complétion automatique de la liste de courses ───────────────────────
+// « Presque fini » se juge par rapport au stock apres le dernier rachat (it.plein) :
+// il en reste un quart ou moins, et moins d'un emballage entier. L'ancienne regle
+// (un emballage ou moins) signalait un paquet achete a l'unite des son rangement.
+const PART_PRESQUE_FINI=0.25;
+// Reference sans historique : le stock actuel, et au moins ce que l'ancienne regle
+// jugeait normal (4 emballages-seuils), pour ne pas oublier ce qui est deja bas.
+function _pleinInitial(it){
+  var q=+it.qty||0,base=(it.pkg&&it.pkg.size>0)?it.pkg.size*1.2:((it.unit==='g'||it.unit==='ml')?240:4);
+  return Math.max(q,base);
+}
 function _stockBas(it){
   if(!it||it.qty===null)return null;                 // illimité : jamais
   if(it.plat)return null;                            // plat maison : jamais aux courses
   var q=+it.qty||0;
   if(q<=0)return 'épuisé';
-  var seuil;
-  if(it.pkg&&it.pkg.size>0)seuil=it.pkg.size;        // moins d'un emballage
-  else if(it.unit==='g'||it.unit==='ml')seuil=60;
-  else seuil=1;
-  return q<=seuil?'presque fini':null;
+  var plein=(+it.plein>0)?+it.plein:_pleinInitial(it);
+  if(it.pkg&&it.pkg.size>0&&q>=it.pkg.size)return null;   // encore un emballage entier
+  return q<=plein*PART_PRESQUE_FINI?'presque fini':null;
+}
+// Retient le stock apres chaque rachat : une hausse de quantite = des courses
+// (ou une correction), elle devient la nouvelle reference. Appele par saveState.
+function _majPleins(){
+  Object.keys(S.inv||{}).forEach(function(c){(S.inv[c]||[]).forEach(function(it){
+    if(!it||it.plat||it.qty===null||typeof it.qty!=='number')return;
+    var q=it.qty;
+    if(!(+it.plein>0))it.plein=_pleinInitial(it);
+    else if(typeof it.qVu==='number'&&q>it.qVu)it.plein=q;
+    if(q>it.plein)it.plein=q;
+    it.qVu=q;
+  });});
 }
 function shopSuggestions(){
   var deja={};
@@ -4400,7 +4424,7 @@ function renderShopAuto(){
   }).join('');
   h+='<button onclick="applyShopSuggestions()" style="width:100%;margin-top:9px;padding:9px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">\u2713 Ajouter \u00e0 ma liste</button>';
   if(nbExclus)h+='<div style="font-size:11px;color:var(--text3);margin-top:7px;text-align:right;">'+nbExclus+' \u00e9cart\u00e9'+(nbExclus>1?'s':'')+' \u00b7 '+lienReprise+'</div>';
-  h+='<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.45;">\u00ab \u00e9puis\u00e9 \u00bb = stock \u00e0 0 \u00b7 \u00ab presque fini \u00bb = moins d\'un emballage restant.</div>';
+  h+='<div style="font-size:11px;color:var(--text3);margin-top:6px;line-height:1.45;">\u00ab \u00e9puis\u00e9 \u00bb = stock \u00e0 0 \u00b7 \u00ab presque fini \u00bb = il en reste un quart ou moins de ce que tu avais apr\u00e8s tes derniers achats.</div>';
   return h+'</div>';
 }
 function exclureDuRachat(nom){
