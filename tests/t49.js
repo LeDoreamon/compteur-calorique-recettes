@@ -42,24 +42,25 @@ t('sans pesee, le poids du profil sert de repli, puis 80 kg',()=>{
   S.profil=null;eq(G('_poidsCourant')(),80);
 });
 t('*** estimation nette : le metabolisme de repos n\'est pas recompte ***',()=>{
-  if(!/\(s\.met-1\)\*_poidsCourant\(\)/.test(src))throw new Error('MET brut utilise');
+  if(!/\(s\.met-1\)\*w\*m\/60/.test(src))throw new Error('MET brut utilise');
 });
 
 console.log('\n=== GT. Dans la fenetre de depense ===');
-t('*** la section apparait pour ton profil ***',()=>{
-  S.catalogue=null;S.weights=[{d:'2026-09-20',w:104}];
+t('*** la section liste les seances du programme du compte ***',()=>{
+  S.catalogue=null;S.weights=[{d:'2026-09-20',w:104}];S.programme=G('_programmeSur')(P());
   G('renderProgramme')();
   eq(docEl('burn-programme').style.display,'block');
   const h=docEl('burn-programme').innerHTML;
   eq((h.match(/<option value="(hautA|basA|hautB|basB)"/g)||[]).length,4,'quatre seances');
   if(!/~312 kcal/.test(h))throw new Error('estimation absente du deroulant');
 });
-t('elle est masquee pour un autre compte',()=>{
-  const av=G('__profil')();
-  G('selectProfile')('users/AUTRE');S.catalogue=null;
+t('*** un compte sans programme ne voit pas le mien : il est invite a creer le sien ***',()=>{
+  const sv=S.programme;S.programme=[];
   G('renderProgramme')();
-  eq(docEl('burn-programme').style.display,'none');
-  G('selectProfile')(av);
+  const h=docEl('burn-programme').innerHTML;
+  if(/hautA|Haut A/.test(h))throw new Error('programme d\'un autre visible');
+  if(h.indexOf('ouvrirProgramme()')<0||h.indexOf('Créer')<0)throw new Error('invitation absente');
+  S.programme=sv;
 });
 t('*** choisir une seance puis ajouter cree l\'activite ***',()=>{
   S.weights=[{d:'2026-09-20',w:104}];
@@ -71,7 +72,7 @@ t('*** choisir une seance puis ajouter cree l\'activite ***',()=>{
   G('ajouterSeanceProgramme')();
   const a=G('__burnActs')();
   eq(a.length,1);
-  eq(a[0].name,'Muscu \u2014 Bas A \u2014 quadriceps');
+  eq(a[0].name,'Séance \u2014 Bas A \u2014 quadriceps');
   eq(a[0].min,55);eq(a[0].kcal,Math.round(4*104*55/60));
 });
 t('une duree absurde retombe sur la duree prevue',()=>{
