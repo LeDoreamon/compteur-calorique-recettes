@@ -74,5 +74,34 @@ t('*** suggestion de stock bas -> liste de courses -> « A ranger » : invId con
   X("_ajouterAuxCourses('Lait','laitiers',{invId:'lait'})");X("S.shop.list[0].checked=true;validateCourses()");
   eq(X("S.waiting[0].invId"),'lait');
 });
+console.log('\n=== XXXIII. « Recharger ce stock » depuis l\'ajout d\'article ===');
+function ajout(o){
+  X("_aic='frigo';_macSrc.aim='auto';_macManual.aim=null");
+  docEl('ai-name').value=o.name;docEl('ai-present').checked=false;docEl('ai-pkg-on').checked=!!o.pkg;
+  docEl('ai-pkg-size').value=o.pkg?String(o.pkg):'';docEl('ai-pkg-count').value=o.pkg?'1':'';docEl('ai-pkg-unit').value=o.unit||'g';
+  docEl('ai-qty').value=o.pkg?'':String(o.qty||'');docEl('ai-unit').value=o.unit||'g';docEl('ai-dlc').value=o.dlc||'';docEl('ai-pieceg').value='';
+  ['kcal','prot','gluc','lip'].forEach(k=>docEl('ai-m-'+k).value=o.mac?String(o.mac[k]):'');docEl('ai-m-fib').value='';
+  const vc=sb.confirm;sb.confirm=()=>true;try{X('confirmAddItem()');}finally{sb.confirm=vc;}
+}
+t('*** article epuise recharge : la nouvelle date est prise, l\'ancienne oubliee ***',()=>{
+  prepa();X("S.inv.frigo.push({id:'tor',name:'Tortellini Prosciutto',qty:0,unit:'g',dlc:'2026-09-01'})");const n0=nb();
+  ajout({name:'Tortellini Prosciutto',pkg:250,unit:'g',dlc:'2026-11-11',mac:{kcal:270,prot:12,gluc:40,lip:6.2}});
+  eq(nb(),n0,'doublon');eq(X("findItem('tor').qty"),250);eq(X("findItem('tor').dlc"),'2026-11-11');
+  eq(X("findItem('tor').mac100.kcal"),270,'macros importees');
+});
+t('*** stock en cours : la date la plus proche reste ***',()=>{
+  prepa();X("S.inv.frigo.push({id:'tor',name:'Tortellini Prosciutto',qty:250,unit:'g',dlc:'2026-10-20',mac100:{kcal:280,prot:11,gluc:41,lip:7}})");
+  ajout({name:'Tortellini Prosciutto',pkg:250,unit:'g',dlc:'2026-11-11'});
+  eq(X("findItem('tor').qty"),500);eq(X("findItem('tor').dlc"),'2026-10-20');eq(X("findItem('tor').mac100.kcal"),280,'macros existantes gardees');
+});
+t('stock en cours sans nouvelle date : l\'ancienne (meme depassee) reste, l\'alerte aussi',()=>{
+  prepa();X("S.inv.frigo.push({id:'tor',name:'Tortellini Prosciutto',qty:250,unit:'g',dlc:'2026-09-20'})");
+  ajout({name:'Tortellini Prosciutto',pkg:250,unit:'g'});eq(X("findItem('tor').dlc"),'2026-09-20');
+});
+t('unites incompatibles sans poids par piece : article a part, avec explication',()=>{
+  prepa();X("S.inv.frigo.push({id:'oeuf',name:'Oeufs',qty:6,unit:'pcs'})");const n0=nb();let m='';const va=sb.alert;sb.alert=x=>{m=x;};
+  try{ajout({name:'Oeufs',qty:300,unit:'g'});}finally{sb.alert=va;}
+  eq(nb(),n0+1);eq(X("findItem('oeuf').qty"),6);if(!/compté en pcs/.test(m))throw new Error(m);
+});
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();

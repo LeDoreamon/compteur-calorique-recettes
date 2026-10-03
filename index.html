@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 21h45 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-03 22h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -553,8 +553,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-03-2145';
+const BUILD_ID='2026-10-03-2200';
 const NOUVEAUTES=[
+  {b:'2026-10-03-2200',points:[
+    'Recharger un article déjà en stock garde maintenant la date limite que tu indiques (si l’article était épuisé, l’ancienne date est oubliée), ainsi que les macros importées par le scan si l’article n’en avait pas.'
+  ]},
   {b:'2026-10-03-2145',points:[
     'Ranger les courses : si l’article est déjà dans ton inventaire (même épuisé), tu indiques seulement la quantité achetée, et éventuellement la date limite ; elle s’ajoute à son stock, avec ses macros et ses réglages. Plus de doublons à fusionner.',
     'Si le nom diffère un peu (« Lait » et « Lait demi-écrémé »), l’appli te propose les articles proches avant d’en créer un nouveau.'
@@ -1487,11 +1490,9 @@ function confirmerReassort(){
   if(ex.qty!==null){
     const v=parseFloat(String((document.getElementById('reassort-qty')||{}).value||'').replace(',','.'));
     if(!(v>0)){_alerte('Indique la quantité achetée ('+(ex.unit||'g')+').');return;}
+    const epuise=!(+ex.qty>0);
     ex.qty=Math.round(((+ex.qty||0)+v)*10)/10;
-    const d=(document.getElementById('reassort-dlc')||{}).value||'';
-    const auj=S.today||getToday();
-    if(d){if(!ex.dlc||ex.dlc<auj||d<ex.dlc)ex.dlc=d;}   /* meme regle qu'a la fusion */
-    else if(ex.dlc&&ex.dlc<auj)delete ex.dlc;                      /* l'ancienne date ne concerne plus rien de present */
+    _dlcRecharge(ex,(document.getElementById('reassort-dlc')||{}).value||null,epuise);                      /* l'ancienne date ne concerne plus rien de present */
   }
   S.waiting=(S.waiting||[]).filter(x=>x.id!==w.id);
   fermerReassort();saveState();render();
@@ -1569,6 +1570,15 @@ function toggleWaitPkg(){
   const qr=document.getElementById('wait-qtyrow');if(qr)qr.style.display=on?'none':'flex';
   if(on){const pr=document.getElementById('wait-present');if(pr&&pr.checked){pr.checked=false;toggleWaitPresent();}}
 }
+// Date limite quand on recharge un stock existant (rangement, ajout, recharge) :
+// - ancien stock epuise : rien de l'ancien produit ne reste, la nouvelle date remplace (ou aucune) ;
+// - sinon la plus proche gagne, une date deja depassee est remplacee ;
+// - sans nouvelle date, l'ancienne reste : l'ancien produit est toujours la (perime ou non).
+function _dlcRecharge(ex,dlc,epuise){
+  var auj=S.today||getToday();
+  if(epuise){if(dlc){ex.dlc=dlc;ex.dlcAuto=false;}else delete ex.dlc;return;}
+  if(dlc&&(!ex.dlc||ex.dlc<auj||dlc<ex.dlc)){ex.dlc=dlc;ex.dlcAuto=false;}
+}
 function _addOrMergeInv(cat,item){
   if(!S.inv[cat])S.inv[cat]=[];
   var norm=function(s){return (s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim();};
@@ -1579,16 +1589,10 @@ function _addOrMergeInv(cat,item){
   }
   if(!ex){S.inv[cat].push(item);return false;}
   // Article deja present : on complete au lieu de creer un doublon
+  var _epuise=(ex.qty!==null&&!(+ex.qty>0));
   if(ex.qty===null||item.qty===null)ex.qty=null;                 // stock illimite (epices)
   else ex.qty=Math.round(((+ex.qty||0)+(+item.qty||0))*10)/10;
-  if(item.dlc){
-    var _auj=getToday();
-    var _exPerimee=(ex.dlc&&ex.dlc<_auj);
-    // On garde la date la plus proche, sauf si l'ancienne est deja depassee :
-    // elle ne correspond plus a rien de present et ferait passer un article
-    // qu'on vient de ranger pour perime.
-    if(!ex.dlc||_exPerimee||item.dlc<ex.dlc)ex.dlc=item.dlc;
-  }
+  _dlcRecharge(ex,item.dlc||null,_epuise);
   if(item.macSource==='manual'&&item.mac100){                     // macros saisies : elles priment
     ex.mac100=item.mac100;ex.macSource='manual';
     if(item.macManual)ex.macManual=item.macManual;
@@ -2128,7 +2132,25 @@ var _ajouter=function(){if(!S.inv[cat])S.inv[cat]=[];S.inv[cat].push(item);saveS
 var _dup=findItemByName(n);if(_dup){var _curr=_dup.qty===null?'stock illimité':(_dup.qty+' '+(_dup.unit||''));
   _confirmer('« '+_dup.name+' » est déjà en stock ('+_curr+').\n\nRecharger ce stock, ou créer un article à part ?',{ok:'Recharger ce stock',annuler:'Créer un article à part'}).then(function(ok){
     if(!ok){_ajouter();return;}
-    if(present){_dup.qty=null;}else if(_dup.qty!==null){_dup.qty=(+_dup.qty||0)+qty;if(unit&&!_dup.unit)_dup.unit=unit;}if(_pkgSize>0)_dup.pkg={size:_pkgSize};if(item.pieceG){_dup.pieceG=item.pieceG;_dup.macPiece=item.macPiece;if(item.mac100)_dup.mac100=item.mac100;}saveState();closeAddItem();render();
+    var _ep=(_dup.qty!==null&&!(+_dup.qty>0));
+    if(present){_dup.qty=null;}
+    else if(_dup.qty!==null){
+      var _u0=_dup.unit||'',_q=qty;
+      if(unit&&_u0&&unit!==_u0&&!_ep){
+        // Unites differentes : conversion par le poids d'une piece si on le connait, sinon article a part
+        var _pg=+_dup.pieceG||+item.pieceG||0,_pN=/^(g|ml)$/.test(unit),_p0=/^(g|ml)$/.test(_u0);
+        if(_pg>0&&_pN&&!_p0)_q=Math.round(qty/_pg*10)/10;
+        else if(_pg>0&&!_pN&&_p0)_q=Math.round(qty*_pg);
+        else{_alerte('« '+_dup.name+' » est compté en '+_u0+', pas en '+unit+'.\n\nIl est ajouté comme article à part : tu pourras les fusionner depuis le diagnostic de l’inventaire.');_ajouter();return;}
+      }else if(unit&&(_ep||!_u0))_dup.unit=unit;            /* stock epuise : la nouvelle unite fait foi */
+      _dup.qty=Math.round(((+_dup.qty||0)+_q)*10)/10;
+    }
+    if(_pkgSize>0)_dup.pkg={size:_pkgSize};
+    if(item.pieceG){_dup.pieceG=item.pieceG;_dup.macPiece=item.macPiece;}
+    // Macros saisies ou importees (scan, IA) : elles completent ou remplacent
+    if(item.mac100&&(item.macSource==='manual'||!_dup.mac100)){_dup.mac100=item.mac100;if(item.macSource)_dup.macSource=item.macSource;if(item.macManual)_dup.macManual=item.macManual;}
+    _dlcRecharge(_dup,item.dlc||null,_ep);
+    saveState();closeAddItem();render();
   });
   return;}
 _ajouter();
