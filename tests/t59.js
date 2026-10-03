@@ -21,7 +21,7 @@ t('reponse vide : message, pas de plantage',async()=>{
   const vrai=sb.callAI;sb.callAI=rep('');
   try{await X('runAddMealAI')([{role:'user',content:'bol'}]);}finally{sb.callAI=vrai;}
   eq(X('_pendingMeal'),null);
-  if(!/vide/i.test(docEl('addmeal-textarea').placeholder||''))throw new Error('message : '+docEl('addmeal-textarea').placeholder);
+  if(!/vide/i.test(docEl('addmeal-err').textContent||''))throw new Error('message : '+docEl('addmeal-err').textContent);
 });
 t('plus aucune reponse IA lue sans extractJSON',()=>{
   const src=fs.readFileSync('index.html','utf8');
