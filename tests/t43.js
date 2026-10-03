@@ -224,7 +224,7 @@ t('*** aucune animation de transition a l\'arrivee ***',()=>{
 });
 t('le rendu final suit le chargement des donnees',()=>{
   const i=src.indexOf('function selectProfile');
-  if(!/loadState\(\)\.then\(\(\)=>render\(\)\)/.test(src.slice(i,i+700)))
+  if(!/loadState\(\)\.then\(\(\)=>\{?render\(\)/.test(src.slice(i,i+700)))
     throw new Error('pas de rendu apres chargement');
 });
 t('*** un seul onglet est rendu, l\'accueil ***',()=>{
