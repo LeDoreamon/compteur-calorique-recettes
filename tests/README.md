@@ -84,6 +84,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t68.js` | Courses façon Rappels : cocher = panier masqué, afficher/masquer les cochés, valider (achetés dans leur rayon + À ranger), racheter en décochant, effacer, migration des anciens « Déjà achetés » |
 | `t69.js` | Photo d’un repas : choix inventaire / hors inventaire avant l’appareil ; fiche article : scanner un code-barres pour importer les macros (100 g ou par pièce) |
 | `t70.js` | Recettes IA et perso du compte visibles (`recetteVisible` accepte `ACTIVE_PROFILE`), catalogue d’un autre profil masqué |
+| `t71.js` | Recettes IA incohérentes écartées (ingrédient non utilisé, aliment cité absent, omelette sans œufs, whey cuite, identifiant contredit par le nom), sans faux positif sur le catalogue |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
