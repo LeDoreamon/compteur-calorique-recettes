@@ -71,7 +71,7 @@ t('*** chaque build a ses nouveautes : BUILD_ID = sw.js = premiere entree ***',(
   const id=X('BUILD_ID');eq(X('NOUVEAUTES[0].b'),id,'entree du build');
   if(sw.indexOf("const CACHE='macros-"+id+"'")<0)throw new Error('sw.js CACHE ≠ BUILD_ID');
   const hh=id.slice(11,13)+'h'+id.slice(13,15);if(src.indexOf('build '+id.slice(0,10)+' '+hh)<0)throw new Error('build Reglages ≠ BUILD_ID');
-  if(!X('NOUVEAUTES[0].points.length'))throw new Error('entree vide');
+  if(!Array.isArray(X('NOUVEAUTES[0].points')))throw new Error('entree sans liste de points');
   const ids=X('NOUVEAUTES.map(function(n){return n.b}).join()').split(',');if(ids.slice().sort().reverse().join()!==ids.join())throw new Error('ordre');
 });
 t('*** montrees une seule fois par appareil, puis plus rien ***',()=>{
@@ -96,6 +96,15 @@ t('inscription : le nouveau compte ne recoit pas la liste des changements',()=>{
   if(!/localStorage\.setItem\('dz_nouveautes',BUILD_ID\)[^\n]*\n\s*try\{location\.reload/.test(src.slice(i,i+2500)))throw new Error('marque absente');
   if(!/loadState\(\)\.then\(\(\)=>\{render\(\);_verifierNouveautes\(\);\}/.test(src))throw new Error('appel au demarrage');
   if(src.indexOf('onclick="montrerNouveautes()"')<0)throw new Error('lien Reglages');
+});
+t('*** build sans nouveaute visible (points vides) : rien n\'est montre, la derniere vraie entree reste dans « Quoi de neuf ? » ***',()=>{
+  const msgs=[];const va=sb.alert;sb.alert=m=>msgs.push(m);const vn=X('NOUVEAUTES.slice()');
+  try{
+    X("NOUVEAUTES.splice(0,NOUVEAUTES.length,{b:'2099-01-02-0000',points:[]},{b:'2099-01-01-0000',points:['Vraie nouveaute']})");
+    sb.__vs2=X('sessionActive');X('sessionActive=function(){return true;}');
+    LS.dz_nouveautes='2099-01-01-0000';X('_nvFait=false;_verifierNouveautes()');eq(msgs.length,0,'entree vide montree');
+    X('montrerNouveautes()');if(!/Vraie nouveaute/.test(msgs[0]||''))throw new Error('lien Reglages : '+msgs[0]);
+  }finally{sb.alert=va;sb.__vn=vn;X('NOUVEAUTES.splice.apply(NOUVEAUTES,[0,NOUVEAUTES.length].concat(__vn));sessionActive=__vs2');}
 });
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();

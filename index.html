@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-04 06h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-04 06h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -553,11 +553,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-04-0600';
+const BUILD_ID='2026-10-04-0630';
 const NOUVEAUTES=[
-  {b:'2026-10-04-0600',points:[
-    'Inventaire : les steaks à 5 % de matières grasses ont leurs vraies valeurs (125 kcal pour 100 g au lieu de 147), et le parmesan en double, épuisé, est retiré.'
-  ]},
+  {b:'2026-10-04-0630',points:[]},
+  {b:'2026-10-04-0600',points:[]},   /* corrections de mon inventaire : rien a annoncer */
   {b:'2026-10-04-0530',points:[
     'Catalogue de recettes revu avec ton stock actuel : l’omelette passe au St Morêt léger, le steak-frites et le poulet panko à la sauce BBQ zéro, le chili à une demi-boîte (la boîte entière faisait 850 kcal).',
     '9 nouvelles recettes avec ce qui dormait dans le stock : porridge framboises, omelette chèvre, riz sauté chorizo, pâtes protéinées au thon, pâtes fraîches Comté ou Boursin, gnocchis fromage-jambon, rillettes de thon, fromage blanc framboises-amandes.'
@@ -2986,10 +2985,12 @@ function _verifierNouveautes(){
   var vu=null;try{vu=localStorage.getItem('dz_nouveautes');}catch(e){}
   if(vu===BUILD_ID)return;
   try{localStorage.setItem('dz_nouveautes',BUILD_ID);}catch(e){}
-  var l=vu?NOUVEAUTES.filter(function(n){return n.b>vu;}).slice(0,5):NOUVEAUTES.slice(0,1);
+  /* entree sans point = build sans changement visible pour les utilisateurs (ex. correction de mon seul compte) */
+  var avec=NOUVEAUTES.filter(function(n){return n.points&&n.points.length;});
+  var l=vu?avec.filter(function(n){return n.b>vu;}).slice(0,5):avec.slice(0,1);
   if(l.length)_alerte(_texteNouveautes(l));
 }
-function montrerNouveautes(){_alerte(_texteNouveautes(NOUVEAUTES.slice(0,1)));}
+function montrerNouveautes(){_alerte(_texteNouveautes(NOUVEAUTES.filter(function(n){return n.points&&n.points.length;}).slice(0,1)));}
 function _infoToast(titre,corps){
   try{
     var el=document.getElementById('coach-toast');
