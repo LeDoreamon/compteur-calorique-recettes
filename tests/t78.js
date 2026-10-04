@@ -29,5 +29,13 @@ t('parmesan en stock : jamais retire ; autres comptes : rien',()=>{
   sb._applyState(etat({catalogue:'autre'}));eq(X("findItem('steaks').mac100.kcal"),147,'autre compte');
 });
 t('le drapeau est enregistre avec l\'etat',()=>{if(!/invFix1004:!!S\.invFix1004/.test(X('_saveStateNow.toString()')+X('saveState.toString()')+require('fs').readFileSync('index.html','utf8')))throw new Error('non enregistre');});
+t('*** aiguillettes de poulet : valeurs du cru (110 / 23,5 / 0 / 1,5), une seule fois ***',()=>{
+  const e=etat({invFix1004:true});e.inv.congelateur.push({id:'cx_mqwkfekl',name:'Aiguillettes de poulet',qty:1500,unit:'g',mac100:{kcal:165,prot:31,gluc:0,lip:3.6}});
+  sb._applyState(e);eq(X("findItem('cx_mqwkfekl').mac100.kcal"),110);eq(X("findItem('cx_mqwkfekl').mac100.prot"),23.5);eq(X('S.invFix1004b'),true);
+  const e2=etat({invFix1004:true,invFix1004b:true});e2.inv.congelateur.push({id:'cx_mqwkfekl',name:'Aiguillettes de poulet',qty:1500,unit:'g',mac100:{kcal:165,prot:31,gluc:0,lip:3.6}});
+  sb._applyState(e2);eq(X("findItem('cx_mqwkfekl').mac100.kcal"),165,'deja fait : plus touche');
+  const e3=etat({invFix1004:true});e3.inv.congelateur.push({id:'cx_mqwkfekl',name:'Aiguillettes de poulet',qty:1500,unit:'g',mac100:{kcal:112,prot:24,gluc:0,lip:1.5}});
+  sb._applyState(e3);eq(X("findItem('cx_mqwkfekl').mac100.kcal"),112,'valeur de l\'etiquette deja saisie : gardee');
+});
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();
