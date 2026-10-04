@@ -39,7 +39,7 @@
 "concombres":{"id":"concombres","n":"Concombres","u":"pc","q":2,"piece":[45,2,11,0.3]},
 "carottes":{"id":"cx_mtosaaxv","n":"Carottes rapees citron","u":"g","q":360,"m":[67,1,5.5,4.5]},
 "ratatouille":{"id":"ratatouille","n":"Ratatouille Casse-Grain","u":"g","q":200,"m":[55,1.5,7,2.5]},
-"chili":{"id":"chili","n":"Chili mexicain Casse-Grain","u":"boîtes","q":2,"pieceG":100,"m":[90,5,12,2]},
+"chili":{"id":"chili","n":"Chili mexicain Casse-Grain","u":"boîtes","q":2,"pieceG":430,"m":[90,5,12,2]},
 "soupe":{"id":"cx_mrvi04ju","n":"Soupe - Potiron et Kiri","u":"ml","q":5000,"m":[40,0.8,4.9,1.6]},
 "framboises":{"id":"cx_mqwkf3e6","n":"Framboises surgelées","u":"g","q":450,"m":[52,1.2,12,0.7]},
 "fraises":{"id":"cx_mtot73u2","n":"Fraises surgelées","u":"g","q":750,"m":[37,0.7,5.8,0.4]},
@@ -70,4 +70,13 @@
 "ail":{"id":"ail","n":"Ail en poudre","u":"","q":-1,"m":[34,2.6,7.6,0.2]},
 "gingembre":{"id":"gingembre","n":"Gingembre","u":"","q":-1,"m":[18,0.9,4.2,0.2]},
 "sesame":{"id":"sesame","n":"Sésame doré","u":"","q":-1,"m":[573,18.6,4.7,49.9]},
-"muscade":{"id":"muscade","n":"Noix de muscade","u":"","q":-1,"m":[173,7.3,10.6,14.7]}}
+"muscade":{"id":"muscade","n":"Noix de muscade","u":"","q":-1,"m":[173,7.3,10.6,14.7]},
+"stmoret_leger":{"id":"cx_ms8yjwau","n":"St Morêt léger","u":"g","q":1000,"m":[132,10,5,8]},
+"bbq_zero":{"id":"cx_musrurg0","n":"BBQ ZERO","u":"g","q":1000,"m":[129,0.5,6.1,0.1]},
+"chevre":{"id":"cx_musr6p1c","n":"Fromage de chèvre au lait pasteurisé","u":"g","q":1000,"m":[279,18,1,25],"pkg":180},
+"chorizo":{"id":"cx_mqwmb8rg","n":"Dés de chorizo","u":"g","q":1000,"m":[424,23,4.3,35]},
+"thon_naturel":{"id":"cx_musswwix","n":"Thon entier au naturel","u":"g","q":1000,"m":[120,28,0,0.9],"pkg":120},
+"pates_comte":{"id":"cx_musrmhdl","n":"Pâtes fraiches au Comté AOP","u":"g","q":1000,"m":[277,14,31,10],"pkg":250},
+"pates_boursin":{"id":"cx_musrm6wj","n":"Pâtes fraîches au fromage Boursin® Ail et fines herbes","u":"g","q":1000,"m":[247,9.4,29,10],"pkg":250},
+"citron":{"id":"cx_mtotj6yk","n":"Citron / Citron vert","u":"ml","q":1000,"m":[29,1.1,9.3,0.3]},
+"poivre":{"id":"poivre","n":"Poivre","u":"g","q":-1,"m":[251,10.4,38.7,3.3]}}
