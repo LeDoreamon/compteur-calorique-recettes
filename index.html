@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-04 05h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-04 06h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -553,8 +553,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-04-0530';
+const BUILD_ID='2026-10-04-0600';
 const NOUVEAUTES=[
+  {b:'2026-10-04-0600',points:[
+    'Inventaire : les steaks à 5 % de matières grasses ont leurs vraies valeurs (125 kcal pour 100 g au lieu de 147), et le parmesan en double, épuisé, est retiré.'
+  ]},
   {b:'2026-10-04-0530',points:[
     'Catalogue de recettes revu avec ton stock actuel : l’omelette passe au St Morêt léger, le steak-frites et le poulet panko à la sauce BBQ zéro, le chili à une demi-boîte (la boîte entière faisait 850 kcal).',
     '9 nouvelles recettes avec ce qui dormait dans le stock : porridge framboises, omelette chèvre, riz sauté chorizo, pâtes protéinées au thon, pâtes fraîches Comté ou Boursin, gnocchis fromage-jambon, rillettes de thon, fromage blanc framboises-amandes.'
@@ -754,8 +757,8 @@ const RCP=[
   {id:'liam_v6_bolo_completes',profile:'liam',slots:['lunch','dinner'],name:'Pâtes complètes à la bolognaise',urgent:0,ur:null,time:25,kcal:787,prot:51,gluc:89,lip:23,steps:["Lancer 100 g de pâtes complètes.","Faire revenir 60 g d'oignons dans 5 ml d'huile, 3 min.","Ajouter 150 g de bœuf haché, écraser à la cuillère, 6 min.","Verser 150 g de sauce tomate et 4 g d'épices italiennes, mijoter 10 min.","Servir avec 20 g de fromage râpé."],used:[{id:'pates_completes',n:'Pâtes complètes',qty:100},{id:'boeuf_hache',n:'Boeuf haché (450g à 5% MG)',qty:150},{id:'sauce_tomate',n:'Tubes sauce tomate',qty:150},{id:'oignons',n:'Oignons émincés',qty:60},{id:'epices_it',n:'Épices italiennes',qty:4},{id:'cx_mqwkdso8',n:'Fromage râpé',qty:20},{id:'huile_olive',n:'Huile d\'olive',qty:5}],extras:[]},
   {id:'liam_v6_boulettes_puree',profile:'liam',slots:['lunch','dinner'],name:'Boulettes IKEA, riz & crème',urgent:0,ur:null,time:22,kcal:865,prot:34,gluc:82,lip:46,steps:["Lancer 80 g de riz.","Poêler 200 g de boulettes 10 min en les retournant.","Retirer, faire suer 50 g d'oignons dans la même poêle.","Verser 80 ml de crème liquide, 1 cube de bouillon émietté, 2 g de muscade.","Remettre les boulettes, mijoter 5 min."],used:[{id:'cx_mtos3ak5',n:'Huvudroll - Meatballs (boulettes IKEA)',qty:200},{id:'riz',n:'Riz Oiseaux Célestes',qty:80},{id:'creme_liq',n:'Crème légère liquide',qty:80},{id:'oignons',n:'Oignons émincés',qty:50},{id:'bouillon_legumes',n:'Bouillon légumes',qty:1},{id:'muscade',n:'Noix de muscade',qty:2}],extras:[]},
   {id:'liam_v6_chili_riz',profile:'liam',slots:['lunch','dinner'],name:'Chili au bœuf & riz',urgent:0,ur:null,time:20,kcal:652,prot:47,gluc:86,lip:13,fib:10.4,steps:["Lancer 70 g de riz.","Saisir 150 g de bœuf haché avec 50 g d'oignons, 7 min.","Ajouter une demi-boîte de chili (environ 215 g) et 3 g de paprika ; garder l'autre moitié au frais pour le lendemain.","Mijoter 8 min à feu doux."],used:[{id:'chili',n:'Chili mexicain Casse-Grain',qty:0.5},{id:'boeuf_hache',n:'Boeuf haché (450g à 5% MG)',qty:150},{id:'riz',n:'Riz Oiseaux Célestes',qty:70},{id:'oignons',n:'Oignons émincés',qty:50},{id:'paprika',n:'Paprika',qty:3}],extras:[]},
-  {id:'liam_v6_steak_ratatouille',profile:'liam',slots:['lunch','dinner'],name:'Steak, ratatouille & lentilles',urgent:0,ur:null,time:15,kcal:555,prot:55,gluc:40,lip:20,steps:["Réchauffer 200 g de ratatouille et 130 g de lentilles à la poêle, 5 min.","Cuire 2 steaks 3 min par face.","Assaisonner de 2 g d'ail en poudre."],used:[{id:'steaks',n:'Steaks (4 à 5% MG)',qty:2},{id:'ratatouille',n:'Ratatouille Casse-Grain',qty:200},{id:'cx_mqwm1niv',n:'lentilles casse grains',qty:130},{id:'ail',n:'Ail en poudre',qty:2}],extras:[]},
-  {id:'liam_v6_steak_frites',profile:'liam',slots:['lunch','dinner'],name:'Steak & frites au four',urgent:0,ur:null,time:30,kcal:633,prot:46,gluc:46,lip:24,fib:5.6,steps:["Enfourner 200 g de frites à 200 °C, 25 min.","Cuire 2 steaks 3 min par face en fin de cuisson.","Servir avec 30 g de sauce BBQ zéro."],used:[{id:'steaks',n:'Steaks (4 à 5% MG)',qty:2},{id:'frites',n:'Frites au four',qty:200},{id:'cx_musrurg0',n:'BBQ ZERO',qty:30}],extras:[]},
+  {id:'liam_v6_steak_ratatouille',profile:'liam',slots:['lunch','dinner'],name:'Steak, ratatouille & lentilles',urgent:0,ur:null,time:15,kcal:513,prot:57,gluc:41,lip:15,steps:["Réchauffer 200 g de ratatouille et 130 g de lentilles à la poêle, 5 min.","Cuire 2 steaks 3 min par face.","Assaisonner de 2 g d'ail en poudre."],used:[{id:'steaks',n:'Steaks (4 à 5% MG)',qty:2},{id:'ratatouille',n:'Ratatouille Casse-Grain',qty:200},{id:'cx_mqwm1niv',n:'lentilles casse grains',qty:130},{id:'ail',n:'Ail en poudre',qty:2}],extras:[]},
+  {id:'liam_v6_steak_frites',profile:'liam',slots:['lunch','dinner'],name:'Steak & frites au four',urgent:0,ur:null,time:30,kcal:589,prot:48,gluc:46,lip:19,fib:5.6,steps:["Enfourner 200 g de frites à 200 °C, 25 min.","Cuire 2 steaks 3 min par face en fin de cuisson.","Servir avec 30 g de sauce BBQ zéro."],used:[{id:'steaks',n:'Steaks (4 à 5% MG)',qty:2},{id:'frites',n:'Frites au four',qty:200},{id:'cx_musrurg0',n:'BBQ ZERO',qty:30}],extras:[]},
   {id:'liam_v6_saumon_riz',profile:'liam',slots:['lunch','dinner'],name:'Saumon poêlé, riz & carottes',urgent:0,ur:null,time:20,kcal:696,prot:45,gluc:69,lip:27,steps:["Lancer 80 g de riz.","Saisir 200 g de saumon côté peau dans 5 ml d'huile, 4 min.","Retourner, 3 min, assaisonner de 2 g d'ail.","Servir avec 120 g de carottes râpées au citron, froides."],used:[{id:'cx_ms8y6yk4',n:'Saumon',qty:200},{id:'riz',n:'Riz Oiseaux Célestes',qty:80},{id:'cx_mtosaaxv',n:'Carottes rapees citron',qty:120},{id:'huile_olive',n:'Huile d\'olive',qty:5},{id:'ail',n:'Ail en poudre',qty:2}],extras:[]},
   {id:'liam_v6_thon_pates',profile:'liam',slots:['lunch','dinner'],name:'Pâtes au thon et à la tomate',urgent:0,ur:null,time:18,kcal:816,prot:58,gluc:93,lip:25,steps:["Lancer 100 g de pâtes.","Faire suer 50 g d'oignons dans 5 ml d'huile.","Ajouter 120 g de thon égoutté et 140 g de sauce tomate, 6 min.","Mélanger aux pâtes, 4 g d'épices italiennes."],used:[{id:'pates_blanches',n:'Pâtes blanches',qty:100},{id:'thon',n:'Thon en conserve',qty:120},{id:'sauce_tomate',n:'Tubes sauce tomate',qty:140},{id:'oignons',n:'Oignons émincés',qty:50},{id:'epices_it',n:'Épices italiennes',qty:4},{id:'huile_olive',n:'Huile d\'olive',qty:5}],extras:[]},
   {id:'liam_v6_pates_prot_bacon',profile:'liam',slots:['lunch','dinner'],name:'Pâtes protéinées, bacon & crème',urgent:0,ur:null,time:15,kcal:649,prot:46,gluc:67,lip:21,steps:["Lancer 90 g de pâtes protéinées.","Faire dorer 100 g de bacon à sec avec 40 g d'oignons, 5 min.","Hors du feu, ajouter 60 g de crème fraîche légère.","Mélanger aux pâtes, finir avec 20 g de râpé."],used:[{id:'pates_proteinees',n:'Pâtes protéinées',qty:90},{id:'cx_mqwkk2as',n:'Allumettes de bacon',qty:100},{id:'cx_mqwm5mzs',n:'Crème fraîche légère',qty:60},{id:'cx_mqwkdso8',n:'Fromage râpé',qty:20},{id:'oignons',n:'Oignons émincés',qty:40}],extras:[]},
@@ -1278,6 +1281,31 @@ function _remplirFibresInventaire(){
     if(it.macPiece&&typeof it.macPiece.fib!=='number'&&it.pieceG>0){it.macPiece.fib=Math.round(f*it.pieceG/10)/10;n++;}
   });});
   return n>0;
+}
+// Corrections validees par Liam le 04/10/2026 (revue de son inventaire), une seule fois
+// (S.invFix1004) et seulement si la fiche porte encore l'ancienne valeur :
+// - steaks a 5 % MG saisis a 147 kcal / 7 g de lipides (valeurs d'un 10 %) ;
+// - doublon epuise « Parmigiano Reggiano DOP En copeaux » (l'autre parmesan reste).
+function _corrigerInventaire1004(){
+  var fait=false;
+  Object.keys(S.inv||{}).forEach(function(cat){(S.inv[cat]||[]).forEach(function(it){
+    if(!it||normMac(it.name)!=='steaks 4 a 5 mg')return;
+    var v=(it.macPiece&&it.macPiece.kcal)||(it.mac100&&it.mac100.kcal);
+    if(Math.round(v)!==147)return;
+    var m={kcal:125,prot:21,gluc:0,lip:4.5,fib:0};
+    it.mac100=Object.assign({},m);
+    if(it.macPiece||it.pieceG){var g=+it.pieceG||100;it.pieceG=g;var f=g/100;it.macPiece={kcal:Math.round(m.kcal*f),prot:+(m.prot*f).toFixed(1),gluc:0,lip:+(m.lip*f).toFixed(1),fib:0};}
+    it.macSource='manual';it.macManual={kcal:m.kcal,prot:m.prot,gluc:m.gluc,lip:m.lip};
+    fait=true;
+  });});
+  var tous=[].concat.apply([],Object.keys(S.inv||{}).map(function(c){return S.inv[c]||[];}));
+  var autre=tous.some(function(x){return x&&normMac(x.name)==='parmigiano reggiano';});
+  if(autre)Object.keys(S.inv||{}).forEach(function(cat){
+    var av=(S.inv[cat]||[]).length;
+    S.inv[cat]=(S.inv[cat]||[]).filter(function(x){return !(x&&normMac(x.name)==='parmigiano reggiano dop en copeaux'&&!(+x.qty>0)&&x.qty!==null);});
+    if(S.inv[cat].length!==av){fait=true;if(S.pasRacheter)delete S.pasRacheter[_cleFB(_normNom('Parmigiano Reggiano DOP En copeaux'))];}
+  });
+  return fait;
 }
 // Epices en poudre saisies avec des valeurs du frais ou trop basses
 // (gingembre 18, ail 34, poivre 6 kcal/100 g…). Remplacees une fois
@@ -2789,6 +2817,8 @@ function _applyState(d){
   S.fibInv=true;
   if(!d.epicesFix2&&_corrigerEpicesPoudre())_etatCorrige=true;
   S.epicesFix2=true;
+  if(_catalogue()===PROFIL_HERITE&&!d.invFix1004){if(_corrigerInventaire1004())_etatCorrige=true;S.invFix1004=true;}
+  else S.invFix1004=!!d.invFix1004;
 }
 function showSyncErr(){_alerte(_lastSyncErr||'Aucun détail enregistré pour le moment.\n\nDéclenche une sauvegarde (ajoute un repas) puis retape.');}
 // Le badge existe a deux endroits : en tete de page et sur l'accueil. Un seul
@@ -3037,6 +3067,7 @@ async function _saveStateNow(){
     dupMerged:S.dupMerged||false,
     fibInv:S.fibInv||false,
     epicesFix2:S.epicesFix2||false,
+    invFix1004:!!S.invFix1004,
     removedSpices:S.removedSpices||[],
     shop:S.shop||{list:[],graveyard:[]},
     waiting:S.waiting||[],

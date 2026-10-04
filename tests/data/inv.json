@@ -2,7 +2,7 @@
 "karaage":{"id":"cx_ms8y4spg","n":"Poulet Karaage","u":"g","q":1075,"m":[199,17,12,8.9]},
 "panko":{"id":"cx_ms8y5it1","n":"Poulet Panko","u":"g","q":1075,"m":[230,17,16,11]},
 "boeuf":{"id":"boeuf_hache","n":"Boeuf haché (450g à 5% MG)","u":"g","q":1050,"m":[125,20,0.5,5]},
-"steaks":{"id":"steaks","n":"Steaks (4 à 5% MG)","u":"pcs","q":9,"piece":[147,20,0,7]},
+"steaks":{"id":"steaks","n":"Steaks (4 à 5% MG)","u":"pcs","q":9,"piece":[125,21,0,4.5]},
 "boulettes":{"id":"cx_mtos3ak5","n":"Huvudroll - Meatballs (boulettes IKEA)","u":"g","q":1000,"m":[244,13,5.9,19]},
 "saumon":{"id":"cx_ms8y6yk4","n":"Saumon","u":"g","q":400,"m":[145,18.9,0,7.7]},
 "thon":{"id":"thon","n":"Thon en conserve","u":"g","q":480,"m":[240,35.5,0,12.5]},
