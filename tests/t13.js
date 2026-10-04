@@ -78,8 +78,11 @@ t('une journee type atteint la cible proteique',()=>{
   const midi=liam.find(r=>r.id==='liam_v6_poulet_riz_soja');
   const soir=liam.find(r=>r.id==='liam_v6_bolo_completes');
   const snack=liam.find(r=>r.id==='liam_v6_fb_fraises');
-  const P=pdj.prot+midi.prot+soir.prot+snack.prot;
-  const K=pdj.kcal+midi.kcal+soir.kcal+snack.kcal;
+  // Depuis les valeurs du poulet cru (04/10/2026), ces quatre repas font ~146 g :
+  // le shaker (mon favori, pris chaque jour) complete la journee type.
+  const shaker=liam.find(r=>r.id==='liam_v6_shaker_whey');
+  const P=pdj.prot+midi.prot+soir.prot+snack.prot+shaker.prot;
+  const K=pdj.kcal+midi.kcal+soir.kcal+snack.kcal+shaker.kcal;
   if(P<160)throw new Error('proteines : '+P);
   if(K>2600)throw new Error('kcal : '+K+' (cible 2600)');
 });
