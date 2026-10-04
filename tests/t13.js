@@ -20,7 +20,7 @@ S.inv={frigo:frigo,placards:[],congelateur:[],epices:[]};
 const liam=(sb.RCP||[]).filter(r=>r.profile==='liam'&&r.slots&&r.slots.length);
 
 console.log('\n=== AM. Le catalogue colle a l\'inventaire ===');
-t('30 recettes visibles pour Liam',()=>eq(liam.length,30));
+t('39 recettes visibles pour Liam (30 + 9 du 04/10)',()=>eq(liam.length,39));
 t('*** chaque ingredient existe dans l\'inventaire ***',()=>{
   const manque=[];
   liam.forEach(r=>(r.used||[]).forEach(u=>{

@@ -36,8 +36,8 @@ t('karaage : karaage, pas des aiguillettes',()=>eq(C('liam_v6_karaage_riz').prot
 t('bolognaise : nappe sur pates completes',()=>{const c=C('liam_v6_bolo_completes');eq(c.base+'/'+c.nappe,'pates_completes/bolo');});
 t('chili : nappe chili sur riz',()=>{const c=C('liam_v6_chili_riz');eq(c.base+'/'+c.nappe,'riz/chili');});
 t('boulettes : creme en nappe',()=>{const c=C('liam_v6_boulettes_puree');eq(c.prot.join(','),'boulettes');if(c.sauces.indexOf('creme')<0)throw new Error(c.sauces);});
-t('omelette : omelette, des de jambon, cancoillotte',()=>{
-  const c=C('liam_v6_omelette_jambon');eq(c.prot.join(','),'omelette,jambon_des');if(c.sauces.indexOf('cancoillotte')<0)throw new Error(c.sauces);
+t('omelette : omelette, des de jambon (cancoillotte remplacee par le St Moret leger le 04/10)',()=>{
+  const c=C('liam_v6_omelette_jambon');eq(c.prot.join(','),'omelette,jambon_des');if(c.sauces.indexOf('cancoillotte')>=0)throw new Error(c.sauces);
 });
 t('steak ratatouille : lentilles, steak, ratatouille',()=>{const c=C('liam_v6_steak_ratatouille');eq(c.base+'/'+c.prot+'/'+c.garn,'lentilles/steak/ratatouille');});
 t('l\'oignon ne s\'ajoute que s\'il n\'y a pas d\'autre garniture',()=>{
