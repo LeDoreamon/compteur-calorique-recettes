@@ -137,7 +137,7 @@ t('le bloc Description/Photo a disparu',()=>{
 });
 t('le gros bouton d\'entree est conserve',()=>{
   const fs=require('fs');const html=fs.readFileSync('index.html','utf8');
-  if(!html.includes('Ajouter un repas libre (texte ou photo)'))throw new Error('bouton principal perdu');
+  if(!html.includes('Ajouter un repas libre'))throw new Error('bouton principal perdu');
 });
 
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');

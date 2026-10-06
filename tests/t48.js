@@ -221,8 +221,9 @@ await t('un bon debut passe a l\'etape suivante',async()=>{
   await G('etapeInscription')(1);
   eq(sb.window._ins.etape,1);
 });
-await t('*** le bouton de deconnexion remplace l\'ancien bouton de profil ***',()=>{
-  if(!/<button onclick="deconnexion\(\)" title="Se déconnecter"/.test(src))throw new Error('bouton absent de l\'en-tete');
+await t('*** la deconnexion est dans les reglages, plus dans l\'en-tete (06/10/2026) ***',()=>{
+  if(src.indexOf('onclick="closeSettings();deconnexion()"')<0)throw new Error('absente des reglages');
+  if(/<button onclick="deconnexion\(\)" title="Se déconnecter"/.test(src))throw new Error('encore dans l\'en-tete');
 });
 await t('le bouton Modifier le profil est en bas des reglages',()=>{
   if(!/closeSettings\(\);ouvrirEditionProfil\(\)/.test(src))throw new Error('absent');
