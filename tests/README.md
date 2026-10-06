@@ -93,7 +93,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t77.js` | « Presque fini » jugé par rapport au stock après le dernier rachat (`plein`, `_majPleins`) : quart restant et moins d'un emballage ; référence initiale compatible avec l'ancienne règle |
 | `t78.js` | Corrections ponctuelles de mon inventaire du 04/10 (`_corrigerInventaire1004`, `S.invFix1004`) : steaks à 5 %, parmesan en double ; une seule fois, valeurs déjà modifiées respectées |
 | `t79.js` | Parcours nouvel utilisateur (06/10) : poids visé → objectif du Bilan (et inversement), poids déclaré = première pesée, un seul message sans IA, « stock utilisé » à Non si l'inventaire est vide |
-| `t80.js` | Nutrition : portions sèche (catalogue ≤ 700 kcal par plat, consigne IA) ; protéines par repas (repas principal < 25 g en orange, conseil < 20 g) ; journées trop basses (2 sur 3 sous 1 500 / 1 200 kcal, hors oublis de saisie) ; rappel de pesée sur l'accueil (dernière pesée ≥ 2 jours ou aucune, « Plus tard » pour la journée) |
+| `t80.js` | Nutrition : portions sèche (catalogue ≤ 700 kcal par plat, consigne IA) ; protéines par repas (repas principal < 25 g en orange, conseil < 20 g) ; journées trop basses (2 sur 3 sous 1 500 / 1 200 kcal, hors oublis de saisie) ; rappel de pesée sur l'accueil (dernière pesée ≥ 2 jours ou aucune, « Plus tard » pour la journée) ; produits très transformés (NOVA 4 d'OpenFoodFacts gardé au scan : fiche, ajout, courses → à ranger → inventaire ; badge et explication) |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

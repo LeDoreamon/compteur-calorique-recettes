@@ -1,4 +1,4 @@
-const {sb}=require('./sb.js');
+const {sb,docEl}=require('./sb.js');
 const vm=require('vm');
 let pass=0,fail=0;const tests=[];
 function t(n,f){tests.push([n,f]);}
@@ -47,6 +47,48 @@ t('*** generation IA en perte de poids : consigne de portions (550-700 kcal, 35 
   const src=require('fs').readFileSync('index.html','utf8');
   if(!/PORTIONS \(perte de poids\) : plat principal \(déjeuner, dîner\) entre 550 et 700 kcal/.test(src))throw new Error('consigne absente');
   if(!/\$\{_objectif\(\)==='perte'\?`/.test(src))throw new Error('non conditionnee a l\'objectif');
+});
+console.log('\n=== XLI. Nutrition : produits tres transformes (NOVA) ===');
+const offNova=(g)=>async()=>({ok:true,status:200,json:async()=>({status:1,product:{product_name:'Biscuits',nova_group:g,nutriments:{'energy-kcal_100g':480,proteins_100g:6,carbohydrates_100g:65,fat_100g:20}}})});
+function ficheN(it){X("S.inv={frigo:[],congelateur:[],placards:["+JSON.stringify(it)+"],epices:[]};");X("openItemDetail('placards','"+it.id+"')");}
+t('*** groupe NOVA demande a OpenFoodFacts ***',()=>{const src=require('fs').readFileSync('index.html','utf8');if(src.indexOf('quantity,nova_group')<0)throw new Error('champ absent');});
+t('_novaValide : 1 a 4 seulement',()=>{eq(X("[_novaValide(4),_novaValide('2'),_novaValide(0),_novaValide(5),_novaValide('x'),_novaValide(null)].join(',')"),'4,2,,,,');});
+t('*** scan de la fiche : NOVA 4 garde sur l\'article et signale ***',async()=>{
+  ficheN({id:'bi',name:'Biscuits',qty:200,unit:'g'});
+  const vrai=sb.fetch;sb.fetch=offNova(4);
+  try{X("_scanMode='item'");await X('lookupBarcode')('3017620422003');}finally{sb.fetch=vrai;}
+  if(docEl('item-scan-st').textContent.indexOf('très transformé')<0)throw new Error('message de scan');
+  X('saveItemDetail()');eq(X("findItem('bi').nova"),4);
+  if(X("_badgeNova(findItem('bi'))").indexOf('🏭')<0)throw new Error('badge');
+  X("openItemDetail('placards','bi')");if(docEl('item-nova').textContent.indexOf('Très transformé')<0||docEl('item-nova').style.display!=='block')throw new Error('explication fiche');
+});
+t('enregistrer la fiche sans nouveau scan ne touche pas au classement',()=>{X("openItemDetail('placards','bi')");X('saveItemDetail()');eq(X("findItem('bi').nova"),4);});
+t('un nouveau scan NOVA 1 remplace le 4 ; produit sans classement -> retire',async()=>{
+  const vrai=sb.fetch;
+  try{X("openItemDetail('placards','bi');_scanMode='item'");sb.fetch=offNova(1);await X('lookupBarcode')('3017620422003');X('saveItemDetail()');eq(X("findItem('bi').nova"),1);
+    X("openItemDetail('placards','bi')");sb.fetch=offNova(undefined);await X('lookupBarcode')('3017620422003');X('saveItemDetail()');eq(X("findItem('bi').nova"),undefined);
+  }finally{sb.fetch=vrai;}
+  X("openItemDetail('placards','bi')");eq(docEl('item-nova').style.display,'none');
+});
+t('pas de badge sans classement ou en dessous de 4',()=>{eq(X("_badgeNova({nova:3})+_badgeNova({})+_badgeNova(null)"),'');});
+t('*** courses : scan -> a ranger -> inventaire, le classement suit ***',async()=>{
+  X("S.inv={frigo:[],congelateur:[],placards:[],epices:[]};S.shop={list:[],graveyard:[]};S.waiting=[]");
+  const vrai=sb.fetch;sb.fetch=offNova(4);
+  try{X("_scanMode='shop'");await X('lookupBarcode')('3017620422003');}finally{sb.fetch=vrai;}
+  eq(X("S.shop.list[0].nova"),4);
+  X("S.shop.list[0].checked=true;S.shop.list[0].rayon='epicerie'");X('validateCourses()');
+  eq(X("S.waiting.length"),1,'a ranger');eq(X("S.waiting[0].nova"),4);
+  X("_waitRef=S.waiting[0].id;_waitCat='placards';_waitMacMode='100';_macSrc.wait='auto'");docEl('wait-qty').value='300';docEl('wait-unit').value='g';docEl('wait-present').checked=false;docEl('wait-pkg-on').checked=false;docEl('wait-dlc').value='';X('confirmWaitPlace()');
+  eq(X("Object.values(S.inv).flat().filter(function(i){return i.name==='Biscuits'})[0].nova"),4);
+});
+t('ajout d\'article par scan : classement garde',async()=>{
+  X("S.inv={frigo:[],congelateur:[],placards:[],epices:[]}");X("openAddItem('placards')");
+  const vrai=sb.fetch;sb.fetch=offNova(4);
+  try{X("_scanMode='inv'");await X('lookupBarcode')('3017620422003');}finally{sb.fetch=vrai;}
+  if(docEl('ai-mnote').textContent.indexOf('très transformé')<0)throw new Error('note');
+  docEl('ai-qty').value='200';X('confirmAddItem()');
+  eq(X("S.inv.placards.filter(function(i){return i.name==='Biscuits'})[0].nova"),4);
+  X("openAddItem('placards')");eq(X('_novaAjout'),null,'remis a zero a l\'ouverture');
 });
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();
