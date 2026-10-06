@@ -99,6 +99,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t81.js` | Ergonomie : accroche, cibles expliquées (dépense, écart, rythme, date), « Perte de poids » hors de mon compte, écrans vides (inventaire, courses, Bilan, recettes), parcours sans IA (menu +, fenêtre d'ajout), déconnexion dans les Réglages, onglet « Repas » |
 | `t82.js` | Tutoriel : 7 étapes et leurs cibles, onglets ouverts, « Passer » / « C'est parti », fin enregistrée (`tutoVu`), lancement automatique pour un compte neuf seulement, état ancien = déjà vu, relance depuis les Réglages |
 | `t83.js` | Journal d'erreurs : secrets masqués, rafales regroupées, 30 entrées max, rapport (build, IA, ordre, sans clé), échecs de synchro et d'IA notés, boutons des Réglages, repli si la copie échoue |
+| `t84.js` | Rangement des données : repas libres sans recette cachée (migration, totaux inchangés), volume constant, archive des mois de plus de 3 mois (écriture, échec, fusion, chargement à la demande neutralisé), filet écrit avant, hors ligne, export avec les mois archivés |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
