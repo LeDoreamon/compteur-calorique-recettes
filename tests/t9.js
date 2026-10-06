@@ -8,7 +8,7 @@ function eq(a,b,m){if(String(a)!==String(b))throw new Error((m||'')+' attendu '+
 function build(opts){
   opts=opts||{};
   const net={coupe:!!opts.horsLigne};
-  const serveur={state:opts.serveur||null,burn:{}};
+  const serveur={state:opts.serveur||null,burn:{},envois:[]};
   const local={};
   const journal=[];
   let js=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
@@ -43,9 +43,22 @@ function build(opts){
        return {ok:true,json:async()=>({idToken:'TOK',expiresIn:'3600',refreshToken:'RT'})};
      if(net.coupe)throw new Error('reseau coupe');
      const m=(init&&init.method)||'GET';
-     if(u.includes('/state/rev')) return {ok:true,json:async()=>(serveur.state?serveur.state.rev:null)};
+     const hd=(init&&init.headers)||{};
+     if(u.includes('/state'))serveur.envois.push({m,p:(u.split('?')[0].split('/state')[1]||'').replace('.json',''),body:init&&init.body});
+     if(u.includes('/state/rev')){
+       const et='E'+(serveur.state?serveur.state.rev:'x');
+       if(m==='PUT'&&serveur.intrus){serveur.intrus=false;serveur.state.rev++;}   /* un autre appareil ecrit juste avant */
+       if(m==='PUT'){const et2='E'+serveur.state.rev;if(hd['if-match']&&hd['if-match']!==et2)return {ok:false,status:412,json:async()=>null};serveur.state=serveur.state||{};serveur.state.rev=JSON.parse(init.body);return {ok:true,status:200};}
+       if(serveur.corsEtag&&hd['X-Firebase-ETag'])throw new TypeError('Failed to fetch');
+       return {ok:true,headers:{get:k=>(k==='ETag'&&hd['X-Firebase-ETag']&&!serveur.sansEtag)?et:null},json:async()=>(serveur.state?serveur.state.rev:null)};
+     }
      if(u.includes('/state')){
        if(m==='PUT'){serveur.state=JSON.parse(init.body);return {ok:true,status:200};}
+       if(m==='PATCH'){   /* comme Firebase : mise a jour multi-chemins, null efface */
+         serveur.state=serveur.state||{};const p=JSON.parse(init.body);
+         Object.keys(p).forEach(c=>{const s=c.split('/');let o=serveur.state;for(let i=0;i<s.length-1;i++){if(!o[s[i]]||typeof o[s[i]]!=='object')o[s[i]]={};o=o[s[i]];}if(p[c]===null)delete o[s[s.length-1]];else o[s[s.length-1]]=p[c];});
+         return {ok:true,status:200};
+       }
        return {ok:true,json:async()=>serveur.state};
      }
      if(u.includes('/burn')){
@@ -231,6 +244,60 @@ await t('l etat distant est mis de cote si l utilisateur force',async()=>{
   const i=src.indexOf('const _newRev=(_rr===null?_stateRev:_rr)+1;');
   const b=src.slice(i-1600,i);
   if(!/'\/filet'/.test(b))throw new Error('aucune mise de cote avant ecrasement force');
+});
+
+console.log('\n=== Z9. Enregistrement partiel et revision reservee (07/10/2026) ===');
+const base=()=>({rev:5,savedAt:'2026-08-01T10:00:00Z',inv:{frigo:[{id:'a',name:'Yaourt',qty:2,unit:'pots'}],placards:[{id:'b',name:'Riz',qty:500,unit:'g'}]},dayMeals:{'2026-08-01':[{rid:'r1',name:'A',mult:1,macros:{kcal:100,prot:1,gluc:1,lip:1}}]},weights:[{d:'2026-08-01',w:80}]});
+const repas=n=>[{rid:'r'+n,name:'M'+n,mult:1,macros:{kcal:200,prot:10,gluc:10,lip:5}}];
+await t('*** premier envoi complet (PUT), suivants partiels (PATCH) : seulement le jour modifie et les meta ***',async()=>{
+  const e=build({serveur:base()});await e.sb.loadState();await attendre(200);
+  e.serveur.envois=[];e.sb.S.dayMeals['2026-08-02']=repas(2);await e.sb.saveState();
+  const w1=e.serveur.envois.filter(x=>x.p===''&&x.m!=='GET');if(!w1.length)throw new Error('rien envoye');
+  e.serveur.envois=[];e.sb.S.dayMeals['2026-08-03']=repas(3);await e.sb.saveState();
+  const w2=e.serveur.envois.filter(x=>x.p===''&&x.m!=='GET');eq(w2.length,1);eq(w2[0].m,'PATCH');
+  const cles=Object.keys(JSON.parse(w2[0].body)).filter(k=>!/^(rev|vol|savedAt|savedBy|todaySummary|_profile)$/.test(k));
+  eq(cles.join(','),'dayMeals/2026-08-03');
+  const plein=e.local[Object.keys(e.local).find(k=>/_st$/.test(k))].length;
+  if(w2[0].body.length>plein/4)throw new Error('envoi pas plus leger : '+w2[0].body.length+' vs etat complet '+plein);
+});
+await t('*** apres une serie de PATCH, le serveur a exactement l\'etat local (ajout, modif, suppression de jour, categorie) ***',async()=>{
+  const e=build({serveur:base()});await e.sb.loadState();await e.sb.saveState();
+  e.sb.S.dayMeals['2026-08-02']=repas(2);await e.sb.saveState();
+  delete e.sb.S.dayMeals['2026-08-01'];e.sb.S.inv.placards[0].qty=300;e.sb.S.weights.push({d:'2026-08-02',w:79.5});await e.sb.saveState();
+  const loc=JSON.parse(e.local[Object.keys(e.local).find(k=>/_st$/.test(k))]),srv=e.serveur.state;
+  ['dayMeals','inv','weights','shop','customRecipes'].forEach(k=>{if(JSON.stringify(srv[k])!==JSON.stringify(loc[k]))throw new Error(k+' differe : '+JSON.stringify(srv[k]).slice(0,120)+' / '+JSON.stringify(loc[k]).slice(0,120));});
+  const dernier=e.serveur.envois.filter(x=>x.m==='PATCH').pop();const p=JSON.parse(dernier.body);
+  if(!('dayMeals/2026-08-01' in p)||p['dayMeals/2026-08-01']!==null)throw new Error('jour supprime non efface');
+  if(!('inv/placards' in p)||('inv/frigo' in p))throw new Error('categorie : '+Object.keys(p).join(','));
+});
+await t('*** envoi refuse : le suivant renvoie aussi les changements perdus ***',async()=>{
+  const e=build({serveur:base()});await e.sb.loadState();await e.sb.saveState();
+  const vf=e.sb.fetch;e.sb.fetch=async(u,o)=>{if(o&&o.method==='PATCH')return {ok:false,status:500,statusText:'x'};return vf(u,o);};
+  e.sb.S.dayMeals['2026-08-02']=repas(2);await e.sb.saveState();e.sb.fetch=vf;
+  e.serveur.envois=[];e.sb.S.dayMeals['2026-08-03']=repas(3);await e.sb.saveState();
+  const p=JSON.parse(e.serveur.envois.filter(x=>x.m==='PATCH').pop().body);
+  if(!('dayMeals/2026-08-02' in p)||!('dayMeals/2026-08-03' in p))throw new Error('perdu : '+Object.keys(p).join(','));
+});
+await t('*** revision reservee par ETag : un appareil qui ecrit entre la lecture et l\'envoi n\'est pas ecrase ***',async()=>{
+  const e=build({serveur:base()});await e.sb.loadState();
+  const avant=JSON.stringify(e.serveur.state.dayMeals);let conflit=0;
+  e.sb._onSaveConflict=async()=>{conflit++;};
+  e.serveur.intrus=true;e.sb.S.dayMeals['2026-08-02']=repas(2);await e.sb.saveState();
+  if(JSON.stringify(e.serveur.state.dayMeals)!==avant)throw new Error('ecrase malgre le conflit');
+  if(!conflit)throw new Error('conflit non signale');
+  if(!e.serveur.envois.some(x=>x.p==='/rev'&&x.m==='PUT'))throw new Error('pas de reservation');
+});
+await t('navigateur sans ETag (en-tete absent) : on enregistre quand meme, sans reservation',async()=>{
+  const e=build({serveur:base()});e.serveur.sansEtag=true;await e.sb.loadState();
+  e.sb.S.dayMeals['2026-08-02']=repas(2);await e.sb.saveState();
+  if(!e.serveur.state.dayMeals['2026-08-02'])throw new Error('non enregistre');
+  if(e.serveur.envois.some(x=>x.p==='/rev'&&x.m==='PUT'))throw new Error('reservation sans ETag');
+});
+await t('en-tete ETag refuse par le navigateur (CORS) : repli sans ETag',async()=>{
+  const e=build({serveur:base()});e.serveur.corsEtag=true;await e.sb.loadState();
+  e.sb.S.dayMeals['2026-08-02']=repas(2);await e.sb.saveState();
+  if(!e.serveur.state.dayMeals['2026-08-02'])throw new Error('non enregistre');
+  eq(vm.runInContext('_ETAG_OK',e.sb),false);
 });
 
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');

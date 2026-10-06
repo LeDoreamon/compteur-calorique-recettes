@@ -26,7 +26,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t6.js` | Audit large : dates, totaux, inventaire, recettes, parsing, migration d'état |
 | `t7.js` | Recettes contre l'inventaire par défaut |
 | `t8.js` | Rafraîchissement du jour courant, `_burnSave` |
-| `t9.js` | Synchronisation : réseau et `localStorage` simulés, récupération hors ligne, écritures concurrentes |
+| `t9.js` | Synchronisation : réseau et `localStorage` simulés, récupération hors ligne, écritures concurrentes ; envoi partiel (PATCH multi-chemins, état final identique, reprise après échec), révision réservée par ETag (412), repli sans ETag |
 | `t10.js` | Filtre des journées partielles du TDEE, Réglages, filet de restauration |
 | `t11.js` | Fiche article : emballage, poids par pièce, diagnostic des quantités douteuses |
 | `t12.js` | Noms de repli des ingrédients : apprentissage, `resolveInv`, survie à une fusion |

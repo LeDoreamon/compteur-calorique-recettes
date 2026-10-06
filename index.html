@@ -299,7 +299,7 @@ body.auth-ouvert #root { display: none; }
     <div style="display:flex;gap:8px;"><button onclick="copierRapport()" style="flex:1;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">📋 Copier le rapport</button><button onclick="effacerJournal()" style="padding:9px 12px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">Effacer</button></div>
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-07 00h12 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-07 00h13 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -566,8 +566,9 @@ body.auth-ouvert #root { display: none; }
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-07-0012';
+const BUILD_ID='2026-10-07-0013';
 const NOUVEAUTES=[
+  {b:'2026-10-07-0013',points:[]},
   {b:'2026-10-07-0012',points:[]},
   {b:'2026-10-07-0011',points:[]},
   {b:'2026-10-07-0010',points:['Visite guidée : l’inventaire, les courses et le bilan sont montrés avec un exemple, et les Réglages s’ouvrent pour les présenter. Tes données ne sont pas touchées.']},
@@ -3073,15 +3074,56 @@ async function _remoteVol(){
     return (typeof v==='number')?v:null;
   }catch(e){return null;}
 }
+// Ecriture conditionnelle (07/10/2026) : la revision est lue avec son ETag
+// Firebase, puis « reservee » par un PUT if-match avant d'envoyer les donnees.
+// Deux appareils ne peuvent donc plus prendre la meme revision. Si le navigateur
+// ne laisse pas passer l'ETag (CORS), on revient a l'ancien fonctionnement.
+var _ETAG_OK=null,_revEtag=null;
 async function _remoteRev(){
-  try{
+  _revEtag=null;
+  var lire=async function(avecEtag){
     const c=new AbortController();const t=setTimeout(()=>c.abort(),4500);
-    const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state/rev'),{signal:c.signal});
-    clearTimeout(t);
+    const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state/rev'),avecEtag?{signal:c.signal,headers:{'X-Firebase-ETag':'true'}}:{signal:c.signal});
+    clearTimeout(t);return r;
+  };
+  try{
+    var r;
+    if(_ETAG_OK!==false){
+      try{r=await lire(true);}catch(e){
+        if(e&&e.name==='AbortError')return null;
+        r=await lire(false);                       /* en-tete refuse (CORS) : sans ETag desormais */
+        if(_ETAG_OK===null){_ETAG_OK=false;_noterErreur('synchro','ETag indisponible : ecriture sans reservation');}
+      }
+    }else r=await lire(false);
     if(!r.ok)return null;
+    if(_ETAG_OK!==false){var et=null;try{et=r.headers&&r.headers.get?r.headers.get('ETag'):null;}catch(e){}
+      if(et)_revEtag=et;else if(_ETAG_OK===null){_ETAG_OK=false;_noterErreur('synchro','ETag absent de la reponse : ecriture sans reservation');}}
     const v=await r.json();
     return (typeof v==='number')?v:0;
   }catch(e){return null;}                          // réseau indisponible : on ne bloque pas
+}
+// Enregistrement partiel (07/10/2026) : seules les sections modifiees depuis le
+// dernier envoi accepte partent (PATCH multi-chemins) ; repas et inventaire au
+// grain du jour et de la categorie. Premier envoi d'une session : etat complet (PUT).
+var _envoye=null;
+const _META_ETAT={rev:1,vol:1,savedAt:1,savedBy:1,todaySummary:1,_profile:1};
+const _SECTIONS_FINES={dayMeals:1,inv:1};
+function _hashSection(s){var x=0;for(var i=0;i<s.length;i++){x=((x<<5)-x+s.charCodeAt(i))|0;}return x+':'+s.length;}
+function _empreintesSections(o){
+  var e={};
+  Object.keys(o||{}).forEach(function(k){
+    if(_META_ETAT[k])return;var v=o[k];
+    if(_SECTIONS_FINES[k]&&v&&typeof v==='object'&&!Array.isArray(v))Object.keys(v).forEach(function(s){e[k+'/'+s]=_hashSection(JSON.stringify(v[s]===undefined?null:v[s]));});
+    else e[k]=_hashSection(JSON.stringify(v===undefined?null:v));
+  });
+  return e;
+}
+function _patchEtat(o,emp,avant){
+  var p={};
+  Object.keys(emp).forEach(function(c){if(avant[c]===emp[c])return;var i=c.indexOf('/');p[c]=i<0?o[c]:o[c.slice(0,i)][c.slice(i+1)];});
+  Object.keys(avant).forEach(function(c){if(!(c in emp))p[c]=null;});      /* section disparue : effacee */
+  Object.keys(_META_ETAT).forEach(function(k){if(k in o)p[k]=o[k];});
+  return p;
 }
 // Empreinte de ce qui compte dans l'etat : sert a savoir si l'utilisateur a
 // modifie quelque chose depuis son dernier chargement. Si ce n'est pas le cas,
@@ -3414,19 +3456,31 @@ async function _saveStateNow(){
     savedBy:_sessionId
   });
   /* Une seule cle invalide fait refuser tout l'etat par Firebase (HTTP 400) */
+  /* reservation AVANT l'empreinte : en cas de conflit, la relance doit voir les changements locaux */
+  // Reservation de la revision : echoue (412) si un autre appareil a ecrit entre-temps
+  if(_revEtag&&_rr!==null){
+    try{
+      const rc=await fetch(await fbUrl(ACTIVE_PROFILE+'/state/rev'),{method:'PUT',headers:{'Content-Type':'application/json','if-match':_revEtag},body:JSON.stringify(_newRev)});
+      if(rc.ok)_stateRev=_newRev;   /* revision reservee : c'est desormais la notre, meme si l'envoi echoue */
+      if(rc.status===412){_revEtag=null;if(!_saveStateNow._relance){_saveStateNow._relance=true;try{await _saveStateNow();}finally{_saveStateNow._relance=false;}}return;}
+    }catch(e){if(_ETAG_OK!==false&&e&&e.name==='TypeError'){_ETAG_OK=false;_noterErreur('synchro','reservation de revision refusee par le navigateur : ecriture sans reservation');}}
+    _revEtag=null;
+  }
   try{payload=JSON.stringify(_assainirCles(JSON.parse(payload)));}catch(e){}
   try{localStorage.setItem(ACTIVE_PROFILE+'_st',payload);}catch(e){}
   _empreinteRef=_empreinteEtat();
+  var _obj=null,_emp=null,_meth='PUT',_corps=payload;
+  try{_obj=JSON.parse(payload);_emp=_empreintesSections(_obj);if(_envoye){_meth='PATCH';_corps=JSON.stringify(_patchEtat(_obj,_emp,_envoye));}}catch(e){_meth='PUT';_corps=payload;}
   try{
     const _sc=new AbortController();const _stid=setTimeout(()=>_sc.abort(),8000);
     const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'),{
-      method:'PUT',
+      method:_meth,
       headers:{'Content-Type':'application/json'},
-      body:payload,
+      body:_corps,
       signal:_sc.signal
     });
     clearTimeout(_stid);
-    if(r.ok)_stateRev=_newRev;
+    if(r.ok){_stateRev=_newRev;_envoye=_emp;}
     _syncStatus=r.ok?'ok':'offline';
     _lastSyncErr=r.ok?'':('Ecriture refusee — HTTP '+r.status+' '+r.statusText
       +(r.status===400?" (donnee non enregistrable : un nom contient sans doute un caractere interdit comme / ou .)":''));
@@ -3436,6 +3490,7 @@ async function _saveStateNow(){
 }
 
 async function loadState(){
+  _envoye=null;   /* apres un chargement, le premier envoi est complet */
   try{
     const _ctrl=new AbortController();const _tid=setTimeout(()=>_ctrl.abort(),7000);
     const r=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'),{signal:_ctrl.signal});
