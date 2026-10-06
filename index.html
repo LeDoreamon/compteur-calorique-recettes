@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-04 06h45 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 19h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -553,8 +553,12 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-04-0645';
+const BUILD_ID='2026-10-06-1900';
 const NOUVEAUTES=[
+  {b:'2026-10-06-1900',points:[
+    'Le poids visé indiqué à l’inscription devient bien l’objectif de poids du Bilan (et les deux restent synchronisés), et le poids déclaré compte comme première pesée.',
+    'Ajouter un repas avec un inventaire vide ne suppose plus que tu as utilisé ton stock.'
+  ]},
   {b:'2026-10-04-0645',points:[]},   /* poulet cru de mon inventaire */
   {b:'2026-10-04-0630',points:[]},
   {b:'2026-10-04-0600',points:[]},   /* corrections de mon inventaire : rien a annoncer */
@@ -2749,6 +2753,8 @@ function _applyState(d){
   S.shop=(d.shop&&Array.isArray(d.shop.list))?{list:d.shop.list,graveyard:Array.isArray(d.shop.graveyard)?d.shop.graveyard:[],graveRayons:Array.isArray(d.shop.graveRayons)?d.shop.graveRayons:[]}:{list:[],graveyard:[],graveRayons:[]};
   if(_migrerDejaAchetes())_etatCorrige=true;
   if(_migrerRayonsTicket())_etatCorrige=true;
+  /* comptes crees avant le 06/10/2026 : poids vise de l'inscription jamais repris dans le Bilan */
+  if(!(typeof d.weightGoal==='number')&&d.profil&&+d.profil.poidsVise>=30&&+d.profil.poidsVise<=400){d.weightGoal=Math.round(+d.profil.poidsVise*10)/10;_etatCorrige=true;}
   S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.mesures=Array.isArray(d.mesures)?d.mesures.filter(function(m){return m&&/^\d{4}-\d\d-\d\d$/.test(m.d);}):[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
   S.shopSeeded=d.shopSeeded||false;
   S.bilanVu=(typeof d.bilanVu==='string'&&/^\d{4}-\d\d-\d\d$/.test(d.bilanVu))?d.bilanVu:null;
@@ -5338,7 +5344,9 @@ function setWeightGoal(){
   var el=document.getElementById('goal-input');
   var v=el?parseFloat(el.value):NaN;
   if(!(v>=30&&v<=400)){_alerte('Entre un poids cible réaliste (en kg).');return;}
-  S.weightGoal=Math.round(v*10)/10;saveState();render();
+  S.weightGoal=Math.round(v*10)/10;
+  if(S.profil)S.profil=Object.assign({},S.profil,{poidsVise:S.weightGoal});   /* un seul poids vise */
+  saveState();render();
 }
 function clearWeightGoal(){S.weightGoal=null;saveState();render();}
 
@@ -6943,6 +6951,7 @@ function _majBandeauJour(){
   el.style.display='block';
 }
 let _addMealUseStock=true;
+function _aDuStock(){return Object.keys(S.inv||{}).some(function(c){return c!=='epices'&&(S.inv[c]||[]).some(function(i){return i&&!i.plat&&(i.qty===null||+i.qty>0);});});}
 function setMealStock(yes){
   _addMealUseStock=yes;
   const y=document.getElementById('ms-yes'),n=document.getElementById('ms-no');
@@ -6973,7 +6982,7 @@ function openAddMeal(type) {_scanBase=null;_erreurAjout('');
     _amSlot=_pm?_pm.id:null;      // pose sans passer par setAmSlot, qui renommerait le repas
     renderAmSlots();
   }catch(e){}
-  setMealStock(true);
+  setMealStock(_aDuStock());   /* inventaire vide : « Non » par defaut */
   _iaAnalyse='';try{_majIAPrevue();}catch(e){}
   var _ch=document.getElementById('addmeal-photo-choix');if(_ch)_ch.style.display='none';
   // Photo : on demande d'abord si le repas vient de l'inventaire. Le bouton
@@ -6996,7 +7005,7 @@ function _libIA(photo){
 }
 var _iaAnalyse='';   // IA qui a reellement fait la derniere analyse de repas
 function _majIAPrevue(){
-  var a=document.getElementById('addmeal-ia');if(a)a.innerHTML=_libIA(false)+'<br>'+_libIA(true);
+  var a=document.getElementById('addmeal-ia');if(a)a.innerHTML=(_iaPrevue(false)||_iaPrevue(true))?_libIA(false)+'<br>'+_libIA(true):_libIA(false);
   var b=document.getElementById('addmeal-ia-photo');if(b)b.innerHTML=_libIA(true);
 }
 function choixPhotoRepas(stock){
@@ -8221,6 +8230,9 @@ async function _initNouveauProfil(cle,profil,groq,gemini){
   var tz='';try{tz=Intl.DateTimeFormat().resolvedOptions().timeZone||'';}catch(e){}
   var st={rev:1,savedAt:new Date().toISOString(),_profile:cle,profil:profil,catalogue:null,
           tz:tz||null,pasBase:(+profil.pas>0?Math.round(+profil.pas):0),inv:INV_VIDE,dayMeals:{}};
+  /* le poids vise devient l'objectif du Bilan, le poids declare la premiere pesee */
+  if(+profil.poidsVise>=30&&+profil.poidsVise<=400)st.weightGoal=Math.round(+profil.poidsVise*10)/10;
+  if(+profil.poids>=30&&+profil.poids<=400)st.weights=[{d:getToday(),w:Math.round(+profil.poids*10)/10}];
   if(_cleGroqValide(groq))st.groqKey=groq;
   if(_cleGeminiValide(gemini))st.geminiKey=gemini;
   var r=await fetch(await fbUrl(cle+'/state'),{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(st)});
@@ -8528,6 +8540,7 @@ function enregistrerProfil(){
   var c=_lireCibles();
   p.cibles=_ciblesValides(c)?c:(calculerCibles(p)||TARGETS);
   S.profil=_neutre(p);
+  if(+p.poidsVise>=30&&+p.poidsVise<=400)S.weightGoal=Math.round(+p.poidsVise*10)/10;   /* un seul poids vise */
   if(typeof p.pas==='number'&&p.pas>=0)S.pasBase=Math.round(p.pas);
   TARGETS=_ciblesProfil();
   try{saveState();}catch(e){}

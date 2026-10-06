@@ -92,6 +92,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t76.js` | Ranger les courses et « Recharger ce stock » (date limite, macros importées, unités) : article déjà en stock (même épuisé, lien `invId` ou même nom) → quantité ajoutée, macros gardées, sans doublon ; date limite ; articles au nom proche proposés ; fusion inter-catégories de même unité ; plats maison exclus |
 | `t77.js` | « Presque fini » jugé par rapport au stock après le dernier rachat (`plein`, `_majPleins`) : quart restant et moins d'un emballage ; référence initiale compatible avec l'ancienne règle |
 | `t78.js` | Corrections ponctuelles de mon inventaire du 04/10 (`_corrigerInventaire1004`, `S.invFix1004`) : steaks à 5 %, parmesan en double ; une seule fois, valeurs déjà modifiées respectées |
+| `t79.js` | Parcours nouvel utilisateur (06/10) : poids visé → objectif du Bilan (et inversement), poids déclaré = première pesée, un seul message sans IA, « stock utilisé » à Non si l'inventaire est vide |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
