@@ -57,12 +57,13 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t83.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue toutes les suites `tests/tN.js` (découvertes seules, ordre numérique) dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`). Il sort en erreur (code 1) si un test échoue ou si une suite plante avant sa ligne de bilan (« PLANTEE »).
+- CI (07/10/2026) : `.github/workflows/tests.yml` rejoue `tests/run.sh` à chaque PR et à chaque mise à jour de `main` (Node 20), puis `tests/audit.py` à titre informatif. Ne fusionner que si la vérification « Tests » est verte.
 - Attendu : 0 échec (1408 tests au 07/10/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t83` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite `tests/tN.js` est jouée automatiquement ; l'ajouter au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -79,6 +80,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 
 ### c. Publier
 
+- `python3 outils/publier.py "Point en clair." …` (ou `--muet`) fait les deux étapes ci-dessous : build à l'heure de Paris aux quatre endroits (toujours postérieur au précédent) et entrée `NOUVEAUTES` en tête.
 - Incrémenter le build à quatre endroits : `build AAAA-MM-JJ HHhMM` dans `index.html` (bas de la fenêtre Réglages), `const BUILD_ID='AAAA-MM-JJ-HHMM'` dans `index.html`, et dans `sw.js` la ligne `// build …` ainsi que `const CACHE='macros-AAAA-MM-JJ-HHMM';`.
 - Ajouter en tête de `NOUVEAUTES` une entrée `{b:BUILD_ID, points:[…]}` : ce qui change pour l'utilisateur, en clair, sans jargon. Un build qui ne change rien de visible pour les autres comptes (corrections de mon seul inventaire ou de mon catalogue, tests, doc) a une entrée muette `{b:BUILD_ID, points:[]}` : rien n'est montré (décision du 04/10/2026). Fenêtre « Quoi de neuf dans Dorayaki ? » montrée une fois par appareil après la mise à jour (`_verifierNouveautes`, `localStorage.dz_nouveautes`), rien pour un compte qui vient d'être créé ; lien « Quoi de neuf ? » en bas des Réglages. `t73.js` échoue si l'entrée manque ou si les quatre builds ne concordent pas.
 - Terminer chaque message de commit par les lignes d'attribution demandées par la session.
