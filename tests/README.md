@@ -95,6 +95,7 @@ Prérequis : `node` et `python3`, et `index.html` à la racine.
 | `t79.js` | Parcours nouvel utilisateur (06/10) : poids visé → objectif du Bilan (et inversement), poids déclaré = première pesée, un seul message sans IA, « stock utilisé » à Non si l'inventaire est vide |
 | `t80.js` | Nutrition : portions sèche (catalogue ≤ 700 kcal par plat, consigne IA) ; protéines par repas (repas principal < 25 g en orange, conseil < 20 g) ; journées trop basses (2 sur 3 sous 1 500 / 1 200 kcal, hors oublis de saisie) ; rappel de pesée sur l'accueil (dernière pesée ≥ 2 jours ou aucune, « Plus tard » pour la journée) ; produits très transformés (NOVA 4 d'OpenFoodFacts gardé au scan : fiche, ajout, courses → à ranger → inventaire ; badge et explication) |
 | `t81.js` | Ergonomie : accroche, cibles expliquées (dépense, écart, rythme, date), « Perte de poids » hors de mon compte, écrans vides (inventaire, courses, Bilan, recettes), parcours sans IA (menu +, fenêtre d'ajout), déconnexion dans les Réglages, onglet « Repas » |
+| `t82.js` | Tutoriel : 7 étapes et leurs cibles, onglets ouverts, « Passer » / « C'est parti », fin enregistrée (`tutoVu`), lancement automatique pour un compte neuf seulement, état ancien = déjà vu, relance depuis les Réglages |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
