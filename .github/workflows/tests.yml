@@ -1,0 +1,21 @@
+# Rejoue toutes les suites de tests a chaque PR et a chaque mise a jour de main.
+# Echec si un test echoue ou si une suite plante (code de sortie de tests/run.sh).
+name: Tests
+on:
+  pull_request:
+  push:
+    branches: [main]
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Suites de tests
+        run: bash tests/run.sh
+      - name: Audit statique (informatif)
+        run: python3 tests/audit.py
+        continue-on-error: true

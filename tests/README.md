@@ -12,6 +12,8 @@ bash tests/run.sh
 
 Prérequis : `node` et `python3`, et `index.html` à la racine.
 
+Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort en erreur si un test échoue ou si une suite plante. La même commande tourne sur GitHub à chaque PR (`.github/workflows/tests.yml`).
+
 ## Ce que contient chaque suite
 
 | Fichier | Couvre |
