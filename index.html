@@ -296,7 +296,7 @@ body.auth-ouvert #root { display: none; }
     </div>
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 23h15 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 23h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -563,8 +563,9 @@ body.auth-ouvert #root { display: none; }
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-06-2315';
+const BUILD_ID='2026-10-06-2330';
 const NOUVEAUTES=[
+  {b:'2026-10-06-2330',points:['Visite guidée : un bouton « Précédent » pour revenir à l’étape d’avant.']},
   {b:'2026-10-06-2315',points:[
     'Nouveau : une visite guidée de l’appli en 7 étapes, lancée à la création d’un compte. Pour la revoir : Réglages ⚙ → « Revoir le tutoriel ».'
   ]},
@@ -3074,6 +3075,7 @@ var TUTO=[
 var _tutoEtape=-1;
 function _tutoSiNouveau(){if(S&&S.tutoVu===false&&_tutoEtape<0)setTimeout(lancerTuto,500);}
 function lancerTuto(){_tutoEtape=0;_tutoMontrer();}
+function tutoPrecedent(){if(_tutoEtape>0){_tutoEtape--;_tutoMontrer();}}
 function tutoSuivant(){if(_tutoEtape<0)return;_tutoEtape++;if(_tutoEtape>=TUTO.length)finTuto();else _tutoMontrer();}
 function finTuto(){
   _tutoEtape=-1;
@@ -3096,7 +3098,8 @@ function _tutoMontrer(){
     +'<div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px;">'+e.txt+'</div>'
     +'<div style="display:flex;align-items:center;gap:10px;">'
     +(der?'':'<button onclick="finTuto()" style="background:none;border:0;color:var(--text3);font-size:12.5px;cursor:pointer;padding:6px 0;text-decoration:underline;">Passer le tutoriel</button>')
-    +'<button onclick="tutoSuivant()" style="margin-left:auto;padding:9px 18px;background:var(--gold);border:0;border-radius:9px;color:#1a120b;font-size:13px;font-weight:600;cursor:pointer;">'+(der?'C’est parti':'Suivant')+'</button></div></div>';
+    +(_tutoEtape>0?'<button onclick="tutoPrecedent()" style="margin-left:auto;padding:9px 14px;background:transparent;border:0.5px solid var(--border);border-radius:9px;color:var(--text2);font-size:13px;cursor:pointer;">Précédent</button>':'')
+    +'<button onclick="tutoSuivant()" style="'+(_tutoEtape>0?'':'margin-left:auto;')+'padding:9px 18px;background:var(--gold);border:0;border-radius:9px;color:#1a120b;font-size:13px;font-weight:600;cursor:pointer;">'+(der?'C’est parti':'Suivant')+'</button></div></div>';
   r.style.display='block';
   try{var cs=getComputedStyle(cible).position;if(cs!=='fixed')cible.scrollIntoView({block:'center'});}catch(x){}
   try{window.removeEventListener('resize',_tutoPlacer);window.addEventListener('resize',_tutoPlacer);}catch(x){}

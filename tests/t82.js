@@ -53,6 +53,13 @@ t('*** inscription : le nouvel etat porte tutoVu=false ***',async()=>{
 });
 t('*** relance depuis les Reglages ***',()=>{if(src.indexOf('onclick="closeSettings();lancerTuto()"')<0||src.indexOf('Revoir le tutoriel')<0)throw new Error('bouton absent');});
 t('le calque passe au-dessus du bouton + et des fenetres',()=>{if(!/#tuto \{ display: none; position: fixed; inset: 0; z-index: 400; \}/.test(src))throw new Error('z-index');});
+t('*** « Precedent » : absent a l\'etape 1, ramene a l\'etape d\'avant (et a son onglet) ***',()=>{
+  prep();X('lancerTuto()');if(bulle().indexOf('tutoPrecedent()')>=0)throw new Error('present a l\'etape 1');
+  X('tutoSuivant();tutoSuivant()');eq(X('S.mainTab'),'recipes');if(bulle().indexOf('tutoPrecedent()')<0)throw new Error('absent');
+  X('tutoPrecedent()');eq(X('_tutoEtape'),1);eq(X('S.mainTab'),'accueil');if(bulle().indexOf('Le bouton +')<0)throw new Error('mauvaise etape');
+  X('tutoSuivant();tutoSuivant();tutoSuivant();tutoSuivant();tutoSuivant()');eq(X('_tutoEtape'),6);if(bulle().indexOf('tutoPrecedent()')<0)throw new Error('absent a la derniere');
+  X('finTuto()');X('tutoPrecedent()');eq(X('_tutoEtape'),-1,'sans effet hors tutoriel');
+});
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 sb.document.querySelector=vraiQS;sb.saveState=vraiSave;
 console.log('---- '+pass+' ok, '+fail+' KO');})();
