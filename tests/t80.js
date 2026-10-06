@@ -38,5 +38,15 @@ t('*** proteines par repas affichees, repas principal faible signale ***',()=>{p
   if(h.indexOf('ton petit déjeuner n’en a apporté que 12 g')<0)throw new Error('conseil');});
 t('une collation seule : pas de ligne ; collation faible jamais signalee',()=>{prepBas('H');repas('snack',5);if(acc().indexOf('Protéines par repas')>=0)throw new Error('ligne pour une collation');});
 t('tout au-dessus de 25 g : pas de conseil',()=>{prepBas('H');repas('breakfast',30);repas('dinner',40);if(acc().indexOf('Vise 25 à 40 g')>=0)throw new Error('conseil a tort');});
+console.log('\n=== XL. Nutrition : portions adaptees a la seche ===');
+t('*** catalogue : aucun plat principal au-dessus de 700 kcal, aucun petit-dejeuner au-dessus de 550 ***',()=>{
+  const trop=X("RCP.filter(function(r){return /^liam_v[67]_/.test(r.id)&&r.slots&&r.slots.length}).filter(function(r){var princ=r.slots.indexOf('lunch')>=0||r.slots.indexOf('dinner')>=0;return princ?r.kcal>700:(r.slots.indexOf('breakfast')>=0&&r.kcal>550);}).map(function(r){return r.name+' '+r.kcal})");
+  if(trop.length)throw new Error(trop.join(' | '));
+});
+t('*** generation IA en perte de poids : consigne de portions (550-700 kcal, 35 g de proteines) ***',()=>{
+  const src=require('fs').readFileSync('index.html','utf8');
+  if(!/PORTIONS \(perte de poids\) : plat principal \(déjeuner, dîner\) entre 550 et 700 kcal/.test(src))throw new Error('consigne absente');
+  if(!/\$\{_objectif\(\)==='perte'\?`/.test(src))throw new Error('non conditionnee a l\'objectif');
+});
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();
