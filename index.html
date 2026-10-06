@@ -249,6 +249,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .coach-out { animation: coachOut .4s var(--ease) both; }
 @media (prefers-reduced-motion: reduce) { .coach-in, .coach-out { animation: none !important; } }
 
+.pastille-nova{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;line-height:1.4;vertical-align:1px;color:var(--orange);background:rgba(233,161,59,.14);border:0.5px solid rgba(233,161,59,.55);white-space:nowrap;}
 </style>
 </head>
 <body>
@@ -287,7 +288,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 20h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 21h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -553,10 +554,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-06-2030';
+const BUILD_ID='2026-10-06-2100';
 const NOUVEAUTES=[
+  {b:'2026-10-06-2100',points:[]},   /* pastille « Transformé » : deja decrite dans l'entree 2030, mise a jour */
   {b:'2026-10-06-2030',points:[
-    'Code-barres : les produits très transformés (selon OpenFoodFacts) sont repérés par 🏭 dans l’inventaire, avec une explication dans leur fiche. Rien d’interdit : à calories égales, ils calent souvent moins.'
+    'Code-barres : les produits très transformés (selon OpenFoodFacts) portent la pastille « Transformé » dans l’inventaire, avec une explication dans leur fiche. Rien d’interdit : à calories égales, ils calent souvent moins.'
   ]},
   {b:'2026-10-06-2000',points:[
     'Recettes générées par l’IA en perte de poids : des portions adaptées (plat principal de 550 à 700 kcal, au moins 35 g de protéines).'
@@ -1499,8 +1501,9 @@ let _itemDetailRef=null;
 var _dernierNova=null,_novaFiche,_novaAjout=null;
 function _novaValide(v){v=parseInt(v,10);return(v>=1&&v<=4)?v:null;}
 function _tresTransforme(it){return!!(it&&_novaValide(it.nova)===4);}
-function _badgeNova(it){return _tresTransforme(it)?'<span title="Très transformé (selon OpenFoodFacts)" style="margin-left:5px;font-size:11px;opacity:.85;">🏭</span>':'';}
-function _texteNova(it){return _tresTransforme(it)?'🏭 Très transformé (selon OpenFoodFacts). Rien d’interdit : à calories égales, ces produits calent souvent moins. À garder en appoint plutôt qu’en base des repas.':'';}
+var _PASTILLE_NOVA='<span class="pastille-nova" title="Produit très transformé (selon OpenFoodFacts)">Transformé</span>';
+function _badgeNova(it){return _tresTransforme(it)?_PASTILLE_NOVA:'';}
+function _texteNova(it){return _tresTransforme(it)?_PASTILLE_NOVA+' <strong>Produit très transformé</strong> (selon OpenFoodFacts). Rien d’interdit : à calories égales, ces produits calent souvent moins. À garder en appoint plutôt qu’en base des repas.':'';}
 let _waitRef=null,_waitCat='placards',_waitMacMode='100';
 // Article du stock correspondant a un article « A ranger » : lien connu, sinon meme nom
 // (articles a 0 compris : ce sont justement ceux qu'on rachete), plats maison exclus.
@@ -1817,7 +1820,7 @@ function openItemDetail(cat,id){
   var _a=document.getElementById('item-mac-apercu');if(_a){_a.style.display='none';_a.textContent='';}
   const it=(S.inv[cat]||[]).find(i=>i.id===id);if(!it)return;
   _itemDetailRef={cat,id};_novaFiche=undefined;
-  {var _nv=document.getElementById('item-nova');if(_nv){var _tn=_texteNova(it);_nv.textContent=_tn;_nv.style.display=_tn?'block':'none';}}
+  {var _nv=document.getElementById('item-nova');if(_nv){var _tn=_texteNova(it);_nv.innerHTML=_tn;   /* texte fixe, aucune donnee externe */_nv.style.display=_tn?'block':'none';}}
   document.getElementById('item-name').value=it.name||'';
   document.getElementById('item-sub').textContent=(it.qty===null?'présent (illimité)':((it.qty||0)+' '+(it.unit||'')));
   _itemMacMode=it.macPiece?'piece':'100';
@@ -2146,7 +2149,7 @@ function appliquerScanFiche(name,macros,qtyStr){
   if(fib!==null)sv('item-fib',fib);
   _novaFiche=_dernierNova;
   var st=document.getElementById('item-scan-st');
-  if(st){st.style.display='block';st.textContent='\u2713 Macros de \u00ab\u00a0'+name+'\u00a0\u00bb importées ('+note+')'+(qtyStr?' \u00b7 emballage '+qtyStr:'')+(_novaFiche===4?' \u00b7 🏭 très transformé':'')+'. Vérifie puis Enregistrer.';}
+  if(st){st.style.display='block';st.textContent='\u2713 Macros de \u00ab\u00a0'+name+'\u00a0\u00bb importées ('+note+')'+(qtyStr?' \u00b7 emballage '+qtyStr:'')+(_novaFiche===4?' \u00b7 produit très transformé':'')+'. Vérifie puis Enregistrer.';}
 }
 function applyScannedProduct(name,macros,qtyStr){
   const ov=document.getElementById('ai-overlay');if(ov)ov.style.display='flex';
@@ -2156,7 +2159,7 @@ function applyScannedProduct(name,macros,qtyStr){
   {const _ef=document.getElementById('ai-m-fib');if(_ef)_ef.value=(typeof macros.fib==='number')?macros.fib:'';}
   _novaAjout=_dernierNova;
   const mb=document.getElementById('ai-mbox');if(mb)mb.style.display='block';
-  const note=document.getElementById('ai-mnote');if(note)note.textContent='Importé via OpenFoodFacts (pour 100 g/ml)'+(qtyStr?' — emballage : '+qtyStr:'')+(_novaAjout===4?' — 🏭 très transformé':'');
+  const note=document.getElementById('ai-mnote');if(note)note.textContent='Importé via OpenFoodFacts (pour 100 g/ml)'+(qtyStr?' — emballage : '+qtyStr:'')+(_novaAjout===4?' — produit très transformé':'');
   _macSrc.aim='manual';_macManual.aim={kcal:macros.kcal,prot:macros.prot,gluc:macros.gluc,lip:macros.lip};renderMacSrc('aim');
   const stt=document.getElementById('ai-status');if(stt)stt.textContent='✓ Macros importées. Choisis la catégorie, la quantité et la DLC, puis Ajouter.';
   var _pq=_parseQty(qtyStr);var _pkg=document.getElementById('ai-pkg-on');
