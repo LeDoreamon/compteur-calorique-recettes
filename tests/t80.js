@@ -59,8 +59,8 @@ t('*** scan de la fiche : NOVA 4 garde sur l\'article et signale ***',async()=>{
   try{X("_scanMode='item'");await X('lookupBarcode')('3017620422003');}finally{sb.fetch=vrai;}
   if(docEl('item-scan-st').textContent.indexOf('très transformé')<0)throw new Error('message de scan');
   X('saveItemDetail()');eq(X("findItem('bi').nova"),4);
-  if(X("_badgeNova(findItem('bi'))").indexOf('🏭')<0)throw new Error('badge');
-  X("openItemDetail('placards','bi')");if(docEl('item-nova').textContent.indexOf('Très transformé')<0||docEl('item-nova').style.display!=='block')throw new Error('explication fiche');
+  if(X("_badgeNova(findItem('bi'))").indexOf('pastille-nova')<0)throw new Error('badge');
+  X("openItemDetail('placards','bi')");if(docEl('item-nova').innerHTML.indexOf('Produit très transformé')<0||docEl('item-nova').style.display!=='block')throw new Error('explication fiche');
 });
 t('enregistrer la fiche sans nouveau scan ne touche pas au classement',()=>{X("openItemDetail('placards','bi')");X('saveItemDetail()');eq(X("findItem('bi').nova"),4);});
 t('un nouveau scan NOVA 1 remplace le 4 ; produit sans classement -> retire',async()=>{
