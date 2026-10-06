@@ -14,7 +14,8 @@ const bulle=()=>docEl('tuto').innerHTML;
 console.log('\n=== XLV. Tutoriel de premier compte ===');
 t('*** sept etapes : objectif, +, journee, inventaire, courses, bilan, reglages ***',()=>{
   eq(X('TUTO.length'),7);
-  eq(X("TUTO.map(function(e){return e.sel}).join(' ')"),'#acc-objectif #fab-ajout #daypane #bnav-b-inventory #bnav-b-courses #bnav-b-weight #btn-reglages');
+  eq(X("TUTO.map(function(e){return e.sel}).join(' ')"),'#acc-objectif #fab-ajout #daypane #tuto-demo #tuto-demo #tuto-demo #set-overlay > div');
+  eq(X("TUTO.map(function(e){return e.tab}).join(' ')"),'accueil accueil recipes inventory courses weight accueil');
   ['id="acc-objectif"','<button id="btn-reglages"','<div id="tuto"','<button id="fab-ajout"'].forEach(s=>{if(src.indexOf(s)<0)throw new Error('cible absente : '+s);});
   if(src.indexOf("id=\"daypane\"")<0||src.indexOf("'<button id=\"bnav-b-'+t[0]")<0)throw new Error('cibles journee / barre');
 });
@@ -28,11 +29,12 @@ t('*** lancement : etape 1 affichee, bulle avec compteur, Passer et Suivant ***'
 t('*** chaque etape ouvre le bon onglet ; la derniere dit « C\'est parti » sans « Passer » ***',()=>{
   prep();X('lancerTuto()');X('tutoSuivant()');eq(X('S.mainTab'),'accueil');
   X('tutoSuivant()');eq(X('S.mainTab'),'recipes','journee dans Repas');if(bulle().indexOf('Ta journée')<0)throw new Error('etape 3');
-  X('tutoSuivant();tutoSuivant();tutoSuivant();tutoSuivant()');eq(X('_tutoEtape'),6);eq(X('S.mainTab'),'accueil');
+  X('tutoSuivant()');eq(X('S.mainTab'),'inventory');X('tutoSuivant()');eq(X('S.mainTab'),'courses');X('tutoSuivant()');eq(X('S.mainTab'),'weight');
+  X('tutoSuivant()');eq(X('_tutoEtape'),6);eq(X('S.mainTab'),'accueil');eq(docEl('set-overlay').style.display,'flex','reglages ouverts');
   const h=bulle();if(h.indexOf('C’est parti')<0)throw new Error('dernier bouton');if(h.indexOf('finTuto()')>=0)throw new Error('Passer a la derniere etape');
 });
-t('*** fin : calque ferme, tutoriel marque vu et enregistre, retour a l\'accueil ***',()=>{
-  X('tutoSuivant()');eq(docEl('tuto').style.display,'none');eq(X('S.tutoVu'),true);eq(X('_tutoEtape'),-1);if(saves<1)throw new Error('non enregistre');eq(X('S.mainTab'),'accueil');
+t('*** fin : calque ferme, reglages refermes, tutoriel marque vu et enregistre, retour a l\'accueil ***',()=>{
+  X('tutoSuivant()');eq(docEl('set-overlay').style.display,'none','reglages restes ouverts');eq(docEl('tuto').style.display,'none');eq(X('S.tutoVu'),true);eq(X('_tutoEtape'),-1);if(saves<1)throw new Error('non enregistre');eq(X('S.mainTab'),'accueil');
 });
 t('*** « Passer » arrete tout des la premiere etape ***',()=>{prep();X('lancerTuto()');X('finTuto()');eq(docEl('tuto').style.display,'none');eq(X('S.tutoVu'),true);if(saves<1)throw new Error('non enregistre');});
 t('element introuvable : etape sautee',()=>{prep();absents=['#acc-objectif'];X('lancerTuto()');eq(X('_tutoEtape'),1);if(bulle().indexOf('Le bouton +')<0)throw new Error('pas saute');X('finTuto()');});
@@ -59,6 +61,19 @@ t('*** « Precedent » : absent a l\'etape 1, ramene a l\'etape d\'avant (et a s
   X('tutoPrecedent()');eq(X('_tutoEtape'),1);eq(X('S.mainTab'),'accueil');if(bulle().indexOf('Le bouton +')<0)throw new Error('mauvaise etape');
   X('tutoSuivant();tutoSuivant();tutoSuivant();tutoSuivant();tutoSuivant()');eq(X('_tutoEtape'),6);if(bulle().indexOf('tutoPrecedent()')<0)throw new Error('absent a la derniere');
   X('finTuto()');X('tutoPrecedent()');eq(X('_tutoEtape'),-1,'sans effet hors tutoriel');
+});
+t('*** exemples : liste de courses, inventaire et bilan types affiches, sans toucher aux donnees ***',()=>{
+  prep();X("S.shop={list:[{id:'r1',name:'Mon vrai article',rayon:'divers',checked:false}],graveyard:[]};S.inv={frigo:[{id:'v1',name:'Mon vrai yaourt',qty:2,unit:'pots'}],congelateur:[],placards:[],epices:[]};S.weights=[{d:'2026-10-01',w:80}]");
+  const avant=X('JSON.stringify([S.shop,S.inv,S.weights,S.dayMeals,S.weightGoal])');
+  X('lancerTuto();tutoSuivant();tutoSuivant();tutoSuivant()');
+  let d=docEl('tabpane').innerHTML;if(d.indexOf('id="tuto-demo"')<0||d.indexOf('Blancs de poulet')<0||d.indexOf('Mon vrai yaourt')>=0)throw new Error('inventaire type');
+  if(bulle().indexOf('· exemple')<0)throw new Error('mention exemple');
+  X('tutoSuivant()');d=docEl('tabpane').innerHTML;if(d.indexOf('Brocolis')<0||d.indexOf('Mon vrai article')>=0)throw new Error('liste type');
+  X('tutoSuivant()');d=docEl('tabpane').innerHTML;if(d.indexOf('Objectif')<0)throw new Error('bilan type');
+  eq(X('JSON.stringify([S.shop,S.inv,S.weights,S.dayMeals,S.weightGoal])'),avant,'donnees modifiees');
+  X('tutoPrecedent()');if(docEl('tabpane').innerHTML.indexOf('Brocolis')<0)throw new Error('precedent : liste type');
+  X('finTuto()');eq(X('JSON.stringify([S.shop,S.inv,S.weights,S.dayMeals,S.weightGoal])'),avant,'donnees modifiees a la fin');
+  eq(X('_tutoDemoActif'),false,'exemple reste affiche');   /* le faux DOM ne recree pas #tabpane : on verifie le rendu reel par le drapeau */
 });
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 sb.document.querySelector=vraiQS;sb.saveState=vraiSave;
