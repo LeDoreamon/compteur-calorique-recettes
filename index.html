@@ -112,7 +112,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 /* Apparition douce du contenu principal */
 @keyframes riseIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 #profile-screen > div { animation: riseIn .9s var(--ease) both; }
-#profile-screen { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+#profile-screen { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); overscroll-behavior: contain; }
+/* Ecran de connexion ouvert : l'appli derriere n'est ni affichee ni defilable */
+body.auth-ouvert #root { display: none; }
 
 
 /* ═══ NAVIGATION BASSE ═════════════════════════════════════════════════ */
@@ -249,7 +251,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 .coach-out { animation: coachOut .4s var(--ease) both; }
 @media (prefers-reduced-motion: reduce) { .coach-in, .coach-out { animation: none !important; } }
 
-.pastille-nova{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:4px;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;line-height:1.4;vertical-align:1px;color:var(--orange);background:rgba(233,161,59,.14);border:0.5px solid rgba(233,161,59,.55);white-space:nowrap;}
+.pastille-nova{display:inline-flex;align-items:center;margin-left:6px;vertical-align:-1px;color:var(--orange);opacity:.85;}.icone-nova{display:block;}
 </style>
 </head>
 <body>
@@ -288,7 +290,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 21h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 21h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -554,11 +556,13 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-06-2100';
+const BUILD_ID='2026-10-06-2130';
 const NOUVEAUTES=[
+  {b:'2026-10-06-2130',points:[]},   /* appli masquee derriere l'ecran de connexion : invisible a l'usage */
+  {b:'2026-10-06-2115',points:[]},   /* icone SVG des produits transformes : decrite dans l'entree 2030, mise a jour */
   {b:'2026-10-06-2100',points:[]},   /* pastille « Transformé » : deja decrite dans l'entree 2030, mise a jour */
   {b:'2026-10-06-2030',points:[
-    'Code-barres : les produits très transformés (selon OpenFoodFacts) portent la pastille « Transformé » dans l’inventaire, avec une explication dans leur fiche. Rien d’interdit : à calories égales, ils calent souvent moins.'
+    'Code-barres : les produits très transformés (selon OpenFoodFacts) portent une petite icône d’usine orange dans l’inventaire, avec une explication dans leur fiche. Rien d’interdit : à calories égales, ils calent souvent moins.'
   ]},
   {b:'2026-10-06-2000',points:[
     'Recettes générées par l’IA en perte de poids : des portions adaptées (plat principal de 550 à 700 kcal, au moins 35 g de protéines).'
@@ -980,6 +984,7 @@ function selectProfile(n){
   _lastMainTab='';_lastMealTab='';_lastDay='';   // pas d'animation de transition a l'arrivee
   render();
   document.getElementById('profile-screen').style.display='none';
+  try{document.body.classList.remove('auth-ouvert');}catch(e){}
   loadState().then(()=>{render();_verifierNouveautes();});
 }
 // ─── EDIT MODE ───────────────────────────
@@ -1501,7 +1506,9 @@ let _itemDetailRef=null;
 var _dernierNova=null,_novaFiche,_novaAjout=null;
 function _novaValide(v){v=parseInt(v,10);return(v>=1&&v<=4)?v:null;}
 function _tresTransforme(it){return!!(it&&_novaValide(it.nova)===4);}
-var _PASTILLE_NOVA='<span class="pastille-nova" title="Produit très transformé (selon OpenFoodFacts)">Transformé</span>';
+/* Petite usine au trait (sol, toit en dents de scie, cheminee) : plus nette que l'emoji a 13 px */
+var _ICONE_NOVA='<svg class="icone-nova" viewBox="0 0 16 16" width="13" height="13" aria-hidden="true"><path d="M1.5 14.5V8l4-2.5V8l4-2.5V8l3-2V1.5h2v13z" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+var _PASTILLE_NOVA='<span class="pastille-nova" title="Produit très transformé (selon OpenFoodFacts)" role="img" aria-label="Très transformé">'+_ICONE_NOVA+'</span>';
 function _badgeNova(it){return _tresTransforme(it)?_PASTILLE_NOVA:'';}
 function _texteNova(it){return _tresTransforme(it)?_PASTILLE_NOVA+' <strong>Produit très transformé</strong> (selon OpenFoodFacts). Rien d’interdit : à calories égales, ces produits calent souvent moins. À garder en appoint plutôt qu’en base des repas.':'';}
 let _waitRef=null,_waitCat='placards',_waitMacMode='100';
@@ -8434,6 +8441,7 @@ function afficherEcranConnexion(mode){
   _auth.mode=mode||'accueil';_auth.err='';
   var ps=document.getElementById('profile-screen');if(!ps)return;
   ps.style.display='flex';ps.style.alignItems='flex-start';ps.style.overflowY='auto';
+  try{document.body.classList.add('auth-ouvert');}catch(e){}
   renderAuth();
 }
 function _authMode(m){_auth.mode=m;_auth.err='';if(m==='inscription'){_ins={etape:0,login:'',mdp:'',p:{},groq:''};_chargerChoix(null);}renderAuth();}

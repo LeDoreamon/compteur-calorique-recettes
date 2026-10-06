@@ -33,5 +33,12 @@ t('*** « stock utilise » : Non par defaut si l\'inventaire est vide, Oui sinon
   X("S.inv.frigo.push({id:'p',name:'Poulet',qty:0,unit:'g'})");X("openAddMeal('text')");eq(X('_addMealUseStock'),false,'epuise');
   X("S.inv.frigo.push({id:'q',name:'Riz',qty:500,unit:'g'})");X("openAddMeal('text')");eq(X('_addMealUseStock'),true,'en stock');
 });
+t('*** ecran de connexion : l\'appli derriere est masquee, puis rendue a l\'ouverture du compte ***',()=>{
+  const cls=new Set();const b=X('document.body');const avant=b.classList;
+  b.classList={add:c=>cls.add(c),remove:c=>cls.delete(c),contains:c=>cls.has(c),toggle(){}};
+  try{X("afficherEcranConnexion('accueil')");if(!cls.has('auth-ouvert'))throw new Error('non masquee');
+    X("selectProfile('users/u1')");if(cls.has('auth-ouvert'))throw new Error('toujours masquee');}finally{b.classList=avant;}
+  const src=require('fs').readFileSync('index.html','utf8');if(src.indexOf('body.auth-ouvert #root { display: none; }')<0)throw new Error('css');
+});
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();
