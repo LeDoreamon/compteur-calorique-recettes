@@ -35,10 +35,10 @@ t('la table couvre les 99 articles et reste dans 0-40 g/100 g',()=>{
   const k=X('Object.keys(FIBRES_INVENTAIRE)');eq(k.length,99);
   k.forEach(n=>{const v=X('FIBRES_INVENTAIRE')[n];if(!(v>=0&&v<=40))throw new Error(n+' : '+v);if(X('normMac')(n)!==n)throw new Error('cle non normalisee '+n);});
 });
-t('deconnexion a gauche du nom, reglages a droite',()=>{
+t('en-tete : le nom puis les reglages ; la deconnexion est passee dans les reglages',()=>{
   const i=src.indexOf('<div class="apphead">'),b=src.slice(i,i+1500);
   const d=b.indexOf('title="Se déconnecter"'),n=b.indexOf('${_nomAffiche()}'),r=b.indexOf('openSettings()');
-  if(!(d>0&&d<n&&n<r))throw new Error('ordre '+d+' '+n+' '+r);
+  if(!(d<0&&n>0&&n<r))throw new Error('ordre '+d+' '+n+' '+r);
 });
 console.log('\n=== XIVB. Gingembre et ail en poudre ===');
 const epices=()=>({dayMeals:{},inv:{frigo:[],congelateur:[],placards:[],epices:[

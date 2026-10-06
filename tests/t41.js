@@ -81,8 +81,8 @@ t('le reste du repas survit au changement de moment',()=>{
 });
 
 console.log('\n=== EY. Icones et aura ===');
-t('*** l\'icone des recettes est un livre ouvert ***',()=>{
-  if(!/'recipes','\\ud83d\\udcd6'/.test(src))throw new Error('icone inchangee');
+t('*** l\'onglet des repas : assiette et libelle « Repas » (06/10/2026) ***',()=>{
+  if(src.indexOf("['recipes','\\ud83c\\udf7d\\ufe0f','Repas']")<0)throw new Error('icone ou libelle');
 });
 t('*** l\'icone de l\'inventaire est un frigo dessine ***',()=>{
   if(!/ICONE_FRIGO/.test(src))throw new Error('icone absente');

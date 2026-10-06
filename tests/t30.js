@@ -32,7 +32,7 @@ console.log('\n=== DG. Contenu de la barre ===');
 t('les cinq onglets sont presents',()=>{
   S.mainTab='recipes';sb.render();
   const h=docEl('bnav').innerHTML;
-  ['Accueil','Recettes','Inventaire','Courses','Bilan'].forEach(function(l){
+  ['Accueil','Repas','Inventaire','Courses','Bilan'].forEach(function(l){
     if(!h.includes(l))throw new Error(l+' absent');
   });
   eq((h.match(/data-action="main-tab"/g)||[]).length,5);

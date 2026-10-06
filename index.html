@@ -290,7 +290,8 @@ body.auth-ouvert #root { display: none; }
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 21h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 22h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -333,14 +334,14 @@ body.auth-ouvert #root { display: none; }
         <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Moment de la journée</div>
         <div id="am-slots-entree" style="display:flex;gap:6px;"></div>
       </div>
-      <label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">Décris ce que tu as mangé</label>
+      <div id="am-bloc-ia"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">Décris ce que tu as mangé</label>
       <div id="addmeal-err" role="alert" style="display:none;margin-bottom:10px;padding:10px 12px;background:var(--red-bg);border:0.5px solid rgba(224,92,79,.35);border-radius:8px;color:var(--red);font-size:12.5px;line-height:1.5;white-space:pre-line;"></div><textarea id="addmeal-textarea" placeholder="Ex: 200g de poulet grillé avec 100g de riz basmati, légumes sautés à l'huile d'olive..." style="width:100%;height:90px;padding:10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;margin-bottom:10px;"></textarea>
-      <button onclick="startAddMealAnalysis('text')" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">✦ Analyser par IA</button>
+      <button onclick="startAddMealAnalysis('text')" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">✦ Analyser par IA</button></div>
       <button onclick="invAddMeal()" style="width:100%;padding:12px;background:rgba(192,87,70,.14);border:0.5px solid rgba(192,87,70,.45);border-radius:10px;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;">📦 Composer depuis mon inventaire</button>
-      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Ou autrement</div>
-      <div class="am-methods">
+      <div id="am-autrement" style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Ou autrement</div>
+      <div class="am-methods" id="am-methodes">
         <button onclick="openScanner('meal')" class="am-m"><span class="am-i">▥</span><span>Code-barres</span></button>
-        <button onclick="startAddMealAnalysis('photo')" class="am-m"><span class="am-i">📷</span><span>Photo</span></button>
+        <button id="am-m-photo" onclick="startAddMealAnalysis('photo')" class="am-m"><span class="am-i">📷</span><span>Photo</span></button>
         <button onclick="manualAddMeal()" class="am-m"><span class="am-i">🔢</span><span>Manuel</span></button>
       </div>
     </div>
@@ -556,8 +557,15 @@ body.auth-ouvert #root { display: none; }
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-06-2130';
+const BUILD_ID='2026-10-06-2230';
 const NOUVEAUTES=[
+  {b:'2026-10-06-2230',points:[
+    'L’onglet « Recettes » devient « Repas » : il regroupe ta journée et les recettes.',
+    'Se déconnecter : le bouton est maintenant en bas des Réglages.',
+    'Sans clé IA, le bouton + propose d’abord le code-barres et la saisie à la main.',
+    'Tes cibles sont expliquées : ce que tu dépenses, l’écart, le rythme et la date estimée (dans « Modifier le profil »).',
+    'Écrans vides plus clairs : inventaire, courses et Bilan n’affichent que l’essentiel tant qu’ils sont vides.'
+  ]},
   {b:'2026-10-06-2130',points:[]},   /* appli masquee derriere l'ecran de connexion : invisible a l'usage */
   {b:'2026-10-06-2115',points:[]},   /* icone SVG des produits transformes : decrite dans l'entree 2030, mise a jour */
   {b:'2026-10-06-2100',points:[]},   /* pastille « Transformé » : deja decrite dans l'entree 2030, mise a jour */
@@ -3954,7 +3962,7 @@ const MACRO_INFOS={
   gluc:{titre:'Glucides',unite:'g',
     texte:"La source d'énergie la plus directe, notamment à l'effort. Ce qui n'est pas utilisé est mis en réserve."},
   fib:{titre:'Fibres',unite:'g',
-    texte:"Elles ne comptent presque pas dans les calories, mais rassasient, régulent le transit et lissent la glycémie : précieuses en sèche. Repère : 30 g par jour (ANSES). On les trouve dans les légumes, les fruits, les légumineuses, les céréales complètes, les flocons d'avoine et les oléagineux. Quand un aliment du jour n'a pas de valeur connue, le total est affiché « ≥ » : c'est un minimum."},
+    texte:"Elles ne comptent presque pas dans les calories, mais rassasient, régulent le transit et lissent la glycémie : précieuses quand on mange moins. Repère : 30 g par jour (ANSES). On les trouve dans les légumes, les fruits, les légumineuses, les céréales complètes, les flocons d'avoine et les oléagineux. Quand un aliment du jour n'a pas de valeur connue, le total est affiché « ≥ » : c'est un minimum."},
   lip:{titre:'Lipides',unite:'g',
     texte:"Nécessaires au fonctionnement hormonal et à l'absorption de certaines vitamines. Les plus denses en énergie, d'où leur poids rapide dans un total."}
 };
@@ -4411,6 +4419,7 @@ function onInvSearch(v){
   render();
 }
 function renderInv(){
+  if(_invVide()&&!S.editMode)return '<div id="inv-list">'+renderInvCats()+'</div>';   /* ni tri, ni edition, ni recherche sur un inventaire vide */
   if(S.invDlcSort)return _invDlcBar()+'<div style="animation:dlcIn .25s ease;">'+renderDlcSortedInventory()+'</div>';
   const editBtn=_invDlcBar()+`<button onclick="toggleEditMode()" style="padding:6px 14px;background:${S.editMode?'rgba(95,168,201,.2)':'transparent'};border:0.5px solid ${S.editMode?'var(--blue)':'var(--border)'};border-radius:8px;color:${S.editMode?'var(--blue)':'var(--text2)'};font-size:13px;cursor:pointer;margin-bottom:14px;display:block;width:100%;">${S.editMode?'\u2713 Terminer l\'édition':'\u270f\ufe0f Éditer l\'inventaire'}</button>`;
   // Ajouter depuis le haut, sans avoir a derouler jusqu'a la bonne categorie
@@ -4448,13 +4457,15 @@ function renderInvCats(){
     const addBtn=S.editMode&&open?`<div style="padding:6px 15px;border-top:0.5px solid var(--border);"><button onclick="openAddItem('${cat}')" style="width:100%;padding:8px;background:transparent;border:0.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">\u2795 Ajouter dans ${info.label}</button></div>`:'';
     return`<div class="catcard"><div class="chead" data-action="toggle-cat" data-val="${cat}"><span style="font-size:15px;">${info.sym}</span><span style="flex:1;">${info.label}</span>${urg.length?`<span class="chip" style="background:var(--red-bg);color:var(--red);margin-right:6px;">\u26a0 ${urg.length}</span>`:''}<span class="chev" style="font-size:14px;color:var(--text3);transform:rotate(${open?'90deg':'0deg'});">▸</span></div><div class="cwrap${!S.editMode&&S._anim==='c:'+cat?' unfold':''}" data-cat="${cat}">${rows}${addBtn}</div></div>`;
   }).join('');
-  if(!Object.values(S.inv).flat().length&&!S.editMode)return`<div style="text-align:center;padding:2rem 1rem;"><div style="font-size:32px;margin-bottom:10px;">🌿</div><div style="font-size:14px;color:var(--text3);margin-bottom:12px;">Inventaire vide — clique pour ajouter tes aliments dans les catégories !</div><button onclick="toggleEditMode()" style="padding:9px 18px;background:linear-gradient(135deg,#C86050,#A63F32);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button></div>`;
   const _del=getDeletedItems();
   const histSection=S.editMode&&_del.length?`<div style="margin-top:16px;padding:12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🗑 Récemment supprimés · récupérables 24h, sinon définitif</div>${_del.map((d,i)=>{const hh=Math.floor((Date.now()-d.deletedAt)/3600000);const left=Math.max(1,24-hh);const ci=CINFO[d.cat];return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--border);"><span style="flex:1;font-size:12px;color:var(--text2);">${d.item.name} <span style="color:var(--text3);font-size:11px;">· ${ci?ci.label:d.cat} · encore ${left}h pour récupérer</span></span><button onclick="restoreDeletedItem(${i})" style="padding:4px 10px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;flex-shrink:0;">↩ Restaurer</button></div>`;}).join('')}</div>`:'';
   const bottomAdd=S.editMode?`<button onclick="openAddItem('frigo')" style="width:100%;padding:11px;margin-top:14px;background:linear-gradient(135deg,var(--green),var(--green));border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button>`:'';
   const waitSection=(S.waiting&&S.waiting.length)?`<div style="background:rgba(192,87,70,.07);border:0.5px solid rgba(192,87,70,.25);border-radius:12px;padding:12px;margin-bottom:14px;"><div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:2px;">\ud83d\uded2 À ranger \u00b7 ${S.waiting.length}</div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Articles achet\u00e9s \u00e0 ranger. Touche un article : s\u2019il est d\u00e9j\u00e0 dans ton inventaire, indique juste la quantit\u00e9 achet\u00e9e ; \u2715 pour le retirer.</div>${S.waiting.map(w=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;"><span onclick="openWaitingItem('${w.id}')" style="flex:1;font-size:13px;color:var(--text);cursor:pointer;">${w.name}</span><span onclick="openWaitingItem('${w.id}')" style="font-size:15px;color:var(--accent);cursor:pointer;">\u2192</span><button onclick="deleteWaiting('${w.id}')" style="background:none;border:0;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:2px 6px;">\u2715</button></div>`).join('')}</div>`:'';
+  if(_invVide()&&!S.editMode)return waitSection+'<div style="text-align:center;padding:2rem 1rem;"><div style="font-size:32px;margin-bottom:10px;">🌿</div><div style="font-size:14px;color:var(--text2);margin-bottom:6px;">Ton inventaire est vide.</div><div style="font-size:12.5px;color:var(--text3);line-height:1.5;margin-bottom:14px;">Ajoute ce que tu as chez toi (frigo, placards…) : les recettes proposées en dépendent. Un code-barres remplit les valeurs tout seul.</div><button onclick="openAddItem(\'frigo\')" style="padding:10px 20px;background:linear-gradient(135deg,#C86050,#A63F32);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button></div>';
   return waitSection+cats+bottomAdd+histSection;
 }
+/* Rien en stock (articles a 0 et plats exclus) : l'onglet n'affiche que l'essentiel */
+function _invVide(){return !Object.values(S.inv||{}).some(function(a){return (Array.isArray(a)?a:[]).some(function(i){return i&&(i.plat||i.qty===null||+i.qty>0);});});}
 // ─── 🛒 Complétion automatique de la liste de courses ───────────────────────
 // « Presque fini » se juge par rapport au stock apres le dernier rachat (it.plein) :
 // il en reste un quart ou moins, et moins d'un emballage entier. L'ancienne regle
@@ -4597,9 +4608,10 @@ function renderCoursesHTML(){
     });
     html+='</div>';
   });
-  if(!actifN&&!checkedN&&!voir)html+='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">'+(acheteN?'Rien d’autre à acheter. 🎉':'Liste vide. Ajoute des articles ci-dessus.')+'</div>';
-  html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;line-height:1.45;">Coche un article pour le mettre dans le panier. « Valider les courses » envoie le panier dans « À ranger » (onglet Inventaire), sauf les articles marqués 🧾 (achetés sans passer par l’inventaire) : touche le 🧾 à droite d’un article pour le marquer ou non. Les articles achetés se masquent ensuite dans leur rayon.</div>';
-  html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">✓ Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
+  if(!actifN&&!checkedN&&!voir)html+='<div style="color:var(--text3);font-size:13px;text-align:center;padding:24px;">'+(acheteN?'Rien d’autre à acheter. 🎉':'Ta liste est vide. Tape un article ci-dessus, ou scanne un produit avec 📷.')+'</div>';
+  if(!actifN&&!checkedN&&!acheteN){html+='</div>';return html;}   /* liste vide : ni mode d'emploi ni bouton de validation */
+  if(actifN||checkedN)html+='<div style="font-size:11px;color:var(--text3);margin:0 0 8px;text-align:center;line-height:1.45;">Coche ce que tu mets dans le panier, puis « Valider les courses » : les articles passent dans « À ranger » (Inventaire). 🧾 à droite d’un article : acheté sans passer par l’inventaire.</div>';
+  if(actifN||checkedN)html+=`<button onclick="validateCourses()" style="width:100%;padding:12px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;margin-top:6px;">✓ Valider les courses${checkedN?' ('+checkedN+')':''}</button>`;
   if(voir&&acheteN)html+=`<button onclick="effacerAchetes()" style="width:100%;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.35);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;margin-top:8px;">Effacer les ${acheteN} article${acheteN>1?'s':''} acheté${acheteN>1?'s':''}</button>`;
   html+='</div>';
   return html;
@@ -5116,7 +5128,7 @@ function renderTDEEBlock(t){
     else if(gain>0.5)tip='Tu prends vite (~'+gain.toFixed(2).replace('.',',')+' kg/sem) : une partie sera du gras. Vise plutôt ~'+rec+' kcal/j.';
     else tip='Ta prise stagne : ta dépense réelle tourne autour de '+t.tdee+' kcal/j. Pour prendre ~0,25 kg par semaine, vise ~'+rec+' kcal/j.';
   }else
-  if(t.perWeek>=0.2)tip='Bon rythme de sèche, tiens le cap.';
+  if(t.perWeek>=0.2)tip='Bon rythme de '+_motSeche()+', tiens le cap.';
   else if(t.perWeek>=0.1)tip=sousCible
     ?'Ça descend doucement. Pour accélérer vers ~0,5 kg par semaine, vise ~'+rec+' kcal/j.'
     :'Ça descend doucement. Ta cible ('+TARGETS.kcal+' kcal) est déjà sous ta dépense réelle : c\'est la régularité qui fera la différence.';
@@ -5224,7 +5236,7 @@ function renderCoachSummary(){
       if(mp<T.prot*0.9)phrase+=' Tes protéines aussi sont courtes ('+mp+' g/jour).';
     }else{
       var ec=mk-T.kcal;
-      if(Math.abs(ec)<=120){phrase='Moyenne à '+mk+' kcal, pile sur ta cible. '+(obj==='maintien'?'C\'est ce qui stabilise ton poids.':'C\'est la régularité qui fait la sèche, et tu l\'as.');col='var(--green)';}
+      if(Math.abs(ec)<=120){phrase='Moyenne à '+mk+' kcal, pile sur ta cible. '+(obj==='maintien'?'C\'est ce qui stabilise ton poids.':'C\'est la régularité qui fait la différence, et tu l\'as.');col='var(--green)';}
       else if(ec>0){phrase='Moyenne à '+mk+' kcal, soit +'+ec+' par jour. Sur une semaine ça fait '+Math.round(ec*7/10)*10+' kcal de surplus — resserre un peu.';col='var(--warn)';}   /* ec*7 : l'ancienne formule affichait 1400 pour 1050 */
       else if(obj==='maintien'){phrase='Moyenne à '+mk+' kcal, '+(-ec)+' sous ta cible. Pour un maintien, remonte un peu : sinon tu perdras du poids.';col='var(--warn)';}
       else{phrase='Moyenne à '+mk+' kcal, '+(-ec)+' sous ta cible. Le déficit est là ; veille juste à ne pas creuser trop vite.';col='var(--green)';}
@@ -5316,9 +5328,9 @@ function renderCockpit(){
   var avg=avgMacrosOverDays(7);
   var html=renderBilanSemaine()+renderCoachSummary()+'<div style="margin-bottom:18px;">';
   var _o=_objectif();
-  html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📊 Pilotage '+(_o==='prise'?'de la prise de masse':(_o==='maintien'?'du maintien':'de la sèche'))+'</div>';
+  html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px;">📊 Pilotage '+(_o==='prise'?'de la prise de masse':(_o==='maintien'?'du maintien':'de la '+_motSeche()))+'</div>';
   if(!avg){
-    html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:16px;text-align:center;color:var(--text3);font-size:13px;line-height:1.5;">Logue tes repas quelques jours pour voir ta moyenne hebdomadaire et piloter ta sèche.</div>';
+    html=renderBilanSemaine()+renderCoachSummary()+'<div>';   /* rien a piloter avant quelques jours notes : pas de carte vide */
   } else {
     var dW=null;var arr=(S.weights||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
     if(arr.length){var a7=_wAgo(arr,7);var last=arr[arr.length-1];if(a7&&a7.off<=4&&a7.x.d!==last.d)dW=last.w-a7.x.w;}
@@ -5428,6 +5440,8 @@ function renderGoalBlock(){
     var date=shiftDate(S.today,Math.round(weeks*7));
     var dlabel=new Date(date+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
     proj='<div style="border-top:0.5px solid var(--border);padding-top:10px;font-size:12px;color:var(--text2);line-height:1.6;text-align:center;">À ton rythme (<strong style="color:var(--green);">'+(tr.perWeek>0?'+':'')+tr.perWeek.toFixed(2)+' kg/sem</strong>), encore <strong>'+remaining.toFixed(1)+' kg</strong>.<br>Tu y es vers le <strong style="color:var(--text);">'+dlabel+'</strong> (~'+(Math.round(weeks*10)/10)+' sem).</div>';
+  } else if(!tr){
+    proj='<div style="border-top:0.5px solid var(--border);padding-top:10px;font-size:12px;color:var(--text2);line-height:1.5;text-align:center;">Encore '+remaining.toFixed(1)+' kg. Pèse-toi régulièrement : une date estimée apparaîtra après quelques pesées.</div>';
   } else {
     proj='<div style="border-top:0.5px solid var(--border);padding-top:10px;font-size:12px;color:var(--orange);line-height:1.5;text-align:center;">Encore '+remaining.toFixed(1)+' kg. '+(dir>0?'Ton poids ne monte pas assez pour estimer une date — continue le suivi ou ajuste ton surplus.':'Ton poids ne baisse pas assez pour estimer une date — continue le suivi ou ajuste ton déficit.')+'</div>';
   }
@@ -6429,7 +6443,7 @@ const ICONE_FRIGO='<svg viewBox="0 0 24 24" width="19" height="19" style="displa
   +'<rect x="5.5" y="7.6" width="13" height="1.9" fill="#6E8698"/>'
   +'<rect x="7.6" y="4.6" width="1.5" height="2.4" rx="0.75" fill="#48606F"/>'
   +'<rect x="7.6" y="11.4" width="1.5" height="3.4" rx="0.75" fill="#48606F"/></svg>';
-const _BNAV=[['accueil','\ud83c\udfe0','Accueil'],['recipes','\ud83d\udcd6','Recettes'],
+const _BNAV=[['accueil','\ud83c\udfe0','Accueil'],['recipes','\ud83c\udf7d\ufe0f','Repas'],
              ['inventory',ICONE_FRIGO,'Inventaire'],['courses','\ud83d\uded2','Courses'],
              ['weight','\ud83d\udcca','Bilan']];
 var _bnavPose=false;
@@ -6599,7 +6613,9 @@ function _cibleDuJour(day){return TARGETS.kcal+(_objectif()==='perte'?0:_depense
 // Un seul seuil pour « proteines atteintes », partout (coach, serie, calendrier)
 const PROT_ATTEINT=0.95;
 function _protOk(p){return (+p||0)>=TARGETS.prot*PROT_ATTEINT;}
-function _libObjectif(){var o=_objectif();return o==='prise'?'Prise de masse':(o==='maintien'?'Maintien':'Sèche');}
+function _libObjectif(){var o=_objectif();return o==='prise'?'Prise de masse':(o==='maintien'?'Maintien':(_catalogue()===PROFIL_HERITE?'Sèche':'Perte de poids'));}
+/* « Sèche » est mon vocabulaire : les autres comptes lisent « perte de poids » (06/10/2026) */
+function _motSeche(){return _catalogue()===PROFIL_HERITE?'sèche':'perte de poids';}
 // Le meme "il te reste 1400 kcal" ne veut pas dire la meme chose a 8 h et a
 // 22 h. On situe le moment avant de choisir le ton.
 function _phaseJournee(day){
@@ -6785,8 +6801,11 @@ function ouvrirMenuAjout(){
   var b=function(act,ic,lib){return '<button class="ma-b" onclick="menuAjoutAction(\''+act+'\')"><span class="ma-i">'+ic+'</span><span>'+lib+'</span></button>';};
   var h=(jour!==S.today?'<div style="margin:-4px 0 12px;padding:8px 11px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.4);border-radius:8px;font-size:12px;color:var(--blue);">Pour '+_libJour(jour)+' (jour affiché dans le tracker)</div>':'')
     +'<div class="ma-grille">'
-    +b('texte','\u270d\ufe0f','Décrire un repas')+b('photo','\ud83d\udcf7','Photo')+b('code','\u25a5','Code-barres')
-    +b('inventaire','\ud83d\udce6','Mon inventaire')+b('activite','\ud83d\udd25','Pas et activités')+b('pesee','\u2696\ufe0f','Pesée')
+    +((!_iaPrevue(false)&&!_iaPrevue(true))
+      ? b('code','\u25a5','Code-barres')+b('manuel','\ud83d\udd22','Saisie manuelle')+b('inventaire','\ud83d\udce6','Mon inventaire')
+        +b('activite','\ud83d\udd25','Pas et activités')+b('pesee','\u2696\ufe0f','Pesée')+b('ia','\u2728','Activer l\u2019IA')
+      : b('texte','\u270d\ufe0f','Décrire un repas')+b('photo','\ud83d\udcf7','Photo')+b('code','\u25a5','Code-barres')
+        +b('inventaire','\ud83d\udce6','Mon inventaire')+b('activite','\ud83d\udd25','Pas et activités')+b('pesee','\u2696\ufe0f','Pesée'))
     +'</div>'
     +'<button class="ma-habit" onclick="fermerMenuAjout();ouvrirPreparerPlat()" style="margin-top:10px;"><span style="font-size:20px;">\ud83c\udf73</span><span style="flex:1;min-width:0;"><span style="display:block;font-size:13px;color:var(--text);">Préparer un plat</span><span style="font-size:11px;color:var(--text3);">Gâteau, lasagnes\u2026 à manger en plusieurs fois</span></span><span style="flex-shrink:0;color:var(--gold);font-size:16px;">\u203a</span></button>';
   var hab=_repasHabituels(6);
@@ -6809,6 +6828,7 @@ function menuAjoutAction(a){
   fermerMenuAjout();
   S.displayDate=jour;          // openAddMeal et la fiche d'activite partent de ce jour
   if(a==='activite'){openBurnLog(jour);return;}
+  if(a==='ia'){openSettings();return;}
   if(a==='pesee'){
     S.mainTab='weight';render();
     try{var w=document.getElementById('weight-input');if(w){w.scrollIntoView({block:'center'});w.focus();}}catch(e){}
@@ -6817,6 +6837,7 @@ function menuAjoutAction(a){
   openAddMeal(a==='photo'?'photo':'text');   // la photo doit partir du geste de l'utilisateur
   if(a==='code')openScanner('meal');
   else if(a==='inventaire')invAddMeal();
+  else if(a==='manuel')manualAddMeal();
 }
 function refaireRepas(jour,idx){
   var src=(S.dayMeals[jour]||[])[idx];if(!src)return;
@@ -6894,7 +6915,6 @@ function render(){
   }).join('');
   ROOT.innerHTML=`<div>
     <div class="apphead">${_htmlBarreReste()}
-      <button onclick="deconnexion()" title="Se déconnecter" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:15px;cursor:pointer;color:var(--text2);flex-shrink:0;">⏻</button>
       <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal</div></div>
       ${urgTotal?`<button class="chip" data-action="voir-urgents" title="Voir dans l'inventaire" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;border:0;cursor:pointer;font-family:inherit;">⚠ ${urgTotal} à consommer</button>`:''}
       <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
@@ -6904,7 +6924,7 @@ function render(){
     ${S.mainTab==='courses'?renderCoursesHTML():''}
     ${S.mainTab==='weight'?renderCockpit()+renderMacroTrend()+renderCalendrier()+renderGoalBlock()+renderWeightHTML()+renderMesuresHTML()+renderProgresHTML():''}
     ${S.mainTab==='recipes'?`
-      ${!getApiKey()?`<div style="background:rgba(233,161,59,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">⚙ Clé API Groq non configurée — features IA désactivées (✦ desserts, 📷 photos)</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:var(--bg);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
+      ${!getApiKey()?`<div style="background:rgba(233,161,59,.12);border:0.5px solid var(--orange);border-radius:8px;padding:10px 14px;margin-bottom:10px;display:flex;align-items:center;gap:10px;"><span style="flex:1;font-size:12px;color:var(--orange);">✨ Sans IA : pas d’analyse des repas décrits ou photographiés, ni de recettes générées. Le reste marche sans.</span><button onclick="openSettings()" style="background:var(--orange);border:none;border-radius:6px;padding:5px 10px;color:var(--bg);font-size:11px;font-weight:600;cursor:pointer;white-space:nowrap;flex-shrink:0;">Configurer</button></div>`:''}
       ${renderMacros()}
       ${renderBudgetSuggestions()}
       ${renderNightModal()}${renderFreeMealNightModal()}
@@ -6915,10 +6935,10 @@ function render(){
       </div>
       <div class="meal-tabs">${tabBtns}</div>
       <div id="mealpane">${S.mealTab==='urgent'?renderDLCSection():''}${S.mealTab==='favs'?renderFavSection():''}${S.mealTab==='perso'?renderCustHeader():''}
-      ${S.mealTab==='favs'?'':shown.length?renderRecTri()+shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">Aucune recette disponible.</div>'}</div>
+      ${S.mealTab==='favs'?'':shown.length?renderRecTri()+shown.map(r=>renderCard(r)).join(''):'<div style="text-align:center;padding:2rem 0;font-size:14px;color:var(--text3);">'+(_catalogue()?'Aucune recette pour ce moment.':'Pas encore de recettes. Remplis ton inventaire, puis « Générer des recettes » te propose des plats faits avec ce que tu as'+(_iaPrevue(false)?'':' (il faut une clé IA, voir Réglages ⚙)')+'.')+'</div>'}</div>
       <div style="margin-top:10px;">
         <button onclick="openAddMeal('text')" style="width:100%;padding:12px;background:transparent;border:0.5px dashed rgba(246,237,227,.15);border-radius:10px;color:var(--text3);font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;transition:color .2s;" onmouseover="this.style.color='var(--text2)'" onmouseout="this.style.color='var(--text3)'">
-          <span style="font-size:18px;">➕</span><span>Ajouter un repas libre (texte ou photo)</span>
+          <span style="font-size:18px;">➕</span><span>Ajouter un repas libre</span>
         </button>
       </div>
       <div style="margin-bottom:20px;"></div>
@@ -7092,7 +7112,7 @@ function openAddMeal(type) {_scanBase=null;_erreurAjout('');
     renderAmSlots();
   }catch(e){}
   setMealStock(_aDuStock());   /* inventaire vide : « Non » par defaut */
-  _iaAnalyse='';try{_majIAPrevue();}catch(e){}
+  _iaAnalyse='';try{_majIAPrevue();_amSansIA();}catch(e){}
   var _ch=document.getElementById('addmeal-photo-choix');if(_ch)_ch.style.display='none';
   // Photo : on demande d'abord si le repas vient de l'inventaire. Le bouton
   // choisi ouvre l'appareil (iOS exige un geste direct de l'utilisateur).
@@ -7113,6 +7133,20 @@ function _libIA(photo){
   return (photo?'\ud83d\udcf7 Photo analysée par ':'\u270d\ufe0f Texte analysé par ')+'<strong style="color:var(--text2);">'+p.nom+'</strong>'+(p.secours?' (secours : '+p.secours+')':'');
 }
 var _iaAnalyse='';   // IA qui a reellement fait la derniere analyse de repas
+/* Sans aucune cle IA, l'ajout de repas commence par ce qui marche : code-barres et saisie a la main (06/10/2026) */
+function _amSansIA(){
+  var sans=!_iaPrevue(false)&&!_iaPrevue(true);
+  var ia=document.getElementById('am-bloc-ia'),ph=document.getElementById('am-m-photo'),au=document.getElementById('am-autrement'),me=document.getElementById('am-methodes'),inp=document.getElementById('addmeal-input');
+  if(ia)ia.style.display=sans?'none':'';
+  if(ph)ph.style.display=sans?'none':'';
+  if(au)au.textContent=sans?'Ajouter le repas':'Ou autrement';
+  if(me)me.style.marginBottom=sans?'12px':'';
+  try{
+    if(sans&&me&&au&&ia&&inp.insertBefore){inp.insertBefore(au,ia);inp.insertBefore(me,ia);}   /* methodes avant le reste */
+    else if(!sans&&me&&au&&inp.appendChild){inp.appendChild(au);inp.appendChild(me);}       /* ordre d'origine une fois une cle ajoutee */
+  }catch(e){}
+  return sans;
+}
 function _majIAPrevue(){
   var a=document.getElementById('addmeal-ia');if(a)a.innerHTML=(_iaPrevue(false)||_iaPrevue(true))?_libIA(false)+'<br>'+_libIA(true):_libIA(false);
   var b=document.getElementById('addmeal-ia-photo');if(b)b.innerHTML=_libIA(true);
@@ -8278,14 +8312,18 @@ function ageDe(naissance){
   return (a>0&&a<130)?a:0;
 }
 // Estimation de depart (Mifflin-St Jeor x niveau d'activite), modifiable.
-function calculerCibles(p){
+function _depenseEstimee(p){
   if(!p)return null;
   var w=+p.poids,hh=+p.taille,a=ageDe(p.naissance);
   if(!(w>0&&hh>0&&a>0))return null;
   var sx=p.sexe==='H'?5:(p.sexe==='F'?-161:-78);
   var bmr=10*w+6.25*hh-5*a+sx;
   var i=Math.min(4,Math.max(0,(parseInt(p.activite,10)||1)-1));
-  var tdee=bmr*[1.2,1.375,1.55,1.725,1.9][i];
+  return bmr*[1.2,1.375,1.55,1.725,1.9][i];
+}
+function calculerCibles(p){
+  var tdee=_depenseEstimee(p);if(!tdee)return null;
+  var w=+p.poids;
   var kcal=p.objectif==='perte'?tdee*0.8:(p.objectif==='prise'?tdee*1.1:tdee);
   kcal=Math.max(1200,Math.round(kcal/10)*10);
   var ref=(p.objectif==='perte'&&+p.poidsVise>0&&+p.poidsVise<w)?+p.poidsVise:w;
@@ -8293,6 +8331,39 @@ function calculerCibles(p){
   var lip=Math.round(kcal*0.25/9);
   var gluc=Math.max(0,Math.round((kcal-prot*4-lip*9)/4));
   return {kcal:kcal,prot:prot,gluc:gluc,lip:lip};
+}
+// Explication des cibles en clair (06/10/2026) : depense estimee, ecart, rythme
+// et date estimee du poids vise. Remise a jour quand on modifie les calories.
+var _pCibles=null;
+function _texteCibles(p,kcal){
+  var fin=' C’est un repère de départ, pas un avis médical : le Bilan l’affinera avec tes pesées.';
+  var d=_depenseEstimee(p);kcal=+kcal;
+  if(!d||!(kcal>0))return 'Repère calculé avec tes infos, à ajuster si besoin.'+fin;
+  d=Math.round(d/10)*10;
+  var ecart=d-kcal,o=(p&&p.objectif)||'perte',v=function(x){return String(Math.round(x*10)/10).replace('.',',');};
+  var t='Ton corps dépense environ <strong style="color:var(--text);">'+d+' kcal</strong> par jour (selon ton âge, ta taille, ton poids et ton activité).';
+  if(o==='perte'&&ecart>=50){
+    var kg=ecart*7/7700;
+    t+=' En mangeant '+kcal+' kcal, tu manges <strong style="color:var(--text);">'+ecart+' kcal de moins</strong> que tu ne dépenses : environ <strong style="color:var(--green);">'+v(kg)+' kg perdus par semaine</strong>.';
+    var w=+p.poids,pv=+p.poidsVise;
+    if(pv>0&&pv<w&&kg>0.05){
+      var dt=shiftDate((S&&S.today)||getToday(),Math.round((w-pv)/kg*7));
+      var lib=new Date(dt+'T00:00:00').toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+      t+=' À ce rythme, '+v(pv)+' kg vers <strong style="color:var(--text);">'+lib+'</strong>.';
+    }
+  }else if(o==='prise'&&ecart<=-50){
+    t+=' En mangeant '+kcal+' kcal, tu manges <strong style="color:var(--text);">'+(-ecart)+' kcal de plus</strong> que tu ne dépenses : environ <strong style="color:var(--green);">'+v(-ecart*7/7700)+' kg pris par semaine</strong>.';
+  }else if(ecart>=50){
+    t+=' En mangeant '+kcal+' kcal, tu manges '+ecart+' kcal de moins que tu ne dépenses : ton poids devrait baisser doucement.';
+  }else if(ecart<=-50){
+    t+=' En mangeant '+kcal+' kcal, tu manges '+(-ecart)+' kcal de plus que tu ne dépenses : ton poids devrait monter doucement.';
+  }else t+=' En mangeant '+kcal+' kcal, tu manges à peu près ce que tu dépenses : ton poids devrait rester stable.';
+  t+=' Les protéines servent à garder tes muscles'+(o==='perte'?' pendant que tu perds du poids':'')+'.';
+  return t+fin;
+}
+function majTexteCibles(){
+  var e=document.getElementById('pf-cibles-txt'),k=document.getElementById('pf-kcal');
+  if(e&&_pCibles)e.innerHTML=_texteCibles(_pCibles,k?parseFloat(k.value):0);
 }
 function _ciblesValides(c){
   return !!c&&['kcal','prot','gluc','lip'].every(function(k){return typeof c[k]==='number'&&isFinite(c[k])&&c[k]>=0;})&&c.kcal>=800;
@@ -8416,8 +8487,8 @@ function _secAlim(p){
     +_champ('Temps de cuisine max',_sel('pf-temps',[['15','15 min'],['30','30 min'],['45','45 min'],['60','1 h'],['','Pas de limite']],p.temps==null?'30':p.temps));
 }
 function _secCibles(c,note){
-  return (note?'<div style="font-size:11.5px;color:var(--text3);line-height:1.45;margin-bottom:10px;">'+note+'</div>':'')
-    +_deux(_champ('Calories',_inp('pf-kcal','number',c.kcal,'','min="800" max="6000" inputmode="numeric"')),
+  return '<div id="pf-cibles-txt" style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:12px;">'+(note||'')+'</div>'
+    +_deux(_champ('Calories',_inp('pf-kcal','number',c.kcal,'','min="800" max="6000" inputmode="numeric" oninput="majTexteCibles()"')),
            _champ('Protéines (g)',_inp('pf-prot','number',c.prot,'','min="0" max="400" inputmode="numeric"')))
     +_deux(_champ('Glucides (g)',_inp('pf-gluc','number',c.gluc,'','min="0" max="900" inputmode="numeric"')),
            _champ('Lipides (g)',_inp('pf-lip','number',c.lip,'','min="0" max="400" inputmode="numeric"')));
@@ -8449,7 +8520,7 @@ function renderAuth(){
   var ps=document.getElementById('profile-screen');if(!ps)return;
   var err=_auth.err?'<div style="font-size:12.5px;color:var(--red);background:rgba(192,87,70,.1);border:0.5px solid rgba(192,87,70,.35);border-radius:9px;padding:9px 11px;margin-bottom:12px;">'+_auth.err+'</div>':'';
   var dis=_auth.occupe?' disabled':'';
-  var tete='<div style="text-align:center;margin-bottom:22px;"><img src="icon-192.png?v=3" alt="" style="width:74px;height:74px;border-radius:20px;margin-bottom:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);"><div style="font-size:22px;font-weight:700;color:var(--text);">Dorayaki</div></div>';
+  var tete='<div style="text-align:center;margin-bottom:22px;"><img src="icon-192.png?v=3" alt="" style="width:74px;height:74px;border-radius:20px;margin-bottom:10px;box-shadow:0 6px 18px rgba(0,0,0,.4);"><div style="font-size:22px;font-weight:700;color:var(--text);">Dorayaki</div>'+(_auth.mode==='accueil'?'<div style="font-size:13px;color:var(--text2);margin-top:6px;line-height:1.45;">Compte tes calories et cuisine avec ce que tu as déjà.</div>':'')+'</div>';
   var retour='<button onclick="_authMode(\'accueil\')" style="background:none;border:0;color:var(--text3);font-size:13px;cursor:pointer;margin-top:12px;width:100%;">\u2190 Retour</button>';
   var h='';
   if(_auth.mode==='accueil'){
@@ -8517,7 +8588,7 @@ function _renderInscription(err,dis,retour){
   else{
     var c=calculerCibles(p)||CIBLES_PAR_DEFAUT;
     if(p.cibles&&_ciblesValides(p.cibles))c=p.cibles;
-    corps=_secCibles(c,'Estimation de départ à partir de tes infos (formule Mifflin-St Jeor). Ajuste si besoin : c\'est un repère, pas un avis médical.');
+    _pCibles=p;corps=_secCibles(c,_texteCibles(p,c.kcal));
   }
   var nav='<div style="display:flex;gap:8px;margin-top:6px;">'
     +(e>0?'<button onclick="etapeInscription(-1)" style="'+_ST_BTN+'flex:1;background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);">Précédent</button>':'')
@@ -8616,7 +8687,7 @@ function ouvrirEditionProfil(){
     +'<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Alimentation</div>'+_secAlim(p)
     +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 10px;"><span style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;">Cibles</span>'
     +'<button onclick="recalculerCiblesProfil()" style="background:none;border:0;color:var(--accent2);font-size:11.5px;cursor:pointer;text-decoration:underline;">Recalculer depuis mes infos</button></div>'
-    +_secCibles(c,'');
+    +(_pCibles=p,_secCibles(c,_texteCibles(p,c.kcal)));
   if(sessionActive()){
     var _lg=(sessionActive()||{}).login||'';
     h+='<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Connexion</div>'
@@ -8641,6 +8712,7 @@ function recalculerCiblesProfil(){
   var c=calculerCibles(_profilSaisi());
   if(!c){_errProfil('Renseigne taille, poids et date de naissance pour le calcul.');return;}
   ['kcal','prot','gluc','lip'].forEach(function(k){var e=document.getElementById('pf-'+k);if(e)e.value=c[k];});
+  _pCibles=_profilSaisi();majTexteCibles();
   _errProfil('');
 }
 function enregistrerProfil(){

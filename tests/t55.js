@@ -42,7 +42,7 @@ t('barre Reste cachee = retiree du rendu, sans flou d\'arriere-plan',()=>{
   if(!/#barre-reste:not\(\.vis\) \{ display: none; \}/.test(src))throw new Error('pas retiree');
 });
 t('le volet propose les six parcours',()=>{
-  prepa();X('ouvrirMenuAjout()');
+  prepa();const _gk=X('getApiKey');X("getApiKey=function(){return 'gsk_test'}");try{X('ouvrirMenuAjout()');}finally{sb.getApiKey=_gk;}
   const h=docEl('menu-ajout-corps').innerHTML;
   ['texte','photo','code','inventaire','activite','pesee'].forEach(a=>{if(h.indexOf("menuAjoutAction('"+a+"')")<0)throw new Error('manque '+a);});
   eq(docEl('menu-ajout').style.display,'flex');
