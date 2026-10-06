@@ -299,7 +299,7 @@ body.auth-ouvert #root { display: none; }
     <div style="display:flex;gap:8px;"><button onclick="copierRapport()" style="flex:1;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">📋 Copier le rapport</button><button onclick="effacerJournal()" style="padding:9px 12px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">Effacer</button></div>
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-07 00h11 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-07 00h12 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -566,8 +566,9 @@ body.auth-ouvert #root { display: none; }
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-07-0011';
+const BUILD_ID='2026-10-07-0012';
 const NOUVEAUTES=[
+  {b:'2026-10-07-0012',points:[]},
   {b:'2026-10-07-0011',points:[]},
   {b:'2026-10-07-0010',points:['Visite guidée : l’inventaire, les courses et le bilan sont montrés avec un exemple, et les Réglages s’ouvrent pour les présenter. Tes données ne sont pas touchées.']},
   {b:'2026-10-06-2350',points:['Un souci ? Réglages ⚙ → « Copier le rapport » : un résumé des derniers problèmes rencontrés, à envoyer à Liam. Il reste sur ton appareil et ne contient ni ta clé IA ni ton mot de passe.']},
@@ -1003,13 +1004,14 @@ function selectProfile(n){
   TARGETS=_h?LIAM_TARGETS:CIBLES_PAR_DEFAUT;
   S.inv=JSON.parse(JSON.stringify(_h?INV_DEFAULT:INV_VIDE));        // un compte ne recoit jamais les donnees de demo
   S.dayMeals=JSON.parse(JSON.stringify(_h?MEALS_DEFAULT:{}));
+  _archJours={};_archCharges={};_nettoyageFait=false;S.archives={};
   S.today=getToday();S.displayDate=S.today;
   S.editMode=false;S.mealTab='breakfast';S.mainTab='accueil';
   _lastMainTab='';_lastMealTab='';_lastDay='';   // pas d'animation de transition a l'arrivee
   render();
   document.getElementById('profile-screen').style.display='none';
   try{document.body.classList.remove('auth-ouvert');}catch(e){}
-  loadState().then(()=>{render();_verifierNouveautes();_tutoSiNouveau();});
+  loadState().then(()=>{render();_verifierNouveautes();_tutoSiNouveau();setTimeout(_nettoyageDonnees,4000);});
 }
 // ─── EDIT MODE ───────────────────────────
 function toggleEditMode(){S.editMode=!S.editMode;render();}
@@ -2738,6 +2740,87 @@ function saveBurnLog(){
 
 let _syncStatus = ''; // '' | 'ok' | 'offline'
 let _lastSyncErr='';
+// ── Rangement des donnees (07/10/2026) ──
+// 1. Repas libres : chacun creait une recette cachee qui recopiait son nom et ses
+//    macros (customRecipes). On recopie nom et macros dans les vieux repas qui
+//    n'en avaient pas, puis on retire ces recettes (drapeau S.libresMigres).
+// 2. Archive : les mois de plus de ARCHIVE_MOIS mois partent dans
+//    users/<uid>/archive/AAAA-MM (index S.archives = {n repas, j jours}),
+//    relus a la demande par le calendrier et remis dans l'export.
+// L'etat du cloud est copie dans le filet juste avant (Reglages -> Sauvegardes).
+const ARCHIVE_MOIS=3;
+var _archJours={},_archCharges={},_nettoyageFait=false;
+function _repasDuJour(d){return (S.dayMeals&&S.dayMeals[d])||(_archJours&&_archJours[d])||[];}
+function _moisDecale(m,n){var d=new Date(+m.slice(0,4),+m.slice(5,7)-1+n,1);return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+function _moisAArchiver(){
+  var lim=_moisDecale((S.today||getToday()).slice(0,7),-ARCHIVE_MOIS),vus={};
+  Object.keys(S.dayMeals||{}).forEach(function(k){var m=k.slice(0,7);if(/^\d{4}-\d\d$/.test(m)&&m<lim)vus[m]=1;});
+  return Object.keys(vus).sort();
+}
+function _migrerRepasLibres(){
+  var cr=S.customRecipes||[],idx={},n=0;
+  cr.forEach(function(r){if(r&&/^_free_/.test(String(r.id)))idx[r.id]=r;});
+  Object.keys(S.dayMeals||{}).forEach(function(d){(S.dayMeals[d]||[]).forEach(function(m){
+    if(!m||!/^_free_/.test(String(m.rid)))return;var r=idx[m.rid];if(!r)return;
+    if(!m.name&&r.name){m.name=r.name;n++;}
+    if(!m.macros){m.macros={kcal:+r.kcal||0,prot:+r.prot||0,gluc:+r.gluc||0,lip:+r.lip||0};if(typeof r.fib==='number')m.macros.fib=r.fib;n++;}
+  });});
+  var avant=cr.length;
+  S.customRecipes=cr.filter(function(r){return !(r&&/^_free_/.test(String(r.id)));});
+  for(var i=RCP.length-1;i>=0;i--){if(RCP[i]&&/^_free_/.test(String(RCP[i].id)))RCP.splice(i,1);}
+  return n+(avant-S.customRecipes.length);
+}
+async function _archiverMois(m){
+  var jours={};
+  Object.keys(S.dayMeals||{}).forEach(function(d){if(d.slice(0,7)===m)jours[d]=S.dayMeals[d];});
+  try{
+    var u=await fbUrl(ACTIVE_PROFILE+'/archive/'+m),ex=null;
+    var r0=await fetch(u);if(!r0.ok)return false;ex=await r0.json();
+    var tout=Object.assign({},(ex&&ex.jours)||{},jours),n=0,nj=0;      /* deja archive (import, restauration) : on complete, le local gagne */
+    Object.keys(tout).forEach(function(d){nj++;n+=((tout[d]||[]).length||Object.keys(tout[d]||{}).length);});
+    var r=await fetch(u,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(_assainirCles({mois:m,n:n,jours:tout}))});
+    if(!r.ok){_noterErreur('synchro','archivage '+m+' refusé — HTTP '+r.status);return false;}
+    Object.keys(jours).forEach(function(d){delete S.dayMeals[d];});
+    S.archives=S.archives||{};S.archives[m]={n:n,j:nj};
+    Object.keys(tout).forEach(function(d){_archJours[d]=tout[d];});_archCharges[m]=true;
+    return true;
+  }catch(e){_noterErreur('synchro','archivage '+m+' : '+(e&&e.message));return false;}
+}
+async function _chargerArchive(m){
+  if(_archCharges[m]||!S.archives||!S.archives[m])return;
+  _archCharges[m]='encours';
+  try{
+    var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/archive/'+m));
+    if(!r.ok){_archCharges[m]=false;return;}
+    var a=_neutre(await r.json());
+    if(a&&a.jours&&typeof a.jours==='object')Object.keys(a.jours).forEach(function(d){
+      var l=a.jours[d];l=Array.isArray(l)?l:(l&&typeof l==='object'?Object.values(l):[]);
+      if(!(S.dayMeals&&S.dayMeals[d]))_archJours[d]=l.filter(Boolean);
+    });
+    _archCharges[m]=true;render();
+  }catch(e){_archCharges[m]=false;}
+}
+async function _nettoyageDonnees(){
+  if(_nettoyageFait||!_loaded)return;
+  try{if(!sessionActive()||(navigator&&navigator.onLine===false))return;}catch(e){return;}
+  _nettoyageFait=true;
+  var libres=!S.libresMigres&&(S.customRecipes||[]).some(function(r){return r&&/^_free_/.test(String(r.id));});
+  var mois=_moisAArchiver();
+  if(!libres&&!mois.length){if(!S.libresMigres){S.libresMigres=true;saveState();}return;}
+  try{
+    var rs=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'));if(!rs.ok)return;
+    var brut=await rs.json();
+    if(brut){
+      var rf=await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'),{method:'PUT',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({at:new Date().toISOString(),remplacePar:'rangement des données ('+S.today+')',state:JSON.stringify(brut)})});
+      if(!rf.ok)return;                                  /* pas de filet : on ne touche a rien */
+    }
+  }catch(e){_noterErreur('synchro','rangement : filet impossible');return;}
+  if(libres)_migrerRepasLibres();
+  S.libresMigres=true;
+  for(var i=0;i<mois.length;i++){if(!(await _archiverMois(mois[i])))break;}
+  saveState();render();
+}
 // ── Journal d'erreurs (06/10/2026) ──
 // Garde sur l'appareil (localStorage dz_journal) les 30 dernieres erreurs :
 // synchro, IA, erreurs JavaScript. Rien n'est envoye : « Copier le rapport »
@@ -2871,7 +2954,10 @@ function _applyState(d){
   if(!(typeof d.weightGoal==='number')&&d.profil&&+d.profil.poidsVise>=30&&+d.profil.poidsVise<=400){d.weightGoal=Math.round(+d.profil.poidsVise*10)/10;_etatCorrige=true;}
   S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.mesures=Array.isArray(d.mesures)?d.mesures.filter(function(m){return m&&/^\d{4}-\d\d-\d\d$/.test(m.d);}):[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
   S.shopSeeded=d.shopSeeded||false;
-  S.tutoVu=(d.tutoVu!==false);   /* seul un compte cree depuis le 06/10/2026 porte false jusqu'a la fin du tutoriel */
+  S.tutoVu=(d.tutoVu!==false);
+  S.libresMigres=!!d.libresMigres;
+  S.archives={};
+  if(d.archives&&typeof d.archives==='object')Object.keys(d.archives).forEach(function(m){var a=d.archives[m];if(/^\d{4}-\d\d$/.test(m)&&a&&typeof a==='object')S.archives[m]={n:Math.max(0,+a.n||0),j:Math.max(0,+a.j||0)};});   /* seul un compte cree depuis le 06/10/2026 porte false jusqu'a la fin du tutoriel */
   S.bilanVu=(typeof d.bilanVu==='string'&&/^\d{4}-\d\d-\d\d$/.test(d.bilanVu))?d.bilanVu:null;
   S.recTri=d.recTri||'';S.recTriDir=(d.recTriDir===-1?-1:1);
   S.pasRacheter=(d.pasRacheter&&typeof d.pasRacheter==='object')?_assainirCles(d.pasRacheter):{};
@@ -3014,7 +3100,8 @@ function _volumeEtat(d){
     Object.keys(iv).forEach(function(c){n+=(iv[c]||[]).length;});
     n+=(d.weights||[]).length;
     n+=(d.mesures||[]).length;
-    n+=(d.customRecipes||[]).length*2;
+    n+=(d.customRecipes||[]).filter(function(r){return !(r&&/^_free_/.test(String(r.id)));}).length*2;   /* recettes cachees des repas libres : retirees le 07/10/2026 */
+    var ar=d.archives||{};Object.keys(ar).forEach(function(m){n+=(+(ar[m]&&ar[m].n)||0)*3;});           /* repas archives : toujours comptes */
     n+=(d.aiRecipes||[]).length;
     n+=((d.shop&&d.shop.list)||[]).length;
   }catch(e){}
@@ -3310,7 +3397,7 @@ async function _saveStateNow(){
     waiting:S.waiting||[],
     weights:S.weights||[],mesures:S.mesures||[],favs:S.favs||[],weightGoal:(S.weightGoal||null),
     todaySummary:(function(){try{var t=getDayMacros(S.today);return{date:S.today,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip};}catch(e){return null;}})(),
-    shopSeeded:S.shopSeeded||false,bilanVu:S.bilanVu||null,tutoVu:S.tutoVu!==false,
+    shopSeeded:S.shopSeeded||false,bilanVu:S.bilanVu||null,archives:S.archives||{},libresMigres:!!S.libresMigres,tutoVu:S.tutoVu!==false,
     recTri:S.recTri||'',recTriDir:S.recTriDir||1,
     pasBase:(typeof S.pasBase==='number')?S.pasBase:null,
     programme:S.programme||[],progMigre:!!S.progMigre,
@@ -3998,7 +4085,7 @@ function getDessertMacros(dessert,cd){if(!dessert||dessert==='none')return{kcal:
 function findRecipe(rid){
   return RCP.find(x=>x.id===rid)||(S.customRecipes||[]).find(x=>x.id===rid)||(S.aiRecipes||[]).find(x=>x.id===rid)||null;
 }
-function getDayMacros(day){const _t=(S.dayMeals[day]||[]).reduce((acc,{rid,dessert,customDessert,extras,macros})=>{const r=findRecipe(rid);const base=macros||r;if(!base)return acc;const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0),gluc:a.gluc+(e.gluc||0),lip:a.lip+(e.lip||0)}),{kcal:0,prot:0,gluc:0,lip:0});return{kcal:acc.kcal+base.kcal+dm.kcal+ex.kcal,prot:acc.prot+base.prot+dm.prot+ex.prot,gluc:acc.gluc+base.gluc+dm.gluc+ex.gluc,lip:acc.lip+base.lip+dm.lip+ex.lip};},{kcal:0,prot:0,gluc:0,lip:0});return{kcal:Math.round(_t.kcal),prot:Math.round(_t.prot*10)/10,gluc:Math.round(_t.gluc*10)/10,lip:Math.round(_t.lip*10)/10};}
+function getDayMacros(day){const _t=_repasDuJour(day).reduce((acc,{rid,dessert,customDessert,extras,macros})=>{const r=findRecipe(rid);const base=macros||r;if(!base)return acc;const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0),gluc:a.gluc+(e.gluc||0),lip:a.lip+(e.lip||0)}),{kcal:0,prot:0,gluc:0,lip:0});return{kcal:acc.kcal+base.kcal+dm.kcal+ex.kcal,prot:acc.prot+base.prot+dm.prot+ex.prot,gluc:acc.gluc+base.gluc+dm.gluc+ex.gluc,lip:acc.lip+base.lip+dm.lip+ex.lip};},{kcal:0,prot:0,gluc:0,lip:0});return{kcal:Math.round(_t.kcal),prot:Math.round(_t.prot*10)/10,gluc:Math.round(_t.gluc*10)/10,lip:Math.round(_t.lip*10)/10};}
 // Fibres d'un repas saisi : valeur enregistree, sinon recalcul depuis les lignes
 // (inventaire, table par nom), la recette ou le dessert. {g, complet} ou null.
 function _fibRepas(m){
@@ -4024,7 +4111,7 @@ function _fibRepas(m){
   return {g:Math.round(g*10)/10,complet:ok};
 }
 function getDayFibres(day){
-  var repas=(S.dayMeals&&S.dayMeals[day])||[],g=0,complets=0,connus=0;
+  var repas=_repasDuJour(day),g=0,complets=0,connus=0;
   repas.forEach(function(m){var f=_fibRepas(m);if(!f)return;connus++;g+=f.g;if(f.complet)complets++;});
   return {g:Math.round(g*10)/10,complet:complets===repas.length,connu:connus>0||!repas.length,n:repas.length};
 }
@@ -5657,11 +5744,26 @@ async function _exportFile(filename,mime,content){
 // Sauvegarde complete. La depense et les photos vivent dans leurs propres
 // noeuds : l'ancien export ne contenait que l'etat principal, et rien ne
 // permettait de le reimporter.
+// Mois archives (07/10/2026) : remis dans l'export, l'import les rangera de nouveau
+async function _archivesDansExport(st){
+  var _manquants=[];
+  if(st.archives&&typeof st.archives==='object'){
+    st.dayMeals=st.dayMeals||{};
+    for(var _m of Object.keys(st.archives)){
+      try{var _ra=await fetch(await fbUrl(ACTIVE_PROFILE+'/archive/'+_m));var _a=_ra.ok?await _ra.json():null;
+        if(_a&&_a.jours){Object.keys(_a.jours).forEach(function(d){if(!st.dayMeals[d])st.dayMeals[d]=_a.jours[d];});delete st.archives[_m];}else _manquants.push(_m);
+      }catch(e){_manquants.push(_m);}
+    }
+    if(!Object.keys(st.archives).length)delete st.archives;
+  }
+  if(_manquants.length)_alerte('Export incomplet\n\nLes repas archivés de '+_manquants.join(', ')+' n’ont pas pu être lus (réseau). Le reste est bien dans le fichier.');
+}
 async function exportBackup(){
   try{await saveState();}catch(e){}
   var raw=localStorage.getItem(ACTIVE_PROFILE+'_st')||'{}';
   var st;try{st=JSON.parse(raw);}catch(e){st={};}
   delete st.groqKey;delete st.geminiKey;   // les cles d'API ne quittent jamais l'app
+  await _archivesDansExport(st);   /* mois archives remis dans le fichier */
   // Photos de progression : lues sur le cloud (elles ne sont pas en local)
   var progres=null,progresMini=null;
   try{
@@ -5857,7 +5959,7 @@ function protStreak(){
 // jugee incomplete (meme regle que l'estimation du TDEE) : pas de couleur.
 var _calMois=null,_calSel=null;
 function _etatJour(d){
-  var repas=(S.dayMeals&&S.dayMeals[d])||[];
+  var repas=_repasDuJour(d);
   if(!repas.length)return {etat:'vide'};
   var m=getDayMacros(d),b=null;try{b=getBurn(d);}catch(e){}
   var dep=(b&&b.total)||0,cible=_cibleDuJour(d);
@@ -5872,6 +5974,8 @@ var _CAL_FOND={cible:'rgba(111,191,115,.28)',dessus:'rgba(233,161,59,.30)',desso
 function renderCalendrier(){
   var auj=S.today;
   if(!_calMois)_calMois=auj.slice(0,7);
+  var _arch=S.archives&&S.archives[_calMois];
+  if(_arch&&!(_archCharges&&_archCharges[_calMois]))_chargerArchive(_calMois);
   var an=+_calMois.slice(0,4),mo=+_calMois.slice(5,7);
   var nbJ=new Date(an,mo,0).getDate();
   var decal=(new Date(an,mo-1,1).getDay()+6)%7;            // lundi = 0
@@ -5893,7 +5997,7 @@ function renderCalendrier(){
   var nav=function(sens,en){return '<button data-action="cal-mois" data-val="'+sens+'" '+(en?'':'data-disabled="true" ')+'aria-label="'+(sens<0?'Mois précédent':'Mois suivant')+'" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:32px;color:'+(en?'var(--text2)':'var(--border)')+';font-size:15px;cursor:'+(en?'pointer':'default')+';">'+(sens<0?'\u2190':'\u2192')+'</button>';};
   var html='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:18px;">'
     +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">'
-      +'<div style="flex:1;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">\ud83d\udcc5 '+titre+'</div>'
+      +'<div style="flex:1;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">\ud83d\udcc5 '+titre+(_arch&&_archCharges[_calMois]!==true?' <span style="text-transform:none;letter-spacing:0;font-size:11px;">· chargement…</span>':'')+'</div>'
       +nav(-1,true)+nav(1,_calMois<auj.slice(0,7))+'</div>'
     +'<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:4px;">'
       +['L','M','M','J','V','S','D'].map(function(x){return '<div style="text-align:center;font-size:11px;color:var(--text3);">'+x+'</div>';}).join('')+'</div>'
@@ -9535,10 +9639,7 @@ function confirmAddMealFinal() {
   }
 
   const id = '_free_' + Date.now();
-  const freeRecipe = {id, slots:[], name, kcal, prot, gluc, lip, steps:[], used:[], extras:[]};
-  RCP.push(freeRecipe);
-  if(!S.customRecipes)S.customRecipes=[];
-  S.customRecipes.push(freeRecipe);
+  /* plus de recette cachee par repas libre (07/10/2026) : le repas porte son nom et ses macros */
   (_addMealFreeItems||[]).forEach(function(f){
     var m=f.pu?{kcal:f.pu.kcal*f.qty,prot:f.pu.prot*f.qty,gluc:f.pu.gluc*f.qty,lip:f.pu.lip*f.qty,fib:(typeof f.pu.fib==='number'?f.pu.fib*f.qty:undefined)}:(f.m||{});
     if(!(f.qty>0)&&!(m.kcal>0))return;
