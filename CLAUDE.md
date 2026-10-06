@@ -57,12 +57,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 bash tests/run.sh      # depuis la racine du depot
 ```
 
-- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t81.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
-- Attendu : 0 échec (1386 tests au 06/10/2026).
+- Le script vérifie la syntaxe du script inline (`node --check`), puis joue `tests/t2.js` à `tests/t82.js` dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`).
+- Attendu : 0 échec (1397 tests au 06/10/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
-- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t81` de `run.sh` et au tableau de `tests/README.md`.
+- Toute nouvelle suite doit être ajoutée à la boucle `for f in t2 … t82` de `run.sh` et au tableau de `tests/README.md`.
 - Dans un test, `X("nom")` (`vm.runInContext`) lit directement fonctions, `var`, `let` et `const`. Le tableau d'export au début de `tests/sb.js` n'est utile que pour y accéder sous la forme `sb.nom`.
 - `python3 tests/audit.py` fait un audit statique : handlers orphelins, fonctions en double, `\uXXXX` hors script, catch vides, etc.
 
@@ -118,6 +118,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 - Comptes : un seul poids visé (`S.weightGoal` du Bilan ⇄ `profil.poidsVise`, synchronisés par `setWeightGoal` et `enregistrerProfil` ; repris au chargement si l'objectif manque) ; à l'inscription, le poids déclaré devient la première pesée. Inscription guidée (prénom, emoji, objectifs calculés (Mifflin-St Jeor, nom jamais affiché), régime, matériel, puis étape facultative de la clé Groq avec mode d'emploi et « Passer cette étape » : `_secCleGroq`, `_cleGroqValide`, `passerCleGroq`), modification du profil, de l'identifiant, de l'e-mail et du mot de passe, déconnexion.
 - Technique : sauvegardes auto quotidiennes (`BACKUP_KEEP=14`), export/import `.json` (format 2, bloc unique dans Réglages), filet avant écrasement.
 - Ergonomie (06/10/2026) : accroche sous le logo de l'écran d'accueil ; cibles expliquées en clair à l'inscription et dans « Modifier le profil » (`_texteCibles` : dépense estimée `_depenseEstimee`, écart, kg par semaine, mois estimé du poids visé ; mis à jour à la saisie des calories par `majTexteCibles`) ; « Sèche » réservé à mon compte, « Perte de poids » pour les autres (`_libObjectif`, `_motSeche`) ; déconnexion en bas des Réglages (plus d'⏻ dans l'en-tête) ; onglet « Repas » (🍽️, ex-« Recettes ») ; sans aucune clé IA, le menu + propose code-barres, saisie manuelle, inventaire… et « Activer l'IA », et la fenêtre d'ajout masque description et photo (`_amSansIA`) ; écrans vides : inventaire (`_invVide` : message seul, « À ranger » toujours visible), courses (ni mode d'emploi ni validation), Bilan (pas de carte « Pilotage » avant une journée complète, objectif : « une date estimée apparaîtra après quelques pesées » tant qu'il n'y a pas de tendance) ; l'appli est masquée derrière l'écran de connexion (`body.auth-ouvert`).
+- Tutoriel (06/10/2026) : 7 étapes (`TUTO` : objectif du jour `#acc-objectif`, bouton + `#fab-ajout`, journée `#daypane` dans Repas, Inventaire, Courses et Bilan dans la barre `#bnav-b-…`, Réglages `#btn-reglages`). Calque `#tuto` (z-index 400) percé sur l'élément (`.tuto-trou`, ombre de 9999 px) + bulle placée dessous, dessus ou en bas (`_tutoPlacer`, replacée après l'animation d'onglet). « Passer le tutoriel » à chaque étape sauf la dernière (« C'est parti »), `finTuto` enregistre `S.tutoVu=true`. Lancé seul pour un compte créé depuis le 06/10 (`st.tutoVu=false` à l'inscription, `_tutoSiNouveau` après `loadState`) ; un état sans le champ compte comme déjà vu. Relance : Réglages → « Revoir le tutoriel » (`lancerTuto`).
 - Libellés : pas de jargon interne à l'écran (cimetière, salle d'attente, TDEE, urgents…) ; `t66.js` le vérifie.
 
 ## 8. Points ouverts

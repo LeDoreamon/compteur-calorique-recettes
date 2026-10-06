@@ -115,6 +115,10 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 #profile-screen { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); overscroll-behavior: contain; }
 /* Ecran de connexion ouvert : l'appli derriere n'est ni affichee ni defilable */
 body.auth-ouvert #root { display: none; }
+/* Tutoriel : calque sombre perce sur l'element montre, bulle d'explication */
+#tuto { display: none; position: fixed; inset: 0; z-index: 400; }
+#tuto .tuto-trou { position: fixed; border-radius: 14px; border: 2px solid var(--gold); box-shadow: 0 0 0 9999px rgba(0,0,0,.76); pointer-events: none; transition: top .25s var(--ease), left .25s var(--ease), width .25s var(--ease), height .25s var(--ease); }
+#tuto .tuto-bulle { position: fixed; left: 16px; right: 16px; max-width: 380px; margin: 0 auto; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 14px; padding: 14px 15px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.55); animation: riseIn .3s var(--ease) both; }
 
 
 /* ═══ NAVIGATION BASSE ═════════════════════════════════════════════════ */
@@ -290,8 +294,9 @@ body.auth-ouvert #root { display: none; }
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
+    <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 22h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 23h15 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -539,6 +544,7 @@ body.auth-ouvert #root { display: none; }
   <div id="profil-panneau" style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-top-left-radius:16px;border-top-right-radius:16px;padding:18px 18px calc(24px + env(safe-area-inset-bottom, 0px));width:100%;max-width:480px;max-height:calc(100vh - 16px - env(safe-area-inset-top, 0px));overflow-y:auto;box-sizing:border-box;"></div>
 </div>
 <nav class="bnav" id="bnav"></nav>
+<div id="tuto" role="dialog" aria-modal="true" aria-label="Tutoriel"></div>
 <button id="fab-ajout" onclick="ouvrirMenuAjout()" aria-label="Ajouter" title="Ajouter"><svg viewBox="0 0 24 24" width="26" height="26" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/></svg></button>
 <div id="root" class="container"><div style="padding:2rem;text-align:center;color:var(--text3);">Chargement...</div></div>
 <div id="scan-overlay" style="display:none;position:fixed;inset:0;background:#000;z-index:300;flex-direction:column;align-items:center;justify-content:center;">
@@ -557,8 +563,11 @@ body.auth-ouvert #root { display: none; }
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-06-2230';
+const BUILD_ID='2026-10-06-2315';
 const NOUVEAUTES=[
+  {b:'2026-10-06-2315',points:[
+    'Nouveau : une visite guidée de l’appli en 7 étapes, lancée à la création d’un compte. Pour la revoir : Réglages ⚙ → « Revoir le tutoriel ».'
+  ]},
   {b:'2026-10-06-2230',points:[
     'L’onglet « Recettes » devient « Repas » : il regroupe ta journée et les recettes.',
     'Se déconnecter : le bouton est maintenant en bas des Réglages.',
@@ -993,7 +1002,7 @@ function selectProfile(n){
   render();
   document.getElementById('profile-screen').style.display='none';
   try{document.body.classList.remove('auth-ouvert');}catch(e){}
-  loadState().then(()=>{render();_verifierNouveautes();});
+  loadState().then(()=>{render();_verifierNouveautes();_tutoSiNouveau();});
 }
 // ─── EDIT MODE ───────────────────────────
 function toggleEditMode(){S.editMode=!S.editMode;render();}
@@ -2806,6 +2815,7 @@ function _applyState(d){
   if(!(typeof d.weightGoal==='number')&&d.profil&&+d.profil.poidsVise>=30&&+d.profil.poidsVise<=400){d.weightGoal=Math.round(+d.profil.poidsVise*10)/10;_etatCorrige=true;}
   S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.mesures=Array.isArray(d.mesures)?d.mesures.filter(function(m){return m&&/^\d{4}-\d\d-\d\d$/.test(m.d);}):[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
   S.shopSeeded=d.shopSeeded||false;
+  S.tutoVu=(d.tutoVu!==false);   /* seul un compte cree depuis le 06/10/2026 porte false jusqu'a la fin du tutoriel */
   S.bilanVu=(typeof d.bilanVu==='string'&&/^\d{4}-\d\d-\d\d$/.test(d.bilanVu))?d.bilanVu:null;
   S.recTri=d.recTri||'';S.recTriDir=(d.recTriDir===-1?-1:1);
   S.pasRacheter=(d.pasRacheter&&typeof d.pasRacheter==='object')?_assainirCles(d.pasRacheter):{};
@@ -3049,6 +3059,63 @@ function _texteNouveautes(liste){
 // vu (compte existant, nouvel appareil) recoit la derniere entree seulement ;
 // un compte qui vient d'etre cree ne recoit rien (marque a l'inscription).
 var _nvFait=false;
+// ── Tutoriel de premier compte (06/10/2026) ──
+// Sept etapes courtes : chacune ouvre le bon onglet, met l'element en lumiere
+// (calque sombre perce) et l'explique. « Passer » arrete tout ; relance dans Reglages.
+var TUTO=[
+  {tab:'accueil',sel:'#acc-objectif',titre:'Ton objectif du jour',txt:'Les calories et macros à viser aujourd’hui. Les barres se remplissent à chaque repas noté.'},
+  {tab:'accueil',sel:'#fab-ajout',titre:'Le bouton +',txt:'Tout s’ajoute ici : un repas (décrit, en photo, par code-barres ou à la main), tes pas, une activité, ta pesée.'},
+  {tab:'recipes',sel:'#daypane',titre:'Ta journée',txt:'Dans « Repas » : ce que tu as mangé, ce qu’il te reste, puis des recettes qui rentrent dans ce reste.'},
+  {tab:'recipes',sel:'#bnav-b-inventory',titre:'Ton inventaire',txt:'Ce que tu as chez toi. Plus il est complet, plus les recettes proposées sont faisables avec ce que tu as.'},
+  {tab:'recipes',sel:'#bnav-b-courses',titre:'Tes courses',txt:'Ta liste par rayon. Ce qui est presque fini s’y ajoute tout seul, et tes achats passent ensuite dans l’inventaire.'},
+  {tab:'recipes',sel:'#bnav-b-weight',titre:'Ton bilan',txt:'Ton poids, ta tendance et ta régularité. Pèse-toi 2 ou 3 fois par semaine pour des estimations fiables.'},
+  {tab:'accueil',sel:'#btn-reglages',titre:'Réglages',txt:'Ton profil, tes clés IA (pour décrire ou photographier tes repas) et tes sauvegardes. Tu peux y revoir ce tutoriel.'}
+];
+var _tutoEtape=-1;
+function _tutoSiNouveau(){if(S&&S.tutoVu===false&&_tutoEtape<0)setTimeout(lancerTuto,500);}
+function lancerTuto(){_tutoEtape=0;_tutoMontrer();}
+function tutoSuivant(){if(_tutoEtape<0)return;_tutoEtape++;if(_tutoEtape>=TUTO.length)finTuto();else _tutoMontrer();}
+function finTuto(){
+  _tutoEtape=-1;
+  var r=document.getElementById('tuto');if(r){r.style.display='none';r.innerHTML='';}
+  try{window.removeEventListener('resize',_tutoPlacer);}catch(e){}
+  if(S.tutoVu!==true){S.tutoVu=true;try{saveState();}catch(e){}}
+  if(S.mainTab!=='accueil'){S.mainTab='accueil';render();}
+  try{window.scrollTo(0,0);}catch(e){}
+}
+function _tutoMontrer(){
+  var e=TUTO[_tutoEtape];if(!e){finTuto();return;}
+  if(e.tab&&S.mainTab!==e.tab){S.mainTab=e.tab;S.editMode=false;render();try{window.scrollTo(0,0);}catch(x){}}
+  var cible=document.querySelector?document.querySelector(e.sel):null;
+  if(!cible){tutoSuivant();return;}   /* element absent (ecran inattendu) : on passe a la suite */
+  var r=document.getElementById('tuto');if(!r)return;
+  var der=_tutoEtape===TUTO.length-1;
+  r.innerHTML='<div class="tuto-trou"></div><div class="tuto-bulle">'
+    +'<div style="font-size:10px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;">Découverte · '+(_tutoEtape+1)+' / '+TUTO.length+'</div>'
+    +'<div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:5px;">'+e.titre+'</div>'
+    +'<div style="font-size:13px;color:var(--text2);line-height:1.5;margin-bottom:12px;">'+e.txt+'</div>'
+    +'<div style="display:flex;align-items:center;gap:10px;">'
+    +(der?'':'<button onclick="finTuto()" style="background:none;border:0;color:var(--text3);font-size:12.5px;cursor:pointer;padding:6px 0;text-decoration:underline;">Passer le tutoriel</button>')
+    +'<button onclick="tutoSuivant()" style="margin-left:auto;padding:9px 18px;background:var(--gold);border:0;border-radius:9px;color:#1a120b;font-size:13px;font-weight:600;cursor:pointer;">'+(der?'C’est parti':'Suivant')+'</button></div></div>';
+  r.style.display='block';
+  try{var cs=getComputedStyle(cible).position;if(cs!=='fixed')cible.scrollIntoView({block:'center'});}catch(x){}
+  try{window.removeEventListener('resize',_tutoPlacer);window.addEventListener('resize',_tutoPlacer);}catch(x){}
+  try{requestAnimationFrame(_tutoPlacer);}catch(x){_tutoPlacer();}
+  setTimeout(_tutoPlacer,420);   /* apres l'animation de changement d'onglet, qui decale l'element */
+}
+function _tutoPlacer(){
+  var e=TUTO[_tutoEtape];if(!e)return;
+  var cible=document.querySelector?document.querySelector(e.sel):null,r=document.getElementById('tuto');if(!cible||!r||!cible.getBoundingClientRect)return;
+  var b=cible.getBoundingClientRect(),m=6,H=window.innerHeight||844;
+  var t=r.querySelector?r.querySelector('.tuto-trou'):null,bu=r.querySelector?r.querySelector('.tuto-bulle'):null;
+  if(t){t.style.top=(b.top-m)+'px';t.style.left=(b.left-m)+'px';t.style.width=(b.width+2*m)+'px';t.style.height=(b.height+2*m)+'px';
+    t.style.borderRadius=(b.width<90&&Math.abs(b.width-b.height)<12)?'50%':'14px';}
+  if(bu){
+    if(b.bottom+m+210<H){bu.style.top=(b.bottom+m+12)+'px';bu.style.bottom='auto';}             /* sous l'element */
+    else if(b.top-m-210>0){bu.style.bottom=(H-b.top+m+12)+'px';bu.style.top='auto';}           /* au-dessus */
+    else{bu.style.bottom='calc(96px + env(safe-area-inset-bottom, 0px))';bu.style.top='auto';}  /* element tres haut : bulle en bas */
+  }
+}
 function _verifierNouveautes(){
   if(_nvFait)return;
   try{if(!sessionActive()||!_loaded)return;}catch(e){return;}
@@ -3145,7 +3212,7 @@ async function _saveStateNow(){
     waiting:S.waiting||[],
     weights:S.weights||[],mesures:S.mesures||[],favs:S.favs||[],weightGoal:(S.weightGoal||null),
     todaySummary:(function(){try{var t=getDayMacros(S.today);return{date:S.today,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip};}catch(e){return null;}})(),
-    shopSeeded:S.shopSeeded||false,bilanVu:S.bilanVu||null,
+    shopSeeded:S.shopSeeded||false,bilanVu:S.bilanVu||null,tutoVu:S.tutoVu!==false,
     recTri:S.recTri||'',recTriDir:S.recTriDir||1,
     pasBase:(typeof S.pasBase==='number')?S.pasBase:null,
     programme:S.programme||[],progMigre:!!S.progMigre,
@@ -6186,7 +6253,7 @@ function renderAccueil(){
   // ── Objectif du jour ──
   var pct=TARGETS.kcal>0?Math.min(1,r.pris.kcal/TARGETS.kcal):0;
   var over=r.pris.kcal>TARGETS.kcal;
-  h+='<div class="rcard" style="padding:16px 15px;margin-bottom:12px;">'
+  h+='<div id="acc-objectif" class="rcard" style="padding:16px 15px;margin-bottom:12px;">'
     +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px;">'
       +'<div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">Aujourd\'hui</div>'
       +'<div style="font-size:16px;font-weight:600;color:var(--text);margin-top:2px;">Objectif du jour</div></div>'
@@ -6917,7 +6984,7 @@ function render(){
     <div class="apphead">${_htmlBarreReste()}
       <div style="flex:1;"><div style="font-size:17px;font-weight:600;color:var(--text);">${_nomAffiche()}</div><div style="font-size:11px;color:var(--text3);margin-top:2px;">${_libObjectif()} · ${TARGETS.kcal} kcal</div></div>
       ${urgTotal?`<button class="chip" data-action="voir-urgents" title="Voir dans l'inventaire" style="background:var(--red-bg);color:var(--red);padding:4px 10px;font-size:12px;border:0;cursor:pointer;font-family:inherit;">⚠ ${urgTotal} à consommer</button>`:''}
-      <button onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
+      <button id="btn-reglages" onclick="openSettings()" title="Paramètres${getApiKey()?'':' — clé API à configurer'}" style="background:none;border:0.5px solid var(--border);border-radius:8px;width:36px;height:36px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:${getApiKey()?'var(--green)':'var(--orange)'};">⚙</button>
     </div>
     <div id="tabpane">
     ${S.mainTab==='accueil'?renderAccueil():''}
@@ -8412,6 +8479,7 @@ async function _initNouveauProfil(cle,profil,groq,gemini){
           tz:tz||null,pasBase:(+profil.pas>0?Math.round(+profil.pas):0),inv:INV_VIDE,dayMeals:{}};
   /* le poids vise devient l'objectif du Bilan, le poids declare la premiere pesee */
   if(+profil.poidsVise>=30&&+profil.poidsVise<=400)st.weightGoal=Math.round(+profil.poidsVise*10)/10;
+  st.tutoVu=false;   /* tutoriel a la premiere ouverture */
   if(+profil.poids>=30&&+profil.poids<=400)st.weights=[{d:getToday(),w:Math.round(+profil.poids*10)/10}];
   if(_cleGroqValide(groq))st.groqKey=groq;
   if(_cleGeminiValide(gemini))st.geminiKey=gemini;
