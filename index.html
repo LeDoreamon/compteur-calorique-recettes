@@ -287,7 +287,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 20h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 20h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -395,7 +395,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <div id="reassort-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));" onclick="overlayBackdrop(event,this,fermerReassort)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:340px;width:100%;box-sizing:border-box;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;position:relative;"><button onclick="fermerReassort()" aria-label="Fermer" style="position:absolute;top:12px;right:14px;background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button><div id="reassort-corps"></div></div></div>
 <div id="wait-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));overflow-y:auto;" onclick="overlayBackdrop(event,this,closeWaitingItem)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:340px;width:100%;box-sizing:border-box;margin:auto;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><div id="wait-name" style="font-size:16px;font-weight:600;color:var(--text);">Article</div><button onclick="closeWaitingItem()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Où le placer ?</div><div id="wait-cat-row" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px;"></div><div id="wait-mac-toggle" style="display:flex;gap:6px;margin-bottom:12px;"></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" id="wait-qtylabel">Quantité</div><div style="display:flex;gap:6px;margin-bottom:8px;" id="wait-qtyrow"><input id="wait-qty" type="number" placeholder="0" style="flex:1;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;"><select id="wait-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select><input id="wait-pieceg" type="number" placeholder="poids/pièce" style="display:none;flex:1;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><span id="wait-pieceg-u" style="display:none;font-size:12px;color:var(--text3);white-space:nowrap;align-self:center;">g/pièce</span></div><label style="display:flex;align-items:center;gap:7px;margin-bottom:8px;font-size:12px;color:var(--text2);cursor:pointer;"><input type="checkbox" id="wait-pkg-on" onchange="toggleWaitPkg()" style="width:16px;height:16px;accent-color:var(--accent);"> Emballage (paquet, boîte, pot…)</label><div id="wait-pkg-fields" style="display:none;gap:6px;margin-bottom:8px;grid-template-columns:1fr 1fr auto;align-items:center;"><input id="wait-pkg-size" type="number" placeholder="taille g/ml" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><input id="wait-pkg-count" type="number" placeholder="nombre" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;outline:none;box-sizing:border-box;min-width:0;"><select id="wait-pkg-unit" style="padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;"><option value="g">g</option><option value="ml">ml</option></select></div><label style="display:flex;align-items:center;gap:7px;margin-bottom:14px;font-size:12px;color:var(--text2);cursor:pointer;"><input type="checkbox" id="wait-present" onchange="toggleWaitPresent()" style="width:16px;height:16px;"> Illimité (présent)</label><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;" id="wait-mac-label">Macros pour 100 g/ml</div><div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;margin-bottom:8px;"><div><label style="font-size:11px;color:var(--text3);display:block;">Kcal</label><input id="wait-kcal" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--orange);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;">Prot</label><input id="wait-prot" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--green);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;">Gluc</label><input id="wait-gluc" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--blue);font-size:12px;outline:none;box-sizing:border-box;"></div><div><label style="font-size:11px;color:var(--text3);display:block;">Lip</label><input id="wait-lip" type="number" oninput="onMacInput('wait')" style="width:100%;padding:6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.1);border-radius:5px;color:var(--red);font-size:12px;outline:none;box-sizing:border-box;"></div></div><div id="wait-macsrc" style="display:flex;gap:6px;margin-bottom:8px;align-items:center;"></div><button id="wait-ai-btn" onclick="aiWaitMacros()" style="width:100%;padding:8px;background:var(--blue-bg);border:0.5px solid var(--blue);border-radius:7px;color:var(--blue);font-size:12px;cursor:pointer;margin-bottom:14px;">❆ Chercher via IA</button><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">DLC (optionnel)</div><input id="wait-dlc" type="date" style="width:100%;padding:8px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:7px;color:var(--text);font-size:13px;margin-bottom:14px;box-sizing:border-box;"><button onclick="confirmWaitPlace()" style="width:100%;padding:11px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">Placer dans l'inventaire</button></div></div>
 <div id="shopitem-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));" onclick="overlayBackdrop(event,this,closeShopItem)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:320px;width:100%;box-sizing:border-box;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;"><input id="shopitem-name" type="text" placeholder="Nom" onkeydown="if(event.key==='Enter')moveShopItem()" style="font-size:16px;font-weight:600;color:var(--text);background:transparent;border:0;border-bottom:1px solid rgba(246,237,227,.15);outline:none;padding:3px 0;flex:1;min-width:0;margin-right:10px;box-sizing:border-box;"><button onclick="closeShopItem()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Rayon</div><div id="shopitem-hint" style="font-size:11px;color:var(--text2);margin:-2px 0 8px;"></div><select id="shopitem-rayon" style="width:100%;padding:9px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;margin-bottom:12px;box-sizing:border-box;"></select><label style="display:flex;align-items:flex-start;gap:9px;margin-bottom:14px;cursor:pointer;"><input type="checkbox" id="shopitem-grave" style="width:17px;height:17px;accent-color:var(--gold);flex:0 0 auto;margin:1px 0 0;"><span style="font-size:12px;color:var(--text2);line-height:1.4;">🧾 Acheté sans passer par l'inventaire<br><span style="color:var(--text3);">À la validation, il ne va pas dans « À ranger ».</span></span></label><button onclick="moveShopItem()" style="width:100%;padding:10px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:14px;font-weight:500;cursor:pointer;margin-bottom:8px;">Enregistrer</button><button onclick="deleteShopItem()" style="width:100%;padding:9px;background:transparent;border:0.5px solid rgba(224,92,79,.3);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">Supprimer de la liste</button></div></div>
-<div id="item-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));" onclick="overlayBackdrop(event,this,closeItemDetail)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:330px;width:100%;box-sizing:border-box;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:2px;"><input id="item-name" type="text" placeholder="Nom de l'article" style="flex:1;min-width:0;box-sizing:border-box;font-size:16px;font-weight:600;color:var(--text);background:transparent;border:0;border-bottom:0.5px solid rgba(246,237,227,.14);border-radius:0;padding:2px 0 4px;outline:none;font-family:inherit;"><button onclick="closeItemDetail()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div id="item-sub" style="font-size:12px;color:var(--text3);margin-bottom:14px;">—</div><div style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">📅 Date limite (DLC)</div><div style="display:flex;align-items:center;gap:8px;"><input id="item-dlc" type="date" onchange="updateItemDlcHint()" style="flex:1;min-width:0;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><button onclick="document.getElementById('item-dlc').value='';updateItemDlcHint();" style="padding:7px 11px;background:transparent;border:0.5px solid var(--border);border-radius:7px;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">Effacer</button></div><div id="item-dlc-hint" style="font-size:11px;color:var(--text3);margin-top:6px;"></div></div><div id="item-unit-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Unité de mesure</div><select id="item-unit" onchange="onItemUnitChange()" style="width:100%;box-sizing:border-box;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><option value="g">grammes (g)</option><option value="ml">millilitres (ml)</option><option value="pcs">pièces</option><option value="tubes">tubes</option><option value="boîtes">boîtes</option><option value="cubes">cubes</option></select><div id="item-pieceg-row" style="display:none;align-items:center;gap:8px;margin-top:8px;"><span style="font-size:11px;color:var(--text3);white-space:nowrap;">Poids d'une unité</span><input id="item-pieceg" type="number" min="1" step="1" oninput="updateItemUnitHint()" style="width:74px;padding:6px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;text-align:center;outline:none;"><span style="font-size:11px;color:var(--text3);">g</span></div><div id="item-unit-hint" style="font-size:11px;color:var(--text3);margin-top:7px;line-height:1.45;"></div></div><div id="item-dessert-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;">
+<div id="item-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:300;align-items:center;justify-content:center;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));" onclick="overlayBackdrop(event,this,closeItemDetail)"><div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:16px;padding:18px;max-width:330px;width:100%;box-sizing:border-box;max-height:calc(100vh - 40px - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px));overflow-y:auto;"><div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:2px;"><input id="item-name" type="text" placeholder="Nom de l'article" style="flex:1;min-width:0;box-sizing:border-box;font-size:16px;font-weight:600;color:var(--text);background:transparent;border:0;border-bottom:0.5px solid rgba(246,237,227,.14);border-radius:0;padding:2px 0 4px;outline:none;font-family:inherit;"><button onclick="closeItemDetail()" style="background:none;border:0;color:var(--text2);font-size:22px;line-height:1;cursor:pointer;padding:0;">×</button></div><div id="item-sub" style="font-size:12px;color:var(--text3);margin-bottom:14px;">—</div><div id="item-nova" style="display:none;font-size:12px;color:var(--text2);line-height:1.45;margin:-6px 0 14px;padding:8px 10px;background:var(--bg3);border-radius:8px;"></div><div style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">📅 Date limite (DLC)</div><div style="display:flex;align-items:center;gap:8px;"><input id="item-dlc" type="date" onchange="updateItemDlcHint()" style="flex:1;min-width:0;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><button onclick="document.getElementById('item-dlc').value='';updateItemDlcHint();" style="padding:7px 11px;background:transparent;border:0.5px solid var(--border);border-radius:7px;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">Effacer</button></div><div id="item-dlc-hint" style="font-size:11px;color:var(--text3);margin-top:6px;"></div></div><div id="item-unit-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Unité de mesure</div><select id="item-unit" onchange="onItemUnitChange()" style="width:100%;box-sizing:border-box;padding:7px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;outline:none;"><option value="g">grammes (g)</option><option value="ml">millilitres (ml)</option><option value="pcs">pièces</option><option value="tubes">tubes</option><option value="boîtes">boîtes</option><option value="cubes">cubes</option></select><div id="item-pieceg-row" style="display:none;align-items:center;gap:8px;margin-top:8px;"><span style="font-size:11px;color:var(--text3);white-space:nowrap;">Poids d'une unité</span><input id="item-pieceg" type="number" min="1" step="1" oninput="updateItemUnitHint()" style="width:74px;padding:6px;background:var(--bg);border:0.5px solid var(--border);border-radius:7px;color:var(--text);font-size:13px;text-align:center;outline:none;"><span style="font-size:11px;color:var(--text3);">g</span></div><div id="item-unit-hint" style="font-size:11px;color:var(--text3);margin-top:7px;line-height:1.45;"></div></div><div id="item-dessert-wrap" style="margin-bottom:14px;padding:10px 11px;background:var(--bg3);border-radius:10px;">
   <label style="display:flex;align-items:center;gap:9px;cursor:pointer;"><input type="checkbox" id="item-dessert" onchange="toggleItemDessert()" style="width:17px;height:17px;accent-color:var(--gold);flex:0 0 auto;"><span style="font-size:12px;color:var(--text2);">🍰 Proposer comme dessert</span></label>
   <div id="item-dessert-qty-row" style="display:none;align-items:center;gap:8px;margin-top:9px;">
     <span style="font-size:11px;color:var(--text3);">Portion</span>
@@ -553,8 +553,11 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-06-2000';
+const BUILD_ID='2026-10-06-2030';
 const NOUVEAUTES=[
+  {b:'2026-10-06-2030',points:[
+    'Code-barres : les produits très transformés (selon OpenFoodFacts) sont repérés par 🏭 dans l’inventaire, avec une explication dans leur fiche. Rien d’interdit : à calories égales, ils calent souvent moins.'
+  ]},
   {b:'2026-10-06-2000',points:[
     'Recettes générées par l’IA en perte de poids : des portions adaptées (plat principal de 550 à 700 kcal, au moins 35 g de protéines).'
   ]},
@@ -1490,6 +1493,14 @@ let _aic='frigo';
 let _etatCorrige=false;
 let _loaded=false;
 let _itemDetailRef=null;
+// Indicateur de qualite (06/10/2026) : groupe NOVA d'OpenFoodFacts (1 brut ... 4
+// ultra-transforme), lu au scan d'un code-barres et garde sur l'article (it.nova).
+// Seul le 4 est signale, sans jugement : a calories egales, ces produits calent moins.
+var _dernierNova=null,_novaFiche,_novaAjout=null;
+function _novaValide(v){v=parseInt(v,10);return(v>=1&&v<=4)?v:null;}
+function _tresTransforme(it){return!!(it&&_novaValide(it.nova)===4);}
+function _badgeNova(it){return _tresTransforme(it)?'<span title="Très transformé (selon OpenFoodFacts)" style="margin-left:5px;font-size:11px;opacity:.85;">🏭</span>':'';}
+function _texteNova(it){return _tresTransforme(it)?'🏭 Très transformé (selon OpenFoodFacts). Rien d’interdit : à calories égales, ces produits calent souvent moins. À garder en appoint plutôt qu’en base des repas.':'';}
 let _waitRef=null,_waitCat='placards',_waitMacMode='100';
 // Article du stock correspondant a un article « A ranger » : lien connu, sinon meme nom
 // (articles a 0 compris : ce sont justement ceux qu'on rachete), plats maison exclus.
@@ -1564,6 +1575,7 @@ function confirmerReassort(){
     ex.qty=Math.round(((+ex.qty||0)+v)*10)/10;
     _dlcRecharge(ex,(document.getElementById('reassort-dlc')||{}).value||null,epuise);                      /* l'ancienne date ne concerne plus rien de present */
   }
+  if(_novaValide(w.nova))ex.nova=_novaValide(w.nova);
   S.waiting=(S.waiting||[]).filter(x=>x.id!==w.id);
   fermerReassort();saveState();render();
 }
@@ -1670,6 +1682,7 @@ function _addOrMergeInv(cat,item){
     if(item.pieceG)ex.pieceG=item.pieceG;
   }else if(!ex.mac100&&item.mac100)ex.mac100=item.mac100;
   if(item.pkg&&!ex.pkg)ex.pkg=item.pkg;
+  if(item.nova)ex.nova=item.nova;
   if(!ex.added)ex.added=item.added||getToday();
   return true;
 }
@@ -1686,6 +1699,7 @@ function confirmWaitPlace(){
     const _m100={kcal:+(mp.kcal*100/pg).toFixed(1),prot:+(mp.prot*100/pg).toFixed(1),gluc:+(mp.gluc*100/pg).toFixed(1),lip:+(mp.lip*100/pg).toFixed(1)};
     const item={id:_id,name:it.name,qty:Math.round(np),unit:'pc',urgent:0,pieceG:Math.round(pg),macPiece:mp,mac100:_m100,macSource:'manual',macManual:{kcal:mp.kcal,prot:mp.prot,gluc:mp.gluc,lip:mp.lip}};
     const _dlc=document.getElementById('wait-dlc').value||null;if(_dlc)item.dlc=_dlc;
+    if(_novaValide(it.nova))item.nova=_novaValide(it.nova);
     var _mg=_addOrMergeInv(_waitCat,item);
     S.waiting=(S.waiting||[]).filter(w=>w.id!==_waitRef);
     saveState();closeWaitingItem();render();return;
@@ -1705,6 +1719,7 @@ function confirmWaitPlace(){
   item.macSource=_macSrc.wait;
   if(_macSrc.wait==='manual'){if(mac.kcal||mac.prot||mac.gluc||mac.lip)item.macManual={kcal:mac.kcal,prot:mac.prot,gluc:mac.gluc,lip:mac.lip};}else if(_macManual.wait){item.macManual={kcal:+_macManual.wait.kcal||0,prot:+_macManual.wait.prot||0,gluc:+_macManual.wait.gluc||0,lip:+_macManual.wait.lip||0};}
   if(dlc)item.dlc=dlc;
+  if(_novaValide(it.nova))item.nova=_novaValide(it.nova);
   var _mg=_addOrMergeInv(_waitCat,item);
   S.waiting=(S.waiting||[]).filter(w=>w.id!==_waitRef);
   saveState();closeWaitingItem();render();
@@ -1801,7 +1816,8 @@ function openItemDetail(cat,id){
   var _b=document.getElementById('item-mac-base');if(_b)_b.value=100;
   var _a=document.getElementById('item-mac-apercu');if(_a){_a.style.display='none';_a.textContent='';}
   const it=(S.inv[cat]||[]).find(i=>i.id===id);if(!it)return;
-  _itemDetailRef={cat,id};
+  _itemDetailRef={cat,id};_novaFiche=undefined;
+  {var _nv=document.getElementById('item-nova');if(_nv){var _tn=_texteNova(it);_nv.textContent=_tn;_nv.style.display=_tn?'block':'none';}}
   document.getElementById('item-name').value=it.name||'';
   document.getElementById('item-sub').textContent=(it.qty===null?'présent (illimité)':((it.qty||0)+' '+(it.unit||'')));
   _itemMacMode=it.macPiece?'piece':'100';
@@ -2038,6 +2054,7 @@ function _enregistrerItemDetail(){
         delete it.pkg;   // pkg exprime un poids : sans objet pour un article compte a la piece
       }
     }
+    if(_novaFiche!==undefined){if(_novaFiche)it.nova=_novaFiche;else delete it.nova;}   /* nouveau scan : son classement remplace l'ancien */
     saveState();
   }
   closeItemDetail();render();
@@ -2045,6 +2062,7 @@ function _enregistrerItemDetail(){
 function openAddItem(cat){
   document.getElementById('ai-overlay').style.display='flex';
   var _fz=document.getElementById('ai-m-fib');if(_fz)_fz.value='';
+  _novaAjout=null;
   /* met aussi les boutons a jour et adapte le formulaire */
   setAICat(cat||'frigo');
   var _d0=document.getElementById('ai-dlc');if(_d0)_d0.value='';document.getElementById('ai-name').value='';document.getElementById('ai-qty').value='';document.getElementById('ai-mbox').style.display='none';document.getElementById('ai-status').textContent='';_macSrc.aim='auto';_macManual.aim=null;renderMacSrc('aim');const _cb=document.getElementById('ai-present');if(_cb)_cb.checked=false;const _pk=document.getElementById('ai-pkg-on');if(_pk)_pk.checked=false;const _ps=document.getElementById('ai-pkg-size');if(_ps)_ps.value='';const _pc=document.getElementById('ai-pkg-count');if(_pc)_pc.value='';toggleAIPresent();toggleAIPkg();setAICat(_aic);var _pg0=document.getElementById('ai-pieceg');if(_pg0)_pg0.value='';var _pgr0=document.getElementById('ai-pieceg-row');if(_pgr0)_pgr0.style.display='none';if(!('BarcodeDetector' in window))loadZXing().catch(function(){});}
@@ -2093,7 +2111,7 @@ async function lookupBarcode(code){
   if(code.length<6){if(st)st.textContent='Code invalide.';return;}
   _scanActive=false;if(st)st.textContent='🔍 Recherche du produit...';
   try{
-    const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_fr,brands,nutriments,quantity');
+    const r=await fetch('https://world.openfoodfacts.org/api/v2/product/'+code+'.json?fields=product_name,product_name_fr,brands,nutriments,quantity,nova_group');
     const d=await r.json();
     if(d.status!==1||!d.product){if(st)st.textContent='Produit introuvable. Réessaie ou tape le code.';_scanActive=true;if(_scanDetector)requestAnimationFrame(_scanTick);return;}
     const p=d.product,nu=p.nutriments||{};
@@ -2103,6 +2121,7 @@ async function lookupBarcode(code){
     // Donnees publiques modifiables par n'importe qui : neutralisees avant tout usage
     const name=_neutre(((p.product_name_fr||p.product_name||'')+'').trim())||('Produit '+code);
     p.quantity=_neutre((p.quantity||'')+'');
+    _dernierNova=_novaValide(p.nova_group);
     stopScanner();if(_scanMode==='meal'){addScannedToMeal(name,macros,p.quantity||'');}else if(_scanMode==='shop'){addScannedToShop(name,macros,p.quantity||'');}else if(_scanMode==='item'){appliquerScanFiche(name,macros,p.quantity||'');}else{applyScannedProduct(name,macros,p.quantity||'');}
   }catch(e){if(st)st.textContent='Erreur réseau — réessaie.';_scanActive=true;if(_scanDetector)requestAnimationFrame(_scanTick);}
 }
@@ -2125,8 +2144,9 @@ function appliquerScanFiche(name,macros,qtyStr){
   var sv=function(id,v){var e=document.getElementById(id);if(e)e.value=v;};
   sv('item-kcal',m.kcal);sv('item-prot',m.prot);sv('item-gluc',m.gluc);sv('item-lip',m.lip);
   if(fib!==null)sv('item-fib',fib);
+  _novaFiche=_dernierNova;
   var st=document.getElementById('item-scan-st');
-  if(st){st.style.display='block';st.textContent='\u2713 Macros de \u00ab\u00a0'+name+'\u00a0\u00bb importées ('+note+')'+(qtyStr?' \u00b7 emballage '+qtyStr:'')+'. Vérifie puis Enregistrer.';}
+  if(st){st.style.display='block';st.textContent='\u2713 Macros de \u00ab\u00a0'+name+'\u00a0\u00bb importées ('+note+')'+(qtyStr?' \u00b7 emballage '+qtyStr:'')+(_novaFiche===4?' \u00b7 🏭 très transformé':'')+'. Vérifie puis Enregistrer.';}
 }
 function applyScannedProduct(name,macros,qtyStr){
   const ov=document.getElementById('ai-overlay');if(ov)ov.style.display='flex';
@@ -2134,8 +2154,9 @@ function applyScannedProduct(name,macros,qtyStr){
   const nm=document.getElementById('ai-name');if(nm)nm.value=name;
   ['kcal','prot','gluc','lip'].forEach(k=>{const el=document.getElementById('ai-m-'+k);if(el)el.value=macros[k];});
   {const _ef=document.getElementById('ai-m-fib');if(_ef)_ef.value=(typeof macros.fib==='number')?macros.fib:'';}
+  _novaAjout=_dernierNova;
   const mb=document.getElementById('ai-mbox');if(mb)mb.style.display='block';
-  const note=document.getElementById('ai-mnote');if(note)note.textContent='Importé via OpenFoodFacts (pour 100 g/ml)'+(qtyStr?' — emballage : '+qtyStr:'');
+  const note=document.getElementById('ai-mnote');if(note)note.textContent='Importé via OpenFoodFacts (pour 100 g/ml)'+(qtyStr?' — emballage : '+qtyStr:'')+(_novaAjout===4?' — 🏭 très transformé':'');
   _macSrc.aim='manual';_macManual.aim={kcal:macros.kcal,prot:macros.prot,gluc:macros.gluc,lip:macros.lip};renderMacSrc('aim');
   const stt=document.getElementById('ai-status');if(stt)stt.textContent='✓ Macros importées. Choisis la catégorie, la quantité et la DLC, puis Ajouter.';
   var _pq=_parseQty(qtyStr);var _pkg=document.getElementById('ai-pkg-on');
@@ -2194,6 +2215,7 @@ function confirmAddItem(){
   var _dlcEl=document.getElementById('ai-dlc');
   if(_dlcEl&&_dlcEl.value){item.dlc=_dlcEl.value;item.dlcAuto=false;}
   if(_pkgSize>0)item.pkg={size:_pkgSize};
+  if(_novaAjout)item.nova=_novaAjout;
   if(_mk.kcal||_mk.prot||_mk.gluc||_mk.lip)item.mac100=_mk; // sinon la migration remplit depuis la table
   item.macSource=_macSrc.aim;
   if(_macSrc.aim==='manual'){if(_mk.kcal||_mk.prot||_mk.gluc||_mk.lip)item.macManual=_mk;}else if(_macManual.aim){item.macManual={kcal:+_macManual.aim.kcal||0,prot:+_macManual.aim.prot||0,gluc:+_macManual.aim.gluc||0,lip:+_macManual.aim.lip||0};}
@@ -2216,6 +2238,7 @@ var _dup=findItemByName(n);if(_dup){var _curr=_dup.qty===null?'stock illimité':
       _dup.qty=Math.round(((+_dup.qty||0)+_q)*10)/10;
     }
     if(_pkgSize>0)_dup.pkg={size:_pkgSize};
+    if(item.nova)_dup.nova=item.nova;
     if(item.pieceG){_dup.pieceG=item.pieceG;_dup.macPiece=item.macPiece;}
     // Macros saisies ou importees (scan, IA) : elles completent ou remplacent
     if(item.mac100&&(item.macSource==='manual'||!_dup.mac100)){_dup.mac100=item.mac100;if(item.macSource)_dup.macSource=item.macSource;if(item.macManual)_dup.macManual=item.macManual;}
@@ -4398,14 +4421,14 @@ function renderInvCats(){
       const dlc=it.dlc?getDlcStatus(effDlc(it)):null;
       if(S.editMode){
         return`<div class="irow" style="flex-wrap:wrap;gap:4px;align-items:center;">
-          <span onclick="openItemDetail('${cat}','${it.id}')" style="color:${isUrg?'var(--red)':'var(--text2)'};flex:1;font-size:12px;min-width:100px;cursor:pointer;">${it.name}${it.dessert?'<span title="Propos\u00e9 comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">\ud83c\udf70</span>':''}</span>
+          <span onclick="openItemDetail('${cat}','${it.id}')" style="color:${isUrg?'var(--red)':'var(--text2)'};flex:1;font-size:12px;min-width:100px;cursor:pointer;">${it.name}${it.dessert?'<span title="Propos\u00e9 comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">\ud83c\udf70</span>':''}${_badgeNova(it)}</span>
           ${isEp?`<span style="font-size:11px;color:var(--text3);">présent</span>`:`<button onclick="toggleInvPresent('${cat}','${it.id}')" title="Présent / quantité" style="padding:4px 7px;border-radius:6px;border:0.5px solid ${it.qty===null?'var(--green)':'var(--border)'};background:${it.qty===null?'rgba(111,191,115,.12)':'transparent'};color:${it.qty===null?'var(--green)':'var(--text3)'};font-size:12px;cursor:pointer;white-space:nowrap;">∞</button>${it.qty===null?`<span style="font-size:11px;color:var(--green);margin-left:3px;">présent</span>`:`<input type="number" value="${it.qty||0}" min="0" onchange="updateInvQty('${cat}','${it.id}',this.value)" style="width:56px;padding:4px 6px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none;text-align:center;box-sizing:border-box;margin-left:3px;">${it.pkg&&it.pkg.size>0&&(!it.unit||it.unit==='g'||it.unit==='ml')?`<button onclick="stepInvPkg('${cat}','${it.id}',-1)" style="padding:4px 6px;margin-left:3px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">−1</button><button onclick="stepInvPkg('${cat}','${it.id}',1)" style="padding:4px 6px;margin-left:2px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">+1</button><span style="font-size:11px;color:var(--text3);margin-left:4px;white-space:nowrap;">${Math.round((it.qty||0)/it.pkg.size*10)/10} × ${it.pkg.size}${it.unit||"g"}</span>`:``}<span style="font-size:11px;color:var(--text3);margin-left:2px;">${it.unit}</span>`}`}
           <input type="date" value="${it.dlc||''}" onchange="updateInvDlc('${cat}','${it.id}',this.value)" title="Date p\u00e9remption" style="padding:3px 6px;background:var(--bg);border:0.5px solid ${dlc?dlc.color:'var(--border)'};border-radius:6px;color:${dlc?dlc.color:'var(--text3)'};font-size:11px;outline:none;cursor:pointer;"/>
           <button onclick="deleteInvItem('${cat}','${it.id}')" style="background:var(--red-bg);border:0.5px solid var(--red);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;padding:3px 8px;flex-shrink:0;">✕</button>
         </div>`;
       }
       const _dOr=dlc&&dlc.color==='var(--orange)';const _dRed=(isUrg||(dlc&&dlc.color==='var(--red)'))&&!_dOr;const _hot=_dRed||_dOr;const _cls=_dRed?' urg':(_dOr?' urgo':'');const _nc=isUrg?'var(--red)':((dlc&&(dlc.color==='var(--red)'||dlc.color==='var(--orange)'))?dlc.color:'var(--text2)');return`<div class="irow${_cls}">
-        <span onclick="openItemDetail('${cat}','${it.id}')" style="color:${_nc};cursor:pointer;">${_hot?`<span title="${isUrg&&!it.dlc?'Produit périssable : à consommer rapidement':'Date limite proche'}">⏱ </span>`:''}${it.name}${it.dessert?'<span title="Propos\u00e9 comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">\ud83c\udf70</span>':''}</span>
+        <span onclick="openItemDetail('${cat}','${it.id}')" style="color:${_nc};cursor:pointer;">${_hot?`<span title="${isUrg&&!it.dlc?'Produit périssable : à consommer rapidement':'Date limite proche'}">⏱ </span>`:''}${it.name}${it.dessert?'<span title="Propos\u00e9 comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">\ud83c\udf70</span>':''}${_badgeNova(it)}</span>
         <div style="display:flex;align-items:center;gap:6px;">
           <span style="font-size:12px;color:var(--text3);">${qtyLabel(it)}</span>
           ${dlc?`<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:${dlc.bg};color:${dlc.color};font-weight:500;">DLC ${dlc.label}</span>`:''}
@@ -4643,7 +4666,8 @@ function _guessRayon(name){
   return 'divers';
 }
 function addScannedToShop(name,macros,qtyStr){
-  var id=_ajouterAuxCourses(name,_guessRayon(name),{mac100:macros||null,pkg:qtyStr||''});
+  var _ex={mac100:macros||null,pkg:qtyStr||''};if(_dernierNova)_ex.nova=_dernierNova;
+  var id=_ajouterAuxCourses(name,_guessRayon(name),_ex);
   saveState();
   S.mainTab='courses';
   render();
@@ -4657,7 +4681,7 @@ function validateCourses(){
   let placed=0;
   panier.forEach(it=>{
     if(shopTransfer(it.rayon)&&!it.graveOnly){
-      S.waiting.push(Object.assign({id:'wt_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:it.name,rayon:it.rayon},it.invId?{invId:it.invId}:{}));
+      S.waiting.push(Object.assign({id:'wt_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),name:it.name,rayon:it.rayon},it.invId?{invId:it.invId}:{},_novaValide(it.nova)?{nova:_novaValide(it.nova)}:{}));
       placed++;
     }
     it.checked=false;it.achete=S.today;   /* reste dans son rayon, masque */
