@@ -112,7 +112,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 /* Apparition douce du contenu principal */
 @keyframes riseIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 #profile-screen > div { animation: riseIn .9s var(--ease) both; }
-#profile-screen { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+#profile-screen { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); overscroll-behavior: contain; }
+/* Ecran de connexion ouvert : l'appli derriere n'est ni affichee ni defilable */
+body.auth-ouvert #root { display: none; }
 
 
 /* ═══ NAVIGATION BASSE ═════════════════════════════════════════════════ */
@@ -288,7 +290,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
     <div style="display:flex;gap:8px;margin-top:20px;">
       <button onclick="closeSettings()" style="flex:1;padding:10px;background:transparent;border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">Fermer</button>
     </div>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 21h15 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-06 21h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -554,8 +556,9 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-06-2115';
+const BUILD_ID='2026-10-06-2130';
 const NOUVEAUTES=[
+  {b:'2026-10-06-2130',points:[]},   /* appli masquee derriere l'ecran de connexion : invisible a l'usage */
   {b:'2026-10-06-2115',points:[]},   /* icone SVG des produits transformes : decrite dans l'entree 2030, mise a jour */
   {b:'2026-10-06-2100',points:[]},   /* pastille « Transformé » : deja decrite dans l'entree 2030, mise a jour */
   {b:'2026-10-06-2030',points:[
@@ -981,6 +984,7 @@ function selectProfile(n){
   _lastMainTab='';_lastMealTab='';_lastDay='';   // pas d'animation de transition a l'arrivee
   render();
   document.getElementById('profile-screen').style.display='none';
+  try{document.body.classList.remove('auth-ouvert');}catch(e){}
   loadState().then(()=>{render();_verifierNouveautes();});
 }
 // ─── EDIT MODE ───────────────────────────
@@ -8437,6 +8441,7 @@ function afficherEcranConnexion(mode){
   _auth.mode=mode||'accueil';_auth.err='';
   var ps=document.getElementById('profile-screen');if(!ps)return;
   ps.style.display='flex';ps.style.alignItems='flex-start';ps.style.overflowY='auto';
+  try{document.body.classList.add('auth-ouvert');}catch(e){}
   renderAuth();
 }
 function _authMode(m){_auth.mode=m;_auth.err='';if(m==='inscription'){_ins={etape:0,login:'',mdp:'',p:{},groq:''};_chargerChoix(null);}renderAuth();}
