@@ -118,7 +118,7 @@ console.log('\n=== HD. Epice en double ===');
 let p2=0,f2=0;
 function t2(n,f){try{f();console.log('  ok  '+n);p2++;}catch(e){console.log('  KO  '+n+' -> '+e.message);f2++;}}
 t2('*** une epice deja dans les ingredients n\'est pas reproposee en optionnel ***',()=>{
-  const h=G('renderIngredients')(R('liam_v6_saumon_riz'));
+  const h=G('renderIngredients')(R('liam_v6_steak_ratatouille'));   /* recette avec de l'ail (catalogue v8) */
   if(/opt\. · Ail en poudre/.test(h))throw new Error('ail en double');
   if(!/Ail en poudre/.test(h))throw new Error('ail disparu');
 });
