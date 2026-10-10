@@ -8,7 +8,7 @@ function monde(heure){
   // heure = heure voulue a Paris. Intl lit l'instant reel, pas getHours(),
   // donc on fabrique l'instant UTC correspondant (Paris = UTC+2 en aout).
   const isoUTC=new Date(Date.UTC(2026,7,24,(heure+22)%24,0,0)).toISOString();
-  let js=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+  let js=fs.readFileSync('catalogue.js','utf8')+'\n'+fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];   /* catalogue.js charge avant le script */
   js+='\n;["S","RCP","TARGETS","coachAdvice","_phaseJournee","_suggereRecette","getDayMacros","canCook","cookedToday","findItem"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
   const reg={};
   function mk(){return{value:'',checked:false,textContent:'',innerHTML:'',className:'',style:{},cssText:'',dataset:{},

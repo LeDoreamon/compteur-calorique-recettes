@@ -8,7 +8,7 @@ function eq(a,b,m){if(String(a)!==String(b))throw new Error((m||'')+' attendu '+
 // servira aux futurs comptes, meme s'il n'y a plus qu'un profil aujourd'hui.
 function ailleurs(isoUTC){const sb=monde('liam',isoUTC);sb.S.tz='America/Vancouver';return sb;}
 function monde(profil,isoUTC){
-  let js=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+  let js=fs.readFileSync('catalogue.js','utf8')+'\n'+fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];   /* catalogue.js charge avant le script */
   js+='\n;try{ACTIVE_PROFILE="'+profil+'";}catch(e){}';
   js+='\n;["S","getToday","heureProfil","_phaseJournee","PROFILE_TZ","_empreinteEtat","shiftDate"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
   js+='\n;try{globalThis.__setRef=function(v){_empreinteRef=v;};globalThis.__getRef=function(){return _empreinteRef;};}catch(e){}';
