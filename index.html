@@ -299,7 +299,7 @@ body.auth-ouvert #root { display: none; }
     <div style="display:flex;gap:8px;"><button onclick="copierRapport()" style="flex:1;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">📋 Copier le rapport</button><button onclick="effacerJournal()" style="padding:9px 12px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">Effacer</button></div>
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-07 00h13 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-10 11h08 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -566,8 +566,9 @@ body.auth-ouvert #root { display: none; }
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-07-0013';
+const BUILD_ID='2026-10-10-1108';
 const NOUVEAUTES=[
+  {b:'2026-10-10-1108',points:[]},
   {b:'2026-10-07-0013',points:[]},
   {b:'2026-10-07-0012',points:[]},
   {b:'2026-10-07-0011',points:[]},
@@ -1005,7 +1006,7 @@ function selectProfile(n){
   TARGETS=_h?LIAM_TARGETS:CIBLES_PAR_DEFAUT;
   S.inv=JSON.parse(JSON.stringify(_h?INV_DEFAULT:INV_VIDE));        // un compte ne recoit jamais les donnees de demo
   S.dayMeals=JSON.parse(JSON.stringify(_h?MEALS_DEFAULT:{}));
-  _archJours={};_archCharges={};_nettoyageFait=false;S.archives={};
+  _archJours={};_archCharges={};_nettoyageFait=false;S.archives={};_schemaTropRecent=false;
   S.today=getToday();S.displayDate=S.today;
   S.editMode=false;S.mealTab='breakfast';S.mainTab='accueil';
   _lastMainTab='';_lastMealTab='';_lastDay='';   // pas d'animation de transition a l'arrivee
@@ -2802,7 +2803,7 @@ async function _chargerArchive(m){
   }catch(e){_archCharges[m]=false;}
 }
 async function _nettoyageDonnees(){
-  if(_nettoyageFait||!_loaded)return;
+  if(_nettoyageFait||!_loaded||_schemaTropRecent)return;
   try{if(!sessionActive()||(navigator&&navigator.onLine===false))return;}catch(e){return;}
   _nettoyageFait=true;
   var libres=!S.libresMigres&&(S.customRecipes||[]).some(function(r){return r&&/^_free_/.test(String(r.id));});
@@ -2917,11 +2918,33 @@ function _mergeDuplicates(){
   }
   return merged>0;
 }
+// ── Version du format et migrations ordonnees (07/10/2026) ──
+// Chaque changement de format a venir s'ajoute a MIGRATIONS ({v, nom, fn(S) -> true si
+// quelque chose a change}) : jouees une fois, dans l'ordre, a partir de state.schema.
+// Les corrections plus anciennes gardent leurs drapeaux (fibInv, invFix1004…).
+// Garde-fou : un etat ecrit par une version PLUS RECENTE de l'appli n'est jamais
+// ecrase par celle-ci (l'enregistrement reconstruit l'etat champ par champ et
+// effacerait ce qu'elle ne connait pas) : on bloque l'envoi et on propose de recharger.
+const MIGRATIONS=[];
+const SCHEMA=MIGRATIONS.reduce(function(m,x){return Math.max(m,x.v);},1);
+var _schemaTropRecent=false;
+function _migrerSchema(v){
+  var ch=false;v=Math.max(1,+v||1);
+  for(var i=0;i<MIGRATIONS.length;i++){
+    var m=MIGRATIONS[i];if(m.v<=v)continue;
+    try{if(m.fn(S))ch=true;v=m.v;}catch(e){_noterErreur('js','migration '+m.v+' ('+m.nom+') : '+(e&&e.message));break;}   /* on s'arrete : la suivante suppose celle-ci faite */
+  }
+  S.schema=v;return ch;
+}
+function _versionPerimee(){
+  _alerte('Mise à jour nécessaire\n\nTes données ont été enregistrées par une version plus récente de Dorayaki. Pour ne rien perdre, cet appareil n’enregistre plus tant que l’appli n’est pas à jour.\n\nFerme complètement l’appli et rouvre-la (ou recharge la page).');
+}
 function _applyState(d){
   if(!d)return;
   d=_neutre(d);   // tout ce qui vient de Firebase ou du cache passe par ici
   // Si le tag profil existe et ne correspond pas → données de l'autre profil, ignorer
   if(d._profile && d._profile!==ACTIVE_PROFILE)return;
+  if((+d.schema||1)>SCHEMA){if(!_schemaTropRecent){_schemaTropRecent=true;_noterErreur('synchro','etat au format '+d.schema+', appli au format '+SCHEMA);try{_versionPerimee();}catch(e){}}}
   // Inventaire
   if(d.inv){
     // Données séparées par profil (un chemin par profil) → chargement direct.
@@ -3042,6 +3065,8 @@ function _applyState(d){
   else S.invFix1004=!!d.invFix1004;
   if(_catalogue()===PROFIL_HERITE&&!d.invFix1004b){if(_corrigerPouletCru())_etatCorrige=true;S.invFix1004b=true;}
   else S.invFix1004b=!!d.invFix1004b;
+  /* migrations de format, en dernier : l'etat est entierement charge */
+  if(!_schemaTropRecent&&_migrerSchema(d.schema))_etatCorrige=true;
 }
 function showSyncErr(){_alerte(_lastSyncErr||'Aucun détail enregistré pour le moment.\n\nDéclenche une sauvegarde (ajoute un repas) puis retape.');}
 // Le badge existe a deux endroits : en tete de page et sur l'accueil. Un seul
@@ -3383,7 +3408,8 @@ function saveState(){
   return _saveChain;
 }
 async function _saveStateNow(){
-  if(!_loaded)return; // jamais sauvegarder l'état par défaut pendant le chargement initial
+  if(!_loaded)return;
+  if(_schemaTropRecent)return;   /* etat d'une version plus recente : on n'ecrase rien */ // jamais sauvegarder l'état par défaut pendant le chargement initial
   // Quelqu'un a-t-il écrit depuis notre chargement ? Si oui, on n'écrase pas.
   const _rr=await _remoteRev();
   if(_rr!==null&&_rr>_stateRev){
@@ -3439,7 +3465,7 @@ async function _saveStateNow(){
     waiting:S.waiting||[],
     weights:S.weights||[],mesures:S.mesures||[],favs:S.favs||[],weightGoal:(S.weightGoal||null),
     todaySummary:(function(){try{var t=getDayMacros(S.today);return{date:S.today,kcal:t.kcal,prot:t.prot,gluc:t.gluc,lip:t.lip};}catch(e){return null;}})(),
-    shopSeeded:S.shopSeeded||false,bilanVu:S.bilanVu||null,archives:S.archives||{},libresMigres:!!S.libresMigres,tutoVu:S.tutoVu!==false,
+    shopSeeded:S.shopSeeded||false,bilanVu:S.bilanVu||null,archives:S.archives||{},libresMigres:!!S.libresMigres,schema:S.schema||SCHEMA,tutoVu:S.tutoVu!==false,
     recTri:S.recTri||'',recTriDir:S.recTriDir||1,
     pasBase:(typeof S.pasBase==='number')?S.pasBase:null,
     programme:S.programme||[],progMigre:!!S.progMigre,
