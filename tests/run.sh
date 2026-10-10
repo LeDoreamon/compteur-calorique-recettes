@@ -10,6 +10,7 @@ import re;h=open('index.html',encoding='utf-8').read()
 m=re.search(r'<script>(.*?)</script>',h,re.DOTALL)
 open('/tmp/c.js','w',encoding='utf-8').write(m.group(1))" || exit 1
 node --check /tmp/c.js || { echo "SYNTAXE KO"; exit 1; }
+node --check catalogue.js || { echo "SYNTAXE catalogue.js KO"; exit 1; }
 echo "syntaxe ok"
 tot=0; ko=0; plantees=""
 for f in $(ls tests/t[0-9]*.js | sed 's#tests/##;s#\.js$##' | sort -V); do

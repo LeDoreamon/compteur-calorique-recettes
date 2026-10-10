@@ -11,7 +11,7 @@ function build(opts){
   const serveur={state:opts.serveur||null,burn:{},envois:[]};
   const local={};
   const journal=[];
-  let js=fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+  let js=fs.readFileSync('catalogue.js','utf8')+'\n'+fs.readFileSync('index.html','utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
   js+='\n;["S","saveState","loadState","_applyState","render","getToday"].forEach(function(n){try{globalThis[n]=eval(n);}catch(e){}});';
   js+='\n;try{globalThis.__rev=function(){return _stateRev;};globalThis.__setLoaded=function(v){_loaded=v;};}catch(e){}';
   const reg={};

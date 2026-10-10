@@ -28,6 +28,7 @@ def main(args):
         (h, "build " + a_lib, "build " + lib),
         (h, "const BUILD_ID='%s';" % ancien, "const BUILD_ID='%s';" % bid),
     ]
+    rempl.append((h, 'catalogue.js?v=%s"' % ancien, 'catalogue.js?v=%s"' % bid))   # le catalogue suit le build
     for _, a, b in rempl:
         assert h.count(a) == 1, 'ancre introuvable : ' + a
         h = h.replace(a, b)

@@ -103,6 +103,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t85.js` | Version du format : état sans version, migrations ordonnées et jouées une fois, arrêt sur une migration qui plante, état d'une version plus récente (alerte, aucune écriture), levée au changement de compte |
 | `t86.js` | Clés IA hors de l'état : plus dans l'état enregistré, migration (nœud `cles`, sauvegardes et filet purgés), nœud qui fait foi (suppression propagée), Réglages, hors session |
 | `t87.js` | Ingrédients surlignés dans les étapes : tout le catalogue couvert, nom exact de la fiche, pas de reste du texte, « riz » ≠ vinaigre de riz, singulier, majuscules, renommage suivi, recettes perso, carte dépliée, insertion dans l'éditeur |
+| `t88.js` | Découpage : `catalogue.js` chargé avant le script, version = build (mise à jour par `publier.py`), données seules, plus de doublon dans `index.html`, page « Recharger » si le fichier manque |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
