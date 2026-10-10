@@ -116,7 +116,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 /* Ecran de connexion ouvert : l'appli derriere n'est ni affichee ni defilable */
 body.auth-ouvert #root { display: none; }
 /* Tutoriel : calque sombre perce sur l'element montre, bulle d'explication */
-.ing-hl { background: rgba(233,161,59,.17); color: var(--text); border-radius: 4px; padding: 0 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.ing-hl { background: rgba(111,191,115,.24); color: #9BDB9E; font-weight: 600; border-radius: 4px; padding: 0 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 #tuto { display: none; position: fixed; inset: 0; z-index: 400; }
 #tuto .tuto-trou { position: fixed; border-radius: 14px; border: 2px solid var(--gold); box-shadow: 0 0 0 9999px rgba(0,0,0,.76); pointer-events: none; transition: top .25s var(--ease), left .25s var(--ease), width .25s var(--ease), height .25s var(--ease); }
 #tuto .tuto-bulle { position: fixed; left: 16px; right: 16px; max-width: 380px; margin: 0 auto; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 14px; padding: 14px 15px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.55); animation: riseIn .3s var(--ease) both; }
@@ -300,7 +300,7 @@ body.auth-ouvert #root { display: none; }
     <div style="display:flex;gap:8px;"><button onclick="copierRapport()" style="flex:1;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">📋 Copier le rapport</button><button onclick="effacerJournal()" style="padding:9px 12px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">Effacer</button></div>
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-10 11h29 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-10 11h36 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -568,8 +568,11 @@ body.auth-ouvert #root { display: none; }
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-10-1129';
+const BUILD_ID='2026-10-10-1136';
 const NOUVEAUTES=[
+  {b:'2026-10-10-1136',points:[
+    'Ingrédients des recettes surlignés en vert, plus lisibles.'
+  ]},
   {b:'2026-10-10-1129',points:[
     'Dans les étapes des recettes, les ingrédients sont surlignés et écrits avec leur nom exact de l’inventaire : plus facile à suivre en cuisinant.',
     'Recettes perso : touche un ingrédient au-dessus des étapes pour l’insérer en entier, il sera surligné.'
