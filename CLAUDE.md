@@ -59,7 +59,7 @@ bash tests/run.sh      # depuis la racine du depot
 
 - Le script vérifie la syntaxe du script inline (`node --check`), puis joue toutes les suites `tests/tN.js` (découvertes seules, ordre numérique) dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`). Il sort en erreur (code 1) si un test échoue ou si une suite plante avant sa ligne de bilan (« PLANTEE »).
 - CI (07/10/2026) : `.github/workflows/tests.yml` rejoue `tests/run.sh` à chaque PR et à chaque mise à jour de `main` (Node 20), puis `tests/audit.py` à titre informatif. Ne fusionner que si la vérification « Tests » est verte.
-- Attendu : 0 échec (1456 tests au 10/10/2026).
+- Attendu : 0 échec (1461 tests au 10/10/2026).
 - Le bac à sable (`sb.js`, et `t9`, `t17`, `t24` qui lisent le script eux-mêmes) colle `catalogue.js` devant le script inline ; `run.sh` vérifie aussi sa syntaxe.
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
@@ -107,6 +107,7 @@ Si une assertion échoue, le fichier n'est pas écrit : tout rejouer.
 14. Objectif : `_objectif()` renvoie `perte`, `maintien` ou `prise` (profil, sinon poids cible, sinon `perte`) ; `_libObjectif()` donne le libellé (Sèche, Maintien, Prise de masse). Ne pas tester l'objectif par `_enPriseDeMasse()` seul : le maintien n'est pas une sèche. Les moyennes du Bilan portent sur les journées complètes (`_jourComplet` : hors aujourd'hui, au moins 50 % de la cible). Cible du jour : `_cibleDuJour(jour)` ; en sèche l'activité ne s'ajoute pas (elle creuse le déficit), en maintien et en prise elle est à compenser (décision du 25/09/2026). Protéines « atteintes » : `_protOk` (95 % de la cible), partout.
 15. Réseau du bac à sable cloud : Firebase, Groq et `github.io` sont bloqués par le proxy (vérifié le 25/09/2026). On ne peut donc pas tester en direct : simuler les réponses. `raw.githubusercontent.com` et `git clone` fonctionnent.
 16. Champs de clé API (Groq et Gemini) : jamais `type="password"` (le navigateur propose d'enregistrer la clé comme mot de passe). `type="text"` + classe `champ-cle` (`-webkit-text-security: disc`) + `autocomplete="off"` ; `closeSettings` vide les champs. Vérifié par `t65.js`.
+17. Rendu (10/10/2026) : `render()` reconstruit tout `#root` ; mesuré sur mon état réel, c'est le calcul du HTML qui coûte, pas le DOM (3 à 6 ms). Garder hors des boucles ce qui est cher : `getToday()` réutilise un formateur par fuseau (`_fmtProfil`), `paires0k` calcule les mots-clés une fois par article (inventaire : 21 → 6,5 ms). Clics : `data-action` + `_onActionClick` (délégué sur `#root` et la barre) ; `t89` vérifie que chaque `data-action` a son traitement et inversement. Les `onclick` en ligne restent (fenêtres hors `#root`) : les convertir n'apporterait rien de visible.
 
 ## 7. Ce que l'app sait faire
 
