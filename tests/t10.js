@@ -131,7 +131,7 @@ t('*** clearApiKey demande confirmation et propage la suppression ***',()=>{
   const i=src.indexOf('function clearApiKey');
   const bloc=src.slice(i,i+700);
   if(!bloc.includes('_confirmer('))throw new Error('pas de confirmation');
-  if(!bloc.includes('saveState()'))throw new Error('suppression non propagee : la cle reviendrait de Firebase');
+  if(!bloc.includes('_ecrireCles()'))throw new Error('suppression non propagee : la cle reviendrait de Firebase');   /* depuis le 10/10/2026 : noeud cles */
 });
 t('annuler la confirmation ne supprime rien',()=>{
   const src=require('fs').readFileSync('index.html','utf8');

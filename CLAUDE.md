@@ -20,12 +20,12 @@ Dorayaki est une PWA de suivi calorique que je (Liam) développe pour moi. Des c
 - Auth Firebase par API REST : `accounts:signUp`, `signInWithPassword`, `update`, `sendOobCode`, et `securetoken` pour rafraîchir le jeton.
 - La session est stockée dans `localStorage.dz_auth = {uid, rtok, login}`. Le mot de passe n'est jamais stocké.
 - Adresse technique `login@dorayaki.app` (`_emailDe`), sauf si l'identifiant est déjà un e-mail.
-- Données de chaque compte sous `users/<uid>/` : `state`, `burn`, `photos`, `filet`, `backups`, `archive` (mois de repas archivés, `archive/AAAA-MM = {mois,n,jours}`), `progres` et `progresMini` (photos de progression, hors de l'état : clé `AAAA-MM-JJ_pose`, pose = face, profil ou dos).
+- Données de chaque compte sous `users/<uid>/` : `state`, `cles` (clés IA), `burn`, `photos`, `filet`, `backups`, `archive` (mois de repas archivés, `archive/AAAA-MM = {mois,n,jours}`), `progres` et `progresMini` (photos de progression, hors de l'état : clé `AAAA-MM-JJ_pose`, pose = face, profil ou dos).
 - Règles Firebase en place : seul `users/$uid` est accessible (`auth.uid === $uid`), tout le reste est fermé. Conséquence : `/liam` (ancien profil) et `/maureen` sont verrouillés. **Ne pas supprimer ces nœuds** : c'est à moi d'en décider.
 - `fbUrl(path)` ajoute `?auth=<idToken>`. Si `securetoken` refuse le jeton pour de bon (400 `TOKEN_EXPIRED`, `INVALID_REFRESH_TOKEN`, `MISSING_REFRESH_TOKEN`, `USER_DISABLED`, `USER_NOT_FOUND`, `INVALID_GRANT`), `_sessionExpiree()` rouvre l'écran de connexion.
 - Code de rattachement et accès « ancien profil » sans compte : retirés le 26/09/2026 (migration terminée). `PROFIL_HERITE='liam'` reste l'identifiant de mon catalogue (`S.catalogue`), de mes cibles et de mes migrations. Un ancien marqueur `dz_herite` est effacé au démarrage. **Ne jamais écrire l'ancien code en clair.**
-- La clé Groq est stockée dans `localStorage.anthropic_key` et synchronisée dans `state.groqKey` (lisible par moi seul grâce aux règles). Elle est retirée des exports `.json`, ignorée à l'import, et effacée à la déconnexion ainsi qu'à la reconnexion sur un autre compte après une session expirée.
-- Clé Gemini (facultative, 03/10/2026) : même traitement, dans `localStorage.gemini_key` et `state.geminiKey` (`getGeminiKey`, format vérifié par `_cleGeminiValide` : `AQ.…` (nouveau format 2026) ou `AIza…`). Saisie dans Réglages et à l'étape « Les IA » de l'inscription, qui explique pourquoi deux services.
+- La clé Groq est stockée dans `localStorage.anthropic_key` et synchronisée dans **`users/<uid>/cles`** (`{groq, gemini, maj}`, hors de l'état depuis le 10/10/2026, donc hors des sauvegardes quotidiennes, du filet et des exports). Ce nœud fait foi : `_synchroCles` (au chargement) aligne l'appareil dessus, une clé supprimée ailleurs disparaît ; `saveApiKey`, `clearApiKey`, `saveGeminiKey`, `clearGeminiKey` et l'inscription l'écrivent (`_ecrireCles`). Migration unique (`S.clesSorties`) : les clés d'un ancien état (`state.groqKey`/`geminiKey`, encore relues par `_applyState` si l'appareil n'en a pas) partent dans `cles`, puis `_purgerClesSauvegardes` les retire des sauvegardes et du filet déjà écrits. Clés ignorées à l'import, effacées à la déconnexion ainsi qu'à la reconnexion sur un autre compte après une session expirée.
+- Clé Gemini (facultative, 03/10/2026) : même traitement, dans `localStorage.gemini_key` et `cles.gemini` (`getGeminiKey`, format vérifié par `_cleGeminiValide` : `AQ.…` (nouveau format 2026) ou `AIza…`). Saisie dans Réglages et à l'étape « Les IA » de l'inscription, qui explique pourquoi deux services.
 
 ## 3. Modèles Groq
 
@@ -59,7 +59,7 @@ bash tests/run.sh      # depuis la racine du depot
 
 - Le script vérifie la syntaxe du script inline (`node --check`), puis joue toutes les suites `tests/tN.js` (découvertes seules, ordre numérique) dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`). Il sort en erreur (code 1) si un test échoue ou si une suite plante avant sa ligne de bilan (« PLANTEE »).
 - CI (07/10/2026) : `.github/workflows/tests.yml` rejoue `tests/run.sh` à chaque PR et à chaque mise à jour de `main` (Node 20), puis `tests/audit.py` à titre informatif. Ne fusionner que si la vérification « Tests » est verte.
-- Attendu : 0 échec (1432 tests au 10/10/2026).
+- Attendu : 0 échec (1439 tests au 10/10/2026).
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
   - ou supprimer les copies ensuite : `rm -f t*.js sb.js audit.py; rm -rf data`.
