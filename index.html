@@ -116,6 +116,7 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 /* Ecran de connexion ouvert : l'appli derriere n'est ni affichee ni defilable */
 body.auth-ouvert #root { display: none; }
 /* Tutoriel : calque sombre perce sur l'element montre, bulle d'explication */
+.ing-hl { background: rgba(233,161,59,.17); color: var(--text); border-radius: 4px; padding: 0 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
 #tuto { display: none; position: fixed; inset: 0; z-index: 400; }
 #tuto .tuto-trou { position: fixed; border-radius: 14px; border: 2px solid var(--gold); box-shadow: 0 0 0 9999px rgba(0,0,0,.76); pointer-events: none; transition: top .25s var(--ease), left .25s var(--ease), width .25s var(--ease), height .25s var(--ease); }
 #tuto .tuto-bulle { position: fixed; left: 16px; right: 16px; max-width: 380px; margin: 0 auto; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 14px; padding: 14px 15px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.55); animation: riseIn .3s var(--ease) both; }
@@ -299,7 +300,7 @@ body.auth-ouvert #root { display: none; }
     <div style="display:flex;gap:8px;"><button onclick="copierRapport()" style="flex:1;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">📋 Copier le rapport</button><button onclick="effacerJournal()" style="padding:9px 12px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">Effacer</button></div>
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-10 11h17 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-10 11h29 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -445,6 +446,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="crAddIngredient()" style="width:100%;margin-top:8px;padding:9px;background:transparent;border:0.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">+ Ajouter un ingrédient</button>
     <div style="font-size:11px;color:var(--text3);line-height:1.5;margin-top:6px;">🔄 = ingrédient « au choix » : la carte affiche ses macros par défaut, et tu choisiras le vrai ingrédient au moment de cuisiner.</div>
     <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:14px 0 4px;">Étapes <span style="text-transform:none;letter-spacing:0;">(une par ligne)</span></div>
+    <div id="cr-inserer" style="display:none;margin:0 0 6px;"></div>
     <textarea id="cr-steps" rows="5" placeholder="Cuire le riz 12 min.&#10;Poêler le saumon 4 min par face.&#10;Assembler et assaisonner." style="width:100%;box-sizing:border-box;padding:9px 10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;line-height:1.5;outline:none;resize:vertical;"></textarea>
     <div id="cr-total" style="font-size:12px;color:var(--text2);margin-top:12px;padding-top:10px;border-top:0.5px solid var(--border);"></div>
     <div style="display:flex;gap:8px;margin-top:14px;">
@@ -566,8 +568,12 @@ body.auth-ouvert #root { display: none; }
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-10-1117';
+const BUILD_ID='2026-10-10-1129';
 const NOUVEAUTES=[
+  {b:'2026-10-10-1129',points:[
+    'Dans les étapes des recettes, les ingrédients sont surlignés et écrits avec leur nom exact de l’inventaire : plus facile à suivre en cuisinant.',
+    'Recettes perso : touche un ingrédient au-dessus des étapes pour l’insérer en entier, il sera surligné.'
+  ]},
   {b:'2026-10-10-1117',points:[]},
   {b:'2026-10-10-1112',points:[]},
   {b:'2026-10-10-1108',points:[]},
@@ -804,7 +810,7 @@ const RCP=[
   {id:'liam_v8_poulet_chili_doux',profile:'liam',slots:['lunch','dinner'],name:'Poulet sauce chili douce & riz',urgent:0,ur:null,time:20,kcal:584,prot:53,gluc:78,lip:6,steps:["Lancer 70 g de riz.","Saisir 200 g d'aiguillettes à sec dans une poêle antiadhésive, 6 min.","Ajouter 50 g d'oignons, 3 min.","Hors du feu, enrober de 30 g de sauce chili douce détendue avec 10 ml de vinaigre de riz.","Servir sur le riz, 4 g de sésame."],used:[{id:'cx_mqwkfekl',n:'Aiguillettes de poulet',qty:200},{id:'riz',n:'Riz Oiseaux Célestes',qty:70},{id:'sauce_chili',n:'Sauce chili douce',qty:30},{id:'vinaigre_riz',n:'Vinaigre de riz',qty:10},{id:'oignons',n:'Oignons émincés',qty:50},{id:'sesame',n:'Sésame doré',qty:4}],extras:[]},
   {id:'liam_v6_poulet_curry_coco',profile:'liam',slots:['lunch','dinner'],name:'Poulet curry-coco & riz',urgent:0,ur:null,time:25,kcal:650,prot:55,gluc:59,lip:21,steps:["Lancer 60 g de riz.","Faire suer 70 g d'oignons 3 min.","Ajouter 200 g d'aiguillettes, saisir 5 min.","Verser 80 ml de lait de coco, 6 g de curry, 3 g de gingembre, 1 cube de bouillon.","Mijoter 10 min à couvert."],used:[{id:'cx_mqwkfekl',n:'Aiguillettes de poulet',qty:200},{id:'riz',n:'Riz Oiseaux Célestes',qty:60},{id:'lait_coco',n:'Lait de coco',qty:80},{id:'oignons',n:'Oignons émincés',qty:70},{id:'curry',n:'Curry',qty:6},{id:'gingembre',n:'Gingembre',qty:3},{id:'bouillon_poulet',n:'Bouillon poulet',qty:1}],extras:[]},
   {id:'liam_v8_pates_poulet_parmesan',profile:'liam',slots:['lunch','dinner'],name:'Pâtes complètes, poulet, crème & parmesan',urgent:0,ur:null,time:20,kcal:588,prot:50,gluc:60,lip:15,steps:["Lancer 80 g de pâtes complètes.","Saisir 150 g d'aiguillettes en dés à sec, 6 min, avec 50 g d'oignons.","Hors du feu, ajouter 50 g de crème fraîche légère et 2 g d'épices italiennes.","Mélanger aux pâtes, finir avec 10 g de parmesan râpé."],used:[{id:'pates_completes',n:'Pâtes complètes',qty:80},{id:'cx_mqwkfekl',n:'Aiguillettes de poulet',qty:150},{id:'cx_mqwm5mzs',n:'Crème fraîche légère',qty:50},{id:'oignons',n:'Oignons émincés',qty:50},{id:'cx_musr7n63',n:'Parmigiano Reggiano',qty:10},{id:'epices_it',n:'Épices italiennes',qty:2}],extras:[]},
-  {id:'liam_v6_poulet_pane_maison',profile:'liam',slots:['lunch','dinner'],name:'Poulet pané maison & frites',urgent:0,ur:null,time:30,kcal:651,prot:63,gluc:58,lip:16,steps:["Four à 200 °C, 130 g de frites pour 25 min.","Battre 1 œuf, y tremper 200 g d'aiguillettes, rouler dans 40 g de panure.","Enfourner le poulet à mi-cuisson des frites, 12 min.","Servir avec 25 ml de sauce Honey Mustard."],used:[{id:'cx_mqwkfekl',n:'Aiguillettes de poulet',qty:200},{id:'cx_mqwkhtgi',n:'Panure',qty:40},{id:'oeufs',n:'Oeufs',qty:1},{id:'frites',n:'Frites au four',qty:130},{id:'cx_mtoubuqk',n:'Honey Mustard Dressing sauce',qty:25}],extras:[]},
+  {id:'liam_v6_poulet_pane_maison',profile:'liam',slots:['lunch','dinner'],name:'Poulet pané maison & frites',urgent:0,ur:null,time:30,kcal:651,prot:63,gluc:58,lip:16,steps:["Four à 200 °C, 130 g de frites pour 25 min.","Battre 1 œuf, y tremper 200 g d'aiguillettes, rouler dans 40 g de panure.","Enfourner les aiguillettes panées à mi-cuisson des frites, 12 min.","Servir avec 25 ml de sauce Honey Mustard."],used:[{id:'cx_mqwkfekl',n:'Aiguillettes de poulet',qty:200},{id:'cx_mqwkhtgi',n:'Panure',qty:40},{id:'oeufs',n:'Oeufs',qty:1},{id:'frites',n:'Frites au four',qty:130},{id:'cx_mtoubuqk',n:'Honey Mustard Dressing sauce',qty:25}],extras:[]},
   {id:'liam_v6_karaage_riz',profile:'liam',slots:['lunch','dinner'],name:'Poulet karaage, riz & sauce soja',urgent:0,ur:null,time:25,kcal:668,prot:40,gluc:79,lip:20,steps:["Préchauffer le four à 200 °C, enfourner 200 g de karaage 20 min.","Lancer 55 g de riz.","Poêler 40 g d'oignons 3 min.","Dresser, arroser de 15 ml de soja et parsemer 4 g de sésame."],used:[{id:'cx_ms8y4spg',n:'Poulet Karaage',qty:200},{id:'riz',n:'Riz Oiseaux Célestes',qty:55},{id:'soja',n:'Sauce soja sucrée',qty:15},{id:'sesame',n:'Sésame doré',qty:4},{id:'oignons',n:'Oignons émincés',qty:40}],extras:[]},
   {id:'liam_v6_panko_frites',profile:'liam',slots:['lunch','dinner'],name:'Poulet panko & frites au four',urgent:0,ur:null,time:28,kcal:669,prot:38,gluc:63,lip:29,steps:["Four à 200 °C. Enfourner 130 g de frites 25 min.","Ajouter 200 g de poulet panko à mi-cuisson, 14 min.","Servir avec 30 g de sauce BBQ zéro."],used:[{id:'cx_ms8y5it1',n:'Poulet Panko',qty:200},{id:'frites',n:'Frites au four',qty:130},{id:'cx_musrurg0',n:'BBQ ZERO',qty:30}],extras:[]},
   {id:'liam_v8_cuisse_panee_frites',profile:'liam',slots:['lunch','dinner'],name:'Haut de cuisse pané, frites & tomates',urgent:0,ur:null,time:28,kcal:642,prot:36,gluc:61,lip:26,steps:["Four à 200 °C. Enfourner 230 g de haut de cuisse pané et 100 g de frites, 25 min.","Servir avec 100 g de tomates cerises crues coupées en deux.","Accompagner de 20 g de sauce BBQ zéro."],used:[{id:'cx_mtdiah8m',n:'Haut de cuisse de poulet pané',qty:230},{id:'frites',n:'Frites au four',qty:100},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100},{id:'cx_musrurg0',n:'BBQ ZERO',qty:20}],extras:[]},
@@ -816,7 +822,7 @@ const RCP=[
   {id:'liam_v6_boulettes_puree',profile:'liam',slots:['lunch','dinner'],name:'Boulettes IKEA, pâtes protéinées & sauce crème',urgent:0,ur:null,time:22,kcal:663,prot:36,gluc:57,lip:32,steps:["Lancer 70 g de pâtes 21 g de protéines.","Poêler 130 g de boulettes 10 min en les retournant.","Retirer, faire suer 50 g d'oignons dans la même poêle.","Verser 40 ml de crème liquide, 1 cube de bouillon émietté, 1 g de muscade ; remettre les boulettes 5 min.","Servir sur les pâtes avec 10 g de parmesan râpé."],used:[{id:'cx_mtos3ak5',n:'Huvudroll - Meatballs (boulettes IKEA)',qty:130},{id:'cx_mtou24qu',n:'pâtes 21 g protein',qty:70},{id:'creme_liq',n:'Crème légère liquide',qty:40},{id:'oignons',n:'Oignons émincés',qty:50},{id:'bouillon_legumes',n:'Bouillon légumes',qty:1},{id:'muscade',n:'Noix de muscade',qty:1},{id:'cx_musr7n63',n:'Parmigiano Reggiano',qty:10}],extras:[]},
   {id:'liam_v6_saumon_riz',profile:'liam',slots:['lunch','dinner'],name:'Bowl saumon, riz, œuf & tomates',urgent:0,ur:null,time:20,kcal:571,prot:36,gluc:67,lip:17,steps:["Lancer 70 g de riz. Cuire 1 œuf 7 min, le passer sous l'eau froide.","Saisir 120 g de saumon côté peau à sec, 4 min, retourner 3 min.","Dresser le riz, le saumon émietté, l'œuf coupé en deux et 100 g de tomates cerises crues.","Arroser de 15 ml de soja, 4 g de sésame."],used:[{id:'cx_ms8y6yk4',n:'Saumon',qty:120},{id:'riz',n:'Riz Oiseaux Célestes',qty:70},{id:'oeufs',n:'Oeufs',qty:1},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100},{id:'soja',n:'Sauce soja sucrée',qty:15},{id:'sesame',n:'Sésame doré',qty:4}],extras:[]},
   {id:'liam_v6_thon_pates',profile:'liam',slots:['lunch','dinner'],name:'Pâtes au thon et à la tomate',urgent:0,ur:null,time:18,kcal:683,prot:55,gluc:75,lip:20,steps:["Lancer 75 g de pâtes.","Faire suer 50 g d'oignons à sec avec un fond d'eau.","Ajouter 120 g de thon égoutté et 140 g de sauce tomate, 6 min.","Mélanger aux pâtes, 4 g d'épices italiennes."],used:[{id:'pates_blanches',n:'Pâtes blanches',qty:75},{id:'thon',n:'Thon en conserve',qty:120},{id:'sauce_tomate',n:'Tubes sauce tomate',qty:140},{id:'oignons',n:'Oignons émincés',qty:50},{id:'epices_it',n:'Épices italiennes',qty:4}],extras:[]},
-  {id:'liam_v7_pates21_thon_citron',profile:'liam',slots:['lunch','dinner'],name:'Pâtes protéinées, thon & crème citronnée',urgent:0,ur:null,time:15,kcal:595,prot:57,gluc:68,lip:10,steps:["Cuire 100 g de pâtes 21 g de protéines.","Faire suer 40 g d'oignons, 3 min.","Hors du feu, mélanger 120 g de thon au naturel émietté, 50 g de crème fraîche légère et 10 ml de jus de citron.","Lier aux pâtes égouttées, poivrer."],used:[{id:'cx_mtou24qu',n:'pâtes 21 g protein',qty:100},{id:'cx_musswwix',n:'Thon entier au naturel',qty:120},{id:'cx_mqwm5mzs',n:'Crème fraîche légère',qty:50},{id:'oignons',n:'Oignons émincés',qty:40},{id:'cx_mtotj6yk',n:'Citron / Citron vert',qty:10},{id:'poivre',n:'Poivre',qty:1}],extras:[]},
+  {id:'liam_v7_pates21_thon_citron',profile:'liam',slots:['lunch','dinner'],name:'Pâtes protéinées, thon & crème citronnée',urgent:0,ur:null,time:15,kcal:595,prot:57,gluc:68,lip:10,steps:["Cuire 100 g de pâtes 21 g de protéines.","Faire suer 40 g d'oignons, 3 min.","Hors du feu, mélanger 120 g de thon au naturel émietté, 50 g de crème fraîche légère et 10 ml de jus de citron.","Lier aux pâtes égouttées, 1 g de poivre."],used:[{id:'cx_mtou24qu',n:'pâtes 21 g protein',qty:100},{id:'cx_musswwix',n:'Thon entier au naturel',qty:120},{id:'cx_mqwm5mzs',n:'Crème fraîche légère',qty:50},{id:'oignons',n:'Oignons émincés',qty:40},{id:'cx_mtotj6yk',n:'Citron / Citron vert',qty:10},{id:'poivre',n:'Poivre',qty:1}],extras:[]},
   {id:'liam_v6_pates_prot_bacon',profile:'liam',slots:['lunch','dinner'],name:'Pâtes protéinées, bacon & crème',urgent:0,ur:null,time:15,kcal:641,prot:44,gluc:67,lip:21,steps:["Lancer 90 g de pâtes protéinées.","Faire dorer 100 g de bacon à sec avec 40 g d'oignons, 5 min.","Hors du feu, ajouter 60 g de crème fraîche légère.","Mélanger aux pâtes, finir avec 20 g de râpé."],used:[{id:'pates_proteinees',n:'Pâtes protéinées',qty:90},{id:'cx_mqwkk2as',n:'Allumettes de bacon',qty:100},{id:'cx_mqwm5mzs',n:'Crème fraîche légère',qty:60},{id:'cx_mqwkdso8',n:'Fromage râpé',qty:20},{id:'oignons',n:'Oignons émincés',qty:40}],extras:[]},
   {id:'liam_v8_riz_bacon_oeufs',profile:'liam',slots:['lunch','dinner'],name:'Riz sauté bacon & œufs',urgent:0,ur:null,time:20,kcal:585,prot:36,gluc:67,lip:18,steps:["Cuire 70 g de riz, l'égoutter.","Faire revenir 60 g de bacon et 60 g d'oignons, 3 min, sans matière grasse.","Ajouter le riz, faire sauter 3 min à feu vif.","Pousser sur le côté, brouiller 3 œufs dans la poêle, mélanger.","Déglacer avec 10 ml de sauce soja."],used:[{id:'riz',n:'Riz Oiseaux Célestes',qty:70},{id:'cx_mqwkk2as',n:'Allumettes de bacon',qty:60},{id:'oeufs',n:'Oeufs',qty:3},{id:'oignons',n:'Oignons émincés',qty:60},{id:'soja',n:'Sauce soja sucrée',qty:10}],extras:[]},
   {id:'liam_v6_gnocchi_bacon',profile:'liam',slots:['lunch','dinner'],name:'Gnocchis poêlés, bacon & crème',urgent:0,ur:null,time:15,kcal:616,prot:36,gluc:71,lip:20,steps:["Poêler 180 g de gnocchis à sec dans une poêle antiadhésive, 6 min jusqu'à ce qu'ils dorent.","Ajouter 130 g de bacon et 50 g d'oignons, 4 min.","Hors du feu, lier avec 40 g de crème semi-épaisse."],used:[{id:'cx_mtot8zeh',n:'Gnocchi à poêler',qty:180},{id:'cx_mqwkk2as',n:'Allumettes de bacon',qty:130},{id:'creme_semi',n:'Crème semi-épaisse',qty:40},{id:'oignons',n:'Oignons émincés',qty:50}],extras:[]},
@@ -824,14 +830,14 @@ const RCP=[
   {id:'liam_v6_tortellini_viande',profile:'liam',slots:['lunch','dinner'],name:'Tortellini viande, crème & tomates crues',urgent:0,ur:null,time:12,kcal:695,prot:35,gluc:94,lip:20,steps:["Cuire 170 g de tortellini 4 min.","Chauffer 40 g de crème fraîche avec 3 g d'épices italiennes.","Mélanger avec 60 g de jambon de poulet en lanières, ajouter 15 g de râpé.","Servir avec 120 g de tomates cerises crues, coupées en deux, à côté."],used:[{id:'cx_mtosny0o',n:'tortellini viande',qty:170},{id:'cx_mqwm5mzs',n:'Crème fraîche légère',qty:40},{id:'cx_mqwkdso8',n:'Fromage râpé',qty:15},{id:'cx_ms8yaett',n:'Jambon de poulet',qty:60},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:120},{id:'epices_it',n:'Épices italiennes',qty:3}],extras:[]},
   {id:'liam_v8_tortellini_prosciutto',profile:'liam',slots:['lunch','dinner'],name:'Tortellini prosciutto, jambon & parmesan',urgent:0,ur:null,time:10,kcal:631,prot:40,gluc:73,lip:20,steps:["Cuire 150 g de tortellini prosciutto 3 min, égoutter en gardant un fond d'eau.","Mélanger avec 80 g de jambon blanc en lanières et 2 g d'épices italiennes.","Finir avec 10 g de parmesan râpé.","Servir avec 100 g de tomates cerises crues."],used:[{id:'cx_ms8zdyrx',n:'Tortellini Prosciutto',qty:150},{id:'cx_ms8y98k4',n:'Jambon blanc',qty:80},{id:'cx_musr7n63',n:'Parmigiano Reggiano',qty:10},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100},{id:'epices_it',n:'Épices italiennes',qty:2}],extras:[]},
   {id:'liam_v7_pates_comte_jambon',profile:'liam',slots:['lunch','dinner'],name:'Pâtes fraîches au Comté, jambon & tomates',urgent:0,ur:null,time:8,kcal:695,prot:55,gluc:62,lip:24,steps:["Cuire 180 g de pâtes fraîches au Comté 3 min.","Faire dorer 150 g d'allumettes de jambon à sec, 3 min.","Mélanger aux pâtes avec 1 g de poivre.","Servir avec 100 g de tomates cerises crues coupées en deux."],used:[{id:'cx_musrmhdl',n:'Pâtes fraiches au Comté AOP',qty:180},{id:'cx_ms8yrk7g',n:'Allumettes de jambon',qty:150},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100},{id:'poivre',n:'Poivre',qty:1}],extras:[]},
-  {id:'liam_v7_pates_boursin_poulet',profile:'liam',slots:['lunch','dinner'],name:'Pâtes fraîches Boursin & poulet',urgent:0,ur:null,time:12,kcal:673,prot:53,gluc:56,lip:25,steps:["Saisir 150 g d'aiguillettes de poulet coupées en dés dans 5 ml d'huile, 6 min.","Cuire 180 g de pâtes fraîches au Boursin 3 min.","Mélanger le poulet aux pâtes égouttées.","Servir avec 100 g de tomates cerises crues."],used:[{id:'cx_musrm6wj',n:'Pâtes fraîches au fromage Boursin® Ail et fines herbes',qty:180},{id:'cx_mqwkfekl',n:'Aiguillettes de poulet',qty:150},{id:'huile_olive',n:'Huile d\'olive',qty:5},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100}],extras:[]},
-  {id:'liam_v8_pizza_jambon',profile:'liam',slots:['lunch','dinner'],name:'Demi-pizza, jambon & tomates cerises',urgent:0,ur:null,time:15,kcal:645,prot:36,gluc:69,lip:23,steps:["Cuire une demi-pizza De la Mama au four selon le paquet ; garder l'autre moitié pour le lendemain.","À la sortie du four, ajouter 60 g de jambon blanc en lanières.","Servir avec 100 g de tomates cerises crues."],used:[{id:'pizzas',n:'Pizzas De la Mama',qty:0.5},{id:'cx_ms8y98k4',n:'Jambon blanc',qty:60},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100}],extras:[]},
+  {id:'liam_v7_pates_boursin_poulet',profile:'liam',slots:['lunch','dinner'],name:'Pâtes fraîches Boursin & poulet',urgent:0,ur:null,time:12,kcal:673,prot:53,gluc:56,lip:25,steps:["Saisir 150 g d'aiguillettes de poulet coupées en dés dans 5 ml d'huile, 6 min.","Cuire 180 g de pâtes fraîches au Boursin 3 min.","Mélanger les aiguillettes aux pâtes égouttées.","Servir avec 100 g de tomates cerises crues."],used:[{id:'cx_musrm6wj',n:'Pâtes fraîches au fromage Boursin® Ail et fines herbes',qty:180},{id:'cx_mqwkfekl',n:'Aiguillettes de poulet',qty:150},{id:'huile_olive',n:'Huile d\'olive',qty:5},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100}],extras:[]},
+  {id:'liam_v8_pizza_jambon',profile:'liam',slots:['lunch','dinner'],name:'Demi-pizza, jambon & tomates cerises',urgent:0,ur:null,time:15,kcal:645,prot:36,gluc:69,lip:23,steps:["Cuire une pizza De la Mama au four selon le paquet et n'en servir que la moitié ; garder l'autre pour le lendemain.","À la sortie du four, ajouter 60 g de jambon blanc en lanières.","Servir avec 100 g de tomates cerises crues."],used:[{id:'pizzas',n:'Pizzas De la Mama',qty:0.5},{id:'cx_ms8y98k4',n:'Jambon blanc',qty:60},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100}],extras:[]},
   {id:'liam_v6_mozza_tomates',profile:'liam',slots:['lunch','snack'],name:'Mozzarella, tomates crues & jambon',urgent:0,ur:null,time:8,kcal:525,prot:43,gluc:9,lip:35,steps:["Égoutter 125 g de billes de mozzarella.","Couper 150 g de tomates cerises en deux, crues.","Disposer avec 100 g de jambon blanc, arroser de 8 ml d'huile d'olive et 2 g d'épices."],used:[{id:'cx_mqwkli92',n:'Billes de mozzarella',qty:125},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:150},{id:'cx_ms8y98k4',n:'Jambon blanc',qty:100},{id:'huile_olive',n:'Huile d\'olive',qty:8},{id:'epices_it',n:'Épices italiennes',qty:2}],extras:[]},
   {id:'liam_v6_shaker_whey',profile:'liam',slots:['snack'],name:'Shaker clear whey',urgent:0,ur:null,time:2,kcal:102,prot:23,gluc:2,lip:0,steps:["30 g de clear whey dans 400 ml d'eau froide, secouer."],used:[{id:'whey',n:'Clear whey',qty:30}],extras:[]},
   {id:'liam_v6_fb_fraises',profile:'liam',slots:['snack'],name:'Fromage blanc & fraises',urgent:0,ur:null,time:3,kcal:222,prot:17,gluc:33,lip:2,steps:["250 g de fromage blanc dans un bol.","Ajouter 120 g de fraises décongelées et 8 g de miel."],used:[{id:'cx_mqwm344t',n:'Fromage blanc 0% nature ou parfumé',qty:250},{id:'cx_mtot73u2',n:'Fraises surgelées',qty:120},{id:'miel',n:'Miel liquide',qty:8}],extras:[]},
-  {id:'liam_v7_yaourt_grec_framboises',profile:'liam',slots:['snack','breakfast'],name:'Fromage blanc, framboises & amandes',urgent:0,ur:null,time:3,kcal:250,prot:17,gluc:28,lip:9,steps:["200 g de fromage blanc 0 % dans un bol.","Ajouter 80 g de framboises décongelées 40 s au micro-ondes.","Parsemer 15 g d'amandes concassées."],used:[{id:'cx_mqwm344t',n:'Fromage blanc 0% nature ou parfumé',qty:200},{id:'cx_mqwkf3e6',n:'Framboises surgelées',qty:80},{id:'cx_mqwlzzup',n:'Amandes',qty:15}],extras:[]},
+  {id:'liam_v7_yaourt_grec_framboises',profile:'liam',slots:['snack','breakfast'],name:'Fromage blanc, framboises & amandes',urgent:0,ur:null,time:3,kcal:250,prot:17,gluc:28,lip:9,steps:["200 g de fromage blanc dans un bol.","Ajouter 80 g de framboises décongelées 40 s au micro-ondes.","Parsemer 15 g d'amandes concassées."],used:[{id:'cx_mqwm344t',n:'Fromage blanc 0% nature ou parfumé',qty:200},{id:'cx_mqwkf3e6',n:'Framboises surgelées',qty:80},{id:'cx_mqwlzzup',n:'Amandes',qty:15}],extras:[]},
   {id:'liam_v8_fb_compote_amandes',profile:'liam',slots:['snack'],name:'Fromage blanc, compote & amandes',urgent:0,ur:null,time:3,kcal:231,prot:16,gluc:30,lip:6,steps:["200 g de fromage blanc dans un bol.","Ajouter un pot de compote.","Parsemer 10 g d'amandes."],used:[{id:'cx_mqwm344t',n:'Fromage blanc 0% nature ou parfumé',qty:200},{id:'cx_ms8zf2k9',n:'Compotes',qty:1},{id:'cx_mqwlzzup',n:'Amandes',qty:10}],extras:[]},
-  {id:'liam_v8_thon_stmoret_tomates',profile:'liam',slots:['snack'],name:'Rillettes de thon au St Morêt & tomates cerises',urgent:0,ur:null,time:5,kcal:171,prot:27,gluc:6,lip:4,steps:["Écraser 80 g de thon au naturel avec 40 g de St Morêt léger et 5 ml de citron.","Poivrer.","Servir avec 100 g de tomates cerises crues pour tremper."],used:[{id:'cx_musswwix',n:'Thon entier au naturel',qty:80},{id:'cx_ms8yjwau',n:'St Morêt léger',qty:40},{id:'cx_mtotj6yk',n:'Citron / Citron vert',qty:5},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100},{id:'poivre',n:'Poivre',qty:1}],extras:[]},
+  {id:'liam_v8_thon_stmoret_tomates',profile:'liam',slots:['snack'],name:'Rillettes de thon au St Morêt & tomates cerises',urgent:0,ur:null,time:5,kcal:171,prot:27,gluc:6,lip:4,steps:["Écraser 80 g de thon au naturel avec 40 g de St Morêt léger et 5 ml de citron.","Ajouter 1 g de poivre.","Servir avec 100 g de tomates cerises crues pour tremper."],used:[{id:'cx_musswwix',n:'Thon entier au naturel',qty:80},{id:'cx_ms8yjwau',n:'St Morêt léger',qty:40},{id:'cx_mtotj6yk',n:'Citron / Citron vert',qty:5},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100},{id:'poivre',n:'Poivre',qty:1}],extras:[]},
   {id:'liam_v8_oeufs_durs_tomates',profile:'liam',slots:['snack'],name:'Œufs durs & tomates cerises',urgent:0,ur:null,time:12,kcal:162,prot:14,gluc:4,lip:10,steps:["Cuire 2 œufs 9 min dans l'eau bouillante, refroidir.","Servir avec 100 g de tomates cerises crues et une pincée d'Herbamare."],used:[{id:'oeufs',n:'Oeufs',qty:2},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100},{id:'sel',n:'Sel Herbamare',qty:1}],extras:[]},
   {id:'liam_v6_soupe_potiron',profile:'liam',slots:['snack','dinner'],name:'Soupe potiron & râpé',urgent:0,ur:null,time:6,kcal:211,prot:7,gluc:20,lip:10,steps:["Réchauffer 400 ml de soupe potiron-Kiri.","Parsemer 15 g de fromage râpé au moment de servir."],used:[{id:'cx_mrvi04ju',n:'Soupe - Potiron et Kiri',qty:400},{id:'cx_mqwkdso8',n:'Fromage râpé',qty:15}],extras:[]},
   {id:'liam_v6_tomates_bacon',profile:'liam',slots:['snack'],name:'Tomates cerises crues & bacon poêlé',urgent:0,ur:null,time:5,kcal:101,prot:13,gluc:6,lip:3,steps:["Faire dorer 60 g de bacon à sec, 4 min, laisser tiédir.","Couper 150 g de tomates cerises en deux, crues.","Mélanger au dernier moment pour qu'elles restent fraîches."],used:[{id:'cx_ms8z08jd',n:'Tomates cerises',qty:150},{id:'cx_mqwkk2as',n:'Allumettes de bacon',qty:60}],extras:[]},
@@ -4565,6 +4571,93 @@ function renderNightModal(){
   </div></div>`;
 }
 
+// ── Ingredients surlignes dans les etapes (10/10/2026, idee de Liam) ──
+// A l'affichage, pour toutes les recettes (catalogue, perso, IA) : la mention d'un
+// ingredient (« saumon », « St Morêt », « jambon de poulet »…) est remplacee par le
+// nom exact de sa fiche d'inventaire, surligne. Repere : morceaux du nom (mots qui se
+// suivent, au singulier comme au pluriel) ; un morceau partage par deux ingredients de
+// la meme recette est ignore ; le plus long l'emporte ; une fois par etape et par ingredient.
+const _ING_VIDES={de:1,du:1,des:1,la:1,le:1,les:1,au:1,aux:1,a:1,en:1,et:1,ou:1,d:1,l:1,avec:1,sans:1,pour:1,sur:1,un:1,une:1,g:1,ml:1,x:1};
+const _ING_ADJ={leger:1,legere:1,legers:1,nature:1,blanc:1,blanche:1,blanches:1,blancs:1,sucree:1,sucre:1,douce:1,doux:1,frais:1,fraiche:1,fraiches:1,complet:1,complete:1,completes:1,entier:1,naturel:1,surgele:1,surgelee:1,surgelees:1,surgeles:1,liquide:1,epaisse:1,semi:1,emince:1,emincee:1,emincees:1,eminces:1,cerises:1,dore:1,doree:1,pane:1,panee:1,instantanes:1,fines:1,herbes:1,aop:1,parfume:1,vert:1,noir:1,bio:1,pasteurise:1,morceaux:1,saveur:1,vanille:1,poudre:1,tubes:1,maison:1,mg:1,proteinees:1,protein:1,italiennes:1,mexicain:1,casse:1,grain:1,grains:1,mama:1,zero:1,allegee:1,sucres:1,artificielle:1,arome:1,bifidus:1,dressing:1};
+const _ING_SYN={parmigiano:['parmesan'],meatballs:['boulettes']};   /* nom de la fiche -> mot des etapes */
+function _ingNorm(s){
+  var n='',map=[];s=String(s||'');
+  for(var i=0;i<s.length;i++){
+    var c=s[i],t;
+    if(c==='œ'||c==='Œ')t='oe';else if(c==='æ'||c==='Æ')t='ae';else if(c==='’')t="'";
+    else t=c.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    for(var k=0;k<t.length;k++){n+=t[k];map.push(i);}
+  }
+  return {n:n,map:map};
+}
+function _ingMorceaux(nom){
+  var mots=_ingNorm(nom).n.split(/[^a-z0-9]+/).filter(Boolean),out={};
+  for(var a=0;a<mots.length;a++)for(var b=a;b<mots.length;b++){
+    var seg=mots.slice(a,b+1);
+    if(_ING_VIDES[seg[0]]||_ING_VIDES[seg[seg.length-1]])continue;
+    if(seg.every(function(w){return _ING_VIDES[w]||_ING_ADJ[w]||/\d/.test(w)||w.length<3;}))continue;
+    var k=seg.join(' ');out[k]=1;
+    if(seg.length===1&&/[sx]$/.test(k)&&!out[k.slice(0,-1)])out[k.slice(0,-1)]=2;   /* « oeufs » trouve aussi « oeuf » (2 = singulier) */
+    if(seg.length===1&&_ING_SYN[k])_ING_SYN[k].forEach(function(x){out[x]=1;});
+  }
+  _ingMorceaux.sing=out;
+  return Object.keys(out);
+}
+function _ingRecette(r){
+  var ings=[];
+  (r&&r.used||[]).forEach(function(u){
+    var it=null;try{it=resolveInv(u.id,u.n);}catch(e){}
+    var nom=(it&&it.name)||u.n||'';if(!nom)return;
+    var m={},sing={};
+    [nom].concat(u.n&&u.n!==nom?[u.n]:[]).forEach(function(x){_ingMorceaux(x).forEach(function(k){if(_ingMorceaux.sing[k]===2){if(!m[k])sing[k]=1;}else{delete sing[k];}m[k]=1;});});
+    var mots={};_ingNorm(nom).n.split(/[^a-z0-9]+/).forEach(function(w){if(w)mots[w]=1;});
+    ings.push({nom:nom,morceaux:Object.keys(m),sing:sing,mots:mots});
+  });
+  /* morceau partage (« riz » : riz et vinaigre de riz) : il revient au seul ingredient dont le nom commence par lui, sinon a personne */
+  var vus={};ings.forEach(function(g){g.n=_ingNorm(g.nom).n;g.morceaux.forEach(function(k){(vus[k]=vus[k]||[]).push(g);});});
+  ings.forEach(function(g){g.morceaux=g.morceaux.filter(function(k){
+    if(vus[k].length===1)return true;
+    var deb=vus[k].filter(function(x){return x.n.indexOf(k)===0;});
+    return deb.length===1&&deb[0]===g;
+  });});
+  return ings;
+}
+function _etapeSurlignee(ings,s){
+  s=String(s||'');if(!ings||!ings.length)return s;
+  var N=_ingNorm(s),pris=[],trouves=[],faits=[],paires=[];
+  ings.forEach(function(g,gi){g.morceaux.forEach(function(k){paires.push({g:g,gi:gi,k:k});});});
+  paires.sort(function(a,b){return b.k.length-a.k.length;});      /* le plus long d'abord, tous ingredients confondus */
+  paires.forEach(function(p){
+    if(faits[p.gi])return;
+    var motif=p.k.split(' ').map(function(w){return w.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');}).join('[^a-z0-9]{1,3}');   /* « flocons d avoine » = « flocons d'avoine » */
+    var re=new RegExp('(^|[^a-z0-9])('+motif+'(?:s|x)?)(?![a-z0-9])','g'),m;
+    while((m=re.exec(N.n))){
+      var d=m.index+m[1].length,f=d+m[2].length;
+      if(pris.some(function(q){return d<q[1]&&f>q[0];}))continue;
+      /* les mots voisins qui appartiennent au nom sont absorbes : pas de « [Huile d'olive] d'olive » */
+      var dans=function(w){return !!w&&(p.g.mots[w]||Object.keys(p.g.mots).some(function(x){return x.length>=4&&w.length>=4&&(x.indexOf(w)===0||w.indexOf(x)===0);}));};
+      var libre=function(a,b){return !pris.some(function(q){return a<q[1]&&b>q[0];});};
+      var ext=false,mm;
+      for(;;){
+        var apres=/^[^a-z0-9]{1,3}([a-z0-9]+)(?:[^a-z0-9]{1,3}([a-z0-9]+))?/.exec(N.n.slice(f));
+        if(!apres)break;
+        if(dans(apres[1])&&(!_ING_VIDES[apres[1]]||p.g.mots[apres[1]])){var nf=f+apres[0].indexOf(apres[1])+apres[1].length;if(!libre(f,nf))break;f=nf;ext=true;continue;}
+        if(_ING_VIDES[apres[1]]&&apres[2]&&dans(apres[2])&&!_ING_VIDES[apres[2]]){var nf2=f+apres[0].length;if(!libre(f,nf2))break;f=nf2;ext=true;continue;}
+        break;
+      }
+      while((mm=/([a-z0-9]+)[^a-z0-9]{1,3}$/.exec(N.n.slice(0,d)))&&dans(mm[1])&&!_ING_VIDES[mm[1]]&&libre(d-mm[0].length,d)){d-=mm[0].length;ext=true;}
+      pris.push([d,f]);trouves.push({d:N.map[d],f:N.map[f-1]+1,nom:p.g.sing[p.k]?null:p.g.nom});   /* singulier : le texte garde son accord */faits[p.gi]=1;break;
+    }
+  });
+  if(!trouves.length)return s;
+  trouves.sort(function(a,b){return b.d-a.d;});
+  trouves.forEach(function(t){
+    var orig=s.slice(t.d,t.f),nom=t.nom||orig;   /* mention au singulier (« 1 œuf ») : le mot du texte, surligne */
+    if(/^[a-zà-ÿœæ]/.test(orig)&&/^[A-ZÀ-ÝŒÆ][a-zà-ÿ]/.test(nom)&&!/\s[A-ZÀ-Ý]/.test(nom))   /* « Parmigiano Reggiano » garde ses majuscules */nom=nom[0].toLowerCase()+nom.slice(1);   /* « 75 g de pâtes » : pas de majuscule en milieu de phrase */
+    s=s.slice(0,t.d)+'<mark class="ing-hl">'+nom+'</mark>'+s.slice(t.f);
+  });
+  return s;
+}
 function renderIngredients(r){
   const tr=(r.used||[]).map(u=>{
     const it=findItem(u.id);
@@ -4635,7 +4728,7 @@ function renderCard(r){
       +`<button onclick="event.stopPropagation();choisirPhotoRecette('${r.id}')" style="padding:6px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;backdrop-filter:blur(4px);">\ud83d\udcf7 ${p?'Changer':'Ajouter une photo'}</button>`
       +(p?`<button onclick="event.stopPropagation();retirerPhotoRecette('${r.id}')" title="Retirer la photo" style="padding:6px 9px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;">\u00d7</button>`:'')
       +`</div></div>`;
-  })()}${renderIngredients(r)}<div style="padding-top:12px;">${(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${s}</span></div>`).join('')}</div>${renderCardBottom(r)}</div>`:''}</div>`;
+  })()}${renderIngredients(r)}<div style="padding-top:12px;">${((_ingR)=>(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${_etapeSurlignee(_ingR,s)}</span></div>`).join(''))(_ingRecette(r))}</div>${renderCardBottom(r)}</div>`:''}</div>`;
 }
 
 function qtyLabel(it){
@@ -6511,6 +6604,24 @@ function renderCrIngs(){
   el.innerHTML=_cr.rows.map(function(g,i){
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-top:0.5px solid rgba(246,237,227,.06);"><span style="flex:1;min-width:0;font-size:13px;color:var(--text2);">'+g.name+(g.flex?' <span style="font-size:11px;color:var(--blue);">🔄 au choix</span>':'')+'</span><input type="number" id="cr-ing-'+i+'" value="'+g.qty+'" min="0" oninput="updateCrTotals()" style="width:64px;padding:5px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text);font-size:13px;outline:none;text-align:center;"><span style="font-size:11px;color:var(--text3);min-width:22px;">'+g.unit+'</span><span id="cr-ingk-'+i+'" style="font-size:11px;color:var(--orange);min-width:52px;text-align:right;">0 kcal</span><button onclick="crToggleFlex('+i+')" title="Au choix à la cuisson" style="padding:3px 6px;border-radius:6px;font-size:11px;cursor:pointer;background:none;border:0.5px solid '+(g.flex?'rgba(95,168,201,.7)':'var(--border)')+';color:'+(g.flex?'var(--blue)':'var(--text3)')+';">🔄</button><button onclick="crRemoveIng('+i+')" style="background:none;border:none;color:var(--red);cursor:pointer;font-size:15px;line-height:1;padding:0 2px;">✕</button></div>';
   }).join('')||'<div style="font-size:12px;color:var(--text3);padding:8px 0;">Aucun ingrédient — ajoute-en ci-dessous.</div>';
+  renderCrInserer();
+}
+function renderCrInserer(){
+  var el=document.getElementById('cr-inserer');if(!el||!_cr)return;
+  if(!_cr.rows.length){el.style.display='none';el.innerHTML='';return;}
+  el.style.display='block';
+  el.innerHTML='<div style="font-size:11px;color:var(--text3);margin-bottom:5px;">Toucher un ingrédient l’insère dans les étapes, en entier : il y sera surligné.</div><div style="display:flex;flex-wrap:wrap;gap:5px;">'
+    +_cr.rows.map(function(g,i){return '<button onclick="crInsererIng('+i+')" class="ing-hl" style="border:0;font-size:12px;padding:4px 8px;cursor:pointer;font-family:inherit;">'+g.name+'</button>';}).join('')+'</div>';
+}
+function crInsererIng(i){
+  var g=_cr&&_cr.rows[i],ta=document.getElementById('cr-steps');if(!g||!ta)return;
+  var v=ta.value||'',d=(typeof ta.selectionStart==='number')?ta.selectionStart:v.length,f=(typeof ta.selectionEnd==='number')?ta.selectionEnd:d;
+  var avant=v.slice(0,d),txt=g.name;
+  if(avant&&!/[\s(]$/.test(avant))txt=' '+txt;
+  if(!/^[A-ZÀ-Ý]{2}/.test(g.name)&&!/\s[A-ZÀ-Ý]/.test(g.name)&&avant&&!/(^|[.!?\n]\s*)$/.test(avant))txt=txt.replace(g.name,g.name[0].toLowerCase()+g.name.slice(1));
+  var apres=v.slice(f);if(apres&&!/^[\s.,;:!?)]/.test(apres))txt+=' ';
+  ta.value=avant+txt+apres;
+  try{ta.focus();ta.selectionStart=ta.selectionEnd=avant.length+txt.length;}catch(e){}
 }
 function crToggleFlex(i){_crSync();if(_cr&&_cr.rows[i])_cr.rows[i].flex=!_cr.rows[i].flex;renderCrIngs();updateCrTotals();}
 function crRemoveIng(i){_crSync();_cr.rows.splice(i,1);renderCrIngs();updateCrTotals();}
