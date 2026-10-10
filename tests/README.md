@@ -101,6 +101,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t83.js` | Journal d'erreurs : secrets masqués, rafales regroupées, 30 entrées max, rapport (build, IA, ordre, sans clé), échecs de synchro et d'IA notés, boutons des Réglages, repli si la copie échoue |
 | `t84.js` | Rangement des données : repas libres sans recette cachée (migration, totaux inchangés), volume constant, archive des mois de plus de 3 mois (écriture, échec, fusion, chargement à la demande neutralisé), filet écrit avant, hors ligne, export avec les mois archivés |
 | `t85.js` | Version du format : état sans version, migrations ordonnées et jouées une fois, arrêt sur une migration qui plante, état d'une version plus récente (alerte, aucune écriture), levée au changement de compte |
+| `t86.js` | Clés IA hors de l'état : plus dans l'état enregistré, migration (nœud `cles`, sauvegardes et filet purgés), nœud qui fait foi (suppression propagée), Réglages, hors session |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

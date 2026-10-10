@@ -7,10 +7,11 @@ const G=n=>sb[n]||sb.window[n];
 const src=fs.readFileSync('index.html','utf8');
 const LS={};sb.localStorage={getItem:k=>(k in LS?LS[k]:null),setItem:(k,v)=>{LS[k]=String(v);},removeItem:k=>{delete LS[k];}};
 const CLE='gsk_'+'A1b2C3d4E5f6G7h8I9j0K1l2M3n4';
-let etat=null;
+let etat=null,cles=null;
 sb.fetch=async function(url,opt){
   if(/accounts:signUp/.test(url))return {ok:true,status:200,json:async()=>({localId:'UIDG',idToken:'t',refreshToken:'r',expiresIn:'3600'})};
   if(/\/state\.json/.test(url)&&opt&&opt.method==='PUT'){etat=JSON.parse(opt.body);}
+  if(/\/cles\.json/.test(url)&&opt&&opt.method==='PUT'){cles=JSON.parse(opt.body);}
   return {ok:true,status:200,json:async()=>null};
 };
 function prepa(groq){
@@ -18,7 +19,7 @@ function prepa(groq){
   G('afficherEcranConnexion')('accueil');G('_authMode')('inscription');
   const I=sb.window._ins;I.login='ana';I.mdp='secret1';
   Object.assign(I.p,{prenom:'Ana',sexe:'F',naissance:'1995-01-01',taille:165,poids:60,objectif:'maintien',activite:'2',cibles:{kcal:2000,prot:110,gluc:230,lip:65}});
-  I.etape=5;G('renderAuth')();if(groq!==undefined)docEl('au-groq').value=groq;etat=null;
+  I.etape=5;G('renderAuth')();if(groq!==undefined)docEl('au-groq').value=groq;etat=null;cles=null;
 }
 const ecran=()=>docEl('profile-screen').innerHTML;
 (async()=>{
@@ -34,9 +35,9 @@ await t('*** une cle mal copiee est refusee avec un message ***',async()=>{
   prepa('sk-abc123');await G('etapeInscription')(1);
   eq(etat,null,'compte cree quand meme');if(!/gsk_/.test(G('_auth').err||ecran()))throw new Error('pas de message');
 });
-await t('*** une cle valide part dans l\'etat du compte et sur l\'appareil ***',async()=>{
+await t('*** une cle valide part dans le noeud cles du compte (jamais dans l\'etat) et sur l\'appareil ***',async()=>{
   delete LS.anthropic_key;prepa(' '+CLE+' ');await G('etapeInscription')(1);
-  eq(etat&&etat.groqKey,CLE);eq(LS.anthropic_key,CLE);
+  eq(cles&&cles.groq,CLE);eq(etat&&etat.groqKey,undefined,'cle dans l\'etat');eq(LS.anthropic_key,CLE);
 });
 await t('*** Passer : compte cree sans cle, meme si un champ etait rempli ***',async()=>{
   prepa('gsk_nimportequoi');await G('passerCleGroq')();

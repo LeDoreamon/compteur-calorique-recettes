@@ -48,8 +48,8 @@ t('*** cle Gemini : jamais exportee, ignoree a l\'import, effacee a la deconnexi
   LS.gemini_key=GK;LS.dz_auth='{}';X('_deconnecter')();eq(LS.gemini_key,undefined,'deconnexion');
   if(!/localStorage\.removeItem\('anthropic_key'\);localStorage\.removeItem\('gemini_key'\);\}/.test(src))throw new Error('reconnexion autre compte');
 });
-t('synchronisee dans l\'etat du compte et rechargee sur un autre appareil',()=>{
-  if(!/geminiKey:getGeminiKey\(\),/.test(src))throw new Error('sauvegarde');
+t('hors de l\'etat ; un ancien etat qui la contient la recharge encore',()=>{
+  if(/geminiKey:getGeminiKey\(\),/.test(src))throw new Error('cle encore dans l\'etat');   /* 10/10/2026 : noeud cles a part */
   delete LS.gemini_key;X('_applyState')({_profile:X('ACTIVE_PROFILE'),inv:X('S.inv'),dayMeals:{},geminiKey:GK});eq(LS.gemini_key,GK);
   delete LS.gemini_key;X('_applyState')({_profile:X('ACTIVE_PROFILE'),inv:X('S.inv'),dayMeals:{},geminiKey:'<script>'});eq(LS.gemini_key,undefined,'cle invalide acceptee');
 });
@@ -66,13 +66,13 @@ t('*** inscription : explication des deux services et champ Gemini visible ***',
   if(/<details/.test(h))throw new Error('Gemini encore replie');
 });
 t('*** inscription : cle Gemini invalide refusee, valide enregistree ***',async()=>{
-  let etat=null;sb.fetch=async(url,opt)=>{if(/accounts:signUp/.test(url))return{ok:true,status:200,json:async()=>({localId:'G1',idToken:'t',refreshToken:'r',expiresIn:'3600'})};
-    if(/\/state\.json/.test(url)&&opt&&opt.method==='PUT')etat=JSON.parse(opt.body);return{ok:true,status:200,json:async()=>null};};
+  let etat=null,cles=null;sb.fetch=async(url,opt)=>{if(/accounts:signUp/.test(url))return{ok:true,status:200,json:async()=>({localId:'G1',idToken:'t',refreshToken:'r',expiresIn:'3600'})};
+    if(/\/state\.json/.test(url)&&opt&&opt.method==='PUT')etat=JSON.parse(opt.body);if(/\/cles\.json/.test(url)&&opt&&opt.method==='PUT')cles=JSON.parse(opt.body);return{ok:true,status:200,json:async()=>null};};
   const prep=(g)=>{X("_auth.occupe=false;afficherEcranConnexion('accueil');_authMode('inscription')");const I=sb.window._ins;I.login='bea';I.mdp='secret1';
     Object.assign(I.p,{prenom:'Bea',sexe:'F',naissance:'1995-01-01',taille:165,poids:60,objectif:'maintien',activite:'2',cibles:{kcal:2000,prot:110,gluc:230,lip:65}});
-    I.etape=5;X('renderAuth()');docEl('au-groq').value='';docEl('au-gemini').value=g;etat=null;};
+    I.etape=5;X('renderAuth()');docEl('au-groq').value='';docEl('au-gemini').value=g;etat=null;cles=null;};
   prep('nimportequoi');await X('etapeInscription')(1);eq(etat,null,'compte cree malgre la cle invalide');
-  prep(GK);delete LS.gemini_key;await X('etapeInscription')(1);eq(etat&&etat.geminiKey,GK);eq(LS.gemini_key,GK);
+  prep(GK);delete LS.gemini_key;await X('etapeInscription')(1);eq(cles&&cles.gemini,GK);eq(etat&&etat.geminiKey,undefined,'cle dans l\'etat');eq(LS.gemini_key,GK);
 });
 t('*** recettes : gpt-oss-120b, raisonnement moyen ; repli 20b si la requete est trop grosse ***',async()=>{
   eq(X('MODELE_RECETTES'),'openai/gpt-oss-120b');
