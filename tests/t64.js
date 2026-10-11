@@ -29,7 +29,7 @@ t('*** une seule fois : un champ vide ensuite reste vide ***',()=>{
   eq(X("typeof findItem('av').mac100.fib"),'undefined');eq(X('S.fibInv'),true);
 });
 t('le drapeau part avec l\'etat enregistre',()=>{
-  const i=src.indexOf('async function _saveStateNow');if(src.slice(i,i+6000).indexOf('fibInv:S.fibInv')<0)throw new Error('fibInv absent');
+  const i=src.indexOf('function _etatPourEnvoi(');if(src.slice(i,i+6000).indexOf('fibInv:S.fibInv')<0)throw new Error('fibInv absent');
 });
 t('la table couvre les 99 articles et reste dans 0-40 g/100 g',()=>{
   const k=X('Object.keys(FIBRES_INVENTAIRE)');eq(k.length,99);
@@ -58,7 +58,7 @@ t('une valeur deja corrigee a la main est gardee',()=>{
 });
 t('une seule fois (drapeau epicesFix2 enregistre)',()=>{
   const e=epices();e.epicesFix2=true;sb._applyState(e);eq(X("findItem('gi').mac100.kcal"),18);
-  const i=src.indexOf('async function _saveStateNow');if(src.slice(i,i+6000).indexOf('epicesFix2:S.epicesFix2')<0)throw new Error('drapeau absent');
+  const i=src.indexOf('function _etatPourEnvoi(');if(src.slice(i,i+6000).indexOf('epicesFix2:S.epicesFix2')<0)throw new Error('drapeau absent');
 });
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();

@@ -55,10 +55,10 @@ t('un produit sans nom garde son nom de repli',async()=>{
 });
 
 console.log('\n=== IC. Deconnexion ===');
-t('*** la deconnexion retire la cle Groq de l\'appareil ***',()=>{
+t('*** la deconnexion retire la cle Groq de l\'appareil ***',async()=>{
   stock.anthropic_key='gsk_x';stock.dz_auth=JSON.stringify({uid:'u',rtok:'r'});
   sb.confirm=()=>true;
-  X('deconnexion')();
+  await X('deconnexion')();   /* attend l'envoi des donnees avant d'effacer (11/10/2026) */
   if('anthropic_key' in stock)throw new Error('cle restee');
   if('dz_auth' in stock)throw new Error('session restee');
 });

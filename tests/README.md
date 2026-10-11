@@ -105,6 +105,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t87.js` | Ingrédients surlignés dans les étapes : tout le catalogue couvert, nom exact de la fiche, pas de reste du texte, « riz » ≠ vinaigre de riz, singulier, majuscules, renommage suivi, recettes perso, carte dépliée, insertion dans l'éditeur |
 | `t88.js` | Découpage : `catalogue.js` chargé avant le script, version = build (mise à jour par `publier.py`), données seules, plus de doublon dans `index.html`, page « Recharger » si le fichier manque |
 | `t89.js` | Rendu plus léger : mots-clés des voisins à zéro calculés une fois par article, un seul formateur de date par fuseau (bon jour après changement), date limite toujours repérée ; chaque `data-action` a son traitement et aucun traitement n'est orphelin |
+| `t90.js` | Audit du 11/10/2026 : aucune saisie hors ligne perdue ou écrasée en silence entre appareils (question, mise de côté dans le filet), aucun compte anonyme ni lecture sans session, déconnexion qui efface l'appareil, identifiants et clés de jour piégés neutralisés, noms échappés dans les `onclick`, mots vides de l'IA, liens `noopener`, libellés du filet |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

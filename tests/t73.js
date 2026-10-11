@@ -94,7 +94,7 @@ t('appareil sans historique : seulement la derniere entree ; pas connecte : rien
 t('inscription : le nouveau compte ne recoit pas la liste des changements',()=>{
   const i=src.indexOf('async function finaliserInscription');
   if(!/localStorage\.setItem\('dz_nouveautes',BUILD_ID\)[^\n]*\n\s*try\{location\.reload/.test(src.slice(i,i+2500)))throw new Error('marque absente');
-  if(!/loadState\(\)\.then\(\(\)=>\{render\(\);_verifierNouveautes\(\);\}/.test(src))throw new Error('appel au demarrage');
+  if(!/loadState\(\)\.then\(\(\)=>\{render\(\);_verifierNouveautes\(\);/.test(src.slice(src.indexOf('function selectProfile('))))throw new Error('appel au demarrage');   /* le chargement part de selectProfile (11/10/2026) */
   if(src.indexOf('onclick="montrerNouveautes()"')<0)throw new Error('lien Reglages');
 });
 t('*** build sans nouveaute visible (points vides) : rien n\'est montre, la derniere vraie entree reste dans « Quoi de neuf ? » ***',()=>{

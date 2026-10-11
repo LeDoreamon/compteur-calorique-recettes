@@ -277,7 +277,7 @@ body.auth-ouvert #root { display: none; }
 <div id="set-overlay" onclick="overlayBackdrop(event,this,closeSettings)" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:center;justify-content:center;padding:16px;">
   <div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:14px;padding:22px;width:100%;max-width:400px;max-height:88vh;overflow-y:auto;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;"><div style="font-size:17px;font-weight:600;color:var(--text);">⚙️ Réglages</div><button onclick="closeSettings()" style="background:none;border:none;color:var(--text3);font-size:19px;cursor:pointer;line-height:1;">✕</button></div><div id="set-profile" style="padding:11px 12px;background:var(--bg3);border-radius:10px;margin-bottom:16px;"></div><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">🧠 Clé API Groq</div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.45;">Sert à l'analyse des repas et à la génération de recettes. Gratuite sur <a href="https://console.groq.com" target="_blank" style="color:var(--blue);">console.groq.com</a>.</div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:10px;line-height:1.45;">Sert à l'analyse des repas et à la génération de recettes. Gratuite sur <a href="https://console.groq.com" target="_blank" rel="noopener noreferrer" style="color:var(--blue);">console.groq.com</a>.</div>
     <input type="text" id="api-key-input" class="champ-cle" name="groq-api-key" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" data-lpignore="true" data-1p-ignore data-bwignore placeholder="gsk_..." style="width:100%;padding:10px 12px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;margin-bottom:12px;box-sizing:border-box;">
     <button onclick="saveApiKey()" style="width:100%;padding:10px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">Enregistrer la clé</button>
     <button onclick="clearApiKey()" style="width:100%;margin-top:8px;padding:9px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:12px;cursor:pointer;">Supprimer la clé</button>
@@ -300,7 +300,7 @@ body.auth-ouvert #root { display: none; }
     <div style="display:flex;gap:8px;"><button onclick="copierRapport()" style="flex:1;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">📋 Copier le rapport</button><button onclick="effacerJournal()" style="padding:9px 12px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">Effacer</button></div>
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-10 12h14 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-11 14h24 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -565,12 +565,16 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-10-1214"></script>
+<script src="catalogue.js?v=2026-10-11-1424"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-10-1214';
+const BUILD_ID='2026-10-11-1424';
 const NOUVEAUTES=[
+  {b:'2026-10-11-1424',points:[
+    'Plus aucune saisie ne disparaît sans prévenir quand deux appareils écrivent en même temps : ta version est mise de côté et se récupère dans Réglages › Voir les sauvegardes.',
+    'La déconnexion enregistre d’abord tes dernières saisies, puis efface de l’appareil les données du compte (elles restent dans ton compte).'
+  ]},
   {b:'2026-10-10-1214',points:[]},
   {b:'2026-10-10-1209',points:[]},
   {b:'2026-10-10-1136',points:[
@@ -2125,7 +2129,7 @@ function getGeminiKey(){try{return localStorage.getItem('gemini_key')||'';}catch
 // Deux formats Google : historique « AIza… » et nouveau « AQ.… » (2026)
 function _cleGeminiValide(k){return /^(AIza[0-9A-Za-z_-]{30,}|AQ\.[0-9A-Za-z_.-]{20,})$/.test(String(k||''));}
 var _derniereIA='';   // 'gemini' | 'groq' : moteur de la derniere analyse photo
-// ─── Auth anonyme Firebase (REST) — s'active dès que _FBK.key est renseignée ─
+// ─── Auth Firebase (REST) : jeton du compte connecte (aucun acces sans compte) ─
 const _FBK={key:'AIzaSyBKAKZ4iGE9-t7rIseyJhXOCj2KbehU7iI'};
 let _fbTok=null,_fbTokExp=0;
 async function fbAuthToken(){
@@ -2150,16 +2154,8 @@ async function fbAuthToken(){
     }catch(e){}
     return null;      // jamais de repli anonyme pour un compte
   }
-  try{
-    const rt=localStorage.getItem('fb_rtok');
-    if(rt){
-      const r=await fetch('https://securetoken.googleapis.com/v1/token?key='+_FBK.key,{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:'grant_type=refresh_token&refresh_token='+encodeURIComponent(rt)});
-      if(r.ok){const d=await r.json();_fbTok=d.id_token;_fbTokExp=now+(parseInt(d.expires_in,10)||3600)*1000;if(d.refresh_token){try{localStorage.setItem('fb_rtok',d.refresh_token);}catch(e){}}return _fbTok;}
-      try{localStorage.removeItem('fb_rtok');}catch(e){}
-    }
-    const r2=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signUp?key='+_FBK.key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({returnSecureToken:true})});
-    if(r2.ok){const d=await r2.json();_fbTok=d.idToken;_fbTokExp=now+(parseInt(d.expiresIn,10)||3600)*1000;try{localStorage.setItem('fb_rtok',d.refreshToken);}catch(e){}return _fbTok;}
-  }catch(e){}
+  /* sans compte connecte : aucun acces. L'ancien repli creait un compte Firebase
+     anonyme a chaque visite de l'ecran de connexion (retire le 11/10/2026). */
   return null;
 }
 // Session revoquee : on redemande le mot de passe. Les saisies faites ici
@@ -2841,7 +2837,7 @@ function _applyState(d){
   if(_migrerRayonsTicket())_etatCorrige=true;
   /* comptes crees avant le 06/10/2026 : poids vise de l'inscription jamais repris dans le Bilan */
   if(!(typeof d.weightGoal==='number')&&d.profil&&+d.profil.poidsVise>=30&&+d.profil.poidsVise<=400){d.weightGoal=Math.round(+d.profil.poidsVise*10)/10;_etatCorrige=true;}
-  S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights:[];S.mesures=Array.isArray(d.mesures)?d.mesures.filter(function(m){return m&&/^\d{4}-\d\d-\d\d$/.test(m.d);}):[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
+  S.waiting=Array.isArray(d.waiting)?d.waiting:[];S.weights=Array.isArray(d.weights)?d.weights.filter(function(x){return !(x&&typeof x==='object'&&typeof x.d==='string'&&!_cleSure(x.d));}):[];S.mesures=Array.isArray(d.mesures)?d.mesures.filter(function(m){return m&&/^\d{4}-\d\d-\d\d$/.test(m.d);}):[];S.favs=Array.isArray(d.favs)?d.favs:[];S.weightGoal=(typeof d.weightGoal==='number')?d.weightGoal:null;
   S.shopSeeded=d.shopSeeded||false;
   S.tutoVu=(d.tutoVu!==false);
   S.libresMigres=!!d.libresMigres;
@@ -2884,6 +2880,7 @@ function _applyState(d){
   if(d.dayMeals){
     S.dayMeals=(ACTIVE_PROFILE===PROFIL_HERITE)?JSON.parse(JSON.stringify(MEALS_DEFAULT)):{};
     Object.keys(d.dayMeals).forEach(day=>{
+      if(!_cleSure(day))return;   /* cle piegee (fichier modifie a la main) : ignoree */
       // Firebase remplace complètement le jour (permet suppression + ajout)
       S.dayMeals[day]=d.dayMeals[day];
     });
@@ -3049,18 +3046,41 @@ function _empreinteEtat(){
     return x+':'+p.length;
   }catch(e){return null;}
 }
+// Envoi jamais confirme (hors ligne, refus) : retenu ici ET sur l'appareil, pour
+// qu'aucun rechargement ne remplace en silence une saisie qui n'a pas atteint le
+// cloud. Avant de la remplacer, elle est mise de cote dans le filet (Reglages >
+// sauvegardes > « Revenir a cet etat »). — audit du 11/10/2026
+var _nonEnvoye=false,MOTIF_AUTRE_APPAREIL='version de cet appareil';
+function _nonEnvoyeLocal(){try{return localStorage.getItem(ACTIVE_PROFILE+'_nonEnvoye')==='1';}catch(e){return false;}}
+function _marquerNonEnvoye(v){_nonEnvoye=!!v;try{if(v)localStorage.setItem(ACTIVE_PROFILE+'_nonEnvoye','1');else localStorage.removeItem(ACTIVE_PROFILE+'_nonEnvoye');}catch(e){}}
+function _modifsLocalesEnAttente(){return _nonEnvoye||(_empreinteRef!=null&&_empreinteEtat()!==_empreinteRef);}
+async function _mettreDeCoteLocal(texte){
+  try{
+    if(!texte||texte.length<200)return false;
+    var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'),{method:'PUT',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({at:new Date().toISOString(),remplacePar:MOTIF_AUTRE_APPAREIL,state:texte})});
+    if(r&&r.ok){_nettoyageFait=true;return true;}   /* le rangement du jour n'ecrasera pas ce filet */
+  }catch(e){}
+  return false;
+}
 async function _reloadFromServer(silencieux){
+  var _deCote=false;
+  if(_loaded&&_modifsLocalesEnAttente()){
+    try{_deCote=await _mettreDeCoteLocal(JSON.stringify(_assainirCles(_etatPourEnvoi(_stateRev))));}catch(e){}
+    if(_deCote)_marquerNonEnvoye(false);
+  }
   _loaded=false;
   await loadState();
   render();
-  if(!silencieux)_infoToast('\ud83d\udd04 Donn\u00e9es recharg\u00e9es','Elles avaient \u00e9t\u00e9 modifi\u00e9es depuis un autre appareil. Ta version locale, plus ancienne, n\'a pas \u00e9t\u00e9 envoy\u00e9e.');
+  if(_deCote)_infoToast('\ud83d\udd04 Version d\u2019un autre appareil charg\u00e9e','Elle \u00e9tait plus r\u00e9cente. Ce que tu avais saisi ici est mis de c\u00f4t\u00e9 : R\u00e9glages \u203a Voir les sauvegardes \u203a \u00ab Revenir \u00e0 cet \u00e9tat \u00bb pour le reprendre.');
+  else if(!silencieux)_infoToast('\ud83d\udd04 Donn\u00e9es recharg\u00e9es','Elles avaient \u00e9t\u00e9 modifi\u00e9es depuis un autre appareil.');
 }
 async function _onSaveConflict(){
   if(_conflictBusy)return;
   _conflictBusy=true;
   _syncStatus='conflict';
   _majBadgesSync();
-  var ok=await _confirmer("\u26a0 Ces donn\u00e9es ont \u00e9t\u00e9 modifi\u00e9es ailleurs entre-temps.\n\nEnregistrer maintenant \u00e9craserait ces modifications. L'app peut recharger la version la plus r\u00e9cente \u00e0 la place.",{ok:'Recharger',annuler:'Ne rien enregistrer'});
+  var ok=await _confirmer("\u26a0 Ces donn\u00e9es ont \u00e9t\u00e9 modifi\u00e9es sur un autre appareil entre-temps.\n\nEnregistrer maintenant \u00e9craserait ces modifications. Recharger affiche la version la plus r\u00e9cente ; ce que tu as saisi ici est mis de c\u00f4t\u00e9 et reste r\u00e9cup\u00e9rable dans R\u00e9glages \u203a Voir les sauvegardes.",{ok:'Recharger',annuler:'Plus tard'});
   _conflictBusy=false;
   if(ok)await _reloadFromServer(true);
 }
@@ -3079,7 +3099,11 @@ let _wasHidden=false;
 async function _checkFresherOnResume(){
   if(!_loaded)return;
   const rr=await _remoteRev();
-  if(rr!==null&&rr>_stateRev)await _reloadFromServer(false);
+  if(rr!==null&&rr>_stateRev){
+    /* une saisie d'ici attend encore le cloud : on demande, on ne remplace pas en silence */
+    if(_modifsLocalesEnAttente()){await _onSaveConflict();return;}
+    await _reloadFromServer(false);
+  }
 }
 // ─── Fenetres de dialogue ───────────────────────────────────────────────────
 // Sur iPhone, en PWA, alert/confirm ouvrent une boite systeme grise qui affiche
@@ -3273,45 +3297,10 @@ function saveState(){
   _saveChain=_saveChain.then(go,go);
   return _saveChain;
 }
-async function _saveStateNow(){
-  if(!_loaded)return;
-  if(_schemaTropRecent)return;   /* etat d'une version plus recente : on n'ecrase rien */ // jamais sauvegarder l'état par défaut pendant le chargement initial
-  // Quelqu'un a-t-il écrit depuis notre chargement ? Si oui, on n'écrase pas.
-  const _rr=await _remoteRev();
-  if(_rr!==null&&_rr>_stateRev){
-    // L'autre appareil a ecrit. Si rien n'a bouge de notre cote, on prend sa
-    // version sans rien demander : aucune donnee locale n'est en jeu.
-    var _emp=_empreinteEtat();
-    if(_emp&&_empreinteRef&&_emp===_empreinteRef){await _reloadFromServer(true);return;}
-    await _onSaveConflict();return;
-  }
-  // Dernier rempart : meme si les revisions concordent, on ne remplace pas un
-  // etat nettement plus fourni sans le dire. C'est ce qui manquait quand un
-  // poste reste hors ligne cinq jours a ecrase le travail fait ailleurs.
-  if(_rr!==null){
-    var _volLocal=_volumeEtat(S), _volDist=await _remoteVol();
-    if(_volDist!==null&&_volDist>20&&_volLocal<_volDist*0.6){
-      if(!(await _confirmer('\u26a0 Cet appareil s\'apprête à remplacer des données bien plus complètes.\n\n'
-        +'Ici : environ '+_volLocal+' éléments.\nSur le cloud : environ '+_volDist+' éléments.\n\n'
-        +'Cela ressemble à un appareil resté en retard. Recharger la version du cloud est recommandé.',
-        {ok:'Recharger le cloud',annuler:'Envoyer quand même'}))){
-        // L'utilisateur choisit d'envoyer : on met l'etat distant de cote avant
-        try{
-          var _av=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'));
-          if(_av.ok){var _aj=await _av.json();
-            if(_aj)await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'),{method:'PUT',
-              headers:{'Content-Type':'application/json'},
-              body:JSON.stringify({at:new Date().toISOString(),remplacePar:'écrasement volontaire',state:JSON.stringify(_aj)})});}
-        }catch(e){}
-      }else{
-        await _reloadFromServer(false);
-        return;
-      }
-    }
-  }
-  const _newRev=(_rr===null?_stateRev:_rr)+1;
+// Etat tel qu'il part vers le cloud (aussi mis de cote avant un rechargement)
+function _etatPourEnvoi(_newRev){
   const _invSafe={};for(const c in S.inv){_invSafe[c]=(S.inv[c]||[]).filter(Boolean).map(it=>Object.assign({},it,{qty:it.qty===null?-1:it.qty}));}
-  var payload=JSON.stringify({
+  return {
     dayMeals:S.dayMeals,
     inv:_invSafe,
     aiRecipes:S.aiRecipes||[],
@@ -3344,7 +3333,46 @@ async function _saveStateNow(){
     vol:_volumeEtat(S),
     savedAt:new Date().toISOString(),
     savedBy:_sessionId
-  });
+  };
+}
+async function _saveStateNow(){
+  if(!_loaded)return;
+  if(_schemaTropRecent)return;   /* etat d'une version plus recente : on n'ecrase rien */ // jamais sauvegarder l'état par défaut pendant le chargement initial
+  // Quelqu'un a-t-il écrit depuis notre chargement ? Si oui, on n'écrase pas.
+  const _rr=await _remoteRev();
+  if(_rr!==null&&_rr>_stateRev){
+    // L'autre appareil a ecrit. Si rien n'a bouge de notre cote, on prend sa
+    // version sans rien demander : aucune donnee locale n'est en jeu.
+    var _emp=_empreinteEtat();
+    if(_emp&&_empreinteRef&&_emp===_empreinteRef&&!_nonEnvoye){await _reloadFromServer(true);return;}   /* rien d'ici en attente */
+    await _onSaveConflict();return;
+  }
+  // Dernier rempart : meme si les revisions concordent, on ne remplace pas un
+  // etat nettement plus fourni sans le dire. C'est ce qui manquait quand un
+  // poste reste hors ligne cinq jours a ecrase le travail fait ailleurs.
+  if(_rr!==null){
+    var _volLocal=_volumeEtat(S), _volDist=await _remoteVol();
+    if(_volDist!==null&&_volDist>20&&_volLocal<_volDist*0.6){
+      if(!(await _confirmer('\u26a0 Cet appareil s\'apprête à remplacer des données bien plus complètes.\n\n'
+        +'Ici : environ '+_volLocal+' éléments.\nSur le cloud : environ '+_volDist+' éléments.\n\n'
+        +'Cela ressemble à un appareil resté en retard. Recharger la version du cloud est recommandé.',
+        {ok:'Recharger le cloud',annuler:'Envoyer quand même'}))){
+        // L'utilisateur choisit d'envoyer : on met l'etat distant de cote avant
+        try{
+          var _av=await fetch(await fbUrl(ACTIVE_PROFILE+'/state'));
+          if(_av.ok){var _aj=await _av.json();
+            if(_aj)await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'),{method:'PUT',
+              headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({at:new Date().toISOString(),remplacePar:'écrasement volontaire',state:JSON.stringify(_aj)})});}
+        }catch(e){}
+      }else{
+        await _reloadFromServer(false);
+        return;
+      }
+    }
+  }
+  const _newRev=(_rr===null?_stateRev:_rr)+1;
+  var payload=JSON.stringify(_etatPourEnvoi(_newRev));
   /* Une seule cle invalide fait refuser tout l'etat par Firebase (HTTP 400) */
   /* reservation AVANT l'empreinte : en cas de conflit, la relance doit voir les changements locaux */
   // Reservation de la revision : echoue (412) si un autre appareil a ecrit entre-temps
@@ -3371,11 +3399,12 @@ async function _saveStateNow(){
     });
     clearTimeout(_stid);
     if(r.ok){_stateRev=_newRev;_envoye=_emp;}
+    _marquerNonEnvoye(!r.ok);
     _syncStatus=r.ok?'ok':'offline';
     _lastSyncErr=r.ok?'':('Ecriture refusee — HTTP '+r.status+' '+r.statusText
       +(r.status===400?" (donnee non enregistrable : un nom contient sans doute un caractere interdit comme / ou .)":''));
     if(!r.ok)_noterErreur('synchro',_lastSyncErr);
-  }catch(e){_syncStatus='offline';_lastSyncErr='Ecriture — '+e.name+': '+e.message;_noterErreur('synchro',_lastSyncErr);}
+  }catch(e){_marquerNonEnvoye(true);_syncStatus='offline';_lastSyncErr='Ecriture — '+e.name+': '+e.message;_noterErreur('synchro',_lastSyncErr);}
   _majBadgesSync();
 }
 
@@ -3404,22 +3433,28 @@ async function loadState(){
         var _pasAppauvri=(_volLoc>=_volDist*0.75);
         if(_loc&&(_loc.inv||_loc.dayMeals)&&_lRev>_dRev&&_plusRecent&&_pasAppauvri){
           _applyState(_loc);
+          _nonEnvoye=true;   /* a renvoyer : le flag tombe quand le cloud confirme */
           _stateRev=_dRev;                 // la revision du serveur reste la reference
           _loaded=true;
           _syncStatus='ok';
-          try{const rb2=await fetch(await fbUrl(ACTIVE_PROFILE+'/burn'));if(rb2.ok){const bd2=await rb2.json();_burnData=(bd2&&typeof bd2==='object')?bd2:{};}}catch(e){}
+          try{const rb2=await fetch(await fbUrl(ACTIVE_PROFILE+'/burn'));if(rb2.ok){_burnData=_burnSur(await rb2.json());}}catch(e){}
           setTimeout(function(){saveState();},1500);
           _infoToast('Saisie hors ligne recuperee','Des modifications faites sans reseau n\'avaient pas ete envoyees. Elles ont ete restaurees et sont en cours d\'enregistrement.');
           setTimeout(function(){autoBackup();},4000);
           return;
         }
+        /* le dernier envoi d'ici n'a jamais ete confirme et le cloud a ete ecrit depuis :
+           sa version s'affiche, celle d'ici est mise de cote (rien ne se perd en silence) */
+        var _deCote=false;
+        if(_loc&&(_loc.inv||_loc.dayMeals)&&_nonEnvoyeLocal()){_deCote=await _mettreDeCoteLocal(JSON.stringify(_loc));if(_deCote)_marquerNonEnvoye(false);}
         _applyState(d);
         _stateRev=_dRev;
         _loaded=true;
         _empreinteRef=_empreinteEtat();
+        if(_deCote)_infoToast('\ud83d\udd04 Version d\u2019un autre appareil charg\u00e9e','Des modifications faites ici n\u2019avaient pas pu \u00eatre envoy\u00e9es, et le cloud a chang\u00e9 depuis. Elles sont mises de c\u00f4t\u00e9 : R\u00e9glages \u203a Voir les sauvegardes \u203a \u00ab Revenir \u00e0 cet \u00e9tat \u00bb pour les reprendre.');
         try{localStorage.setItem(ACTIVE_PROFILE+'_st',JSON.stringify(d));}catch(e){}
         _syncStatus='ok';
-        try{const rb=await fetch(await fbUrl(ACTIVE_PROFILE+'/burn'));if(rb.ok){const bd=await rb.json();_burnData=(bd&&typeof bd==='object')?bd:{};}}catch(e){}
+        try{const rb=await fetch(await fbUrl(ACTIVE_PROFILE+'/burn'));if(rb.ok){_burnData=_burnSur(await rb.json());}}catch(e){}
         if(_etatCorrige){_etatCorrige=false;saveState();}
         setTimeout(function(){autoBackup();},4000);   // sauvegarde du jour, sans retarder l'affichage
         return;
@@ -3427,9 +3462,11 @@ async function loadState(){
     }
   }catch(e){_lastSyncErr='Lecture — '+e.name+': '+e.message;_noterErreur('synchro',_lastSyncErr);}
   try{
-    const d=JSON.parse(localStorage.getItem(ACTIVE_PROFILE+'_st')||localStorage.getItem('frigo_state')||'null');
+    const d=JSON.parse(localStorage.getItem(ACTIVE_PROFILE+'_st')||'null');   /* plus de repli sur frigo_state (appli d'avant les comptes) */
     _applyState(d);
     _stateRev=(d&&typeof d.rev==='number')?d.rev:0;   // sinon on repartait de zero
+    /* dernier envoi jamais confirme : cette revision n'est pas celle du cloud, on repart de la precedente */
+    if(d&&_nonEnvoyeLocal()){_nonEnvoye=true;if(_stateRev>0)_stateRev--;}
     _loaded=true;
     if(!_photosChargees)chargerPhotos();
     _empreinteRef=_empreinteEtat();
@@ -3520,9 +3557,18 @@ function _neutre(v,prof){
   if(typeof v==='string')return v.replace(/</g,'\u2039').replace(/>/g,'\u203a').replace(/"/g,'\u201d');
   if(!v||typeof v!=='object'||prof>12)return v;
   if(Array.isArray(v))return v.map(function(x){return _neutre(x,prof+1);});
-  var o={};Object.keys(v).forEach(function(k){o[k]=_neutre(v[k],prof+1);});
+  var o={};Object.keys(v).forEach(function(k){o[k]=(_CHAMPS_ID[k]&&typeof v[k]==='string')?_idSur(v[k]):_neutre(v[k],prof+1);});
   return o;
 }
+// Identifiants : inseres tels quels dans les onclick="f('…')". Une apostrophe
+// (fichier de sauvegarde piege, reponse d'IA) en sortirait. Les identifiants
+// de l'appli n'ont que lettres, chiffres, _ et - : rien ne change pour eux.
+var _CHAMPS_ID={id:1,rid:1,invId:1};
+function _idSur(s){return String(s).replace(/['"`\\<>&\s]/g,'_');}
+/* cle de jour (repas, activite, pesee) : rien qui sorte d'un attribut ni d'un chemin Firebase */
+function _cleSure(k){return typeof k==='string'&&k.length>0&&k.length<40&&!/['"`\\<>&\s\/#$\[\].]/.test(k);}
+/* activite par jour (Firebase ou import) : cles sures, textes neutralises */
+function _burnSur(b){var o={};if(b&&typeof b==='object')Object.keys(b).forEach(function(k){if(_cleSure(k)&&b[k]&&typeof b[k]==='object')o[k]=_neutre(b[k]);});return o;}
 function extractJSON(text){
   let t=text.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json/gi,'').replace(/```/g,'').trim();
   const s=t.indexOf('{'),e=t.lastIndexOf('}');
@@ -3708,9 +3754,10 @@ RÈGLES ABSOLUES:
 }
 
 // Deux noms designent-ils le meme article ? (un mot significatif en commun)
-var _MOTS_VIDES={avec:1,sans:1,pour:1,nature:1,leger:1,legere:1,light:1,maison:1,les:1,des:1,aux:1,une:1,the:1,bio:1,pack:1};
+/* nom distinct : un second _MOTS_VIDES (tableau, plus bas) ecrasait cet objet, et « nature », « sans », « bio »… n'etaient plus ignores (audit 11/10/2026) */
+var _MOTS_VIDES_IA={avec:1,sans:1,pour:1,nature:1,leger:1,legere:1,light:1,maison:1,les:1,des:1,aux:1,une:1,the:1,bio:1,pack:1};
 function _nmIA(s){return normMac(String(s||'').replace(/œ/g,'oe').replace(/Œ/g,'Oe').replace(/æ/g,'ae'));}
-function _motsNom(n){return _nmIA(n).split(' ').filter(function(w){return w.length>=3&&!_MOTS_VIDES[w]&&!/^\d/.test(w);}).map(function(w){return w.replace(/s$/,'');});}
+function _motsNom(n){return _nmIA(n).split(' ').filter(function(w){return w.length>=3&&!_MOTS_VIDES_IA[w]&&!/^\d/.test(w);}).map(function(w){return w.replace(/s$/,'');});}
 function _nomsCompatibles(a,b){
   var na=_nmIA(a),nb=_nmIA(b);if(!na||!nb)return false;
   if(na.indexOf(nb)>=0||nb.indexOf(na)>=0)return true;
@@ -4667,7 +4714,7 @@ function renderInvDiag(){
         +' <span style="color:var(--text3);">(vide)</span></div>'
         +'<div style="display:flex;gap:8px;margin-top:5px;">'
         +'<button onclick="openItemDetail(\''+v.vide.cat+'\',\''+v.vide.it.id+'\')" style="flex:1;padding:5px;background:transparent;border:0.5px solid var(--border);border-radius:6px;color:var(--text2);font-size:11px;cursor:pointer;">Ouvrir le vide</button>'
-        +'<button onclick="ignorerVoisins('+JSON.stringify(v.plein.it.name).replace(/"/g,'&quot;')+','+JSON.stringify(v.vide.it.name).replace(/"/g,'&quot;')+')" style="flex:1;padding:5px;background:transparent;border:0.5px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;cursor:pointer;">Ce sont deux produits</button>'
+        +'<button onclick="ignorerVoisins('+_attr(JSON.stringify(v.plein.it.name))+','+_attr(JSON.stringify(v.vide.it.name))+')" style="flex:1;padding:5px;background:transparent;border:0.5px solid var(--border);border-radius:6px;color:var(--text3);font-size:11px;cursor:pointer;">Ce sont deux produits</button>'
         +'</div></div>';
     }).join('');
     var _ni=Object.keys(S.paires0k||{}).length;
@@ -4830,7 +4877,7 @@ function renderShopAuto(){
       +'<input type="checkbox" id="sa-'+i+'" checked style="width:16px;height:16px;accent-color:var(--accent);flex:0 0 auto;">'
       +'<span style="flex:1;min-width:0;font-size:12px;color:var(--text2);">'+x.name+'</span>'
       +'<span style="font-size:11px;color:'+col+';white-space:nowrap;">'+x.etat+'</span>'
-      +'<button onclick="event.preventDefault();event.stopPropagation();exclureDuRachat('+JSON.stringify(x.name).replace(/"/g,'&quot;')+')" title="Ne plus me le proposer" style="background:none;border:0;color:var(--text3);font-size:15px;line-height:1;cursor:pointer;padding:0 2px;flex:0 0 auto;">\u00d7</button></label>';
+      +'<button onclick="event.preventDefault();event.stopPropagation();exclureDuRachat('+_attr(JSON.stringify(x.name))+')" title="Ne plus me le proposer" style="background:none;border:0;color:var(--text3);font-size:15px;line-height:1;cursor:pointer;padding:0 2px;flex:0 0 auto;">\u00d7</button></label>';
   }).join('');
   h+='<button onclick="applyShopSuggestions()" style="width:100%;margin-top:9px;padding:9px;background:var(--accent);border:0;border-radius:8px;color:#fff;font-size:12px;font-weight:600;cursor:pointer;">\u2713 Ajouter \u00e0 ma liste</button>';
   if(nbExclus)h+='<div style="font-size:11px;color:var(--text3);margin-top:7px;text-align:right;">'+nbExclus+' \u00e9cart\u00e9'+(nbExclus>1?'s':'')+' \u00b7 '+lienReprise+'</div>';
@@ -5856,7 +5903,7 @@ async function _restaurerSauvegarde(sv){
   delete _st.groqKey;delete _st.geminiKey;
   _applyState(_st);                 // passe par la neutralisation des entrees
   if(sv.burn){
-    _burnData=_neutre(sv.burn);
+    _burnData=_burnSur(sv.burn);
     Object.keys(_burnData).forEach(function(d){try{_burnSave(d);}catch(e){}});
   }
   if(sv.photos){
@@ -6867,8 +6914,19 @@ async function restoreBackup(day){
     _alerte('✓ Sauvegarde du '+day+' restaurée.');
   }catch(e){_alerte('⚠ Restauration impossible : '+(e.message||e));}
 }
+// Libelle du filet selon ce qui l'a pose
+function _libFilet(fj){
+  var x=String((fj&&fj.remplacePar)||''),q='';
+  try{if(fj&&fj.at){var dt=new Date(fj.at);if(!isNaN(dt))q=' ('+dt.toLocaleDateString('fr-FR',{day:'numeric',month:'short'})+' à '+dt.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})+')';}}catch(e){}
+  if(x===MOTIF_AUTRE_APPAREIL)return 'Saisie de cet appareil mise de côté, remplacée par la version d’un autre appareil'+q;
+  if(/^\d{4}-\d\d-\d\d$/.test(x))return 'État mis de côté avant la restauration de la sauvegarde du '+x+q;
+  if(x==='import de sauvegarde')return 'État mis de côté avant l’import d’une sauvegarde'+q;
+  if(x==='écrasement volontaire')return 'État du cloud mis de côté avant « Envoyer quand même »'+q;
+  if(/^rangement des donn/.test(x))return 'État mis de côté avant le rangement des données'+q;
+  return 'État mis de côté'+(x?' : '+_neutre(x):'')+q;
+}
 async function annulerRestauration(){
-  if(!(await _confirmer('Revenir à l\'état qui précédait la dernière restauration ?\n\nLes données actuelles seront remplacées.',{ok:'Revenir en arrière',danger:true})))return;
+  if(!(await _confirmer('Revenir à l\'état mis de côté ?\n\nLes données actuelles seront remplacées (elles-mêmes mises de côté à leur tour).',{ok:'Revenir à cet état',danger:true})))return;
   try{
     var r=await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'));
     if(!r.ok)throw new Error('lecture impossible');
@@ -6897,8 +6955,8 @@ async function renderBackupList(){
     var rf=await fetch(await fbUrl(ACTIVE_PROFILE+'/filet'));
     if(rf.ok){var fj=await rf.json();
       if(fj&&fj.state)_filet='<div style="padding:8px 10px;background:rgba(233,161,59,.12);border:0.5px solid rgba(233,161,59,.4);border-radius:8px;margin-bottom:8px;">'
-        +'<div style="font-size:11px;color:var(--gold);margin-bottom:6px;">Etat mis de cote avant la restauration du '+(fj.remplacePar||'?')+'</div>'
-        +'<button onclick="annulerRestauration()" style="width:100%;padding:7px;background:transparent;border:0.5px solid rgba(233,161,59,.5);border-radius:7px;color:var(--gold);font-size:11px;cursor:pointer;">Revenir a cet etat</button></div>';
+        +'<div style="font-size:11px;color:var(--gold);margin-bottom:6px;">'+_libFilet(fj)+'</div>'
+        +'<button onclick="annulerRestauration()" style="width:100%;padding:7px;background:transparent;border:0.5px solid rgba(233,161,59,.5);border-radius:7px;color:var(--gold);font-size:11px;cursor:pointer;">Revenir à cet état</button></div>';
     }
   }catch(e){}
   var _n=Math.min(l.length,BACKUP_KEEP);
@@ -8615,12 +8673,28 @@ async function changerMotDePasse(nouveau){
   if(d.refreshToken)_poserSession({localId:s.uid,refreshToken:d.refreshToken,idToken:d.idToken,expiresIn:d.expiresIn},s.login);
 }
 function deconnexion(){
-  _confirmer('Se déconnecter de cet appareil ?',{ok:'Se déconnecter'}).then(function(ok){if(ok)_deconnecter();});
+  return _confirmer('Se déconnecter de cet appareil ?\n\nTes données restent dans ton compte. Celles gardées sur cet appareil sont effacées.',{ok:'Se déconnecter'}).then(async function(ok){
+    if(!ok)return;
+    /* derniere chance d'envoyer : la copie locale va etre effacee */
+    if(_loaded&&!_schemaTropRecent){try{await saveState();}catch(e){}}
+    if(_nonEnvoye&&!(await _confirmer('Des modifications ne sont pas encore enregistrées en ligne\n\nSi tu te déconnectes maintenant, elles seront perdues. Retrouve du réseau, attends quelques secondes, puis réessaie.',{ok:'Me déconnecter quand même',annuler:'Annuler',danger:true})))return;
+    _deconnecter();
+  });
+}
+// Appareil partage : apres la deconnexion, rien du compte ne reste lisible
+// (copie de l'etat, photos, journal d'erreurs, rappels du jour). — 11/10/2026
+function _effacerDonneesLocales(uid){
+  try{
+    var prof=[uid?('users/'+uid):ACTIVE_PROFILE,PROFIL_HERITE];
+    prof.forEach(function(p){['_st','_photos','_nonEnvoye'].forEach(function(s){localStorage.removeItem(p+s);});});
+    ['frigo_state','fb_rtok','dz_journal','dz_pesee_plus_tard','dz_bas_vu'].forEach(function(k){localStorage.removeItem(k);});
+  }catch(e){}
 }
 function _deconnecter(){
   // La cle Groq est rangee hors profil : sans ce menage, le compte suivant
   // sur cet appareil s'en servirait et l'enverrait dans ses propres donnees.
   // Elle revient a la reconnexion, depuis l'etat du compte.
+  _effacerDonneesLocales((sessionActive()||{}).uid);
   try{localStorage.removeItem('dz_auth');localStorage.removeItem('dz_herite');localStorage.removeItem('anthropic_key');localStorage.removeItem('gemini_key');}catch(e){}
   _fbTok=null;_fbTokExp=0;
   try{location.reload();}catch(e){}
@@ -8984,9 +9058,10 @@ async function validerConnexion(){
   _auth.occupe=true;renderAuth();
   // Reconnexion apres une session expiree : si c'est un autre compte, la cle
   // Groq du precedent ne doit pas le suivre (meme menage que deconnexion()).
-  var _ancien=(sessionActive()||{}).login||'';
-  try{await connexion(l,m);
-    try{if(_ancien&&_ancien!==_loginNorm(l)){localStorage.removeItem('anthropic_key');localStorage.removeItem('gemini_key');}}catch(e){}try{location.reload();}catch(e){}}
+  /* compare les comptes (uid) : un meme compte dont l'identifiant a change garde ses donnees */
+  var _ancienUid=(sessionActive()||{}).uid||'';
+  try{var _s2=await connexion(l,m);
+    try{if(_ancienUid&&_s2&&_s2.uid&&_ancienUid!==_s2.uid){localStorage.removeItem('anthropic_key');localStorage.removeItem('gemini_key');_effacerDonneesLocales(_ancienUid);}}catch(e){}try{location.reload();}catch(e){}}
   catch(e){_auth.occupe=false;_auth.err=_msgErreurAuth(e&&e.message);renderAuth();}
 }
 async function demanderReinitialisation(){
@@ -9720,7 +9795,9 @@ function confirmAddMealFinal() {
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
-loadState().then(()=>{render();_verifierNouveautes();},()=>render());
+/* chargement : demarrerApp() -> selectProfile() pour un compte connecte. Sans session,
+   plus rien n'est lu (l'ancien appel lisait /liam en arriere-plan et pouvait marquer
+   « hors ligne » a tort en finissant apres le vrai chargement) — 11/10/2026 */
 setTimeout(()=>{try{render();}catch(e){}},9000);
 // Service Worker
 if('serviceWorker' in navigator){
