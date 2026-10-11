@@ -303,7 +303,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-12 00h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-12 00h15 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -568,12 +568,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-12-0000"></script>
+<script src="catalogue.js?v=2026-10-12-0015"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-12-0000';
+const BUILD_ID='2026-10-12-0015';
 const NOUVEAUTES=[
+  {b:'2026-10-12-0015',points:[
+    'Prise de masse : les recettes plus petites que ta cible te proposent une portion adaptée (par exemple ×1,4), que tu peux ajuster avant de valider. Les recettes générées par l’IA ont des portions calculées pour ta cible, en prise de masse comme en maintien.'
+  ]},
   {b:'2026-10-12-0000',points:[
     'Recettes perso : seuls les ingrédients écrits entre crochets, comme [sauce soja], sont surlignés ; le reste de ton texte n’est plus modifié (« la sauce » reste « la sauce »). Tes recettes existantes ont reçu les crochets : vérifie-les dans l’éditeur.'
   ]},
@@ -1239,10 +1242,16 @@ function renderCcMoments(){
       +'color:'+(on?m.couleur:'var(--text3)')+';">'+m.court+'</button>';
   }).join('');
 }
+// Quantite pour un multiplicateur : une portion agrandie (×1,4) arrondit les articles
+// a la piece (2 œufs × 1,4 = 3 œufs, pas 2,8) ; grammes au gramme pres.
+function _qteMult(q,mult,unit){
+  var v=q*mult;if(mult===Math.round(mult))return v;
+  return (!unit||unit==='g'||unit==='ml')?Math.round(v):Math.max(1,Math.round(v));
+}
 function openConfirmCook(rid,mult,day,subst){
   const r=RCP.find(x=>x.id===rid);if(!r)return;
-  _cc={rid,mult,day,subst:!!subst,ings:(r.used||[]).map(u=>{const it=resolveInv(u.id,u.n);const m=getM100(it?it.id:u.id);const need=u.qty*mult;const avail=it?(it.qty===null?Infinity:it.qty):0;const q=subst?Math.min(need,avail):need;return{id:it?it.id:u.id,n:u.n,name:it?it.name:(u.n||u.id),qty:(q===Infinity?need:q),unit:it?it.unit:'',m100:m,flex:!!u.flex,_miss:!!subst&&avail<need&&!u.flex};})};
-  document.getElementById('cc-title').textContent=(subst?'🔁 ':'')+(mult===2?'\u00d72 \u2014 ':'')+r.name;
+  _cc={rid,mult,day,subst:!!subst,ings:(r.used||[]).map(u=>{const it=resolveInv(u.id,u.n);const m=getM100(it?it.id:u.id);const need=_qteMult(u.qty,mult,it?it.unit:'');const avail=it?(it.qty===null?Infinity:it.qty):0;const q=subst?Math.min(need,avail):need;return{id:it?it.id:u.id,n:u.n,name:it?it.name:(u.n||u.id),qty:(q===Infinity?need:q),unit:it?it.unit:'',m100:m,flex:!!u.flex,_miss:!!subst&&avail<need&&!u.flex};})};
+  document.getElementById('cc-title').textContent=(subst?'🔁 ':'')+(mult===2?'\u00d72 \u2014 ':(mult!==1?'\u00d7'+String(mult).replace('.',',')+' \u2014 ':''))+r.name;
   _ccMoment=(function(){
     var s=(r.slots||[]);
     if(!s.length)return null;
@@ -1324,7 +1333,9 @@ function updateCCTotals(){
 }
 function executeCook(){
   const{rid,mult,day}=_cc;const r=RCP.find(x=>x.id===rid);if(!r)return;
-  const _rm=ccRecipeMacros();const _per={kcal:Math.round(_rm.kcal/mult),prot:Math.round(_rm.prot/mult),gluc:Math.round(_rm.gluc/mult),lip:Math.round(_rm.lip/mult)};
+  /* parts = nombre de portions : ×2 = deux portions (la 2e demain) ; ×1,4 = UNE portion agrandie, comptee en entier */
+  const parts=mult>=2?mult:1;
+  const _rm=ccRecipeMacros();const _per={kcal:Math.round(_rm.kcal/parts),prot:Math.round(_rm.prot/parts),gluc:Math.round(_rm.gluc/parts),lip:Math.round(_rm.lip/parts)};
   _cc.ings.forEach((g,i)=>{const el=document.getElementById('cc-'+i);const uq=el?parseFloat(el.value)||0:g.qty;const it=resolveInv(g.id,g.n);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-uq);});
   const ccExtras=[];
   document.querySelectorAll('#cc-extras [id^="cc-exrow-"]').forEach(row=>{
@@ -1335,14 +1346,14 @@ function executeCook(){
     if(!it||q<=0)return;
     const m=itemMealMacros(it,q);
     // l'extra est ajouté au plat entier → réparti par portion
-    ccExtras.push({id:it.id,name:it.name,qty:Math.round(q/mult*10)/10,unit:it.unit||'',kcal:Math.round(m.kcal/mult),prot:Math.round(m.prot/mult),gluc:Math.round(m.gluc/mult),lip:Math.round(m.lip/mult)});
+    ccExtras.push({id:it.id,name:it.name,qty:Math.round(q/parts*10)/10,unit:it.unit||'',kcal:Math.round(m.kcal/parts),prot:Math.round(m.prot/parts),gluc:Math.round(m.gluc/parts),lip:Math.round(m.lip/parts)});
     Object.values(S.inv).forEach(arr=>{const x=arr.find(i=>i.id===it.id);if(x&&x.qty!==null)x.qty=Math.max(0,x.qty-q);});
   });
   const did=S.recipeDesserts[rid]||'none';const cd=did==='autre'?S.customDesserts[rid]:null;
   if(did!=='none'&&did!=='autre'){const d=allDesserts().find(x=>x.id===did);if(d&&d.inv){const it=resolveInv(d.inv,d.n);if(it&&it.qty!==null)it.qty=Math.max(0,it.qty-dessertDeductQty(it,d));}}
   delete S.recipeDesserts[rid];delete S.customDesserts[rid];delete S.customInputs[rid];
   if(!S.dayMeals[day])S.dayMeals[day]=[];
-  const _pings=_cc.ings.map((g,i)=>{const el=document.getElementById('cc-'+i);const uq=el?parseFloat(el.value)||0:g.qty;if(uq<=0)return null;const it=findItem(g.id);let mm={kcal:0,prot:0,gluc:0,lip:0};if(it&&(it.mac100||it.macPiece)){mm=itemMealMacros(it,uq);}else if(g.m100){const f=uq/100;mm={kcal:(g.m100.kcal||0)*f,prot:(g.m100.prot||0)*f,gluc:(g.m100.gluc||0)*f,lip:(g.m100.lip||0)*f};}return{id:g.id,n:g.n,name:g.name,qty:Math.round(uq/mult*10)/10,unit:g.unit||'',kcal:Math.round(mm.kcal/mult),prot:Math.round(mm.prot/mult*10)/10,gluc:Math.round(mm.gluc/mult*10)/10,lip:Math.round(mm.lip/mult*10)/10};}).filter(Boolean);
+  const _pings=_cc.ings.map((g,i)=>{const el=document.getElementById('cc-'+i);const uq=el?parseFloat(el.value)||0:g.qty;if(uq<=0)return null;const it=findItem(g.id);let mm={kcal:0,prot:0,gluc:0,lip:0};if(it&&(it.mac100||it.macPiece)){mm=itemMealMacros(it,uq);}else if(g.m100){const f=uq/100;mm={kcal:(g.m100.kcal||0)*f,prot:(g.m100.prot||0)*f,gluc:(g.m100.gluc||0)*f,lip:(g.m100.lip||0)*f};}return{id:g.id,n:g.n,name:g.name,qty:Math.round(uq/parts*10)/10,unit:g.unit||'',kcal:Math.round(mm.kcal/parts),prot:Math.round(mm.prot/parts*10)/10,gluc:Math.round(mm.gluc/parts*10)/10,lip:Math.round(mm.lip/parts*10)/10};}).filter(Boolean);
   const _entry={rid,mult:1,dessert:did!=='none'?did:null,customDessert:did==='autre'&&cd&&!cd.loading&&!cd.error?cd:null,name:r.name};_entry.macros=_per;if(_pings.length)_entry.ings=_pings;if(ccExtras.length)_entry.extras=ccExtras;
   if(_ccMoment)_entry.slot=_ccMoment;   /* moment choisi a la confirmation */
   S.dayMeals[day].push(_entry);
@@ -3691,7 +3702,7 @@ Retourne UNIQUEMENT un tableau JSON valide, rien d'autre:
 
 RÈGLES ABSOLUES:
 - NOMBRE : ${_consigneNombre(besoin)} Pas plus : l'utilisateur a déjà d'autres recettes faisables.${_objectif()==='perte'?`
-- PORTIONS (perte de poids) : plat principal (déjeuner, dîner) entre 550 et 700 kcal, petit-déjeuner entre 350 et 500, collation entre 150 et 300. Garde au moins 35 g de protéines par plat principal : réduis d'abord féculents, crème et huile, pas la protéine.`:''}
+- PORTIONS (perte de poids) : plat principal (déjeuner, dîner) entre 550 et 700 kcal, petit-déjeuner entre 350 et 500, collation entre 150 et 300. Garde au moins 35 g de protéines par plat principal : réduis d'abord féculents, crème et huile, pas la protéine.`:_consignePortions()}
 - INTERDICTION de proposer une recette déjà listée dans "RECETTES DÉJÀ EXISTANTES", ni une variante trop proche (même ingrédient principal + même format). Sois créatif, propose autre chose.
 - Une recette peut convenir à plusieurs repas → mets plusieurs valeurs dans "slots".
 - "id" = identifiant EXACT de la liste (partie avant le "=").
@@ -4196,6 +4207,14 @@ function btn(rid,m,can,label,icon){
   const c=can?(m===2?`border:0.5px solid var(--blue);color:var(--blue);`:`border:0.5px solid var(--border);color:var(--text);`):`border:0.5px solid var(--border);color:var(--text3);opacity:0.5;`;
   return`<button data-action="cook" data-val="${rid}" data-mult="${m}" ${!can?'data-disabled="true"':''} style="flex:1;padding:9px 6px;border-radius:8px;background:transparent;${c}font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;gap:5px;cursor:${can?'pointer':'not-allowed'};">${label}</button>`;
 }
+function _btnPortionPrise(r){
+  var f=_facteurPortion(r);if(!f)return '';
+  var ok=canCook(r,f),k=Math.round(recipeMacros(r).kcal*f/10)*10,fx=String(f).replace('.',',');
+  return '<button data-action="cook" data-val="'+r.id+'" data-mult="'+f+'"'+(ok?'':' data-disabled="true"')
+    +' title="Proposition : quantités ajustées et modifiables avant de valider" style="width:100%;margin-top:8px;padding:9px 10px;border-radius:8px;background:transparent;border:0.5px dashed var(--gold);color:var(--gold);font-size:12px;font-weight:500;cursor:'+(ok?'pointer':'not-allowed')+';'+(ok?'':'opacity:.5;')+'">'
+    +'💪 Portion prise de masse ×'+fx+' · ≈ '+k+' kcal</button>'
+    +'<div style="font-size:11px;color:var(--text3);margin-top:4px;text-align:center;">Proposé pour ta cible : tu vois et ajustes les quantités avant de valider.</div>';
+}
 function calorieRing(eaten,target,burned){
   var reste=Math.round(target-eaten);
   var pct=target>0?Math.min(1,Math.max(0,eaten/target)):0;
@@ -4329,7 +4348,7 @@ function renderCardBottom(r){
   const rup1=!c1?missingIngredients(r):[];
   const miss=(!c2&&c1)?getMissingFor2(r):[];
   const missHtml=miss.length>0?`<div style="margin-top:8px;display:flex;flex-wrap:wrap;align-items:center;gap:5px;"><span style="font-size:11px;color:var(--text3);">ⓘ Insuffisant pour ×2 :</span>${miss.map(m=>`<span style="background:var(--warn-bg);color:var(--warn);border-radius:5px;padding:2px 8px;font-size:11px;font-weight:500;">${m.name} — ${m.have}${m.unit} / ${m.need}${m.unit}</span>`).join('')}</div>`:'';
-  return`${renderDessert(r)}${rup1.length?`<div style="margin-top:8px;font-size:11px;color:var(--red);line-height:1.45;">Rupture — il te manque : ${rup1.join(', ')}</div><button data-action="cook-subst" data-rid="${r.id}" style="margin-top:8px;width:100%;padding:9px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">🔁 Cuisiner en remplaçant des ingrédients</button>`:''}<div style="display:flex;gap:8px;margin-top:12px;">${btn(r.id,1,c1,'1 portion','user')}${btn(r.id,2,c2,'Préparer pour 2','users')}</div>${missHtml}`;
+  return`${renderDessert(r)}${rup1.length?`<div style="margin-top:8px;font-size:11px;color:var(--red);line-height:1.45;">Rupture — il te manque : ${rup1.join(', ')}</div><button data-action="cook-subst" data-rid="${r.id}" style="margin-top:8px;width:100%;padding:9px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">🔁 Cuisiner en remplaçant des ingrédients</button>`:''}<div style="display:flex;gap:8px;margin-top:12px;">${btn(r.id,1,c1,'1 portion','user')}${btn(r.id,2,c2,'Préparer pour 2','users')}</div>${_btnPortionPrise(r)}${missHtml}`;
 }
 
 function _mealStock(meal,sign){
@@ -7047,6 +7066,32 @@ function _objectif(){
   return 'perte';
 }
 function _enPriseDeMasse(){return _objectif()==='prise';}
+// Portions selon la cible du jour (11/10/2026). En perte de poids, la regle fixe
+// 550-700 kcal par plat reste ; en prise de masse et en maintien, la taille d'un plat
+// suit la cible : plat principal 27-33 %, petit-dejeuner 21-27 %, collation 8-15 %.
+const PARTS_CIBLE={plat:[0.27,0.33],ptidej:[0.21,0.27],collation:[0.08,0.15]};
+function _portionsCibles(){
+  var T=TARGETS.kcal||2000,r10=function(x){return Math.round(x*T/10)*10;};
+  var o={};Object.keys(PARTS_CIBLE).forEach(function(k){o[k]=[r10(PARTS_CIBLE[k][0]),r10(PARTS_CIBLE[k][1])];});
+  o.protPlat=Math.round((TARGETS.prot||0)*0.28);
+  return o;
+}
+function _consignePortions(){
+  var ob=_objectif();if(ob!=='prise'&&ob!=='maintien')return '';
+  var p=_portionsCibles();
+  return '\n- PORTIONS ('+(ob==='prise'?'prise de masse':'maintien')+', cible '+TARGETS.kcal+' kcal/jour) : plat principal (déjeuner, dîner) entre '+p.plat[0]+' et '+p.plat[1]+' kcal, petit-déjeuner entre '+p.ptidej[0]+' et '+p.ptidej[1]+', collation entre '+p.collation[0]+' et '+p.collation[1]+'.'+(p.protPlat?' Au moins '+p.protPlat+' g de protéines par plat principal.':'')+(ob==='prise'?' Des portions franches : ne descends pas sous ces valeurs.':'');
+}
+// Prise de masse : une recette calibree plus petit (mon catalogue, fait pour la seche)
+// recoit une PROPOSITION de portion agrandie (×1,4…) a cote des boutons habituels.
+// Jamais imposee : la fenetre de confirmation montre les quantites, modifiables.
+function _facteurPortion(r){
+  if(!r||_objectif()!=='prise')return 0;
+  var s=r.slots||[],part=(s.indexOf('lunch')>=0||s.indexOf('dinner')>=0)?PARTS_CIBLE.plat:(s.indexOf('breakfast')>=0?PARTS_CIBLE.ptidej:null);
+  if(!part)return 0;
+  var k=recipeMacros(r).kcal;if(!(k>0))return 0;
+  var f=Math.round((part[0]+part[1])/2*(TARGETS.kcal||0)/k*10)/10;
+  return f>=1.15?Math.min(f,1.9):0;   /* sous ×2 : ×2 et plus = deux portions (la 2e demain), pas une grande */
+}
 // Calories visees un jour donne. En seche, l'activite ne s'ajoute pas : la cible
 // tient deja compte de l'activite habituelle, et les estimations de depense
 // sont souvent hautes ; l'activite creuse le deficit. En maintien et en prise,
@@ -7481,7 +7526,7 @@ function _onActionClick(e){
   else if(action==='cook-subst'){handleCook(el.dataset.rid,1,true,true);return;}
   else if(action==='edit-custrec'){openCustRec(el.dataset.val);return;}
   else if(action==='edit-meal'){openEditMeal(el.dataset.day,parseInt(el.dataset.idx));return;}
-  else if(action==='cook'){handleCook(val,parseInt(el.dataset.mult||'1'));return;}
+  else if(action==='cook'){handleCook(val,parseFloat(el.dataset.mult||'1')||1);return;}   /* parseFloat : ×1,4 (prise de masse) */
   else if(action==='confirm-day'){confirmDay(el.dataset.day);return;}
   else if(action==='free-meal-day'){confirmFreeMealDay(el.dataset.day);return;}
   render();
