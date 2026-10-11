@@ -14,7 +14,8 @@ sb.fetch=async(u,o)=>{
 const stock={};
 sb.localStorage={getItem:k=>k in stock?stock[k]:null,setItem:(k,v)=>{stock[k]=String(v);},removeItem:k=>{delete stock[k];}};
 const session=login=>JSON.stringify({uid:'u1',rtok:'r1',login:login});
-const okConnexion=()=>({ok:true,status:200,body:{localId:'u2',refreshToken:'r2',idToken:'i2',expiresIn:'3600'}});
+/* uid renvoye par Firebase : u1 = le meme compte que la session (alice), u2 = un autre (bob) */
+const okConnexion=(uid)=>({ok:true,status:200,body:{localId:uid||'u2',refreshToken:'r2',idToken:'i2',expiresIn:'3600'}});
 
 console.log('\n=== IIA. Cle Groq a la reconnexion apres une session expiree ===');
 t('*** un autre compte ne recupere pas la cle Groq du precedent ***',async()=>{
@@ -28,7 +29,7 @@ t('*** un autre compte ne recupere pas la cle Groq du precedent ***',async()=>{
 t('le meme compte garde sa cle (casse et espaces ignores)',async()=>{
   stock.dz_auth=session('alice');stock.anthropic_key='cle-alice';
   docEl('au-login').value=' Alice ';docEl('au-mdp').value='secret';
-  X("_auth.occupe=false;");reponses=[okConnexion()];
+  X("_auth.occupe=false;");reponses=[okConnexion('u1')];
   await X('validerConnexion')();
   eq(stock.anthropic_key,'cle-alice');
 });

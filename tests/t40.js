@@ -95,7 +95,7 @@ t('le contenu est preserve',()=>{
 
 console.log('\n=== EU. Filet a l\'enregistrement ===');
 t('*** le payload est assaini avant envoi ***',()=>{
-  const i=src.indexOf('var payload=JSON.stringify({');
+  const i=src.indexOf('var payload=JSON.stringify(_etatPourEnvoi(');   /* etat construit par _etatPourEnvoi (11/10/2026) */
   const b=src.slice(i,i+2600);
   if(!/_assainirCles\(JSON\.parse\(payload\)\)/.test(b))
     throw new Error('aucun assainissement avant envoi');
