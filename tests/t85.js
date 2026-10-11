@@ -13,7 +13,7 @@ t('*** etat sans version : format 1, sans blocage ; la version part avec l\'etat
   if(src.indexOf('schema:S.schema||SCHEMA,')<0)throw new Error('version non sauvegardee');
 });
 t('*** migrations jouees une fois, dans l\'ordre, a partir de la version de l\'etat ***',()=>{
-  X("__ordre=[];MIGRATIONS.push({v:2,nom:'a',fn:function(S){__ordre.push(2);return true}},{v:3,nom:'b',fn:function(S){__ordre.push(3);return false}})");
+  X("__vraies=MIGRATIONS.splice(0);__ordre=[];MIGRATIONS.push({v:2,nom:'a',fn:function(S){__ordre.push(2);return true}},{v:3,nom:'b',fn:function(S){__ordre.push(3);return false}})");
   X("S.schema=1");eq(X('_migrerSchema(1)'),true);eq(X('__ordre.join(",")'),'2,3');eq(X('S.schema'),3);
   X('__ordre=[]');X('_migrerSchema(2)');eq(X('__ordre.join(",")'),'3','reprise a la bonne version');
   X('__ordre=[]');X('_migrerSchema(3)');eq(X('__ordre.length'),0,'rejouee');
@@ -21,7 +21,7 @@ t('*** migrations jouees une fois, dans l\'ordre, a partir de la version de l\'e
 t('*** une migration qui plante arrete la suite et garde la derniere version reussie ***',()=>{
   X("MIGRATIONS.length=0;__ordre=[];MIGRATIONS.push({v:2,nom:'ok',fn:function(){__ordre.push(2)}},{v:3,nom:'ko',fn:function(){throw new Error('boum')}},{v:4,nom:'apres',fn:function(){__ordre.push(4)}})");
   X('_migrerSchema(1)');eq(X('S.schema'),2);eq(X('__ordre.join(",")'),'2','la suivante a tourne');
-  X('MIGRATIONS.length=0');
+  X('MIGRATIONS.length=0');X('Array.prototype.push.apply(MIGRATIONS,__vraies)');   /* les vraies migrations reviennent */
 });
 t('*** etat ecrit par une version plus recente : prevenu, plus aucun enregistrement ni rangement ***',async()=>{
   alertes=[];X('_schemaTropRecent=false');sb.__d=etat({schema:99});X('_applyState(__d)');
