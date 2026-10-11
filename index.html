@@ -303,7 +303,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-11 14h59 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-11 23h51 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -568,12 +568,13 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-11-1459"></script>
+<script src="catalogue.js?v=2026-10-11-2351"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-11-1459';
+const BUILD_ID='2026-10-11-2351';
 const NOUVEAUTES=[
+  {b:'2026-10-11-2351',points:[]},
   {b:'2026-10-11-1459',points:[
     'Réglages : tu peux supprimer ton compte et toutes tes données (après confirmation et ton mot de passe).'
   ]},
@@ -4554,7 +4555,7 @@ function renderCard(r){
   const wb=wc>0?`<span class="chip" style="background:var(--green-bg);color:var(--green);">↺ ${wc}× cette semaine</span>`:'';
   const _ph=photoRecette(r.id);
   const _vig=`<div style="width:52px;height:52px;border-radius:10px;overflow:hidden;flex-shrink:0;border:0.5px solid var(--border);">`
-    +(_ph?`<img src="${_ph}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`:_vignetteDefaut(r,22))
+    +(_ph?_imgRecette(_ph,'width:100%;height:100%;object-fit:cover;display:block;'):_vignetteDefaut(r,22))
     +`</div>`;
   return`<div class="rcard" style="border-color:${bc};"><div class="rhead" data-action="toggle-recipe" data-val="${r.id}">
     ${_vig}
@@ -4573,7 +4574,7 @@ function renderCard(r){
   </div>${open?`<div class="rbody${S._anim==='r:'+r.id?' unfold':''}" data-rec="${r.id}" style="padding:0 15px 14px;border-top:0.5px solid var(--border);">${(function(){
     const p=photoRecette(r.id);
     return `<div style="margin:12px 0 4px;border-radius:12px;overflow:hidden;position:relative;height:${p?'170px':'128px'};border:0.5px solid var(--border);">`
-      +(p?`<img src="${p}" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">`:_vignetteDefaut(r,40))
+      +(p?_imgRecette(p,'width:100%;height:100%;object-fit:cover;display:block;'):_vignetteDefaut(r,40))
       +`<div style="position:absolute;right:7px;bottom:7px;display:flex;gap:6px;">`
       +`<button onclick="event.stopPropagation();choisirPhotoRecette('${r.id}')" style="padding:6px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;backdrop-filter:blur(4px);">\ud83d\udcf7 ${p?'Changer':'Ajouter une photo'}</button>`
       +(p?`<button onclick="event.stopPropagation();retirerPhotoRecette('${r.id}')" title="Retirer la photo" style="padding:6px 9px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;">\u00d7</button>`:'')
@@ -6596,7 +6597,7 @@ function renderAccueil(){
       var p=photoRecette(x.r.id);
       return '<div class="rcard" data-action="go-recipe" data-val="'+x.r.id+'" style="display:flex;align-items:center;gap:11px;padding:10px 12px;margin-bottom:8px;cursor:pointer;">'
         +'<div style="width:46px;height:46px;border-radius:9px;overflow:hidden;flex-shrink:0;border:0.5px solid var(--border);">'
-        +(p?'<img src="'+p+'" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">':_vignetteDefaut(x.r,20))
+        +(p?_imgRecette(p,'width:100%;height:100%;object-fit:cover;display:block;'):_vignetteDefaut(x.r,20))
         +'</div>'
         +'<div style="flex:1;min-width:0;">'
           +'<div style="font-size:13.5px;color:var(--text);line-height:1.3;">'+x.r.name+'</div>'
@@ -8084,9 +8085,29 @@ var PHOTOS={},_photosChargees=false,_photosGen=0;   // _photosGen : invalide un 
 // stable sans avoir a connaitre le chemin interne du fichier. Les liens non
 // verifies sont ecartes au demarrage et remplaces par la vignette, donc en
 // ajouter un qui n'existe pas ne casse rien.
+// Largeur STANDARD obligatoire : depuis 2026, Wikimedia limite tres fort les
+// miniatures de taille non standard (400 px renvoyait des erreurs -> images
+// cassees). Tailles standard : 250, 330, 500, 960, 1280…
+const WM_LARGEURS=[250,330,500,960,1280];
 function _wm(fichier,largeur){
+  var l=WM_LARGEURS.indexOf(largeur)>=0?largeur:500;
   return 'https://commons.wikimedia.org/wiki/Special:FilePath/'
-    +encodeURIComponent(fichier)+'?width='+(largeur||400);
+    +encodeURIComponent(fichier)+'?width='+l;
+}
+// Photo de recette qui ne charge pas (lien mort, limite de Wikimedia, reseau) :
+// jamais d'icone cassee. Elle disparait aussitot, le lien est ecarte et le
+// rendu suivant montre la vignette dessinee.
+var _imgEchecTid=null;
+function _imgRecette(src,style){
+  return '<img src="'+_attr(src)+'" alt="" onerror="_imgEchec(this)" style="'+style+'">';
+}
+function _imgEchec(img){
+  try{img.style.visibility='hidden';}catch(e){}
+  var u='';try{u=img.getAttribute('src')||'';}catch(e){}
+  if(!/^https:/.test(u)||_liensCasses[u])return;   /* photo de l'utilisateur : rien a ecarter */
+  _liensCasses[u]=1;
+  if(_imgEchecTid)clearTimeout(_imgEchecTid);
+  _imgEchecTid=setTimeout(function(){_imgEchecTid=null;try{render();}catch(e){}},60);
 }
 var LIENS_IMAGES={
   liam_v6_porridge_whey:_wm('Porridge.jpg'),
@@ -8778,7 +8799,7 @@ async function supprimerCompte(mdp){
   try{['dz_auth','dz_herite','anthropic_key','gemini_key'].forEach(function(k){localStorage.removeItem(k);});}catch(e){}
   _fbTok=null;_fbTokExp=0;
   try{var f=document.getElementById('dz-suppr');if(f&&f.remove)f.remove();}catch(e){}
-  await _alerte('Compte supprimé\n\nToutes tes données ont été effacées. Merci d’avoir utilisé Dorayaki.');
+  await _alerte('Compte supprimé\n\nToutes tes données ont été effacées. Merci d’avoir utilisé Dorayaki, on espère te revoir bientôt ! 👋');
   try{location.reload();}catch(e){}
   return true;
 }

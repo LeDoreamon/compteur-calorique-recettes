@@ -70,7 +70,7 @@ console.log('\n=== FK. Table de liens ===');
 t('*** les adresses Wikimedia sont stables ***',()=>{
   const u=G('_wm')('Porridge.jpg',400);
   if(!/^https:\/\/commons\.wikimedia\.org\/wiki\/Special:FilePath\//.test(u))throw new Error(u);
-  if(!/width=400/.test(u))throw new Error('largeur absente');
+  if(!/width=500$/.test(u))throw new Error('400 px n\'est pas une taille standard Wikimedia : 500 attendu ('+u+')');   /* 11/10/2026 */
 });
 t('les noms de fichiers sont encodes',()=>{
   const u=G('_wm')('An omelette.jpg',400);
