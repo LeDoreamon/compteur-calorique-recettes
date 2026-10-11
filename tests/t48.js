@@ -26,7 +26,7 @@ await t('*** identifiants valides et invalides ***',()=>{
   ['liam','liam.dorayaki','l_m-27'].forEach(x=>{if(!G('loginValide')(x))throw new Error(x+' refuse');});
   ['','ab','a b','éric','-liam','x'.repeat(31),'liam@x','@mail.fr'].forEach(x=>{if(G('loginValide')(x))throw new Error('"'+x+'" accepte');});
 });
-await t('l\'identifiant devient une adresse technique en minuscules',()=>eq(G('_emailDe')('  Liam '),'liam@dorayaki.app'));
+await t('l\'identifiant devient une adresse technique en minuscules',()=>eq(G('_emailDe')('  Liam '),'liam@dorayaki.invalid'));
 await t('*** les erreurs de Google sont traduites ***',()=>{
   const m=G('_msgErreurAuth');
   if(!/déjà pris/.test(m('EMAIL_EXISTS')))throw new Error('EMAIL_EXISTS');
@@ -45,7 +45,7 @@ await t('*** une connexion reussie ouvre une session durable ***',async()=>{
   const s=G('sessionActive')();
   eq(s.uid,'UID123');eq(s.login,'liam');
   const b=JSON.parse(appels[0].body);
-  eq(b.email,'liam@dorayaki.app');eq(b.password,'secret1');
+  eq(b.email,'liam@dorayaki.invalid');eq(b.password,'secret1');
 });
 await t('*** le mot de passe n\'est jamais stocke ***',()=>{
   if(JSON.stringify(LS).indexOf('secret1')>=0)throw new Error('mot de passe en clair dans le stockage local');
@@ -233,7 +233,7 @@ console.log('\n=== GP. Adresse e-mail et recuperation ===');
 await t('*** une vraie adresse e-mail est acceptee telle quelle ***',()=>{
   if(!G('loginValide')('Liam.D@Mail.fr'))throw new Error('refusee');
   eq(G('_emailDe')(' Liam.D@Mail.fr '),'liam.d@mail.fr');
-  eq(G('_emailDe')('liam'),'liam@dorayaki.app','un identifiant simple garde l\'adresse technique');
+  eq(G('_emailDe')('liam'),'liam@dorayaki.invalid','un identifiant simple garde l\'adresse technique');
 });
 await t('*** la reinitialisation part vers une vraie adresse ***',async()=>{
   serveur([{m:/sendOobCode/,d:{email:'liam@mail.fr'}}]);
