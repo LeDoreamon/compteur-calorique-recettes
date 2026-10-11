@@ -43,10 +43,10 @@ t('*** le nom suit l\'inventaire : article renomme = nouveau nom dans les etapes
   const it=sb.S.inv.frigo.find(o=>o.id==='cx_ms8y6yk4');it.name='Saumon frais Label Rouge';
   try{const e=etapes(R('liam_v6_saumon_riz')).map(lisible).join(' | ');if(e.indexOf('[Saumon frais Label Rouge]')<0)throw new Error(e);}finally{remettre();}
 });
-t('*** recette perso : mentions surlignees aussi ***',()=>{
-  const r={id:'cust_x',custom:true,steps:['Poêler le saumon 4 min.','Ajouter le St Morêt et les tomates cerises crues.'],used:[{id:'cx_ms8y6yk4',n:'Saumon',qty:120},{id:'cx_ms8yjwau',n:'St Morêt léger',qty:30},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100}]};
-  const e=etapes(r).map(lisible).join(' | ');
-  eq(e,'Poêler le [saumon] 4 min. | Ajouter le [St Morêt léger] et les [tomates cerises] crues.');
+t('*** recette perso : les passages entre crochets sont surlignes (mode crochets : t94) ***',()=>{
+  const r={id:'cust_x',custom:true,steps:['Poêler le [saumon] 4 min.','Ajouter le [St Morêt] et les tomates cerises crues.'],used:[{id:'cx_ms8y6yk4',n:'Saumon',qty:120},{id:'cx_ms8yjwau',n:'St Morêt léger',qty:30},{id:'cx_ms8z08jd',n:'Tomates cerises',qty:100}]};
+  const g=X('_ingRecette')(r),e=r.steps.map(x=>lisible(X('_etapeSurlignee')(g,x,true))).join(' | ');
+  eq(e,'Poêler le [saumon] 4 min. | Ajouter le [St Morêt léger] et les tomates cerises crues.','sans crochets = texte');
 });
 t('*** affichage : les etapes de la carte depliee sont surlignees ***',()=>{
   X("S.openRec='liam_v6_omelette_jambon'");const h=X("renderCard(RCP.find(function(r){return r.id==='liam_v6_omelette_jambon'}))");X('S.openRec=null');
@@ -56,7 +56,7 @@ t('*** editeur perso : toucher un ingredient insere son nom complet a l\'emplace
   X("openCustRec(null,{name:'Test',rows:[{id:'cx_ms8yjwau',name:'St Morêt léger',qty:30}]})");
   if(docEl('cr-inserer').innerHTML.indexOf('crInsererIng(0)')<0)throw new Error('pastilles absentes');
   const ta=docEl('cr-steps');ta.value='Tartiner le pain.';ta.selectionStart=ta.selectionEnd=9;   /* apres « Tartiner » */
-  X('crInsererIng(0)');eq(ta.value,'Tartiner St Morêt léger le pain.');
+  X('crInsererIng(0)');eq(ta.value,'Tartiner [St Morêt léger] le pain.');   /* entre crochets (11/10/2026) */
   X('closeCustRec()');
 });
 t('sans ingredient : texte inchange',()=>{eq(X("_etapeSurlignee([],'Cuire 5 min.')"),'Cuire 5 min.');});

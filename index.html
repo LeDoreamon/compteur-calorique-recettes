@@ -303,7 +303,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-11 23h51 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-12 00h00 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -568,12 +568,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-11-2351"></script>
+<script src="catalogue.js?v=2026-10-12-0000"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-11-2351';
+const BUILD_ID='2026-10-12-0000';
 const NOUVEAUTES=[
+  {b:'2026-10-12-0000',points:[
+    'Recettes perso : seuls les ingrédients écrits entre crochets, comme [sauce soja], sont surlignés ; le reste de ton texte n’est plus modifié (« la sauce » reste « la sauce »). Tes recettes existantes ont reçu les crochets : vérifie-les dans l’éditeur.'
+  ]},
   {b:'2026-10-11-2351',points:[]},
   {b:'2026-10-11-1459',points:[
     'Réglages : tu peux supprimer ton compte et toutes tes données (après confirmation et ton mot de passe).'
@@ -2793,7 +2796,22 @@ function _mergeDuplicates(){
 // Garde-fou : un etat ecrit par une version PLUS RECENTE de l'appli n'est jamais
 // ecrase par celle-ci (l'enregistrement reconstruit l'etat champ par champ et
 // effacerait ce qu'elle ne connait pas) : on bloque l'envoi et on propose de recharger.
-const MIGRATIONS=[];
+const MIGRATIONS=[
+  /* 11/10/2026 : dans les recettes perso, seuls les passages entre crochets sont des
+     ingredients. Les etapes deja ecrites recoivent des crochets autour des ingredients
+     reperes (jamais un mot generique seul comme « la sauce »), une seule fois. */
+  {v:2,nom:'ingredients entre crochets (recettes perso)',fn:function(S){
+    var ch=false;
+    (S.customRecipes||[]).forEach(function(r){
+      if(!r||r.custom!==true||!Array.isArray(r.steps)||!r.steps.length)return;
+      if(r.steps.some(function(x){return String(x).indexOf('[')>=0;}))return;   /* deja au nouveau format */
+      var g=_ingRecette(r);if(!g.length)return;
+      var n=r.steps.map(function(x){return _etapeEnCrochets(g,x);});
+      if(n.join('\n')!==r.steps.join('\n')){r.steps=n;ch=true;}
+    });
+    return ch;
+  }}
+];
 const SCHEMA=MIGRATIONS.reduce(function(m,x){return Math.max(m,x.v);},1);
 var _schemaTropRecent=false;
 function _migrerSchema(v){
@@ -2903,7 +2921,10 @@ function _applyState(d){
   if(d.customRecipes&&Array.isArray(d.customRecipes)){
     S.customRecipes=d.customRecipes.filter(function(r){return r&&r.id;});
     S.customRecipes.forEach(function(r){if(Array.isArray(r.used))r.used=r.used.filter(Boolean);});
-    S.customRecipes=S.customRecipes;S.customRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
+    /* rechargement (autre appareil, conflit) : les anciennes versions sortent de la liste
+       affichee, sinon une recette modifiee ou supprimee ailleurs restait a l'ecran (11/10/2026) */
+    for(var _ci=RCP.length-1;_ci>=0;_ci--){var _cr0=RCP[_ci];if(_cr0&&(_cr0.custom===true||/^(cust_|_free_)/.test(String(_cr0.id)))&&!S.customRecipes.some(function(x){return x===_cr0;}))RCP.splice(_ci,1);}
+    S.customRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
   // Historique suppressions
   if(d.deletedItems&&Array.isArray(d.deletedItems))S.deletedItems=d.deletedItems;
   // Sequelle de l'ancien bug : des articles comptes a la piece portent encore un
@@ -4431,6 +4452,10 @@ function renderNightModal(){
 const _ING_VIDES={de:1,du:1,des:1,la:1,le:1,les:1,au:1,aux:1,a:1,en:1,et:1,ou:1,d:1,l:1,avec:1,sans:1,pour:1,sur:1,un:1,une:1,g:1,ml:1,x:1};
 const _ING_ADJ={leger:1,legere:1,legers:1,nature:1,blanc:1,blanche:1,blanches:1,blancs:1,sucree:1,sucre:1,douce:1,doux:1,frais:1,fraiche:1,fraiches:1,complet:1,complete:1,completes:1,entier:1,naturel:1,surgele:1,surgelee:1,surgelees:1,surgeles:1,liquide:1,epaisse:1,semi:1,emince:1,emincee:1,emincees:1,eminces:1,cerises:1,dore:1,doree:1,pane:1,panee:1,instantanes:1,fines:1,herbes:1,aop:1,parfume:1,vert:1,noir:1,bio:1,pasteurise:1,morceaux:1,saveur:1,vanille:1,poudre:1,tubes:1,maison:1,mg:1,proteinees:1,protein:1,italiennes:1,mexicain:1,casse:1,grain:1,grains:1,mama:1,zero:1,allegee:1,sucres:1,artificielle:1,arome:1,bifidus:1,dressing:1};
 const _ING_SYN={parmigiano:['parmesan'],meatballs:['boulettes']};   /* nom de la fiche -> mot des etapes */
+/* Mots qui, seuls, designent souvent autre chose que la fiche : « la sauce » est le
+   melange de la recette, pas la sauce soja (11/10/2026). Ils comptent encore dans une
+   mention plus longue (« sauce soja », « pâte à tartiner »). */
+const _ING_GENERIQUES={sauce:1,sauces:1,melange:1,pate:1,jus:1,preparation:1,appareil:1,garniture:1,marinade:1};
 function _ingNorm(s){
   var n='',map=[];s=String(s||'');
   for(var i=0;i<s.length;i++){
@@ -4447,8 +4472,9 @@ function _ingMorceaux(nom){
     var seg=mots.slice(a,b+1);
     if(_ING_VIDES[seg[0]]||_ING_VIDES[seg[seg.length-1]])continue;
     if(seg.every(function(w){return _ING_VIDES[w]||_ING_ADJ[w]||/\d/.test(w)||w.length<3;}))continue;
+    if(seg.length===1&&_ING_GENERIQUES[seg[0]])continue;   /* « pâtes » reste un ingredient, « pâte » (la preparation) non */
     var k=seg.join(' ');out[k]=1;
-    if(seg.length===1&&/[sx]$/.test(k)&&!out[k.slice(0,-1)])out[k.slice(0,-1)]=2;   /* « oeufs » trouve aussi « oeuf » (2 = singulier) */
+    if(seg.length===1&&/[sx]$/.test(k)&&!out[k.slice(0,-1)]&&!_ING_GENERIQUES[k.slice(0,-1)])out[k.slice(0,-1)]=2;   /* « oeufs » trouve aussi « oeuf » (2 = singulier) */
     if(seg.length===1&&_ING_SYN[k])_ING_SYN[k].forEach(function(x){out[x]=1;});
   }
   _ingMorceaux.sing=out;
@@ -4473,8 +4499,9 @@ function _ingRecette(r){
   });});
   return ings;
 }
-function _etapeSurlignee(ings,s){
-  s=String(s||'');if(!ings||!ings.length)return s;
+// Mentions d'ingredients reperees dans un texte : [{d,f,nom}] (positions dans le texte).
+function _ingMentions(ings,s){
+  s=String(s||'');if(!ings||!ings.length)return [];
   var N=_ingNorm(s),pris=[],trouves=[],faits=[],paires=[];
   ings.forEach(function(g,gi){g.morceaux.forEach(function(k){paires.push({g:g,gi:gi,k:k});});});
   paires.sort(function(a,b){return b.k.length-a.k.length;});      /* le plus long d'abord, tous ingredients confondus */
@@ -4490,23 +4517,49 @@ function _etapeSurlignee(ings,s){
       var libre=function(a,b){return !pris.some(function(q){return a<q[1]&&b>q[0];});};
       var ext=false,mm;
       for(;;){
-        var apres=/^[^a-z0-9]{1,3}([a-z0-9]+)(?:[^a-z0-9]{1,3}([a-z0-9]+))?/.exec(N.n.slice(f));
-        if(!apres)break;
-        if(dans(apres[1])&&(!_ING_VIDES[apres[1]]||p.g.mots[apres[1]])){var nf=f+apres[0].indexOf(apres[1])+apres[1].length;if(!libre(f,nf))break;f=nf;ext=true;continue;}
-        if(_ING_VIDES[apres[1]]&&apres[2]&&dans(apres[2])&&!_ING_VIDES[apres[2]]){var nf2=f+apres[0].length;if(!libre(f,nf2))break;f=nf2;ext=true;continue;}
+        /* mots suivants : les petits mots (« de », « à », « g ») ne sont pris que s'ils menent
+           a un mot du nom (« pâtes 21 g de protéines ») ; « gnocchis à sec » s'arrete a « gnocchis » */
+        var reste=N.n.slice(f),toks=[],pos=0,tk;
+        while(toks.length<4&&(tk=/^[^a-z0-9]{1,3}([a-z0-9]+)/.exec(reste.slice(pos)))){pos+=tk[0].length;toks.push({w:tk[1],fin:pos});}
+        var kk=0;while(kk<toks.length&&kk<3&&_ING_VIDES[toks[kk].w])kk++;
+        if(kk<toks.length&&!_ING_VIDES[toks[kk].w]&&dans(toks[kk].w)){var nf=f+toks[kk].fin;if(!libre(f,nf))break;f=nf;ext=true;continue;}
         break;
       }
       while((mm=/([a-z0-9]+)[^a-z0-9]{1,3}$/.exec(N.n.slice(0,d)))&&dans(mm[1])&&!_ING_VIDES[mm[1]]&&libre(d-mm[0].length,d)){d-=mm[0].length;ext=true;}
       pris.push([d,f]);trouves.push({d:N.map[d],f:N.map[f-1]+1,nom:p.g.sing[p.k]?null:p.g.nom});   /* singulier : le texte garde son accord */faits[p.gi]=1;break;
     }
   });
+  return trouves;
+}
+// Nom de fiche affiche a la place d'une mention : mention au singulier (« 1 œuf ») =
+// le mot du texte ; pas de majuscule en milieu de phrase, sauf nom propre.
+function _ingAffiche(orig,nom){
+  nom=nom||orig;
+  if(/^[a-zà-ÿœæ]/.test(orig)&&/^[A-ZÀ-ÝŒÆ][a-zà-ÿ]/.test(nom)&&!/\s[A-ZÀ-Ý]/.test(nom))nom=nom[0].toLowerCase()+nom.slice(1);   /* « Parmigiano Reggiano » garde ses majuscules */
+  return nom;
+}
+// Recettes du catalogue et de l'IA : reperage automatique. Recettes PERSO (crochets=true,
+// 11/10/2026) : seuls les passages entre crochets sont des ingredients — « laisser la
+// sauce epaissir » reste du texte ; « [sauce soja] » devient le nom exact de la fiche.
+function _etapeSurlignee(ings,s,crochets){
+  s=String(s||'');
+  if(crochets)return s.replace(/\[([^\[\]\n]{1,80})\]/g,function(tout,dedans){
+    var t=_ingMentions(ings,dedans),txt=dedans;
+    if(t.length){t.sort(function(a,b){return (b.f-b.d)-(a.f-a.d);});var m=t[0];txt=dedans.slice(0,m.d)+_ingAffiche(dedans.slice(m.d,m.f),m.nom)+dedans.slice(m.f);}
+    return '<mark class="ing-hl">'+txt.trim()+'</mark>';
+  });
+  if(!ings||!ings.length)return s;
+  var trouves=_ingMentions(ings,s);
   if(!trouves.length)return s;
   trouves.sort(function(a,b){return b.d-a.d;});
-  trouves.forEach(function(t){
-    var orig=s.slice(t.d,t.f),nom=t.nom||orig;   /* mention au singulier (« 1 œuf ») : le mot du texte, surligne */
-    if(/^[a-zà-ÿœæ]/.test(orig)&&/^[A-ZÀ-ÝŒÆ][a-zà-ÿ]/.test(nom)&&!/\s[A-ZÀ-Ý]/.test(nom))   /* « Parmigiano Reggiano » garde ses majuscules */nom=nom[0].toLowerCase()+nom.slice(1);   /* « 75 g de pâtes » : pas de majuscule en milieu de phrase */
-    s=s.slice(0,t.d)+'<mark class="ing-hl">'+nom+'</mark>'+s.slice(t.f);
-  });
+  trouves.forEach(function(t){s=s.slice(0,t.d)+'<mark class="ing-hl">'+_ingAffiche(s.slice(t.d,t.f),t.nom)+'</mark>'+s.slice(t.f);});
+  return s;
+}
+// Conversion des recettes perso au format a crochets (migration 2) : les mentions
+// reperees sont entourees de crochets, le texte n'est pas reecrit.
+function _etapeEnCrochets(ings,s){
+  s=String(s||'');if(!ings||!ings.length||s.indexOf('[')>=0)return s;
+  _ingMentions(ings,s).sort(function(a,b){return b.d-a.d;}).forEach(function(m){s=s.slice(0,m.d)+'['+s.slice(m.d,m.f)+']'+s.slice(m.f);});
   return s;
 }
 function renderIngredients(r){
@@ -4579,7 +4632,7 @@ function renderCard(r){
       +`<button onclick="event.stopPropagation();choisirPhotoRecette('${r.id}')" style="padding:6px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;backdrop-filter:blur(4px);">\ud83d\udcf7 ${p?'Changer':'Ajouter une photo'}</button>`
       +(p?`<button onclick="event.stopPropagation();retirerPhotoRecette('${r.id}')" title="Retirer la photo" style="padding:6px 9px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;">\u00d7</button>`:'')
       +`</div></div>`;
-  })()}${renderIngredients(r)}<div style="padding-top:12px;">${((_ingR)=>(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${_etapeSurlignee(_ingR,s)}</span></div>`).join(''))(_ingRecette(r))}</div>${renderCardBottom(r)}</div>`:''}</div>`;
+  })()}${renderIngredients(r)}<div style="padding-top:12px;">${((_ingR)=>(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${_etapeSurlignee(_ingR,s,r.custom===true)}</span></div>`).join(''))(_ingRecette(r))}</div>${renderCardBottom(r)}</div>`:''}</div>`;
 }
 
 function qtyLabel(it){
@@ -6463,15 +6516,16 @@ function renderCrInserer(){
   var el=document.getElementById('cr-inserer');if(!el||!_cr)return;
   if(!_cr.rows.length){el.style.display='none';el.innerHTML='';return;}
   el.style.display='block';
-  el.innerHTML='<div style="font-size:11px;color:var(--text3);margin-bottom:5px;">Toucher un ingrédient l’insère dans les étapes, en entier : il y sera surligné.</div><div style="display:flex;flex-wrap:wrap;gap:5px;">'
+  el.innerHTML='<div style="font-size:11px;color:var(--text3);margin-bottom:5px;">Toucher un ingrédient l’insère dans les étapes entre crochets, ex. [Sauce soja] : seul ce qui est entre crochets est surligné comme ingrédient, le reste reste ton texte.</div><div style="display:flex;flex-wrap:wrap;gap:5px;">'
     +_cr.rows.map(function(g,i){return '<button onclick="crInsererIng('+i+')" class="ing-hl" style="border:0;font-size:12px;padding:4px 8px;cursor:pointer;font-family:inherit;">'+g.name+'</button>';}).join('')+'</div>';
 }
 function crInsererIng(i){
   var g=_cr&&_cr.rows[i],ta=document.getElementById('cr-steps');if(!g||!ta)return;
   var v=ta.value||'',d=(typeof ta.selectionStart==='number')?ta.selectionStart:v.length,f=(typeof ta.selectionEnd==='number')?ta.selectionEnd:d;
-  var avant=v.slice(0,d),txt=g.name;
+  var avant=v.slice(0,d),nm=g.name;
+  if(!/^[A-ZÀ-Ý]{2}/.test(nm)&&!/\s[A-ZÀ-Ý]/.test(nm)&&avant&&!/(^|[.!?\n]\s*)$/.test(avant))nm=nm[0].toLowerCase()+nm.slice(1);
+  var txt='['+nm+']';   /* entre crochets : c'est un ingredient (11/10/2026) */
   if(avant&&!/[\s(]$/.test(avant))txt=' '+txt;
-  if(!/^[A-ZÀ-Ý]{2}/.test(g.name)&&!/\s[A-ZÀ-Ý]/.test(g.name)&&avant&&!/(^|[.!?\n]\s*)$/.test(avant))txt=txt.replace(g.name,g.name[0].toLowerCase()+g.name.slice(1));
   var apres=v.slice(f);if(apres&&!/^[\s.,;:!?)]/.test(apres))txt+=' ';
   ta.value=avant+txt+apres;
   try{ta.focus();ta.selectionStart=ta.selectionEnd=avant.length+txt.length;}catch(e){}
