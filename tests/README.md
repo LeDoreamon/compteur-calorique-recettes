@@ -110,6 +110,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t92.js` | Politique de sécurité du contenu : présente avant le premier script, sans `unsafe-eval` ni plugin, chaque service appelé par `fetch()` autorisé et rien de plus, images Wikimedia/`data:`/`blob:`, lecteur de codes-barres sans évaluation de code |
 | `t93.js` | Photos de recettes jamais cassées : liens Wikimedia en largeur standard, repli `onerror` sur la carte, la recette dépliée et l'accueil, lien en échec écarté (un seul rendu), photo de l'utilisateur masquée sans boucle ; message de fin de suppression du compte |
 | `t94.js` | Recettes perso : seuls les passages entre crochets sont des ingrédients (« la sauce » reste du texte), affichage de la carte, éditeur ; repérage automatique sans faux amis (sauce, pâte, « gnocchis à sec ») ; conversion unique des recettes perso existantes (migration 2) ; recette perso modifiée ou supprimée ailleurs à jour après un rechargement |
+| `t95.js` | Portions selon l'objectif : 550-700 kcal gardés en perte de poids, consigne calculée depuis la cible en prise de masse et en maintien ; en prise de masse, portion agrandie proposée (×1,4) à côté des boutons habituels, quantités ajustées et pièces arrondies, comptée en entier le jour même ; ×2 inchangé |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
