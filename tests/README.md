@@ -106,6 +106,8 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t88.js` | Découpage : `catalogue.js` chargé avant le script, version = build (mise à jour par `publier.py`), données seules, plus de doublon dans `index.html`, page « Recharger » si le fichier manque |
 | `t89.js` | Rendu plus léger : mots-clés des voisins à zéro calculés une fois par article, un seul formateur de date par fuseau (bon jour après changement), date limite toujours repérée ; chaque `data-action` a son traitement et aucun traitement n'est orphelin |
 | `t90.js` | Audit du 11/10/2026 : aucune saisie hors ligne perdue ou écrasée en silence entre appareils (question, mise de côté dans le filet), aucun compte anonyme ni lecture sans session, déconnexion qui efface l'appareil, identifiants et clés de jour piégés neutralisés, noms échappés dans les `onclick`, mots vides de l'IA, liens `noopener`, libellés du filet |
+| `t91.js` | Adresses techniques en `.invalid` (nouveaux comptes, connexion par l'ancien domaine puis migration, refus de Firebase sans blocage, pas de second essai pour une vraie adresse) et « Supprimer mon compte » (Annuler, mot de passe faux, ordre données → compte, appareil vidé, aucun enregistrement après, échecs sans perte, autre compte) |
+| `t92.js` | Politique de sécurité du contenu : présente avant le premier script, sans `unsafe-eval` ni plugin, chaque service appelé par `fetch()` autorisé et rien de plus, images Wikimedia/`data:`/`blob:`, lecteur de codes-barres sans évaluation de code |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
