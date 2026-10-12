@@ -46,7 +46,7 @@ t('*** la carte remplace « Prochain repas » et porte les chiffres ***',()=>{
 });
 t('activite : detail et ce qu\'elle devient (seche)',()=>{
   prepa(16);X("S.dayMeals[S.today]="+repas(1200,40)+";__setBurn({[S.today]:{steps:0,activities:[{name:'Muscu',min:60,kcal:300}]}});");
-  const h=X('renderAccueil()');if(h.indexOf('Muscu')<0||h.indexOf('creusent ton déficit')<0)throw new Error('activite');
+  const h=X('renderAccueil()');if(h.indexOf('Muscu')<0||h.indexOf('ton activité creuse ton déficit')<0)throw new Error('activite');
 });
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}
 sb.heureProfil=vraiH;console.log('---- '+pass+' ok, '+fail+' KO');})();
