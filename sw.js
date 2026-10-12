@@ -1,10 +1,12 @@
-// build 2026-10-12 00h15
-const CACHE='macros-2026-10-12-0015';
+// build 2026-10-12 10h16
+const CACHE='macros-2026-10-12-1016';
 // Reseau d'abord, mais pas indefiniment : sur une connexion faible, la copie
 // en cache est servie au bout de DELAI_RESEAU ms. La requete continue et met
 // le cache a jour pour le lancement suivant.
 const DELAI_RESEAU=6000;
 self.addEventListener('install',e=>{self.skipWaiting();});
+// La page demande la version pour savoir s'il faut proposer de recharger (12/10/2026)
+self.addEventListener('message',e=>{if(e.data&&e.data.type==='version'&&e.ports&&e.ports[0])e.ports[0].postMessage({version:CACHE});});
 self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==CACHE).map(x=>caches.delete(x)))).then(()=>self.clients.claim()));});
 function _cachable(r){return !!r&&(r.ok||r.type==='opaque');}   // opaque : image d'un autre site, statut illisible
 function reseauOuCache(req){
