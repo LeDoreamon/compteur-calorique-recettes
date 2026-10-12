@@ -38,6 +38,7 @@
   --fib: #B89AE0;    /* fibres */
   --blue-bg: rgba(95,168,201,0.12);
   --red: #E05C4F;
+  --lime: #B5CC5C;   /* marge du jour : cible depassee, largement couverte par l'activite */
   --red-bg: rgba(224,92,79,0.12);
   --warn: #F0B93E;
   --warn-bg: rgba(240,185,62,0.12);
@@ -303,7 +304,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 00h18 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 00h24 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -568,12 +569,16 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-13-0018"></script>
+<script src="catalogue.js?v=2026-10-13-0024"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-13-0018';
+const BUILD_ID='2026-10-13-0024';
 const NOUVEAUTES=[
+  {b:'2026-10-13-0024',points:[
+    'Marge du jour : un dépassement de cible largement couvert par ton activité s’affiche en vert-jaune (« ton déficit tient »), l’orange est gardé pour un déficit vraiment serré.',
+    '« Ça rentre dans ce qu’il te reste » ne propose plus de recette qui dépasse ce qu’il te reste (5 % de tolérance) : il peut y en avoir moins de 3.'
+  ]},
   {b:'2026-10-13-0018',points:[]},
   {b:'2026-10-13-0011',points:[
     'Marge du jour : dès qu’une activité est enregistrée, l’appli affiche ce que tu peux encore manger en comptant ton activité (ce qui reste + l’activité), en bas du suivi du jour, sur l’accueil et dans la barre « Reste ».',
@@ -4412,22 +4417,27 @@ function _copierJourVers(src,target){
 // Marge du jour (12/10/2026, demande de Liam) : ce qu'il reste de la cible
 // plus l'activite enregistree, des qu'il y en a une. En seche la cible ne
 // bouge pas (decision du 25/09/2026) : sous la cible = vert (l'activite creuse
-// le deficit), au-dessus mais couvert par l'activite = orange (deficit serre),
-// au-dela = rouge (depasse, et de combien). En maintien et en prise,
-// l'activite est a compenser : vert, ou rouge une fois depassee.
+// le deficit), au-dessus mais largement couvert par l'activite = vert-jaune
+// (le deficit tient : il reste au moins MARGE_LARGE de l'activite), couvert de
+// justesse = orange (deficit serre), au-dela = rouge (depasse, et de combien).
+// En maintien et en prise, l'activite est a compenser : vert, ou rouge une
+// fois depassee.
+const MARGE_LARGE=0.5;
 function _margeJour(jour){
   var act=_depenseDuJour(jour);if(!(act>0))return null;
   var m=getDayMacros(jour),obj=_objectif();
   var reste=Math.round(TARGETS.kcal-m.kcal),marge=Math.round(TARGETS.kcal+act-m.kcal);
-  var etat=marge<0?'depasse':((obj==='perte'&&reste<0)?'serre':'ok');
+  var etat=marge<0?'depasse':((obj!=='perte'||reste>=0)?'ok':(marge>=act*MARGE_LARGE?'couvert':'serre'));
   return {act:act,reste:reste,marge:marge,etat:etat,obj:obj,
-    couleur:etat==='ok'?'var(--green)':(etat==='serre'?'var(--orange)':'var(--red)')};
+    couleur:{ok:'var(--green)',couvert:'var(--lime)',serre:'var(--orange)',depasse:'var(--red)'}[etat]};
 }
 function _texteMarge(g){
   var calcul=g.reste>=0?(g.reste+' restantes + '+g.act+' d\'activité'):(g.act+' d\'activité \u2212 '+(-g.reste)+' au-dessus de ta cible');
   var etat;
   if(g.etat==='depasse')etat='Au-delà de ta cible et de ton activité.';
-  else if(g.obj==='perte')etat=g.etat==='serre'?'Déficit serré : ton activité couvre le dépassement de ta cible.':'Tout bon : sous ta cible, ton activité creuse ton déficit.';
+  else if(g.etat==='couvert')etat='Cible dépassée, mais ton activité couvre largement : ton déficit tient.';
+  else if(g.etat==='serre')etat='Déficit serré : ton activité couvre encore le dépassement, de justesse.';
+  else if(g.obj==='perte')etat='Tout bon : sous ta cible, ton activité creuse ton déficit.';
   else etat='Activité à compenser'+(g.obj==='prise'?' : ta prise de masse en a besoin.':' pour tenir ton maintien.');
   return {valeur:g.marge>=0?(g.marge+' kcal'):('dépassée de '+(-g.marge)+' kcal'),calcul:calcul,etat:etat};
 }
@@ -9709,9 +9719,13 @@ function resteDuJour(jour){
     pris:m
   };
 }
-// Recettes qui tiennent dans ce qu'il reste, pour le moment concerne.
-// On accepte un léger depassement : une recette a 520 kcal pour 500 restantes
-// reste un bon choix, alors qu'a 900 non.
+// Recettes qui tiennent dans ce qu'il reste, pour le moment concerne : au
+// plus RENTRE_TOLERANCE au-dessus (5 %). Demande de Liam (12/10/2026) : « pas
+// que ça dépasse » ; moins de 3 recettes, voire aucune, plutot qu'une qui
+// deborde (avant : les 3 mieux notees, 561 kcal proposees pour 450 restantes).
+// En seche, le reste ne compte pas l'activite (la marge du jour sert a voir le
+// deficit, pas a manger plus).
+const RENTRE_TOLERANCE=1.05;
 function suggestionsAccueil(jour,nb){
   var mo=prochainMoment(jour);
   if(!mo)return {moment:null,recettes:[]};
@@ -9732,7 +9746,7 @@ function suggestionsAccueil(jour,nb){
     // Favorise les proteines tant qu'elles manquent
     if(r.prot>0)note-=Math.min(mm.prot,r.prot)*3.2;
     return {r:x,m:mm,note:note};
-  }).sort(function(a,b){return a.note-b.note;});
+  }).filter(function(x){return x.m.kcal<=r.kcal*RENTRE_TOLERANCE;}).sort(function(a,b){return a.note-b.note;});
   return {moment:mo,reste:r,recettes:notees.slice(0,nb||3)};
 }
 var _amSlot=null,_amBaseName='';
