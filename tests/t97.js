@@ -36,7 +36,7 @@ t('*** seche, cible depassee mais couverte par l\'activite : vert-jaune, « ton 
   const h=vis(X('_htmlMarge')(S.today));
   if(!/Marge du jour 606 kcal/.test(h))throw new Error(h);
   if(!/714 d'activité − 108 au-dessus de ta cible/.test(h))throw new Error('calcul : '+h);
-  if(!/Cible dépassée, mais ton activité couvre le dépassement : ton déficit tient\./.test(h))throw new Error('etat : '+h);
+  if(!/Cible dépassée, mais ton activité couvre le dépassement : ton déficit tient \(≈ \d+ kcal\)\./.test(h))throw new Error('etat : '+h);
   if(/serré/.test(h))throw new Error('dit serre');
 });
 t('*** seche, toute l\'activite mangee mais encore un deficit : orange, « deficit serre », deficit restant affiche (choix de Liam) ***',()=>{
@@ -67,6 +67,25 @@ t('bornes : cible = vert ; cible + activite = vert-jaune a 0 ; puis orange tant 
   jour(3249,400);eq(M().etat,'serre');eq(M().deficit,1);
   jour(3250,400);eq(M().etat,'depasse');eq(M().deficit,0);
   if(!/Plus de déficit aujourd'hui\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('deficit nul');
+});
+t('*** deficit prevu = depense reelle estimee − cible quand elle existe (journee de Liam du 12/10) ***',()=>{
+  const vrai=X('estimateTDEE');
+  try{
+    X("estimateTDEE=function(){return {ok:true,tdee:2673};}");
+    X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");S.profil={prenom:'T',objectif:'perte'};
+    const pose=(k,a)=>{S.dayMeals={};S.dayMeals[S.today]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:150,gluc:200,lip:60}}];X('__setBurn')({[S.today]:{steps:0,activities:[{name:'M',kcal:a}]}});};
+    pose(2338,161);let g=M();
+    eq(g.prevu,363,'2673 − 2310');eq(g.marge,133);eq(g.deficit,496);eq(g.etat,'couvert');
+    if(!/ton déficit tient \(≈ 496 kcal\)\./.test(vis(X('_htmlMarge')(S.today))))throw new Error(vis(X('_htmlMarge')(S.today)));
+    pose(2600,161);g=M();eq(g.marge,-129);eq(g.deficit,234);eq(g.etat,'serre');
+    if(!/Déficit serré : il en reste ≈ 234 kcal sur les 363 prévus par ta cible\./.test(vis(X('_htmlMarge')(S.today))))throw new Error(vis(X('_htmlMarge')(S.today)));
+    pose(3000,161);g=M();eq(g.deficit,-166);eq(g.etat,'depasse');
+    if(!/Plus de déficit aujourd'hui : ≈ 166 kcal de surplus\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('surplus');
+    pose(2000,161);if(!/Tout bon : sous ta cible, ton activité creuse ton déficit \(≈ 834 kcal\)\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('vert');
+    X("estimateTDEE=function(){return {ok:true,tdee:2200};}");pose(2338,161);g=M();
+    eq(g.prevu,0,'cible au-dessus de la depense : aucun deficit prevu');eq(g.deficit,133);
+    X("estimateTDEE=function(){return {ok:false};}");eq(M().prevu,550,'sans estimation : convention');
+  }finally{sb.__e=vrai;X('estimateTDEE=__e');}
 });
 t('un seul deficit de reference : la marge et le conseil du Bilan (TDEE − 550) partagent DEFICIT_PREVU',()=>{
   eq(X('DEFICIT_PREVU'),550);
