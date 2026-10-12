@@ -303,7 +303,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 00h11 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 00h18 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -568,14 +568,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-13-0011"></script>
+<script src="catalogue.js?v=2026-10-13-0018"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-13-0011';
+const BUILD_ID='2026-10-13-0018';
 const NOUVEAUTES=[
+  {b:'2026-10-13-0018',points:[]},
   {b:'2026-10-13-0011',points:[
-    'Marge du jour : dès qu’une activité est enregistrée, l’appli affiche ce que tu peux encore manger en comptant ton activité (ce qui reste + l’activité), sous l’anneau, sur l’accueil et dans la barre « Reste ».',
+    'Marge du jour : dès qu’une activité est enregistrée, l’appli affiche ce que tu peux encore manger en comptant ton activité (ce qui reste + l’activité), en bas du suivi du jour, sur l’accueil et dans la barre « Reste ».',
     'Code couleur : vert quand tout va bien, orange quand ton activité couvre un dépassement de ta cible, rouge au-delà, avec le montant.'
   ]},
   {b:'2026-10-12-1016',points:[
@@ -4457,12 +4458,13 @@ function renderMacros(){
   return`<div id="daypane" style="background:var(--bg2);border:0.5px solid ${isTomorrow?'var(--blue)':'var(--border)'};border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;">
     <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">${navBtn('prev-day','chevron-left',canPrev)}<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--bg3);border-radius:99px;padding:7px 12px;min-width:0;"><span style="font-size:13px;">\ud83d\udcc5</span><span style="font-size:13px;font-weight:600;color:var(--text);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dateLabel}${suffix}</span></div>${navBtn('next-day','chevron-right',canNext)}</div>
     <div style="text-align:center;font-size:11px;color:var(--text3);margin:-4px 0 8px;">${meals.length} repas</div>
-    ${calorieRing(m.kcal,TARGETS.kcal,(function(){var b=getBurn(dd);return b?b.total:0;})())}${_htmlMarge(dd,'-4px 0 12px')}
+    ${calorieRing(m.kcal,TARGETS.kcal,(function(){var b=getBurn(dd);return b?b.total:0;})())}
     <div style="display:grid;grid-template-columns:65px 1fr 75px;align-items:center;gap:5px;row-gap:7px;">${macroBar('Protéines',m.prot,TARGETS.prot,'g','--green','prot')}${macroBar('Glucides',m.gluc,TARGETS.gluc,'g','--blue','gluc')}${macroBar('Lipides',m.lip,TARGETS.lip,'g','--text2','lip')}${_barreFibres(dd)}</div>
     ${meals.length===0?'<div style="text-align:center;padding:10px 0 2px;font-size:12px;color:var(--text3);">Aucun repas enregistré</div>':''}
     ${list?`<div style="margin-top:8px;">${list}</div>`:''}
     ${rem}
     ${meals.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text3);">Copier vers</span><input type="date" id="copy-day-target" value="${shiftDate(dd,1)}" style="font-size:11px;padding:2px 5px;background:var(--bg);border:0.5px solid var(--border);border-radius:5px;color:var(--text2);"><button onclick="copyDayTo(document.getElementById('copy-day-target').value)" style="font-size:11px;padding:3px 10px;background:var(--blue);color:#fff;border:0;border-radius:5px;cursor:pointer;font-weight:500;">⧉ Jour entier</button></div><div style="font-size:11px;color:var(--text3);margin-top:4px;">Astuce : le ⧉ à côté d'un repas le copie seul vers cette date.</div>`:''}
+    ${_htmlMarge(dd,'10px 0 0')}
     <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:11px;color:var(--text3);">Modifiable de J−7 à J+1</span></div>
   </div>`;
 }

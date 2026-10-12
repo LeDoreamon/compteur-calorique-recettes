@@ -304,8 +304,8 @@ t('*** un depassement est annonce comme tel, avec son montant ***',()=>{
 t('*** le tracker n\'affiche plus de « Balance » ***',()=>{
   if(/Balance : /.test(src))throw new Error('l\'ancienne balance subsiste');
 });
-t('*** tracker : la marge du jour affiche, sous l\'anneau, quel que soit l\'objectif ***',()=>{
-  if(!/\$\{calorieRing\(m\.kcal,TARGETS\.kcal,[^\n]*\)\}\$\{_htmlMarge\(dd,/.test(src))throw new Error('encadre absent sous l\'anneau');
+t('*** tracker : la marge du jour affiche, en bas du bloc, quel que soit l\'objectif ***',()=>{
+  if(!/le copie seul vers cette date\.<\/div>`:''\}\n\s*\$\{_htmlMarge\(dd,/.test(src))throw new Error('encadre absent sous « Copier vers »');
   if(/_ligneDeficitJour/.test(src))throw new Error('ancienne ligne de seche encore la');
 });
 t('la marge du tracker, de l\'accueil, du message et de la barre passent par le meme calcul',()=>{
