@@ -39,6 +39,7 @@
   --blue-bg: rgba(95,168,201,0.12);
   --red: #E05C4F;
   --lime: #B5CC5C;   /* marge du jour : cible depassee, largement couverte par l'activite */
+  --sky: #8FD6F5;    /* marge du jour : cible atteinte et deficit au-dela du prevu (demande de Liam, 13/10/2026) */
   --red-bg: rgba(224,92,79,0.12);
   --warn: #F0B93E;
   --warn-bg: rgba(240,185,62,0.12);
@@ -304,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 01h02 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 01h46 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -569,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-13-0102"></script>
+<script src="catalogue.js?v=2026-10-13-0146"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-13-0102';
+const BUILD_ID='2026-10-13-0146';
 const NOUVEAUTES=[
+  {b:'2026-10-13-0146',points:[
+    'Marge du jour : nouvelle couleur bleu clair quand tu as atteint ta cible et que ton activité pousse ton déficit au-delà de ce que prévoyait ta cible.'
+  ]},
   {b:'2026-10-13-0102',points:[]},
   {b:'2026-10-13-0049',points:[]},
   {b:'2026-10-13-0024',points:[
@@ -4426,8 +4430,11 @@ function _copierJourVers(src,target){
 // + marge (l'activite enregistree s'y ajoute). Deficit prevu : depense reelle
 // estimee (pesees) − cible quand l'estimation existe (Liam au 10/10 : 2673 −
 // 2310 = 363, pas 550 : la convention annoncait un deficit trop large), sinon
-// DEFICIT_PREVU. En maintien et en prise, l'activite est a compenser : vert,
-// ou rouge une fois depassee.
+// DEFICIT_PREVU. Bleu clair (demande de Liam, 13/10/2026) : cible atteinte
+// (au moins 90 %, meme seuil que le calendrier, sans la depasser) avec une
+// activite qui pousse le deficit au-dela du prevu ; vert reste « sous la
+// cible ». En maintien et en prise, l'activite est a compenser : vert, ou
+// rouge une fois depassee.
 const DEFICIT_PREVU=550;   /* convention de l'appli : cible conseillee = depense reelle − 550 (≈ −0,5 kg/semaine) */
 function _deficitPrevu(){
   var t=null;try{t=estimateTDEE();}catch(e){}
@@ -4440,15 +4447,16 @@ function _margeJour(jour){
   var reste=Math.round(TARGETS.kcal-m.kcal),marge=Math.round(TARGETS.kcal+act-m.kcal);
   var deficit=null,etat;
   var dp=null;
-  if(obj==='perte'){dp=_deficitPrevu();deficit=dp.d+marge;etat=reste>=0?'ok':(marge>=0?'couvert':(deficit>0?'serre':'depasse'));}
+  if(obj==='perte'){dp=_deficitPrevu();deficit=dp.d+marge;etat=reste>=0?(m.kcal>=TARGETS.kcal*0.9?'atteinte':'ok'):(marge>=0?'couvert':(deficit>0?'serre':'depasse'));}
   else etat=marge<0?'depasse':'ok';
   return {act:act,reste:reste,marge:marge,etat:etat,obj:obj,deficit:deficit,prevu:dp&&dp.d,tdee:dp&&dp.tdee,
-    couleur:{ok:'var(--green)',couvert:'var(--lime)',serre:'var(--orange)',depasse:'var(--red)'}[etat]};
+    couleur:{atteinte:'var(--sky)',ok:'var(--green)',couvert:'var(--lime)',serre:'var(--orange)',depasse:'var(--red)'}[etat]};
 }
 function _texteMarge(g){
   var calcul=g.reste>=0?(g.reste+' restantes + '+g.act+' d\'activité'):(g.act+' d\'activité \u2212 '+(-g.reste)+' au-dessus de ta cible');
   var etat;
   if(g.etat==='depasse')etat=g.obj==='perte'?('Plus de déficit aujourd\'hui'+(g.deficit<0?' : ≈ '+(-g.deficit)+' kcal de surplus.':'.')):'Au-delà de ta cible et de ton activité.';
+  else if(g.etat==='atteinte')etat='Cible atteinte et déficit au-delà du prévu : ≈ '+g.deficit+' kcal au lieu de '+g.prevu+', grâce à ton activité.';
   else if(g.etat==='couvert')etat='Cible dépassée, mais ton activité couvre le dépassement : ton déficit tient (≈ '+g.deficit+' kcal).';
   else if(g.etat==='serre')etat='Déficit serré : il en reste ≈ '+g.deficit+' kcal sur les '+g.prevu+' prévus par ta cible.';
   else if(g.obj==='perte')etat='Tout bon : sous ta cible, ton activité creuse ton déficit (≈ '+g.deficit+' kcal).';

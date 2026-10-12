@@ -47,6 +47,26 @@ t('*** seche, toute l\'activite mangee mais encore un deficit : orange, « defic
   if(!/400 d'activité − 500 au-dessus de ta cible/.test(h))throw new Error('calcul : '+h);
   if(!/Déficit serré : il en reste ≈ 450 kcal sur les 550 prévus par ta cible\./.test(h))throw new Error('etat : '+h);
 });
+t('*** seche, cible atteinte (90 % ou plus, sans la depasser) + activite : bleu clair, deficit au-dela du prevu (demande de Liam, 13/10) ***',()=>{
+  const vrai=X('estimateTDEE');
+  try{
+    X("estimateTDEE=function(){return {ok:true,tdee:2673};}");
+    X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");S.profil={prenom:'T',objectif:'perte'};
+    const pose=(k,a)=>{S.dayMeals={};S.dayMeals[S.today]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:150,gluc:200,lip:60}}];X('__setBurn')({[S.today]:{steps:0,activities:[{name:'M',kcal:a}]}});};
+    pose(2250,400);let g=M();eq(g.etat,'atteinte');eq(g.couleur,'var(--sky)');eq(g.deficit,823);
+    const h=vis(X('_htmlMarge')(S.today));
+    if(!/Cible atteinte et déficit au-delà du prévu : ≈ 823 kcal au lieu de 363, grâce à ton activité\./.test(h))throw new Error(h);
+    pose(2079,400);eq(M().etat,'atteinte','90 % pile (2079 = 0,9 × 2310)');
+    pose(2078,400);eq(M().etat,'ok','sous 90 % : vert');
+    pose(2310,400);eq(M().etat,'atteinte','pile la cible');
+    pose(2311,400);eq(M().etat,'couvert','au-dessus : vert-jaune');
+    pose(2250,400);S.profil={prenom:'T',objectif:'maintien'};eq(M().etat,'ok','maintien : jamais bleu clair');
+  }finally{sb.__e=vrai;X('estimateTDEE=__e');S.profil={prenom:'T',objectif:'perte'};}
+});
+t('le bleu clair existe et se distingue du bleu, du vert et du vert-jaune',()=>{
+  const m=src.match(/--sky: (#[0-9A-Fa-f]{6})/);if(!m)throw new Error('--sky absent');
+  if(['#5FA8C9','#6FBF73','#B5CC5C'].indexOf(m[1].toUpperCase())>=0)throw new Error('meme couleur');
+});
 t('la couleur vert-jaune existe et se distingue du vert et de l\'orange',()=>{
   const m=src.match(/--lime: (#[0-9A-Fa-f]{6})/);if(!m)throw new Error('--lime absent');
   if(['#6FBF73','#E9A13B'].indexOf(m[1].toUpperCase())>=0)throw new Error('meme couleur');
@@ -60,7 +80,7 @@ t('*** seche, plus de deficit du tout : rouge, depassement et surplus chiffres *
   if(!/Plus de déficit aujourd'hui : ≈ 50 kcal de surplus\./.test(h))throw new Error('etat : '+h);
 });
 t('bornes : cible = vert ; cible + activite = vert-jaune a 0 ; puis orange tant qu\'il reste un deficit ; rouge a 0 deficit',()=>{
-  jour(2300,400);eq(M().etat,'ok');eq(M().marge,400);
+  jour(2300,400);eq(M().etat,'atteinte');eq(M().marge,400);
   jour(2301,400);eq(M().etat,'couvert');
   jour(2700,400);eq(M().etat,'couvert');eq(M().marge,0);
   jour(2701,400);eq(M().etat,'serre');eq(M().deficit,549);
