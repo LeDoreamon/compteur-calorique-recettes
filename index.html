@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 01h46 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 01h52 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,17 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-13-0146"></script>
+<script src="catalogue.js?v=2026-10-13-0152"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-13-0146';
+const BUILD_ID='2026-10-13-0152';
 const NOUVEAUTES=[
+  {b:'2026-10-13-0152',points:[
+    'Marge du jour : le bleu clair est maintenant la meilleure couleur (cible tenue et activité qui pousse ton déficit au-delà du prévu) ; le vert, ta cible tenue sans activité.',
+    'Sans activité aussi, l’encadré dit où en est ton déficit pour un jour passé ou dès que ta cible est dépassée.',
+    'Le bloc « Il te reste … ça rentre » de Repas précise « Aujourd’hui » quand tu regardes un autre jour, et ne propose plus de recette qui dépasse.'
+  ]},
   {b:'2026-10-13-0146',points:[
     'Marge du jour : nouvelle couleur bleu clair quand tu as atteint ta cible et que ton activité pousse ton déficit au-delà de ce que prévoyait ta cible.'
   ]},
@@ -4430,11 +4435,14 @@ function _copierJourVers(src,target){
 // + marge (l'activite enregistree s'y ajoute). Deficit prevu : depense reelle
 // estimee (pesees) − cible quand l'estimation existe (Liam au 10/10 : 2673 −
 // 2310 = 363, pas 550 : la convention annoncait un deficit trop large), sinon
-// DEFICIT_PREVU. Bleu clair (demande de Liam, 13/10/2026) : cible atteinte
-// (au moins 90 %, meme seuil que le calendrier, sans la depasser) avec une
-// activite qui pousse le deficit au-dela du prevu ; vert reste « sous la
-// cible ». En maintien et en prise, l'activite est a compenser : vert, ou
-// rouge une fois depassee.
+// DEFICIT_PREVU. Bleu clair = le mieux (demande de Liam, 13/10/2026) : cible
+// tenue (atteinte ou en dessous) ET une activite qui pousse le deficit au-dela
+// du prevu ; vert = cible tenue sans activite (deficit comme prevu). En seche,
+// l'encadre s'affiche aussi sans activite (Liam : « j'ai depasse et je sais pas
+// de combien ») : pour un jour passe, ou des que la cible est depassee ; pas
+// pour aujourd'hui sous la cible (le deficit d'une journee en cours ne veut
+// rien dire). En maintien et en prise, l'activite est a compenser : vert, ou
+// rouge une fois depassee, et seulement avec une activite.
 const DEFICIT_PREVU=550;   /* convention de l'appli : cible conseillee = depense reelle − 550 (≈ −0,5 kg/semaine) */
 function _deficitPrevu(){
   var t=null;try{t=estimateTDEE();}catch(e){}
@@ -4442,24 +4450,26 @@ function _deficitPrevu(){
   return {d:DEFICIT_PREVU,tdee:null};
 }
 function _margeJour(jour){
-  var act=_depenseDuJour(jour);if(!(act>0))return null;
-  var m=getDayMacros(jour),obj=_objectif();
+  var act=_depenseDuJour(jour),obj=_objectif(),m=getDayMacros(jour);
   var reste=Math.round(TARGETS.kcal-m.kcal),marge=Math.round(TARGETS.kcal+act-m.kcal);
+  if(!(act>0)&&!(obj==='perte'&&_repasDuJour(jour).length&&(jour<S.today||reste<0)))return null;
   var deficit=null,etat;
   var dp=null;
-  if(obj==='perte'){dp=_deficitPrevu();deficit=dp.d+marge;etat=reste>=0?(m.kcal>=TARGETS.kcal*0.9?'atteinte':'ok'):(marge>=0?'couvert':(deficit>0?'serre':'depasse'));}
+  if(obj==='perte'){dp=_deficitPrevu();deficit=dp.d+marge;etat=reste>=0?(act>0?'atteinte':'ok'):(marge>=0?'couvert':(deficit>0?'serre':'depasse'));}
   else etat=marge<0?'depasse':'ok';
-  return {act:act,reste:reste,marge:marge,etat:etat,obj:obj,deficit:deficit,prevu:dp&&dp.d,tdee:dp&&dp.tdee,
+  return {jour:jour,act:act,reste:reste,marge:marge,etat:etat,obj:obj,deficit:deficit,prevu:dp&&dp.d,tdee:dp&&dp.tdee,
     couleur:{atteinte:'var(--sky)',ok:'var(--green)',couvert:'var(--lime)',serre:'var(--orange)',depasse:'var(--red)'}[etat]};
 }
 function _texteMarge(g){
-  var calcul=g.reste>=0?(g.reste+' restantes + '+g.act+' d\'activité'):(g.act+' d\'activité \u2212 '+(-g.reste)+' au-dessus de ta cible');
+  var calcul=!(g.act>0)?(g.reste>=0?(g.reste+' kcal sous ta cible'):((-g.reste)+' kcal au-dessus de ta cible'))+', sans activité enregistrée'
+    :(g.reste>=0?(g.reste+' restantes + '+g.act+' d\'activité'):(g.act+' d\'activité \u2212 '+(-g.reste)+' au-dessus de ta cible'));
+  var quand=g.jour===S.today?'aujourd\'hui':'ce jour-là';
   var etat;
-  if(g.etat==='depasse')etat=g.obj==='perte'?('Plus de déficit aujourd\'hui'+(g.deficit<0?' : ≈ '+(-g.deficit)+' kcal de surplus.':'.')):'Au-delà de ta cible et de ton activité.';
-  else if(g.etat==='atteinte')etat='Cible atteinte et déficit au-delà du prévu : ≈ '+g.deficit+' kcal au lieu de '+g.prevu+', grâce à ton activité.';
+  if(g.etat==='depasse')etat=g.obj==='perte'?('Plus de déficit '+quand+(g.deficit<0?' : ≈ '+(-g.deficit)+' kcal de surplus.':'.')):'Au-delà de ta cible et de ton activité.';
+  else if(g.etat==='atteinte')etat='Cible tenue et déficit au-delà du prévu : ≈ '+g.deficit+' kcal au lieu de '+g.prevu+', grâce à ton activité.';
   else if(g.etat==='couvert')etat='Cible dépassée, mais ton activité couvre le dépassement : ton déficit tient (≈ '+g.deficit+' kcal).';
   else if(g.etat==='serre')etat='Déficit serré : il en reste ≈ '+g.deficit+' kcal sur les '+g.prevu+' prévus par ta cible.';
-  else if(g.obj==='perte')etat='Tout bon : sous ta cible, ton activité creuse ton déficit (≈ '+g.deficit+' kcal).';
+  else if(g.obj==='perte')etat='Dans ta cible : déficit ≈ '+g.deficit+' kcal (prévu '+g.prevu+').';
   else etat='Activité à compenser'+(g.obj==='prise'?' : ta prise de masse en a besoin.':' pour tenir ton maintien.');
   return {valeur:g.marge>=0?(g.marge+' kcal'):('dépassée de '+(-g.marge)+' kcal'),calcul:calcul,etat:etat};
 }
@@ -5830,7 +5840,7 @@ function renderBudgetSuggestions(){
     if(!r.slots||!r.slots.length)return false;
     if(!recetteVisible(r))return false;
     if(!canCook(r,1))return false;
-    return r.kcal>=80&&r.kcal<=remK+60;
+    return r.kcal>=80&&r.kcal<=remK*RENTRE_TOLERANCE;   /* meme regle que l'accueil (avant : +60 kcal) */
   });
   if(!cands.length)return '';
   var _dens=function(r){return r.prot/Math.max(1,r.kcal);};
@@ -5844,7 +5854,7 @@ function renderBudgetSuggestions(){
   cands=cands.slice(0,4);
   var _b=getBurn(S.today);
   var html='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:13px;margin-bottom:14px;">';
-  html+='<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">🎯 Il te reste <strong style="color:var(--orange);">'+remK+' kcal</strong>'+(remP>0?' · <strong style="color:var(--green);">'+remP+' g</strong> de protéines':'')+' — ça rentre :</div>';
+  html+='<div style="font-size:11px;color:var(--text2);margin-bottom:4px;">🎯 '+((S.displayDate&&S.displayDate!==S.today)?'Aujourd\'hui, il te reste':'Il te reste')+' <strong style="color:var(--orange);">'+remK+' kcal</strong>'+(remP>0?' · <strong style="color:var(--green);">'+remP+' g</strong> de protéines':'')+' — ça rentre :</div>';
   html+=(_b&&_b.total)?'<div style="font-size:11px;color:var(--text3);margin-bottom:9px;">Tu as dépensé '+_b.total+' kcal aujourd\'hui — '+(_objectif()==='perte'?'ta cible reste la même, c\'est ton déficit qui s\'élargit.':'ils sont comptés dans ce qu\'il te reste.')+'</div>':'<div style="margin-bottom:9px;"></div>';
   cands.forEach(function(r){
     html+='<button data-action="goto-recipe" data-rid="'+r.id+'" style="display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:var(--bg3);border:0.5px solid var(--border);border-radius:9px;padding:9px 11px;margin-bottom:6px;cursor:pointer;"><span style="flex:1;font-size:13px;color:var(--text);">'+r.name+'</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">'+r.kcal+' kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;">'+r.prot+'g P</span></button>';
@@ -7405,7 +7415,7 @@ function _htmlBarreReste(){
   var jour=dd===S.today?'':'<span style="color:var(--blue);">'+_libJour(dd)+'</span> \u00b7 ';
   var kc=rk>=0?'Reste <strong style="color:var(--gold);">'+rk+' kcal</strong>':'Dépassé de <strong style="color:var(--red);">'+(-rk)+' kcal</strong>';
   var g=_margeJour(dd);
-  if(g)kc+=' \u00b7 marge <strong style="color:'+g.couleur+';">'+(g.marge>=0?g.marge:'\u2212'+(-g.marge))+'</strong>';
+  if(g&&g.act>0)kc+=' \u00b7 marge <strong style="color:'+g.couleur+';">'+(g.marge>=0?g.marge:'\u2212'+(-g.marge))+'</strong>';
   var pr=rp>0?' \u00b7 <strong style="color:var(--green);">'+rp+' g</strong> prot.':' \u00b7 <span style="color:var(--green);">prot. atteintes</span>';
   return '<div id="barre-reste" data-action="remonter-tracker" role="button" aria-label="Remonter au tracker"><span style="flex:1;min-width:0;">'+jour+kc+pr+'</span><span style="color:var(--text3);font-size:14px;">\u2191</span></div>';
 }
