@@ -274,11 +274,18 @@ t('aucune section sans activite enregistree',()=>{
 console.log('\n=== FS. Marge avec l\'activite ===');
 // Decision du 25/09/2026 : en seche, l'activite ne s'ajoute pas a la cible
 // (elle creuse le deficit) ; en maintien et en prise, elle est a compenser.
-t('*** seche : pas de marge « avec l\'activite », le deficit se creuse ***',()=>{
-  S.profil={objectif:'perte'};poseJour(2226,12400,[{kcal:300,n:'Muscu'}]);
+// 12/10/2026 (demande de Liam) : la marge (reste + activite) s'affiche aussi
+// en seche, sans toucher a la cible : vert, orange (deficit serre) ou rouge.
+t('*** seche : la marge s\'affiche (reste + activite), la cible ne bouge pas ***',()=>{
+  S.profil={objectif:'perte'};poseJour(2000,12400,[{kcal:300,n:'Muscu'}]);
+  const b=sb.getBurn(S.today),reste=Math.round(sb.TARGETS.kcal-2000);
   const h=G('renderAccueil')();
-  if(!/creusent ton déficit du jour/.test(h))throw new Error('message seche absent');
-  if(/Activité à compenser/.test(h))throw new Error('marge affichee en seche');
+  if(h.indexOf('Marge du jour')<0)throw new Error('marge absente en seche');
+  if(h.indexOf((reste+b.total)+' kcal')<0)throw new Error('marge attendue '+(reste+b.total));
+  if(h.indexOf(reste+' restantes + '+b.total+' d\'activité')<0)throw new Error('calcul non detaille');
+  if(!/ton activité creuse ton déficit/.test(h))throw new Error('etat vert');
+  if(/Activité à compenser/.test(h))throw new Error('« a compenser » en seche');
+  eq(G('_cibleDuJour')(S.today),sb.TARGETS.kcal,'cible du jour inchangee en seche');
 });
 t('*** maintien : la marge vaut cible plus depense moins consomme ***',()=>{
   S.profil={objectif:'maintien'};poseJour(2226,12400,[{kcal:300,n:'Muscu'}]);
@@ -286,29 +293,28 @@ t('*** maintien : la marge vaut cible plus depense moins consomme ***',()=>{
   const attendu=Math.round(sb.TARGETS.kcal+b.total-2226);
   const h=G('renderAccueil')();
   if(h.indexOf(attendu+' kcal')<0)throw new Error('marge attendue '+attendu+' absente du rendu');
+  if(!/Activité à compenser/.test(h))throw new Error('maintien : a compenser');
 });
-t('*** un depassement est annonce comme tel (hors seche) ***',()=>{
+t('*** un depassement est annonce comme tel, avec son montant ***',()=>{
   S.profil={objectif:'prise'};poseJour(4000,0,[{kcal:100,n:'Marche'}]);
   const h=G('renderAccueil')();
-  if(!/−\d+ kcal/.test(h))throw new Error('depassement non signale');
+  const d=Math.round(4000-sb.TARGETS.kcal-100);
+  if(h.indexOf('dépassée de '+d+' kcal')<0)throw new Error('depassement non signale ('+d+')');
 });
 t('*** le tracker n\'affiche plus de « Balance » ***',()=>{
   if(/Balance : /.test(src))throw new Error('l\'ancienne balance subsiste');
 });
-t('*** tracker : marge avec l\'activite hors seche, deficit en seche ***',()=>{
-  const i=src.indexOf("Avec l'activité");
-  if(i<0)throw new Error('libelle absent');
-  const b=src.slice(i-700,i);
-  if(!/_cibleDuJour\(dd\)-m\.kcal/.test(b))throw new Error('formule incorrecte');
-  if(!/_ligneDeficitJour\(m\.kcal,b\.total\)/.test(b))throw new Error('branche seche absente');
+t('*** tracker : la marge du jour affiche, sous l\'anneau, quel que soit l\'objectif ***',()=>{
+  if(!/\$\{calorieRing\(m\.kcal,TARGETS\.kcal,[^\n]*\)\}\$\{_htmlMarge\(dd,/.test(src))throw new Error('encadre absent sous l\'anneau');
+  if(/_ligneDeficitJour/.test(src))throw new Error('ancienne ligne de seche encore la');
 });
-t('la marge du tracker et celle de l\'accueil passent par la meme cible du jour',()=>{
-  if(src.indexOf('_cibleDuJour(dd)-m.kcal')<0||src.indexOf('_cibleDuJour(jour)-m.kcal')<0)throw new Error('une des deux formules est absente');
+t('la marge du tracker, de l\'accueil, du message et de la barre passent par le meme calcul',()=>{
+  ['_htmlMarge(dd,','_htmlMarge(jour,','var g=_margeJour(day);','var g=_margeJour(dd);'].forEach(function(s){if(src.indexOf(s)<0)throw new Error(s+' absent');});
   S.profil=null;
 });
 t('rien ne s\'affiche sans depense',()=>{
   poseJour(2000,0,[]);
-  const i=src.indexOf("if(!b||!b.total)return ''");
-  if(i<0)throw new Error('garde absente : la ligne s\'afficherait a vide');
+  eq(G('_margeJour')(S.today),null,'marge sans activite');
+  if(G('renderAccueil')().indexOf('Marge du jour')>=0)throw new Error('encadre a vide');
 });
 console.log('\n---- total '+pass+' ok, '+fail+' KO ----');

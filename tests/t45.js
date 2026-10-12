@@ -175,13 +175,11 @@ t('*** la synthese ne depend plus du jour courant ***',()=>{
   if(!/const rem=meals\.length>0/.test(src))throw new Error('condition inattendue');
 });
 t('*** la marge lit le jour affiche ***',()=>{
-  if(/const b=getBurn\(S\.today\);if\(!b\|\|!b\.total\)/.test(src))
-    throw new Error('lit toujours aujourd\'hui');
-  if(!/const b=getBurn\(dd\);if\(!b\|\|!b\.total\)/.test(src))throw new Error('jour affiche non utilise');
+  if(/_htmlMarge\(S\.today/.test(src))throw new Error('lit toujours aujourd\'hui');
+  if(!/_htmlMarge\(dd,/.test(src))throw new Error('jour affiche non utilise');
 });
 t('le vocabulaire s\'adapte au jour passe',()=>{
   if(!/\$\{isToday\?'Reste':'Écart'\}/.test(src))throw new Error('libelle fige');
-  if(!/isToday\?"Avec l'activité":"Marge"/.test(src))throw new Error('libelle de marge fige');
 });
 t('un jour passe montre l\'ecart a la cible',()=>{
   const i=src.indexOf("${isToday?'Reste':'Écart'}");

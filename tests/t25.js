@@ -36,12 +36,13 @@ t('le detail des pas et des activites est repris',()=>{
 });
 // L'ancienne « balance du jour » (mange - activite) ignorait le metabolisme de
 // repos : elle est remplacee par ce que devient l'activite selon l'objectif.
-t('*** seche : l\'activite creuse le deficit, la cible ne bouge pas ***',()=>{
+t('*** seche : l\'activite creuse le deficit, la cible ne bouge pas, la marge est donnee ***',()=>{
   jour(2000,100);S.profil={objectif:'perte'};
   depense(S.today,12400,[{kcal:300,n:'Muscu'}]);
-  const a=coachAct(S.today);
+  const a=coachAct(S.today),b=sb.getBurn(S.today),reste=Math.round(sb.TARGETS.kcal-2000);
   if(/Balance/.test(a.corps))throw new Error('ancienne balance : '+a.corps);
-  if(!/creusent ton déficit/.test(a.corps))throw new Error(a.corps);
+  if(!/ton activité creuse ton déficit/.test(a.corps))throw new Error(a.corps);
+  if(a.corps.indexOf('Marge du jour : '+(reste+b.total)+' kcal, soit '+reste+' restantes + '+b.total+' d\'activité')<0)throw new Error(a.corps);
   eq(a.ton,'ok');
 });
 t('*** maintien et prise : l\'activite est a compenser ***',()=>{
