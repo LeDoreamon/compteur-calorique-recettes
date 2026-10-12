@@ -303,7 +303,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-12 00h15 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-12 10h16 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -568,12 +568,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-12-0015"></script>
+<script src="catalogue.js?v=2026-10-12-1016"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-12-0015';
+const BUILD_ID='2026-10-12-1016';
 const NOUVEAUTES=[
+  {b:'2026-10-12-1016',points:[
+    'L’appli ne se recharge plus toute seule à l’ouverture après une mise à jour, et « Quoi de neuf » reste affiché jusqu’à ce que tu le fermes. Quand une nouvelle version arrive pendant que tu t’en sers, un bandeau te propose de recharger, sans jamais t’interrompre.'
+  ]},
   {b:'2026-10-12-0015',points:[
     'Prise de masse : les recettes plus petites que ta cible te proposent une portion adaptée (par exemple ×1,4), que tu peux ajuster avant de valider. Les recettes générées par l’IA ont des portions calculées pour ta cible, en prise de masse comme en maintien.'
   ]},
@@ -3303,11 +3306,13 @@ function _verifierNouveautes(){
   _nvFait=true;
   var vu=null;try{vu=localStorage.getItem('dz_nouveautes');}catch(e){}
   if(vu===BUILD_ID)return;
-  try{localStorage.setItem('dz_nouveautes',BUILD_ID);}catch(e){}
+  var vue=function(){try{localStorage.setItem('dz_nouveautes',BUILD_ID);}catch(e){}};
   /* entree sans point = build sans changement visible pour les utilisateurs (ex. correction de mon seul compte) */
   var avec=NOUVEAUTES.filter(function(n){return n.points&&n.points.length;});
   var l=vu?avec.filter(function(n){return n.b>vu;}).slice(0,5):avec.slice(0,1);
-  if(l.length)_alerte(_texteNouveautes(l));
+  if(!l.length){vue();return;}
+  /* vue seulement une fois FERMEE : un rechargement pendant l'affichage la remontre (12/10/2026) */
+  _alerte(_texteNouveautes(l)).then(vue,vue);
 }
 function montrerNouveautes(){_alerte(_texteNouveautes(NOUVEAUTES.filter(function(n){return n.points&&n.points.length;}).slice(0,1)));}
 function _infoToast(titre,corps){
@@ -10021,8 +10026,42 @@ function confirmAddMealFinal() {
    « hors ligne » a tort en finissant apres le vrai chargement) — 11/10/2026 */
 setTimeout(()=>{try{render();}catch(e){}},9000);
 // Service Worker
+// Nouvelle version du service worker (12/10/2026) : la page ne se recharge plus d'office.
+// Cas normal : la page arrive deja neuve (reseau d'abord), le service worker suit ;
+// recharger faisait « s'ouvrir l'appli deux fois » et effacait « Quoi de neuf ».
+// Page vraiment perimee (servie par le cache) : un bandeau propose de recharger,
+// jamais de rechargement en pleine saisie.
+function _versionServiceWorker(){
+  return new Promise(function(res){
+    try{
+      var c=navigator.serviceWorker&&navigator.serviceWorker.controller;if(!c)return res(null);
+      var ch=new MessageChannel(),t=setTimeout(function(){res(null);},1500);
+      ch.port1.onmessage=function(e){clearTimeout(t);res((e.data&&e.data.version)||null);};
+      c.postMessage({type:'version'},[ch.port2]);
+    }catch(e){res(null);}
+  });
+}
+function _bandeauNouvelleVersion(){
+  if(document.getElementById('maj-bandeau'))return;
+  var b=document.createElement('div');b.id='maj-bandeau';
+  b.style.cssText='position:fixed;left:12px;right:12px;bottom:calc(146px + env(safe-area-inset-bottom, 12px));z-index:190;display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;background:var(--bg2);border:0.5px solid var(--blue);box-shadow:0 8px 24px rgba(0,0,0,.45);';
+  var t=document.createElement('div');t.style.cssText='flex:1;font-size:12.5px;color:var(--text2);line-height:1.4;';t.textContent='Une nouvelle version de Dorayaki est prête.';
+  var bt=document.createElement('button');bt.type='button';bt.textContent='Recharger';
+  bt.style.cssText='padding:8px 12px;border-radius:8px;border:0;background:var(--blue);color:#0b1a22;font-size:12.5px;font-weight:600;cursor:pointer;font-family:inherit;';
+  bt.onclick=function(){bt.disabled=true;bt.textContent='…';var go=function(){location.reload();};try{Promise.resolve(saveState()).then(go,go);}catch(e){go();}};
+  b.appendChild(t);b.appendChild(bt);document.body.appendChild(b);
+}
+function _surNouveauServiceWorker(){
+  return _versionServiceWorker().then(function(v){
+    /* versions « macros-AAAA-MM-JJ-HHMM » : comparables comme du texte. Pas de reponse, meme
+       version ou service worker plus ancien que la page : la page est a jour, rien a faire */
+    if(!v||v<='macros-'+BUILD_ID)return 'a-jour';
+    _bandeauNouvelleVersion();return 'perimee';
+  });
+}
 if('serviceWorker' in navigator){
-  if('serviceWorker' in navigator){navigator.serviceWorker.addEventListener('controllerchange',function(){if(window.__swReloaded)return;window.__swReloaded=true;location.reload();});window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').then(function(reg){function chk(){try{reg.update();}catch(e){}}document.addEventListener('visibilitychange',function(){if(!document.hidden)chk();});window.addEventListener('focus',chk);setInterval(chk,60000);}).catch(function(){});});}
+  navigator.serviceWorker.addEventListener('controllerchange',_surNouveauServiceWorker);
+  window.addEventListener('load',function(){navigator.serviceWorker.register('./sw.js').then(function(reg){function chk(){try{reg.update();}catch(e){}}document.addEventListener('visibilitychange',function(){if(!document.hidden)chk();});window.addEventListener('focus',chk);setInterval(chk,60000);}).catch(function(){});});
 }
 
 
