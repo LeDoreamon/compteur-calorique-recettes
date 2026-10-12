@@ -70,12 +70,12 @@ t('les pas seuls comptent comme activite (au-dessus de la routine)',()=>{
   const g=M(),b=X('getBurn(S.today)');
   if(!g||!(b.total>0))throw new Error('pas ignores');eq(g.marge,420+b.total);
 });
-t('*** Repas : l\'encadre est sous l\'anneau, pour le jour affiche ***',()=>{
+t('*** Repas : l\'encadre est en bas du bloc, sous « Copier vers », pour le jour affiche (demande du 12/10/2026) ***',()=>{
   const hier=X('shiftDate(S.today,-1)');jour(2500,400,'perte',hier);
   X("S.mainTab='recipes';S.displayDate='"+hier+"';");
-  const h=X('renderMacros()');const a=h.indexOf('ring-arc'),m=h.indexOf('marge-jour'),p=h.indexOf('Protéines');
+  const h=X('renderMacros()');const a=h.indexOf('ring-arc'),c=h.indexOf('copy-day-target'),m=h.indexOf('marge-jour'),s=h.indexOf('id="sync-badge"');
   if(m<0)throw new Error('encadre absent pour le jour affiche');
-  if(!(a<m&&m<p))throw new Error('mal place');
+  if(!(a<c&&c<m&&m<s))throw new Error('mal place');
   if(vis(h).indexOf('Marge du jour 200 kcal')<0)throw new Error(vis(h));
   X("S.displayDate=S.today;");
 });
@@ -92,6 +92,11 @@ t('*** accueil : tuile « Reste » = cible seule, encadre juste dessous, puis le
   const m=h.indexOf('marge-jour'),d=h.indexOf('Activité du jour');
   if(m<0||d<0||m>d)throw new Error('ordre');
   if(v.indexOf('Marge du jour 820 kcal')<0)throw new Error('valeur');
+});
+t('*** « Ça rentre dans ce qu\'il te reste » reste sur la cible de base, jamais sur la marge (sèche) ***',()=>{
+  jour(1880,400);const s=X('suggestionsAccueil(S.today,3)');
+  if(s.reste)eq(s.reste.kcal,420,'reste sans l\'activite');
+  eq(X('resteDuJour(S.today)').kcal,420);
 });
 t('*** barre « Reste » collante : la marge, en couleur ***',()=>{
   jour(2500,400);X("S.mainTab='recipes';S.displayDate=S.today;");
