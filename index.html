@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 01h52 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 02h03 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-13-0152"></script>
+<script src="catalogue.js?v=2026-10-13-0203"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-13-0152';
+const BUILD_ID='2026-10-13-0203';
 const NOUVEAUTES=[
+  {b:'2026-10-13-0203',points:[
+    'Marge du jour en prise de masse et en maintien : bleu clair quand tu es dans ta cible (activité comprise), orange puis rouge quand tu as trop mangé ou pas assez, avec ton surplus ou ton déficit réel chiffré.'
+  ]},
   {b:'2026-10-13-0152',points:[
     'Marge du jour : le bleu clair est maintenant la meilleure couleur (cible tenue et activité qui pousse ton déficit au-delà du prévu) ; le vert, ta cible tenue sans activité.',
     'Sans activité aussi, l’encadré dit où en est ton déficit pour un jour passé ou dès que ta cible est dépassée.',
@@ -4441,36 +4444,71 @@ function _copierJourVers(src,target){
 // l'encadre s'affiche aussi sans activite (Liam : « j'ai depasse et je sais pas
 // de combien ») : pour un jour passe, ou des que la cible est depassee ; pas
 // pour aujourd'hui sous la cible (le deficit d'une journee en cours ne veut
-// rien dire). En maintien et en prise, l'activite est a compenser : vert, ou
-// rouge une fois depassee, et seulement avec une activite.
+// rien dire).
+// Prise de masse et maintien (demande de Liam, 13/10/2026 : « savoir quand on
+// a trop pris ou pas assez ») : cible du jour = cible + activite (a
+// compenser). Ecart = mange − cible du jour ; bilan reel du jour = ecart prevu
+// par la cible (cible − depense reelle estimee : surplus prevu en prise, ≈ 0
+// en maintien ; sans estimation : prise = depense × 1,1 comme calculerCibles,
+// maintien = 0) + ecart. Bleu clair = dans la cible du jour a TOL_CIBLE pres
+// (±10 %, meme regle que le calendrier) ; aujourd'hui en dessous = vert
+// « encore N a manger » (journee en cours) ; au-dessus : orange jusqu'a 2 ×
+// TOL_CIBLE, rouge au-dela ; un jour passe en dessous : orange puis rouge.
+// Meme affichage sans activite que la seche (jour passe ou cible depassee).
+const TOL_CIBLE=0.10;
 const DEFICIT_PREVU=550;   /* convention de l'appli : cible conseillee = depense reelle − 550 (≈ −0,5 kg/semaine) */
 function _deficitPrevu(){
   var t=null;try{t=estimateTDEE();}catch(e){}
   if(t&&t.ok&&t.tdee>0)return {d:Math.max(0,Math.round(t.tdee-TARGETS.kcal)),tdee:t.tdee};
   return {d:DEFICIT_PREVU,tdee:null};
 }
+function _ecartPrevu(obj){
+  var t=null;try{t=estimateTDEE();}catch(e){}
+  if(t&&t.ok&&t.tdee>0)return {d:Math.round(TARGETS.kcal-t.tdee),tdee:t.tdee};
+  return {d:obj==='prise'?Math.round(TARGETS.kcal-TARGETS.kcal/1.1):0,tdee:null};
+}
 function _margeJour(jour){
   var act=_depenseDuJour(jour),obj=_objectif(),m=getDayMacros(jour);
   var reste=Math.round(TARGETS.kcal-m.kcal),marge=Math.round(TARGETS.kcal+act-m.kcal);
-  if(!(act>0)&&!(obj==='perte'&&_repasDuJour(jour).length&&(jour<S.today||reste<0)))return null;
-  var deficit=null,etat;
+  if(!(act>0)&&!(_repasDuJour(jour).length&&(jour<S.today||reste<0)))return null;
+  var deficit=null,bilan=null,ecart=null,etat;
   var dp=null;
   if(obj==='perte'){dp=_deficitPrevu();deficit=dp.d+marge;etat=reste>=0?(act>0?'atteinte':'ok'):(marge>=0?'couvert':(deficit>0?'serre':'depasse'));}
-  else etat=marge<0?'depasse':'ok';
-  return {jour:jour,act:act,reste:reste,marge:marge,etat:etat,obj:obj,deficit:deficit,prevu:dp&&dp.d,tdee:dp&&dp.tdee,
-    couleur:{atteinte:'var(--sky)',ok:'var(--green)',couvert:'var(--lime)',serre:'var(--orange)',depasse:'var(--red)'}[etat]};
+  else{
+    dp=_ecartPrevu(obj);ecart=-marge;bilan=dp.d+ecart;
+    var tol=Math.round((TARGETS.kcal+act)*TOL_CIBLE);
+    if(ecart>2*tol)etat='tropFort';else if(ecart>tol)etat='trop';else if(ecart>=-tol)etat='atteinte';
+    else if(jour>=S.today)etat='ok';else etat=ecart<-2*tol?'manqueFort':'manque';
+  }
+  return {jour:jour,act:act,reste:reste,marge:marge,etat:etat,obj:obj,deficit:deficit,bilan:bilan,ecart:ecart,prevu:dp&&dp.d,tdee:dp&&dp.tdee,
+    couleur:{atteinte:'var(--sky)',ok:'var(--green)',couvert:'var(--lime)',serre:'var(--orange)',depasse:'var(--red)',
+      trop:'var(--orange)',manque:'var(--orange)',tropFort:'var(--red)',manqueFort:'var(--red)'}[etat]};
 }
 function _texteMarge(g){
+  var aComp=g.obj==='perte'?'':' à compenser';
   var calcul=!(g.act>0)?(g.reste>=0?(g.reste+' kcal sous ta cible'):((-g.reste)+' kcal au-dessus de ta cible'))+', sans activité enregistrée'
-    :(g.reste>=0?(g.reste+' restantes + '+g.act+' d\'activité'):(g.act+' d\'activité \u2212 '+(-g.reste)+' au-dessus de ta cible'));
+    :(g.reste>=0?(g.reste+(g.jour<S.today?' kcal sous ta cible + ':' restantes + ')+g.act+' d\'activité'+aComp):(g.act+' d\'activité'+aComp+' \u2212 '+(-g.reste)+' au-dessus de ta cible'));
   var quand=g.jour===S.today?'aujourd\'hui':'ce jour-là';
   var etat;
+  if(g.obj!=='perte'){
+    var prise=g.obj==='prise',b=g.bilan,E=g.ecart,act=g.act>0;
+    var bil=Math.abs(b)<50?'à l\'équilibre':(b>0?'≈ '+b+' kcal de surplus':'≈ '+(-b)+' kcal de déficit');
+    var prevu=prise?(g.prevu>0?' (prévu ≈ '+g.prevu+')':' (ta cible est sous ta dépense estimée)'):'';
+    var de=act?' de ta cible et de ton activité':' de ta cible';
+    if(g.etat==='atteinte')etat=(prise?'Cible atteinte':'Pile dans ton maintien')+(act?', activité compensée':'')+' : '+bil+prevu+'.';
+    else if(g.etat==='ok')etat='Encore '+(-E)+' kcal à manger pour '+(prise?'ta prise de masse':'tenir ton maintien')+(act?' (ton activité y est comptée)':'')+'.';
+    else if(g.etat==='trop')etat='Un peu trop : '+E+' kcal au-dessus'+de+', '+bil+prevu+'.';
+    else if(g.etat==='tropFort')etat='Trop : '+E+' kcal au-dessus'+de+', '+bil+prevu+(prise?' : l\'excès part surtout en gras.':'.');
+    else if(g.etat==='manque')etat='Pas assez '+quand+' : '+(-E)+' kcal sous ta cible'+(act?' et ton activité':'')+', '+bil+prevu+'.';
+    else etat='Bien trop peu '+quand+' : '+(-E)+' kcal sous ta cible'+(act?' et ton activité':'')+', '+bil+prevu+(prise?' : sans surplus, pas de prise de masse.':' : si ça se répète, tu perdras du poids.');
+    /* jour passe en dessous : ce qui a manque, signe (« −600 »), pas une marge a manger */
+    return {valeur:/^manque/.test(g.etat)?('\u2212'+(-E)+' kcal'):(g.marge>=0?(g.marge+' kcal'):('+'+(-g.marge)+' kcal')),calcul:calcul,etat:etat};
+  }
   if(g.etat==='depasse')etat=g.obj==='perte'?('Plus de déficit '+quand+(g.deficit<0?' : ≈ '+(-g.deficit)+' kcal de surplus.':'.')):'Au-delà de ta cible et de ton activité.';
   else if(g.etat==='atteinte')etat='Cible tenue et déficit au-delà du prévu : ≈ '+g.deficit+' kcal au lieu de '+g.prevu+', grâce à ton activité.';
   else if(g.etat==='couvert')etat='Cible dépassée, mais ton activité couvre le dépassement : ton déficit tient (≈ '+g.deficit+' kcal).';
   else if(g.etat==='serre')etat='Déficit serré : il en reste ≈ '+g.deficit+' kcal sur les '+g.prevu+' prévus par ta cible.';
-  else if(g.obj==='perte')etat='Dans ta cible : déficit ≈ '+g.deficit+' kcal (prévu '+g.prevu+').';
-  else etat='Activité à compenser'+(g.obj==='prise'?' : ta prise de masse en a besoin.':' pour tenir ton maintien.');
+  else etat='Dans ta cible : déficit ≈ '+g.deficit+' kcal (prévu '+g.prevu+').';
   return {valeur:g.marge>=0?(g.marge+' kcal'):('dépassée de '+(-g.marge)+' kcal'),calcul:calcul,etat:etat};
 }
 function _htmlMarge(jour,marges){
@@ -6194,8 +6232,8 @@ function _etatJour(d){
   var dep=(b&&b.total)||0,cible=_cibleDuJour(d);
   var res={kcal:m.kcal,prot:m.prot,dep:dep,cible:cible,protOk:_protOk(m.prot)};
   if(m.kcal<TARGETS.kcal*TDEE_SEUIL_JOUR)res.etat='partiel';
-  else if(m.kcal>cible*1.1)res.etat='dessus';
-  else if(m.kcal<cible*0.9)res.etat='dessous';
+  else if(m.kcal>cible*(1+TOL_CIBLE))res.etat='dessus';
+  else if(m.kcal<cible*(1-TOL_CIBLE))res.etat='dessous';
   else res.etat='cible';
   return res;
 }
@@ -7309,7 +7347,7 @@ function coachActivite(day){
   // Marge du jour (12/10/2026) : ce qu'on a encore le droit de manger. Un
   // depassement est dit sous l'angle de ce que l'activite rattrape.
   var g=_margeJour(day);
-  if(g&&g.marge<0)corps+=' Ton activité ramène ton dépassement à '+(-g.marge)+' kcal'+(g.etat==='serre'?' : ton déficit tient encore (≈ '+g.deficit+' kcal).':'.');
+  if(g&&g.obj==='perte'&&g.marge<0)corps+=' Ton activité ramène ton dépassement à '+(-g.marge)+' kcal'+(g.etat==='serre'?' : ton déficit tient encore (≈ '+g.deficit+' kcal).':'.');
   else if(g){var t=_texteMarge(g);corps+=' Marge du jour : '+t.valeur+', soit '+t.calcul+'. '+t.etat;}
   return {titre:'\ud83d\udd25 Activité enregistrée',corps:corps,ton:'ok'};
 }
