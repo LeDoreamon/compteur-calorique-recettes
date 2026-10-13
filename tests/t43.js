@@ -293,13 +293,13 @@ t('*** maintien : la marge vaut cible plus depense moins consomme ***',()=>{
   const attendu=Math.round(sb.TARGETS.kcal+b.total-2226);
   const h=G('renderAccueil')();
   if(h.indexOf(attendu+' kcal')<0)throw new Error('marge attendue '+attendu+' absente du rendu');
-  if(!/Activité à compenser/.test(h))throw new Error('maintien : a compenser');
+  if(!/d'activité à compenser/.test(h))throw new Error('maintien : a compenser');
 });
 t('*** un depassement est annonce comme tel, avec son montant ***',()=>{
   S.profil={objectif:'prise'};poseJour(4000,0,[{kcal:100,n:'Marche'}]);
   const h=G('renderAccueil')();
   const d=Math.round(4000-sb.TARGETS.kcal-100);
-  if(h.indexOf('dépassée de '+d+' kcal')<0)throw new Error('depassement non signale ('+d+')');
+  if(h.indexOf('+'+d+' kcal')<0||!/Trop : \d+ kcal au-dessus de ta cible et de ton activité/.test(h))throw new Error('depassement non signale ('+d+')');
 });
 t('*** le tracker n\'affiche plus de « Balance » ***',()=>{
   if(/Balance : /.test(src))throw new Error('l\'ancienne balance subsiste');
