@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-16 01h21 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-16 01h31 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-16-0121"></script>
+<script src="catalogue.js?v=2026-10-16-0131"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-16-0121';
+const BUILD_ID='2026-10-16-0131';
 const NOUVEAUTES=[
+  {b:'2026-10-16-0131',points:[
+    'Correction : sur un compte sans repas ni inventaire, les modifications du profil (objectif, calories…) ne s’enregistraient pas et revenaient aux valeurs par défaut. C’est réparé : refais tes réglages une dernière fois, ils tiennent maintenant.'
+  ]},
   {b:'2026-10-16-0121',points:[
     'Point du coach : bouton « 💬 Revoir le point du coach » en bas du suivi dans Repas, et le message reste affiché plus longtemps quand il est long.'
   ]},
@@ -2888,7 +2891,7 @@ function _applyState(d){
       if(Array.isArray(S.inv[cat]))S.inv[cat]=S.inv[cat].filter(function(x){return x&&x.id;});
     });
   }catch(e){}
-  }
+  }else if(ACTIVE_PROFILE!==PROFIL_HERITE)S.inv=JSON.parse(JSON.stringify(INV_VIDE));   /* absent = vide (Firebase ne garde pas le vide) */
   // Firebase supprime les null : un item "présent" revient en qty:-1 (notre sentinel) ou sans qty (undefined). On rétablit qty=null.
   Object.values(S.inv).forEach(arr=>(arr||[]).forEach(it=>{if(it){if(it.qty===undefined){it.qty=null;_etatCorrige=true;}else if(it.qty===-1){it.qty=null;}}}));
   // kg/L -> g/ml : conversion des unités
@@ -2950,7 +2953,7 @@ function _applyState(d){
       // Firebase remplace complètement le jour (permet suppression + ajout)
       S.dayMeals[day]=d.dayMeals[day];
     });
-  }
+  }else S.dayMeals=(ACTIVE_PROFILE===PROFIL_HERITE)?JSON.parse(JSON.stringify(MEALS_DEFAULT)):{};   /* absent = aucun repas (Firebase ne garde pas le vide) */
   // Clé Groq
   if(d.groqKey&&!localStorage.getItem('anthropic_key'))localStorage.setItem('anthropic_key',d.groqKey);
   if(_cleGeminiValide(d.geminiKey)&&!getGeminiKey()){try{localStorage.setItem('gemini_key',d.geminiKey);}catch(e){}}
@@ -3479,6 +3482,13 @@ async function _saveStateNow(){
   _majBadgesSync();
 }
 
+// Un etat est reconnu a sa revision ou a son profil, pas seulement a son
+// inventaire ou a ses repas : Firebase ne garde ni tableau ni objet vide, donc
+// un compte neuf (inventaire vide, aucun repas) n'avait ni « inv » ni
+// « dayMeals » dans le cloud. Son etat etait ignore a chaque ouverture (profil
+// par defaut, revision 0) et chaque enregistrement tombait dans le conflit
+// « modifie sur un autre appareil » : rien ne partait (15/10/2026).
+function _etatReconnu(d){return !!(d&&typeof d==='object'&&(d.inv||d.dayMeals||(d.profil&&typeof d.profil==='object')||typeof d.rev==='number'));}
 async function loadState(){
   _envoye=null;   /* apres un chargement, le premier envoi est complet */
   try{
@@ -3487,7 +3497,7 @@ async function loadState(){
     clearTimeout(_tid);
     if(r.ok){
       const d=await r.json();
-      if(d&&(d.inv||d.dayMeals)){
+      if(_etatReconnu(d)){
         // Une sauvegarde locale peut n'avoir jamais atteint le serveur (coupure
         // reseau). Sa revision est alors superieure a celle du serveur : c'est
         // elle qui fait foi, et on la renvoie.
@@ -3502,7 +3512,7 @@ async function loadState(){
         var _plusRecent=(_loc&&_loc.savedAt&&d.savedAt)?(_loc.savedAt>d.savedAt):false;
         var _volLoc=_volumeEtat(_loc),_volDist=_volumeEtat(d);
         var _pasAppauvri=(_volLoc>=_volDist*0.75);
-        if(_loc&&(_loc.inv||_loc.dayMeals)&&_lRev>_dRev&&_plusRecent&&_pasAppauvri){
+        if(_etatReconnu(_loc)&&_lRev>_dRev&&_plusRecent&&_pasAppauvri){
           _applyState(_loc);
           _nonEnvoye=true;   /* a renvoyer : le flag tombe quand le cloud confirme */
           _stateRev=_dRev;                 // la revision du serveur reste la reference
@@ -3517,7 +3527,7 @@ async function loadState(){
         /* le dernier envoi d'ici n'a jamais ete confirme et le cloud a ete ecrit depuis :
            sa version s'affiche, celle d'ici est mise de cote (rien ne se perd en silence) */
         var _deCote=false;
-        if(_loc&&(_loc.inv||_loc.dayMeals)&&_nonEnvoyeLocal()){_deCote=await _mettreDeCoteLocal(JSON.stringify(_loc));if(_deCote)_marquerNonEnvoye(false);}
+        if(_etatReconnu(_loc)&&_nonEnvoyeLocal()){_deCote=await _mettreDeCoteLocal(JSON.stringify(_loc));if(_deCote)_marquerNonEnvoye(false);}
         _applyState(d);
         _stateRev=_dRev;
         _loaded=true;
@@ -6051,7 +6061,7 @@ function _lireSauvegarde(txt){
   var o=JSON.parse(txt);
   if(!o||typeof o!=='object')throw new Error('fichier illisible');
   var st=(o._format===2)?o.state:o;
-  if(!st||typeof st!=='object'||!(st.inv||st.dayMeals))throw new Error('ce fichier ne ressemble pas a une sauvegarde Dorayaki');
+  if(!st||typeof st!=='object'||!_etatReconnu(st))throw new Error('ce fichier ne ressemble pas a une sauvegarde Dorayaki');
   return {state:st,burn:(o._format===2&&o.burn&&typeof o.burn==='object')?o.burn:null,
           photos:(o._format===2&&o.photos&&typeof o.photos==='object')?_photosSures(o.photos):null,
           progres:(o._format===2&&o.progres&&typeof o.progres==='object')?_progresSurs(o.progres):null,
