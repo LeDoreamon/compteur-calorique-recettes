@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-13 02h03 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-16 01h21 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-13-0203"></script>
+<script src="catalogue.js?v=2026-10-16-0121"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-13-0203';
+const BUILD_ID='2026-10-16-0121';
 const NOUVEAUTES=[
+  {b:'2026-10-16-0121',points:[
+    'Point du coach : bouton « 💬 Revoir le point du coach » en bas du suivi dans Repas, et le message reste affiché plus longtemps quand il est long.'
+  ]},
   {b:'2026-10-13-0203',points:[
     'Marge du jour en prise de masse et en maintien : bleu clair quand tu es dans ta cible (activité comprise), orange puis rouge quand tu as trop mangé ou pas assez, avec ton surplus ou ton déficit réel chiffré.'
   ]},
@@ -4545,6 +4548,7 @@ function renderMacros(){
     ${rem}
     ${meals.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text3);">Copier vers</span><input type="date" id="copy-day-target" value="${shiftDate(dd,1)}" style="font-size:11px;padding:2px 5px;background:var(--bg);border:0.5px solid var(--border);border-radius:5px;color:var(--text2);"><button onclick="copyDayTo(document.getElementById('copy-day-target').value)" style="font-size:11px;padding:3px 10px;background:var(--blue);color:#fff;border:0;border-radius:5px;cursor:pointer;font-weight:500;">⧉ Jour entier</button></div><div style="font-size:11px;color:var(--text3);margin-top:4px;">Astuce : le ⧉ à côté d'un repas le copie seul vers cette date.</div>`:''}
     ${_htmlMarge(dd,'10px 0 0')}
+    ${(meals.length||(function(){var b=getBurn(dd);return b&&b.total>0;})())?`<button data-action="revoir-coach" style="display:block;width:100%;margin-top:10px;font-size:12px;padding:8px 12px;background:var(--bg3);border:0.5px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;">💬 Revoir le point du coach</button>`:''}
     <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:11px;color:var(--text3);">Modifiable de J−7 à J+1</span></div>
   </div>`;
 }
@@ -7466,9 +7470,20 @@ function _majBarreReste(){
   if(b.classList.contains('vis')!==vis)b.classList.toggle('vis',vis);
 }
 try{window.addEventListener('scroll',function(){if(!_barreRaf)_barreRaf=requestAnimationFrame(_majBarreReste);},{passive:true});}catch(e){}
+// Point du coach (15/10/2026, demande de Liam : « il disparait apres quelques
+// secondes ») : le dernier (jour + source) est retenu pour « Revoir le point
+// du coach » en bas du suivi, qui le recalcule avec les donnees du moment ;
+// la duree d'affichage suit la longueur du texte (_dureeToast).
+var _dernierCoach=null;
+function _dureeToast(titre,corps){return Math.max(7000,Math.min(20000,3000+String((titre||'')+(corps||'')).length*60));}
+function revoirCoach(day){
+  day=day||S.today;
+  showCoachToast(day,(_dernierCoach&&_dernierCoach.day===day)?_dernierCoach.source:undefined);
+}
 function showCoachToast(day,source){
   try{
     var a=(source==='activite')?coachActivite(day):coachAdvice(day);
+    _dernierCoach={day:day||S.today,source:source==='activite'?'activite':undefined};
     var el=document.getElementById('coach-toast');
     if(!el){
       el=document.createElement('div');el.id='coach-toast';
@@ -7482,7 +7497,7 @@ function showCoachToast(day,source){
       +'<div style="font-size:11.5px;color:var(--text2);line-height:1.5;">'+a.corps+'</div>';
     el.style.display='block';
     if(_coachTid)clearTimeout(_coachTid);
-    _coachTid=setTimeout(hideCoachToast,7000);
+    _coachTid=setTimeout(hideCoachToast,_dureeToast(a.titre,a.corps));
   }catch(e){}
 }
 function hideCoachToast(){
@@ -7576,6 +7591,7 @@ function _onActionClick(e){
     _allerVersRecette(el.dataset.val);
   }
   else if(action==='open-burn'){openBurnLog(S.today);}
+  else if(action==='revoir-coach'){revoirCoach(S.displayDate||S.today);}
   else if(action==='rec-tri'){setRecTri(el.dataset.val);}
   else if(action==='rec-tri-dir'){toggleRecTriDir();}
   else if(action==='goto-recipe'){var _r=findRecipe(el.dataset.rid);if(_r){var _sl=(_r.slots&&_r.slots.filter(function(s){return s!=='dessert'&&s!=='urgent';})[0])||(_r.slots&&_r.slots[0])||'breakfast';S.mealTab=_sl;S.openRec=el.dataset.rid;render();}}
