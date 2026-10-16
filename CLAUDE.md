@@ -63,7 +63,7 @@ bash tests/run.sh      # depuis la racine du depot
 
 - Le script vérifie la syntaxe du script inline (`node --check`), puis joue toutes les suites `tests/tN.js` (découvertes seules, ordre numérique) dans un bac à sable `vm` avec un faux DOM (`tests/sb.js`). Il sort en erreur (code 1) si un test échoue ou si une suite plante avant sa ligne de bilan (« PLANTEE »).
 - CI (07/10/2026) : `.github/workflows/tests.yml` rejoue `tests/run.sh` à chaque PR et à chaque mise à jour de `main` (Node 20), puis `tests/audit.py` à titre informatif. Ne fusionner que si la vérification « Tests » est verte.
-- Attendu : 0 échec (1563 tests au 16/10/2026).
+- Attendu : 0 échec (1574 tests au 16/10/2026).
 - Le bac à sable (`sb.js`, et `t9`, `t17`, `t24` qui lisent le script eux-mêmes) colle `catalogue.js` devant le script inline ; `run.sh` vérifie aussi sa syntaxe.
 - Le script copie les tests à la racine pour les exécuter, ce qui pollue le dépôt. Deux options :
   - le lancer dans une copie : `rm -rf /tmp/dz && cp -r . /tmp/dz && bash /tmp/dz/tests/run.sh` ;
