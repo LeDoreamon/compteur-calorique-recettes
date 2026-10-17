@@ -41,7 +41,7 @@ t('*** seche : l\'activite creuse le deficit, la cible ne bouge pas, la marge es
   depense(S.today,12400,[{kcal:300,n:'Muscu'}]);
   const a=coachAct(S.today),b=sb.getBurn(S.today),reste=Math.round(sb.TARGETS.kcal-2000);
   if(/Balance/.test(a.corps))throw new Error('ancienne balance : '+a.corps);
-  if(!/Cible tenue et déficit au-delà du prévu/.test(a.corps))throw new Error(a.corps);
+  if(!/Pour l'instant, belle marge/.test(a.corps))throw new Error(a.corps);
   if(a.corps.indexOf('Marge du jour : '+(reste+b.total)+' kcal, soit '+reste+' restantes + '+b.total+' d\'activité')<0)throw new Error(a.corps);
   eq(a.ton,'ok');
 });

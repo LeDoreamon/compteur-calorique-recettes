@@ -80,7 +80,7 @@ t('masque jusqu\'a la semaine suivante, absent le mercredi',()=>{
 });
 t('le bilan est en tete du Bilan et « bilanVu » est synchronise',()=>{
   const src=fs.readFileSync('index.html','utf8');
-  if(!/var html=renderBilanSemaine\(\)\+renderCoachSummary\(\)/.test(src))throw new Error('placement');
+  if(!/var html=renderBilanSemaine\(\)\+(renderMargeSemaine\(\)\+)?renderCoachSummary\(\)/.test(src))throw new Error('placement');
   if(src.indexOf('bilanVu:S.bilanVu||null')<0)throw new Error('payload');
 });
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' : '+e.message);}}

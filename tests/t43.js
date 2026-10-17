@@ -283,7 +283,7 @@ t('*** seche : la marge s\'affiche (reste + activite), la cible ne bouge pas ***
   if(h.indexOf('Marge du jour')<0)throw new Error('marge absente en seche');
   if(h.indexOf((reste+b.total)+' kcal')<0)throw new Error('marge attendue '+(reste+b.total));
   if(h.indexOf(reste+' restantes + '+b.total+' d\'activité')<0)throw new Error('calcul non detaille');
-  if(!/Cible tenue et déficit au-delà du prévu/.test(h))throw new Error('etat bleu clair');
+  if(!/Pour l'instant, belle marge/.test(h))throw new Error('etat bleu clair');
   if(/Activité à compenser/.test(h))throw new Error('« a compenser » en seche');
   eq(G('_cibleDuJour')(S.today),sb.TARGETS.kcal,'cible du jour inchangee en seche');
 });
