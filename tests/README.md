@@ -116,6 +116,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t98.js` | Revoir le point du coach : dernier point retenu (jour, repas ou activité), bouton « 💬 Revoir le point du coach » en bas du suivi du jour affiché (dès qu'il y a un repas ou une activité), recalcul avec les données du moment, durée d'affichage selon la longueur (7 à 20 s) |
 | `t99.js` | Compte neuf sans inventaire ni repas (faux Firebase qui, comme le vrai, ne garde aucun vide) : profil et cibles du cloud repris à l'ouverture, modification du profil envoyée sans fausse question « autre appareil », reprise sur un autre appareil, mise au format jouée une seule fois, repas supprimés ailleurs bien vidés ici |
 | `t100.js` | Champs Fibres des fenêtres d'ajout d'article, de fiche article et d'ajout de repas : au moins 6 px sous la grille des macros (la marge négative de « Ajouter un item » faisait chevaucher la case) |
+| `t101.js` | Plats maison : ✕ rouge par plat en mode Modifier (pas hors édition), plat retiré de la carte sans toucher aux autres articles, restaurable depuis « Récemment supprimés » |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
