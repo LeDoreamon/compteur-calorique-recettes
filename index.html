@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-16 12h51 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-17 13h38 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-16-1251"></script>
+<script src="catalogue.js?v=2026-10-17-1338"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-16-1251';
+const BUILD_ID='2026-10-17-1338';
 const NOUVEAUTES=[
+  {b:'2026-10-17-1338',points:[
+    'Plats maison : en mode Modifier, un plat se retire comme les autres articles (✕), et se restaure dans « Récemment supprimés ».'
+  ]},
   {b:'2026-10-16-1251',points:[
     'Ajout d’article : la case Fibres ne chevauche plus les macros.'
   ]},
@@ -9775,6 +9778,9 @@ function renderPlatsMaison(){
       +'<span style="font-size:11px;color:var(--text3);">'+(CINFO[x.cat]?CINFO[x.cat].sym+' '+CINFO[x.cat].label+' · ':'')+Math.round(mp.kcal||0)+' kcal / part'+(it.pieceG?' (≈ '+it.pieceG+' g)':'')+'</span></span>'
       +'<span style="font-size:12.5px;color:var(--gold);font-weight:600;white-space:nowrap;">'+_libParts(it.qty)+'</span>'
       +(d?'<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:'+d.bg+';color:'+d.color+';white-space:nowrap;">'+d.label+'</span>':'')
+      /* mode Modifier : retirer le plat comme un autre article (demande de Liam, 17/10/2026) ;
+         il passe dans « Recemment supprimes » (24 h), les ingredients restent deduits (ils ont ete cuisines) */
+      +(S.editMode?'<button onclick="event.stopPropagation();deleteInvItem(\''+x.cat+'\',\''+it.id+'\')" title="Retirer ce plat" aria-label="Retirer ce plat" style="background:var(--red-bg);border:0.5px solid var(--red);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;padding:3px 8px;flex-shrink:0;">✕</button>':'')
       +'</div>';
   }).join('');
   return h+'</div>';
