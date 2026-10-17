@@ -20,71 +20,135 @@ const M=d=>X('_margeJour')(d||S.today);
 const vis=h=>h.replace(/<[^>]+>/g,' ').replace(/\s+/g,' ');
 
 console.log('\n=== LXVII. Marge du jour : reste + activite ===');
-t('*** seche, sous la cible avec une activite : marge = reste + activite, en bleu clair (le mieux) ***',()=>{
-  jour(1880,400);const g=M();
-  eq(g.reste,420);eq(g.act,400);eq(g.marge,820);eq(g.etat,'atteinte');eq(g.couleur,'var(--sky)');
-  const h=vis(X('_htmlMarge')(S.today));
-  if(!/Marge du jour 820 kcal/.test(h))throw new Error(h);
-  if(!/420 restantes \+ 400 d'activité/.test(h))throw new Error('calcul : '+h);
-  if(!/Cible tenue et déficit au-delà du prévu : ≈ \d+ kcal au lieu de \d+, grâce à ton activité\./.test(h))throw new Error('etat : '+h);
+t('*** seche : la couleur ne depend que de la marge, sans activite (jour passe, cible 2300, palier 115 kcal) ***',()=>{
+  const hier=X('shiftDate(S.today,-1)');
+  const cas=[[1900,'large','var(--sky)',/Marge du jour 400 kcal.*Excellent : bien sous ta cible, ton déficit va au-delà du prévu\./],
+             [2100,'ok','var(--green)',/Marge du jour 200 kcal.*Dans ta cible, avec de la marge\./],
+             [2250,'juste','var(--lime)',/Marge du jour 50 kcal.*Tout juste dans ta cible\./],
+             [2350,'serre','var(--orange)',/Marge du jour dépassée de 50 kcal.*Un peu au-dessus de ta marge : 50 kcal de trop, ça reste léger\./],
+             [2500,'depasse','var(--red)',/Marge du jour dépassée de 200 kcal.*Au-delà de ta cible ce jour-là\./]];
+  cas.forEach(([k,etat,col,re])=>{jour(k,0,'perte',hier);const g=M(hier);eq(g.etat,etat,k+' kcal');eq(g.couleur,col,k+' kcal');
+    const h=vis(X('_htmlMarge')(hier));if(!re.test(h))throw new Error(k+' : '+h);});
+  jour(1900,0,'perte',hier);if(!/400 kcal sous ta cible, sans activité enregistrée/.test(vis(X('_htmlMarge')(hier))))throw new Error('calcul sans activite');
 });
-t('*** seche, cible depassee mais couverte par l\'activite : vert-jaune, « ton deficit tient » (exemple de Liam, 11/10) ***',()=>{
+t('*** les memes couleurs avec une activite : la marge compte l\'activite (exemple de Liam du 11/10 : 606 kcal de marge = bleu clair) ***',()=>{
   X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");S.profil={prenom:'T',objectif:'perte'};
   S.dayMeals={};S.dayMeals[S.today]=[{rid:'x',name:'R',mult:1,macros:{kcal:2418,prot:145,gluc:261,lip:82}}];
   X('__setBurn')({[S.today]:{steps:0,activities:[{name:'Muscu',kcal:714}]}});
-  const g=M();eq(g.reste,-108);eq(g.marge,606);eq(g.etat,'couvert');eq(g.couleur,'var(--lime)');
+  const g=M();eq(g.marge,606);eq(g.etat,'large');eq(g.couleur,'var(--sky)');
   const h=vis(X('_htmlMarge')(S.today));
-  if(!/Marge du jour 606 kcal/.test(h))throw new Error(h);
   if(!/714 d'activité − 108 au-dessus de ta cible/.test(h))throw new Error('calcul : '+h);
-  if(!/Cible dépassée, mais ton activité couvre le dépassement : ton déficit tient \(≈ \d+ kcal\)\./.test(h))throw new Error('etat : '+h);
-  if(/serré/.test(h))throw new Error('dit serre');
+  if(!/Pour l'instant, cible dépassée de 108 kcal, mais ton activité couvre largement\./.test(h))throw new Error('aujourd\'hui : '+h);
+  if(/sous ta cible\./.test(h))throw new Error('« sous ta cible » alors qu\'elle est depassee : '+h);
+  const hier=X('shiftDate(S.today,-1)');S.dayMeals[hier]=S.dayMeals[S.today];X('__setBurn')({[hier]:{steps:0,activities:[{name:'Muscu',kcal:714}]}});
+  if(!/Cible dépassée de 108 kcal, mais ton activité couvre largement : ton déficit va au-delà du prévu\./.test(vis(X('_htmlMarge')(hier))))throw new Error('jour passe : '+vis(X('_htmlMarge')(hier)));
+  jour(2500,400);if(!/Pour l'instant, cible dépassée de 200 kcal, mais ton activité couvre, avec de la marge\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('ok couvre');
+  jour(2650,400);if(!/Pour l'instant, cible dépassée de 350 kcal : ton activité couvre tout juste\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('juste couvre');
+  jour(2000,400);if(!/Pour l'instant, belle marge, activité comprise\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('large sous la cible avec activite');
+  jour(2600,400);eq(M().marge,100);eq(M().etat,'juste','2300 + 400 − 2600 = 100 : sous un palier (115)');
 });
-t('*** seche, toute l\'activite mangee mais encore un deficit : orange, « deficit serre », deficit restant affiche (choix de Liam) ***',()=>{
-  jour(2800,400);const g=M();
-  eq(g.reste,-500);eq(g.marge,-100);eq(g.deficit,450);eq(g.etat,'serre');eq(g.couleur,'var(--orange)');
-  const h=vis(X('_htmlMarge')(S.today));
-  if(!/Marge du jour dépassée de 100 kcal/.test(h))throw new Error(h);
-  if(!/400 d'activité − 500 au-dessus de ta cible/.test(h))throw new Error('calcul : '+h);
-  if(!/Déficit serré : il en reste ≈ 450 kcal sur les 550 prévus par ta cible\./.test(h))throw new Error('etat : '+h);
+t('bornes en kcal arrondies (cible 2300 : palier 115) : 345 bleu, 344 vert, 115 vert, 114 vert-jaune, 0 vert-jaune, −1 orange, −115 orange, −116 rouge',()=>{
+  const hier=X('shiftDate(S.today,-1)');
+  [[345,'large'],[344,'ok'],[115,'ok'],[114,'juste'],[0,'juste'],[-1,'serre'],[-115,'serre'],[-116,'depasse']].forEach(([m,e])=>{jour(2300-m,0,'perte',hier);eq(M(hier).etat,e,'marge '+m);});
+  X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");eq(X('_etatMarge("perte",348,2310,false)'),'large','Liam : 348');eq(X('_etatMarge("perte",347,2310,false)'),'ok','Liam : 347');
 });
-t('*** seche, cible tenue (atteinte ou en dessous) + activite : bleu clair, deficit au-dela du prevu (demande de Liam, 13/10) ***',()=>{
+t('*** la marge du jour ne depend plus du TDEE (decision du 17/10/2026) ***',()=>{
   const vrai=X('estimateTDEE');
   try{
-    X("estimateTDEE=function(){return {ok:true,tdee:2673};}");
-    X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");S.profil={prenom:'T',objectif:'perte'};
-    const pose=(k,a)=>{S.dayMeals={};S.dayMeals[S.today]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:150,gluc:200,lip:60}}];X('__setBurn')({[S.today]:{steps:0,activities:[{name:'M',kcal:a}]}});};
-    pose(2250,400);let g=M();eq(g.etat,'atteinte');eq(g.couleur,'var(--sky)');eq(g.deficit,823);
-    const h=vis(X('_htmlMarge')(S.today));
-    if(!/Cible tenue et déficit au-delà du prévu : ≈ 823 kcal au lieu de 363, grâce à ton activité\./.test(h))throw new Error(h);
-    pose(1500,400);eq(M().etat,'atteinte','bien sous la cible, avec activite : bleu clair aussi (Liam : « cible atteinte/sous la cible »)');
-    pose(2310,400);eq(M().etat,'atteinte','pile la cible');
-    pose(2311,400);eq(M().etat,'couvert','au-dessus : vert-jaune');
-    pose(2250,400);S.profil={prenom:'T',objectif:'maintien'};eq(M().etat,'ok','maintien : jamais bleu clair');
-  }finally{sb.__e=vrai;X('estimateTDEE=__e');S.profil={prenom:'T',objectif:'perte'};}
-});
-t('*** sans activite, en seche : jour passe ou cible depassee, l\'encadre dit ou en est le deficit (9/10 de Liam : 3097 mangees) ***',()=>{
-  const vrai=X('estimateTDEE');
-  try{
-    X("estimateTDEE=function(){return {ok:true,tdee:2673};}");
-    X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");S.profil={prenom:'T',objectif:'perte'};X('__setBurn')({});
-    const j9=X('shiftDate(S.today,-4)'),pose=(d,k)=>{S.dayMeals={};S.dayMeals[d]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:123,gluc:320,lip:142}}];};
-    pose(j9,3097);let g=M(j9);
-    eq(g.act,0);eq(g.marge,-787);eq(g.deficit,-424);eq(g.etat,'depasse');eq(g.couleur,'var(--red)');
-    let h=vis(X('_htmlMarge')(j9));
-    if(!/Marge du jour dépassée de 787 kcal/.test(h))throw new Error(h);
-    if(!/787 kcal au-dessus de ta cible, sans activité enregistrée/.test(h))throw new Error('calcul : '+h);
-    if(!/Plus de déficit ce jour-là : ≈ 424 kcal de surplus\./.test(h))throw new Error('etat : '+h);
-    pose(j9,2500);g=M(j9);eq(g.etat,'serre');eq(g.deficit,173);
-    pose(j9,2200);g=M(j9);eq(g.etat,'ok');eq(g.couleur,'var(--green)');
-    if(!/Dans ta cible : déficit ≈ 473 kcal \(prévu 363\)\./.test(vis(X('_htmlMarge')(j9))))throw new Error('vert : '+vis(X('_htmlMarge')(j9)));
-    if(!/110 kcal sous ta cible, sans activité enregistrée/.test(vis(X('_htmlMarge')(j9))))throw new Error('calcul vert');
-    pose(S.today,1500);eq(M(),null,'aujourd\'hui sous la cible, sans activite : rien (journee en cours)');
-    pose(S.today,2600);g=M();eq(g.etat,'serre','aujourd\'hui au-dessus, sans activite : affiche');
-    X("S.mainTab='recipes';S.displayDate=S.today;");if(/marge/.test(X('_htmlBarreReste()')))throw new Error('barre : marge sans activite (doublon du reste)');
-    if(X('renderMacros()').indexOf('marge-jour')<0)throw new Error('tracker');
-    S.profil={prenom:'T',objectif:'maintien'};eq(M().etat,'trop','maintien sans activite, cible depassee : affiche aussi (2600 pour 2310 : +290, tolerance 231)');
-    S.dayMeals={};eq((S.profil={prenom:'T',objectif:'perte'},M(j9)),null,'jour sans repas : rien');
+    const res=[];['{ok:true,tdee:2673}','{ok:true,tdee:3500}','{ok:false}'].forEach(s=>{X('estimateTDEE=function(){return '+s+';}');jour(2500,400);res.push(M().etat+' | '+vis(X('_htmlMarge')(S.today)));});
+    if(res[0]!==res[1]||res[1]!==res[2])throw new Error('varie avec l\'estimation : '+res.join(' // '));
+    if(/déficit ≈|prévus par ta cible|kcal de surplus/.test(res[0]))throw new Error('chiffre tire du TDEE : '+res[0]);
   }finally{sb.__e=vrai;X('estimateTDEE=__e');}
+  const f=src.slice(src.indexOf('function _margeJour('),src.indexOf('function _htmlMarge('));
+  if(/estimateTDEE|_deficitPrevu|_ecartPrevu/.test(f))throw new Error('estimation encore utilisee');
+});
+t('affichage : aujourd\'hui sous la cible sans activite = rien (journee en cours) ; depasse = affiche ; jour passe = affiche',()=>{
+  jour(1500,0);eq(M(),null);jour(2400,0);eq(M().etat,'serre');
+  const hier=X('shiftDate(S.today,-1)');jour(1500,0,'perte',hier);eq(M(hier).etat,'large');
+});
+t('*** seche : une journee terminee sous le plancher n\'est pas « excellente » (orange, comme « Journées très basses ») ***',()=>{
+  const hier=X('shiftDate(S.today,-1)');
+  jour(1100,0,'perte',hier);S.profil.sexe='f';let g=M(hier);eq(g.etat,'bas','1100 < 1200');eq(g.couleur,'var(--orange)');
+  const h=vis(X('_htmlMarge')(hier));
+  if(!/Très bas ce jour-là : 1100 kcal notées, sous 1200 kcal\. Si c'est un oubli de saisie, complète la journée/.test(h))throw new Error(h);
+  jour(1300,0,'perte',hier);S.profil.sexe='h';eq(M(hier).etat,'bas','homme : 1300 < 1500');
+  S.profil.sexe='f';eq(M(hier).etat,'large','femme : 1300 >= 1200');
+  jour(1100,400);S.profil.sexe='f';eq(M().etat,'large','aujourd\'hui (en cours) : jamais « très bas »');
+  jour(1100,0,'maintien',hier);S.profil.sexe='f';if(M(hier).etat==='bas')throw new Error('maintien : deja « bien trop peu »');
+});
+t('*** prise de masse : bleu clair dans la cible du jour (±10 %), trop / pas assez en kcal, sans estimation ***',()=>{
+  const pose=(k,a,d)=>{d=d||S.today;X("TARGETS={kcal:3200,prot:175,gluc:400,lip:90};");S.profil={prenom:'T',objectif:'prise'};S.dayMeals={};S.dayMeals[d]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:150,gluc:300,lip:80}}];X('__setBurn')(a?{[d]:{steps:0,activities:[{name:'M',kcal:a}]}}:{});};
+  pose(3650,400);let g=M();eq(g.etat,'atteinte');eq(g.couleur,'var(--sky)');
+  let h=vis(X('_htmlMarge')(S.today));
+  if(!/Marge du jour \+50 kcal/.test(h)||!/Cible atteinte, activité compensée \(\+50 kcal\)\./.test(h))throw new Error(h);
+  pose(3000,400);eq(M().etat,'ok');if(!/Encore 600 kcal à manger pour ta prise de masse \(ton activité y est comptée\)\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('en cours');
+  pose(4100,400);eq(M().etat,'trop');if(!/Un peu trop : 500 kcal au-dessus de ta cible et de ton activité\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('trop');
+  pose(4400,400);eq(M().etat,'tropFort');if(!/l'excès part surtout en gras\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('trop fort');
+  const hier=X('shiftDate(S.today,-1)');
+  pose(3000,400,hier);eq(M(hier).etat,'manque');h=vis(X('_htmlMarge')(hier));
+  if(!/Marge du jour −600 kcal/.test(h)||!/Pas assez ce jour-là : 600 kcal sous ta cible et ton activité\./.test(h)||!/200 kcal sous ta cible \+ 400 d'activité à compenser/.test(h))throw new Error(h);
+  pose(2800,400,hier);eq(M(hier).etat,'manqueFort');if(!/sans surplus, pas de prise de masse\./.test(vis(X('_htmlMarge')(hier))))throw new Error('manque fort');
+  if(/surplus \(prévu|déficit \(prévu/.test(h))throw new Error('bilan estime encore affiche');
+});
+t('*** maintien : pile dedans en bleu clair, trop ou pas assez ***',()=>{
+  const pose=(k,a,d)=>{d=d||S.today;X("TARGETS={kcal:2600,prot:150,gluc:300,lip:80};");S.profil={prenom:'T',objectif:'maintien'};S.dayMeals={};S.dayMeals[d]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:150,gluc:300,lip:80}}];X('__setBurn')(a?{[d]:{steps:0,activities:[{name:'M',kcal:a}]}}:{});};
+  pose(3040,400);eq(M().etat,'atteinte');if(!/Pile dans ton maintien, activité compensée \(\+40 kcal\)\./.test(vis(X('_htmlMarge')(S.today))))throw new Error(vis(X('_htmlMarge')(S.today)));
+  pose(3400,400);eq(M().etat,'trop');pose(3700,400);eq(M().etat,'tropFort');pose(2500,400);eq(M().etat,'ok');
+  const hier=X('shiftDate(S.today,-1)');pose(2500,400,hier);eq(M(hier).etat,'manque');
+  pose(2300,400,hier);eq(M(hier).etat,'manqueFort');if(!/si ça se répète, tu perdras du poids\./.test(vis(X('_htmlMarge')(hier))))throw new Error('manque fort');
+});
+t('le calendrier et la marge partagent la meme tolerance (TOL_CIBLE) ; palier de seche 5 %',()=>{
+  eq(X('TOL_CIBLE'),0.1);eq(X('MARGE_PALIER'),0.05);
+  if(!/m\.kcal>cible\*\(1\+TOL_CIBLE\)/.test(src)||!/m\.kcal<cible\*\(1-TOL_CIBLE\)/.test(src))throw new Error('_etatJour');
+});
+console.log('\n=== LXXII. Marge de la semaine (Bilan) ===');
+const semaine=(fn)=>{   /* aujourd'hui = jeudi de la semaine courante, le temps du test */
+  const aujV=S.today,L=X('_lundiDe(S.today)'),jeu=X("shiftDate('"+L+"',3)");
+  S.today=jeu;const vrai=X('estimateTDEE');
+  try{fn(L,jeu);}finally{S.today=aujV;sb.__e=vrai;X('estimateTDEE=__e');S.dayMeals={};X('__setBurn')({});}
+};
+const repasJ=(d,k)=>{S.dayMeals[d]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:120,gluc:200,lip:60}}];};
+t('*** somme des marges des journees completes, lundi → dimanche ; un jour incomplet ne compte pas ***',()=>semaine((L,jeu)=>{
+  X("TARGETS={kcal:2300,prot:170,gluc:230,lip:70};");S.profil={prenom:'T',objectif:'perte'};S.dayMeals={};X('__setBurn')({});
+  repasJ(L,2000);repasJ(X("shiftDate('"+L+"',1)"),2500);repasJ(X("shiftDate('"+L+"',2)"),800);repasJ(jeu,1000);
+  const r=X("_margeSemaine('"+L+"')");
+  eq(r.n,2,'lundi et mardi seulement (mercredi a 800 : incomplet ; jeudi : en cours)');eq(r.somme,100);eq(r.moy,50);eq(r.etat,'juste');
+  eq(r.jours.map(j=>j.etat).join(','),'ok,depasse,incomplet,encours,futur,futur,futur');
+}));
+t('*** carte du Bilan : cumul, moyenne, 7 barres, deficit reel estime selon les pesees ***',()=>semaine((L)=>{
+  X("TARGETS={kcal:2300,prot:170,gluc:230,lip:70};");S.profil={prenom:'T',objectif:'perte'};S.dayMeals={};X('__setBurn')({});
+  repasJ(L,2000);repasJ(X("shiftDate('"+L+"',1)"),2500);
+  X("estimateTDEE=function(){return {ok:true,tdee:2673};}");
+  let h=X('renderMargeSemaine()'),v=vis(h);
+  if(!/Marge de la semaine Marge cumulée · 2 jours complets \+100 kcal/.test(v))throw new Error(v.slice(0,200));
+  if(!/Semaine tout juste dans ta cible\. \(≈ 50 kcal de marge par jour\)/.test(v))throw new Error('phrase : '+v);
+  eq((h.match(/margin-top:3px;">[LMJVSD]</g)||[]).length,7,'7 jours');
+  if(h.indexOf('border:1px dashed')<0)throw new Error('jour en cours non distingue');
+  if(!/Déficit réel estimé \(selon tes pesées\) : ≈ 423 kcal\/jour ?, soit ≈ 0,38 kg par semaine/.test(v))throw new Error('deficit reel : '+v);
+  X("estimateTDEE=function(){return {ok:false};}");if(/réel estimé/.test(X('renderMargeSemaine()')))throw new Error('ligne sans estimation');
+  if(src.indexOf('renderBilanSemaine()+renderMargeSemaine()+renderCoachSummary()')<0)throw new Error('pas dans le Bilan');
+}));
+t('semaine tres basse en moyenne : orange, kcal notees par jour',()=>semaine((L)=>{
+  X("TARGETS={kcal:2300,prot:170,gluc:230,lip:70};");S.profil={prenom:'T',objectif:'perte',sexe:'h'};S.dayMeals={};X('__setBurn')({});
+  repasJ(L,1300);repasJ(X("shiftDate('"+L+"',1)"),1250);
+  const r=X("_margeSemaine('"+L+"')");eq(r.etat,'bas');eq(r.couleur,'var(--orange)');eq(r.jours[0].etat,'bas');
+  if(!/Semaine très basse : en moyenne sous 1500 kcal par jour\. \(≈ 1275 kcal notées par jour\)/.test(vis(X('renderMargeSemaine()'))))throw new Error(vis(X('renderMargeSemaine()')));
+}));
+t('aucune journee complete cette semaine (lundi matin) : pas de carte',()=>semaine((L)=>{S.dayMeals={};eq(X('renderMargeSemaine()'),'');}));
+t('maintien et prise : « Ecart a ta cible », signe de l\'ecart (au-dessus = +)',()=>semaine((L)=>{
+  X("TARGETS={kcal:2600,prot:150,gluc:300,lip:80};");S.profil={prenom:'T',objectif:'maintien'};S.dayMeals={};X('__setBurn')({});
+  repasJ(L,2800);repasJ(X("shiftDate('"+L+"',1)"),2700);
+  const v=vis(X('renderMargeSemaine()'));
+  if(!/Écart à ta cible · 2 jours complets \+300 kcal/.test(v)||!/Semaine dans ta cible \(≈ \+150 kcal par jour, activité comprise\)\./.test(v))throw new Error(v);
+}));
+t('*** bilan du lundi : la marge de la semaine ecoulee ***',()=>{
+  const aujV=S.today,L=X('_lundiDe(S.today)'),Lp=X("shiftDate('"+L+"',-7)");
+  try{
+    X("TARGETS={kcal:2300,prot:170,gluc:230,lip:70};");S.profil={prenom:'T',objectif:'perte'};S.dayMeals={};X('__setBurn')({});S.bilanVu=null;
+    repasJ(Lp,2000);repasJ(X("shiftDate('"+Lp+"',1)"),2100);
+    S.today=L;const v=vis(X('renderBilanSemaine()'));
+    if(!/Marge de la semaine \+500 kcal/.test(v))throw new Error(v.slice(0,400));
+  }finally{S.today=aujV;S.dayMeals={};}
 });
 t('*** bloc « Il te reste … ça rentre » de Repas : meme tolerance que l\'accueil, et dit « aujourd\'hui » sous un autre jour ***',()=>{
   const f=src.slice(src.indexOf('function renderBudgetSuggestions'),src.indexOf('function renderBudgetSuggestions')+2600);
@@ -111,101 +175,9 @@ t('la couleur vert-jaune existe et se distingue du vert et de l\'orange',()=>{
   const m=src.match(/--lime: (#[0-9A-Fa-f]{6})/);if(!m)throw new Error('--lime absent');
   if(['#6FBF73','#E9A13B'].indexOf(m[1].toUpperCase())>=0)throw new Error('meme couleur');
 });
-t('*** seche, plus de deficit du tout : rouge, depassement et surplus chiffres ***',()=>{
-  jour(3300,400);const g=M();
-  eq(g.marge,-600);eq(g.deficit,-50);eq(g.etat,'depasse');eq(g.couleur,'var(--red)');
-  const h=vis(X('_htmlMarge')(S.today));
-  if(!/Marge du jour dépassée de 600 kcal/.test(h))throw new Error(h);
-  if(!/400 d'activité − 1000 au-dessus de ta cible/.test(h))throw new Error('calcul : '+h);
-  if(!/Plus de déficit aujourd'hui : ≈ 50 kcal de surplus\./.test(h))throw new Error('etat : '+h);
-});
-t('bornes : cible = vert ; cible + activite = vert-jaune a 0 ; puis orange tant qu\'il reste un deficit ; rouge a 0 deficit',()=>{
-  jour(2300,400);eq(M().etat,'atteinte');eq(M().marge,400);
-  jour(2301,400);eq(M().etat,'couvert');
-  jour(2700,400);eq(M().etat,'couvert');eq(M().marge,0);
-  jour(2701,400);eq(M().etat,'serre');eq(M().deficit,549);
-  jour(3249,400);eq(M().etat,'serre');eq(M().deficit,1);
-  jour(3250,400);eq(M().etat,'depasse');eq(M().deficit,0);
-  if(!/Plus de déficit aujourd'hui\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('deficit nul');
-});
-t('*** deficit prevu = depense reelle estimee − cible quand elle existe (journee de Liam du 12/10) ***',()=>{
-  const vrai=X('estimateTDEE');
-  try{
-    X("estimateTDEE=function(){return {ok:true,tdee:2673};}");
-    X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");S.profil={prenom:'T',objectif:'perte'};
-    const pose=(k,a)=>{S.dayMeals={};S.dayMeals[S.today]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:150,gluc:200,lip:60}}];X('__setBurn')({[S.today]:{steps:0,activities:[{name:'M',kcal:a}]}});};
-    pose(2338,161);let g=M();
-    eq(g.prevu,363,'2673 − 2310');eq(g.marge,133);eq(g.deficit,496);eq(g.etat,'couvert');
-    if(!/ton déficit tient \(≈ 496 kcal\)\./.test(vis(X('_htmlMarge')(S.today))))throw new Error(vis(X('_htmlMarge')(S.today)));
-    pose(2600,161);g=M();eq(g.marge,-129);eq(g.deficit,234);eq(g.etat,'serre');
-    if(!/Déficit serré : il en reste ≈ 234 kcal sur les 363 prévus par ta cible\./.test(vis(X('_htmlMarge')(S.today))))throw new Error(vis(X('_htmlMarge')(S.today)));
-    pose(3000,161);g=M();eq(g.deficit,-166);eq(g.etat,'depasse');
-    if(!/Plus de déficit aujourd'hui : ≈ 166 kcal de surplus\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('surplus');
-    pose(2000,161);if(!/Cible tenue et déficit au-delà du prévu : ≈ 834 kcal au lieu de 363, grâce à ton activité\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('bleu');
-    X("estimateTDEE=function(){return {ok:true,tdee:2200};}");pose(2338,161);g=M();
-    eq(g.prevu,0,'cible au-dessus de la depense : aucun deficit prevu');eq(g.deficit,133);
-    X("estimateTDEE=function(){return {ok:false};}");eq(M().prevu,550,'sans estimation : convention');
-  }finally{sb.__e=vrai;X('estimateTDEE=__e');}
-});
-t('un seul deficit de reference : la marge et le conseil du Bilan (TDEE − 550) partagent DEFICIT_PREVU',()=>{
-  eq(X('DEFICIT_PREVU'),550);
-  if(!/var rec=Math\.round\(\(t\.tdee-DEFICIT_PREVU\)\/10\)\*10;/.test(src))throw new Error('conseil du Bilan');
-  if(/MARGE_LARGE/.test(src))throw new Error('ancien seuil');
-});
 t('*** la cible du jour ne bouge pas en seche (decision du 25/09/2026) ***',()=>{
   jour(1880,400);eq(X('_cibleDuJour(S.today)'),2300);
   const r=X('calorieRing(1880,TARGETS.kcal,400)');if(vis(r).indexOf(' 420 kcal restantes')<0)throw new Error('anneau : '+vis(r));
-});
-t('*** prise de masse : bleu clair dans la cible du jour (cible + activite, ±10 %), trop / pas assez chiffres (demande de Liam, 13/10) ***',()=>{
-  const vrai=X('estimateTDEE');
-  try{
-    X("estimateTDEE=function(){return {ok:true,tdee:2900};}");   /* cible 3200 : surplus prevu 300 */
-    const pose=(k,a,obj,d)=>{d=d||S.today;X("TARGETS={kcal:3200,prot:175,gluc:400,lip:90};");S.profil={prenom:'T',objectif:obj||'prise'};S.dayMeals={};S.dayMeals[d]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:150,gluc:300,lip:80}}];X('__setBurn')(a?{[d]:{steps:0,activities:[{name:'M',kcal:a}]}}:{});};
-    /* cible du jour 3600 (3200 + 400), tolerance 360 */
-    pose(3650,400);let g=M();eq(g.ecart,50);eq(g.bilan,350);eq(g.etat,'atteinte');eq(g.couleur,'var(--sky)');
-    let h=vis(X('_htmlMarge')(S.today));
-    if(!/Marge du jour \+50 kcal/.test(h))throw new Error(h);
-    if(!/400 d'activité à compenser − 450 au-dessus de ta cible/.test(h))throw new Error('calcul : '+h);
-    if(!/Cible atteinte, activité compensée : ≈ 350 kcal de surplus \(prévu ≈ 300\)\./.test(h))throw new Error('etat : '+h);
-    pose(3000,400);g=M();eq(g.etat,'ok');eq(g.couleur,'var(--green)');
-    if(!/Encore 600 kcal à manger pour ta prise de masse \(ton activité y est comptée\)\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('en cours');
-    pose(4100,400);g=M();eq(g.etat,'trop');eq(g.couleur,'var(--orange)');
-    if(!/Un peu trop : 500 kcal au-dessus de ta cible et de ton activité, ≈ 800 kcal de surplus \(prévu ≈ 300\)\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('trop : '+vis(X('_htmlMarge')(S.today)));
-    pose(4400,400);g=M();eq(g.etat,'tropFort');eq(g.couleur,'var(--red)');
-    if(!/l'excès part surtout en gras\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('trop fort');
-    const hier=X('shiftDate(S.today,-1)');
-    pose(3000,400,'prise',hier);g=M(hier);eq(g.etat,'manque');eq(g.bilan,-300);
-    if(!/Pas assez ce jour-là : 600 kcal sous ta cible et ton activité, ≈ 300 kcal de déficit \(prévu ≈ 300\)\./.test(vis(X('_htmlMarge')(hier))))throw new Error('manque : '+vis(X('_htmlMarge')(hier)));
-    if(!/Marge du jour −600 kcal/.test(vis(X('_htmlMarge')(hier))))throw new Error('valeur signee');
-    if(!/200 kcal sous ta cible \+ 400 d'activité à compenser/.test(vis(X('_htmlMarge')(hier))))throw new Error('jour passe : pas de « restantes »');
-    pose(2800,400,'prise',hier);g=M(hier);eq(g.etat,'manqueFort');
-    if(!/sans surplus, pas de prise de masse\./.test(vis(X('_htmlMarge')(hier))))throw new Error('manque fort');
-    pose(3300,0,'prise',hier);g=M(hier);eq(g.etat,'atteinte','sans activite, jour passe : affiche');
-    if(!/^.*Cible atteinte : ≈ 400 kcal de surplus/.test(vis(X('_htmlMarge')(hier))))throw new Error('sans activite');
-    X("estimateTDEE=function(){return {ok:false};}");pose(3650,400);eq(M().prevu,291,'sans estimation : cible − cible/1,1');
-  }finally{sb.__e=vrai;X('estimateTDEE=__e');}
-});
-t('*** maintien : pile dedans en bleu clair, trop ou pas assez chiffres ***',()=>{
-  const vrai=X('estimateTDEE');
-  try{
-    X("estimateTDEE=function(){return {ok:true,tdee:2650};}");   /* cible 2600 : ecart prevu −50 */
-    const pose=(k,a,d)=>{d=d||S.today;X("TARGETS={kcal:2600,prot:150,gluc:300,lip:80};");S.profil={prenom:'T',objectif:'maintien'};S.dayMeals={};S.dayMeals[d]=[{rid:'x',name:'R',mult:1,macros:{kcal:k,prot:150,gluc:300,lip:80}}];X('__setBurn')(a?{[d]:{steps:0,activities:[{name:'M',kcal:a}]}}:{});};
-    /* cible du jour 3000, tolerance 300 */
-    pose(3000,400);let g=M();eq(g.etat,'atteinte');eq(g.bilan,-50);
-    if(!/Pile dans ton maintien, activité compensée : ≈ 50 kcal de déficit\./.test(vis(X('_htmlMarge')(S.today))))throw new Error(vis(X('_htmlMarge')(S.today)));
-    pose(3040,400);if(!/Pile dans ton maintien, activité compensée : à l'équilibre\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('equilibre');
-    pose(3400,400);eq(M().etat,'trop');if(!/Un peu trop : 400 kcal au-dessus de ta cible et de ton activité, ≈ 350 kcal de surplus\./.test(vis(X('_htmlMarge')(S.today))))throw new Error('trop');
-    pose(3700,400);eq(M().etat,'tropFort');
-    pose(2500,400);eq(M().etat,'ok','aujourd\'hui en dessous : encore a manger');
-    if(!/Encore 500 kcal à manger pour tenir ton maintien/.test(vis(X('_htmlMarge')(S.today))))throw new Error('ok');
-    const hier=X('shiftDate(S.today,-1)');
-    pose(2500,400,hier);eq(M(hier).etat,'manque');
-    pose(2300,400,hier);eq(M(hier).etat,'manqueFort');if(!/si ça se répète, tu perdras du poids\./.test(vis(X('_htmlMarge')(hier))))throw new Error('manque fort');
-  }finally{sb.__e=vrai;X('estimateTDEE=__e');}
-});
-t('le calendrier et la marge partagent la meme tolerance (TOL_CIBLE)',()=>{
-  eq(X('TOL_CIBLE'),0.1);
-  if(!/m\.kcal>cible\*\(1\+TOL_CIBLE\)/.test(src)||!/m\.kcal<cible\*\(1-TOL_CIBLE\)/.test(src))throw new Error('_etatJour');
 });
 t('*** rien sans activite enregistree (ni encadre, ni marge dans la barre) ***',()=>{
   jour(1880,0);eq(M(),null);eq(X('_htmlMarge')(S.today),'');
@@ -265,15 +237,15 @@ t('*** « Ça rentre » : plus aucune recette au-dessus du reste (5 % de toleran
 t('*** barre « Reste » collante : la marge, en couleur ***',()=>{
   jour(2550,400);X("S.mainTab='recipes';S.displayDate=S.today;");
   const b=X('_htmlBarreReste()');
-  if(!/marge <strong style="color:var\(--lime\);">150<\/strong>/.test(b))throw new Error(b);
+  if(!/marge <strong style="color:var\(--green\);">150<\/strong>/.test(b))throw new Error(b);
   jour(2800,400);if(!/marge <strong style="color:var\(--orange\);">−100<\/strong>/.test(X('_htmlBarreReste()')))throw new Error('serre');
   jour(3300,400);if(!/marge <strong style="color:var\(--red\);">−600<\/strong>/.test(X('_htmlBarreReste()')))throw new Error('depasse');
 });
 t('*** message apres une activite : la marge, sans reproche ***',()=>{
   jour(1880,400);let c=X('coachActivite(S.today)');
-  if(c.corps.indexOf('Marge du jour : 820 kcal, soit 420 restantes + 400 d\'activité. Cible tenue')<0)throw new Error(c.corps);
+  if(c.corps.indexOf('Marge du jour : 820 kcal, soit 420 restantes + 400 d\'activité. Pour l\'instant, belle marge')<0)throw new Error(c.corps);
   jour(2800,400);c=X('coachActivite(S.today)');
-  if(!/Ton activité ramène ton dépassement à 100 kcal : ton déficit tient encore \(≈ 450 kcal\)\.$/.test(c.corps))throw new Error(c.corps);
+  if(!/Ton activité ramène ton dépassement à 100 kcal\.$/.test(c.corps))throw new Error(c.corps);
   jour(3300,400);c=X('coachActivite(S.today)');
   if(!/Ton activité ramène ton dépassement à 600 kcal\.$/.test(c.corps))throw new Error(c.corps);
   eq(c.ton,'ok');if(/attention|trop/i.test(c.corps))throw new Error('reproche');
