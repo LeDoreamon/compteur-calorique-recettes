@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-18 10h38 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-18 23h56 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-18-1038"></script>
+<script src="catalogue.js?v=2026-10-18-2356"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-18-1038';
+const BUILD_ID='2026-10-18-2356';
 const NOUVEAUTES=[
+  {b:'2026-10-18-2356',points:[
+    'Copier un repas vers un autre jour (ou le refaire, ou le supprimer) retire et rend maintenant le stock comme la cuisson, même pour un article que tu as recréé depuis.'
+  ]},
   {b:'2026-10-18-1038',points:[]},
   {b:'2026-10-17-2130',points:[
     'La marge du jour se base maintenant uniquement sur ce que tu as noté et sur ton activité, sans estimation. Ses couleurs parlent aussi sans activité : bleu clair quand tu es bien sous ta cible, puis vert, vert-jaune, orange et rouge par paliers de 5 % de ta cible.',
@@ -4404,22 +4407,22 @@ function renderCardBottom(r){
   return`${renderDessert(r)}${rup1.length?`<div style="margin-top:8px;font-size:11px;color:var(--red);line-height:1.45;">Rupture — il te manque : ${rup1.join(', ')}</div><button data-action="cook-subst" data-rid="${r.id}" style="margin-top:8px;width:100%;padding:9px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">🔁 Cuisiner en remplaçant des ingrédients</button>`:''}<div style="display:flex;gap:8px;margin-top:12px;">${btn(r.id,1,c1,'1 portion','user')}${btn(r.id,2,c2,'Préparer pour 2','users')}</div>${_btnPortionPrise(r)}${missHtml}`;
 }
 
+// Copie, « refaire », suppression : le stock bouge comme a la cuisson (executeCook).
+// Meme recherche que la cuisson : identifiant, puis nom (resolveInv). Avant le 18/10/2026,
+// l'identifiant seul : un article recree depuis (nouvel identifiant, meme nom) n'etait
+// ni retire a la copie ni rendu a la suppression.
 function _mealStock(meal,sign){
   if(!meal)return;
-  const app=(id,qty)=>{
-    if(!id||!qty)return;
-    Object.values(S.inv).forEach(arr=>{
-      const it=(arr||[]).find(i=>i.id===id);
-      if(it&&it.qty!==null)it.qty=Math.max(0,Math.round((it.qty+sign*qty)*10)/10);
-    });
-  };
+  const bouge=(it,qty)=>{if(it&&it.qty!==null&&qty)it.qty=Math.max(0,Math.round((it.qty+sign*qty)*10)/10);};
+  const app=(id,qty,nom)=>{if(id&&qty)bouge(resolveInv(id,nom),qty);};
   const r=RCP.find(x=>x.id===meal.rid);
-  if(meal.ings&&meal.ings.length)meal.ings.forEach(g=>app(g.id,g.qty));
-  else if(r&&r.used&&r.used.length)r.used.forEach(g=>app(g.id,g.qty));
-  if(meal.extras&&meal.extras.length)meal.extras.forEach(g=>app(g.id,g.qty));
+  if(meal.ings&&meal.ings.length)meal.ings.forEach(g=>app(g.id,g.qty,g.n||g.name));
+  else if(r&&r.used&&r.used.length)r.used.forEach(g=>app(g.id,g.qty,g.n));
+  if(meal.extras&&meal.extras.length)meal.extras.forEach(g=>app(g.id,g.qty,g.name));
   if(meal.dessert&&meal.dessert!=='none'&&meal.dessert!=='autre'){
     const d=allDesserts().find(x=>x.id===meal.dessert);
-    if(d&&d.inv)app(d.inv,d.qty);
+    /* meme quantite qu'a la cuisson : 1 yaourt d'un article en grammes = le poids d'un pot */
+    if(d&&d.inv){const it=resolveInv(d.inv,d.n);if(it)bouge(it,dessertDeductQty(it,d));}
   }
 }
 function copyMealTo(dayKey,idx,target){
