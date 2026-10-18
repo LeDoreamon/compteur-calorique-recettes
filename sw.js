@@ -1,5 +1,5 @@
-// build 2026-10-18 10h38
-const CACHE='macros-2026-10-18-1038';
+// build 2026-10-18 23h56
+const CACHE='macros-2026-10-18-2356';
 // Reseau d'abord, mais pas indefiniment : sur une connexion faible, la copie
 // en cache est servie au bout de DELAI_RESEAU ms. La requete continue et met
 // le cache a jour pour le lancement suivant.
