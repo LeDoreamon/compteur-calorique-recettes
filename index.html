@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-17 21h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-18 10h38 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,13 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-17-2130"></script>
+<script src="catalogue.js?v=2026-10-18-1038"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-17-2130';
+const BUILD_ID='2026-10-18-1038';
 const NOUVEAUTES=[
+  {b:'2026-10-18-1038',points:[]},
   {b:'2026-10-17-2130',points:[
     'La marge du jour se base maintenant uniquement sur ce que tu as noté et sur ton activité, sans estimation. Ses couleurs parlent aussi sans activité : bleu clair quand tu es bien sous ta cible, puis vert, vert-jaune, orange et rouge par paliers de 5 % de ta cible.',
     'Nouveau dans le Bilan : la marge de la semaine, du lundi au dimanche, avec une barre par jour et, après quelques pesées, ton déficit réel estimé.'
@@ -8935,12 +8936,10 @@ function estEmail(s){return /^[^@\s]+@[^@\s]+\.[a-z]{2,}$/.test(_loginNorm(s));}
 function loginValide(s){return estEmail(s)||/^[a-z0-9][a-z0-9._-]{2,29}$/.test(_loginNorm(s));}
 // Adresse technique d'un identifiant simple. Domaine reserve par les normes
 // (RFC 2606/6761) : jamais attribuable, il ne recoit aucun courrier, donc personne
-// ne peut y lire un lien de reinitialisation. Avant le 11/10/2026 : dorayaki.app
-// (domaine qui pourrait etre achete par un tiers) ; ces comptes se connectent
-// toujours (essai sur l'ancien domaine) et migrent a la connexion si Firebase le permet.
-const DOMAINE_TECH='dorayaki.invalid',DOMAINE_TECH_ANCIEN='dorayaki.app';
+// ne peut y lire un lien de reinitialisation. L'ancien domaine (dorayaki.app, avant le
+// 11/10/2026) n'est plus essaye : plus aucun compte ne l'utilisait (verifie le 18/10/2026).
+const DOMAINE_TECH='dorayaki.invalid';
 function _emailDe(login){var l=_loginNorm(login);return estEmail(l)?l:(l+'@'+DOMAINE_TECH);}
-function _emailAncien(login){var l=_loginNorm(login);return estEmail(l)?null:(l+'@'+DOMAINE_TECH_ANCIEN);}
 function _msgErreurAuth(code){
   code=String(code||'');
   if(/EMAIL_EXISTS/.test(code))return 'Cet identifiant est déjà pris.';
@@ -8972,24 +8971,8 @@ async function _appelAuth(point,corps){
   return d;
 }
 async function connexion(login,mdp){
-  var d;
-  try{d=await _appelAuth('signInWithPassword',{email:_emailDe(login),password:String(mdp||''),returnSecureToken:true});}
-  catch(e){
-    var anc=_emailAncien(login);
-    if(!anc||!/INVALID_LOGIN_CREDENTIALS|EMAIL_NOT_FOUND|INVALID_PASSWORD/.test(String(e&&e.message)))throw e;
-    d=await _appelAuth('signInWithPassword',{email:anc,password:String(mdp||''),returnSecureToken:true});   /* compte cree avant le 11/10/2026 */
-    d=(await _migrerAdresseTech(d,login))||d;
-  }
+  var d=await _appelAuth('signInWithPassword',{email:_emailDe(login),password:String(mdp||''),returnSecureToken:true});
   return _poserSession(d,login);
-}
-// Connexion toute fraiche sur l'ancien domaine : on passe l'adresse sur le domaine
-// reserve. Firebase le refuse tant que la « protection contre l'enumeration des
-// adresses e-mail » est active : le compte reste utilisable, on reessaiera.
-async function _migrerAdresseTech(d,login){
-  try{
-    var r=await _appelAuth('update',{idToken:d.idToken,email:_emailDe(login),returnSecureToken:true});
-    return {localId:d.localId,idToken:r.idToken||d.idToken,refreshToken:r.refreshToken||d.refreshToken,expiresIn:r.expiresIn||d.expiresIn};
-  }catch(e){_noterErreur('compte','adresse technique non migree : '+(e&&e.message));return null;}
 }
 async function creerCompte(login,mdp){
   var d=await _appelAuth('signUp',{email:_emailDe(login),password:String(mdp||''),returnSecureToken:true});

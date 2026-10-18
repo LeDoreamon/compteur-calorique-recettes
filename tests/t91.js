@@ -32,38 +32,14 @@ t('compte recent : une seule tentative de connexion',async()=>{
   eq(appels.map(quoi).join(' '),'signInWithPassword(camille@dorayaki.invalid)');
   eq(JSON.parse(LS.dz_auth).uid,'N1');
 });
-t('*** compte d\'avant : connexion par l\'ancien domaine, puis adresse migree vers .invalid ***',async()=>{
-  vider();route=(u,m,b)=>{
-    if(/signInWithPassword/.test(u))return b.email==='bob@dorayaki.app'?rep(true,JET('OLD')):err('INVALID_LOGIN_CREDENTIALS');
-    if(/accounts:update/.test(u))return rep(true,{localId:'OLD',email:b.email,idToken:'tok_neuf',refreshToken:'rt_neuf',expiresIn:'3600'});
-    return rep(true,null);};
-  await X('connexion')('bob','secret1');
-  eq(appels.map(quoi).join(' '),'signInWithPassword(bob@dorayaki.invalid) signInWithPassword(bob@dorayaki.app) update(bob@dorayaki.invalid)');
-  eq(appels[2].b.idToken,'tok_OLD','migration avec le jeton tout frais');
-  const s=JSON.parse(LS.dz_auth);eq(s.uid,'OLD');eq(s.rtok,'rt_neuf','jeton renouvele apres le changement d\'adresse');eq(s.login,'bob');
-});
-t('*** Firebase refuse la migration (protection contre l\'enumeration) : la connexion marche quand meme, c\'est note ***',async()=>{
-  vider();route=(u,m,b)=>{
-    if(/signInWithPassword/.test(u))return b.email==='bob@dorayaki.app'?rep(true,JET('OLD')):err('INVALID_LOGIN_CREDENTIALS');
-    if(/accounts:update/.test(u))return err('OPERATION_NOT_ALLOWED : Please verify the new email before changing email.');
-    return rep(true,null);};
-  await X('connexion')('bob','secret1');
-  eq(JSON.parse(LS.dz_auth).uid,'OLD');
-  if(!/adresse technique non migree/.test(LS.dz_journal||''))throw new Error('refus non note au journal');
-});
-t('mauvais mot de passe : deux essais, erreur claire, aucune session',async()=>{
+t('*** plus d\'essai sur l\'ancien domaine (aucun compte en dorayaki.app, 18/10/2026) : un mauvais mot de passe = une seule tentative ***',async()=>{
   vider();route=()=>err('INVALID_LOGIN_CREDENTIALS');
   let m='';try{await X('connexion')('bob','faux');}catch(e){m=e.message;}
-  eq(m,'INVALID_LOGIN_CREDENTIALS');eq(appels.length,2);
+  eq(m,'INVALID_LOGIN_CREDENTIALS');eq(appels.map(quoi).join(' '),'signInWithPassword(bob@dorayaki.invalid)');
   if(LS.dz_auth)throw new Error('session posee');
-});
-t('vraie adresse e-mail ou trop de tentatives : pas de second essai',async()=>{
-  vider();route=()=>err('INVALID_LOGIN_CREDENTIALS');
-  try{await X('connexion')('bob@mail.fr','faux');}catch(e){}
-  eq(appels.length,1,'e-mail');
-  appels=[];route=()=>err('TOO_MANY_ATTEMPTS_TRY_LATER');
-  try{await X('connexion')('bob','faux');}catch(e){}
-  eq(appels.length,1,'trop de tentatives');
+  appels=[];try{await X('connexion')('bob@mail.fr','faux');}catch(e){}
+  eq(appels.map(quoi).join(' '),'signInWithPassword(bob@mail.fr)','vraie adresse');
+  if(/['"]dorayaki\.app['"]|DOMAINE_TECH_ANCIEN|_emailAncien|_migrerAdresseTech/.test(src))throw new Error('ancien domaine encore dans le code');
 });
 t('changer d\'identifiant vise le domaine reserve',async()=>{
   vider();session('N1','camille');X("_fbTok='tok';_fbTokExp=Date.now()+3600e3;");
