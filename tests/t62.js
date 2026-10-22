@@ -46,7 +46,7 @@ t('*** avec un TDEE : deficit moyen estime et perte hebdomadaire ***',()=>{
   const td=X('estimateTDEE()');if(!td.ok)throw new Error('TDEE indisponible : '+td.reason);
   const h=X('renderCoachSummary()');
   if(h.indexOf('Déficit/j')<0)throw new Error('tuile deficit');
-  if(!/Ce déficit moyen \(\d+ kcal\/j\) représente ~0,\d+ kg par semaine/.test(h))throw new Error((h.match(/Ce déficit[^<]*/)||['phrase absente'])[0]);
+  if(!/Ce déficit moyen estimé \(\d+ kcal\/j\) représente ~0,\d+ kg par semaine/.test(h))throw new Error((h.match(/Ce déficit[^<]*/)||['phrase absente'])[0]);
   if(/Moy\. 7 j/.test(h))throw new Error('moyenne 7 j en double avec le pilotage');
 });
 t('fibres : moyenne dans le point du coach, remarque en fin de journee',()=>{

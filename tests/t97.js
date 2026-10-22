@@ -124,7 +124,7 @@ t('*** carte du Bilan : cumul, moyenne, 7 barres, deficit reel estime selon les 
   if(!/Semaine tout juste dans ta cible\. \(≈ 50 kcal de marge par jour\)/.test(v))throw new Error('phrase : '+v);
   eq((h.match(/margin-top:3px;">[LMJVSD]</g)||[]).length,7,'7 jours');
   if(h.indexOf('border:1px dashed')<0)throw new Error('jour en cours non distingue');
-  if(!/Déficit réel estimé \(selon tes pesées\) : ≈ 423 kcal\/jour ?, soit ≈ 0,38 kg par semaine/.test(v))throw new Error('deficit reel : '+v);
+  if(!/Déficit réel estimé cette semaine \(selon tes pesées\) : ≈ 423 kcal\/jour ?, soit ≈ 0,38 kg par semaine/.test(v))throw new Error('deficit reel : '+v);
   X("estimateTDEE=function(){return {ok:false};}");if(/réel estimé/.test(X('renderMargeSemaine()')))throw new Error('ligne sans estimation');
   if(src.indexOf('renderBilanSemaine()+renderMargeSemaine()+renderCoachSummary()')<0)throw new Error('pas dans le Bilan');
 }));

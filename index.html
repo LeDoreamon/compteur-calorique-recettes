@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-18 23h56 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-22 12h53 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-18-2356"></script>
+<script src="catalogue.js?v=2026-10-22-1253"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-18-2356';
+const BUILD_ID='2026-10-22-1253';
 const NOUVEAUTES=[
+  {b:'2026-10-22-1253',points:[
+    'Bilan : le point du coach et la tuile des calories suivent la même règle (5 % autour de ta cible), et chaque déficit affiché dit sur quelle période il est calculé.'
+  ]},
   {b:'2026-10-18-2356',points:[
     'Copier un repas vers un autre jour (ou le refaire, ou le supprimer) retire et rend maintenant le stock comme la cuisson, même pour un article que tu as recréé depuis.'
   ]},
@@ -5742,6 +5745,15 @@ function renderBurnBlock(){
       +'</div>';
   }catch(e){return '';}
 }
+// Moyenne de calories face a la cible : une seule regle pour la phrase du coach et la
+// tuile « Calories/j » du pilotage, au palier de la marge (MARGE_PALIER, 5 % de la cible).
+// Seche : en dessous, c'est le deficit ; prise : au-dessus, c'est le surplus voulu.
+function _moyenneDansCible(moy,obj){
+  var t=TARGETS.kcal,pal=Math.round(t*MARGE_PALIER),ec=Math.round(moy)-t;
+  if(obj==='prise')return ec>=-pal;
+  if(obj==='maintien')return Math.abs(ec)<=pal;
+  return ec<=pal;
+}
 function renderCoachSummary(){
   try{
     var T=TARGETS,bulk=_enPriseDeMasse();
@@ -5766,18 +5778,20 @@ function renderCoachSummary(){
         +'<div style="font-size:11px;color:var(--text3);">'+unit+'</div></div>';
     };
     // phrase du coach, croisant alimentation ET depense
-    var phrase,col;
+    var phrase,col,sur='Sur '+n+' jour'+(n>1?'s':'')+', moyenne de '+mk+' kcal',pal=Math.round(T.kcal*MARGE_PALIER);
     if(!n){phrase='Pas encore de journée complète cette semaine (hors aujourd\'hui) : logue tes repas en entier pour voir ta moyenne.';col='var(--text3)';}
     else if(bulk){
-      if(mk>=T.kcal-100){phrase='Tu tiens ton surplus : '+mk+' kcal en moyenne sur '+n+' jour'+(n>1?'s':'')+'. C\'est là que la masse se construit.';col='var(--green)';}
-      else{phrase='Moyenne à '+mk+' kcal, soit '+(T.kcal-mk)+' de moins que ta cible. Sur la semaine, ça freine la prise.';col='var(--warn)';}
+      if(_moyenneDansCible(mk,'prise')){phrase='Tu tiens ton surplus : '+mk+' kcal en moyenne sur '+n+' jour'+(n>1?'s':'')+'. C\'est là que la masse se construit.';col='var(--green)';}
+      else{phrase=sur+' : '+(T.kcal-mk)+' sous ta cible. Sur la semaine, ça freine la prise.';col='var(--warn)';}
       if(mp<T.prot*0.9)phrase+=' Tes protéines aussi sont courtes ('+mp+' g/jour).';
     }else{
+      /* meme regle que la tuile « Calories/j » du pilotage (_moyenneDansCible, 5 % comme la marge) :
+         avant, ±120 ici et +60 la-bas (« pile sur ta cible » en vert au-dessus d'un 2430 orange) */
       var ec=mk-T.kcal;
-      if(Math.abs(ec)<=120){phrase='Moyenne à '+mk+' kcal, pile sur ta cible. '+(obj==='maintien'?'C\'est ce qui stabilise ton poids.':'C\'est la régularité qui fait la différence, et tu l\'as.');col='var(--green)';}
-      else if(ec>0){phrase='Moyenne à '+mk+' kcal, soit +'+ec+' par jour. Sur une semaine ça fait '+Math.round(ec*7/10)*10+' kcal de surplus — resserre un peu.';col='var(--warn)';}   /* ec*7 : l'ancienne formule affichait 1400 pour 1050 */
-      else if(obj==='maintien'){phrase='Moyenne à '+mk+' kcal, '+(-ec)+' sous ta cible. Pour un maintien, remonte un peu : sinon tu perdras du poids.';col='var(--warn)';}
-      else{phrase='Moyenne à '+mk+' kcal, '+(-ec)+' sous ta cible. Le déficit est là ; veille juste à ne pas creuser trop vite.';col='var(--green)';}
+      if(Math.abs(ec)<=pal){phrase=sur+' : dans ta cible. '+(obj==='maintien'?'C\'est ce qui stabilise ton poids.':'C\'est la régularité qui fait la différence, et tu l\'as.');col='var(--green)';}
+      else if(ec>0){phrase=sur+' : '+ec+' au-dessus de ta cible chaque jour (≈ '+Math.round(ec*7/10)*10+' kcal sur une semaine). Resserre un peu.';col='var(--warn)';}   /* « au-dessus de ta cible », pas « surplus » : le deficit reel peut tenir (ligne suivante) */
+      else if(obj==='maintien'){phrase=sur+' : '+(-ec)+' sous ta cible. Pour un maintien, remonte un peu : sinon tu perdras du poids.';col='var(--warn)';}
+      else{phrase=sur+' : '+(-ec)+' sous ta cible. Le déficit est là ; veille juste à ne pas creuser trop vite.';col='var(--green)';}
       if(mp<T.prot*0.9)phrase+=' Attention aux protéines : '+mp+' g/jour en moyenne pour '+T.prot+' visés.';
       else phrase+=' Protéines tenues à '+mp+' g/jour, c\'est ce qui protège ton muscle.';
     }
@@ -5788,7 +5802,7 @@ function renderCoachSummary(){
     var ecartTdee=(_td&&_td.ok&&n)?Math.round(_td.tdee-mk):null;
     if(ecartTdee!==null&&Math.abs(ecartTdee)>=50){
       var kgSem=Math.abs(ecartTdee)*7/7700;
-      phrase+=' Ce '+(ecartTdee>0?'déficit':'surplus')+' moyen ('+Math.abs(ecartTdee)+' kcal/j) représente ~'+kgSem.toFixed(2).replace('.',',')+' kg par semaine.';   /* la depense reelle est detaillee plus bas, pas repetee ici */
+      phrase+=' Ce '+(ecartTdee>0?'déficit':'surplus')+' moyen estimé ('+Math.abs(ecartTdee)+' kcal/j) représente ~'+kgSem.toFixed(2).replace('.',',')+' kg par semaine.';   /* la depense reelle est detaillee plus bas, pas repetee ici */
     }
     if(nf>=3){var mf=Math.round(sf/nf);phrase+=' Fibres : ~'+mf+' g/jour'+(mf<25?' (repère 30 g).':'.');}
 
@@ -5799,7 +5813,7 @@ function renderCoachSummary(){
       +tuile('Dépensé',brule||'—','kcal',brule?'var(--orange)':'var(--text3)')
       +tuile('Reste',Math.max(0,Math.round(_cibleDuJour(S.today)-m.kcal)),'kcal','var(--text)')
       +(ecartTdee!==null
-        ?tuile(ecartTdee>=0?'Déficit/jour':'Surplus/jour',Math.abs(ecartTdee),'kcal (est.)',((obj==='prise')?ecartTdee<0:(obj==='perte'?ecartTdee>0:Math.abs(ecartTdee)<150))?'var(--green)':'var(--text2)')
+        ?tuile(ecartTdee>=0?'Déficit/jour':'Surplus/jour',Math.abs(ecartTdee),'kcal · '+n+' j',((obj==='prise')?ecartTdee<0:(obj==='perte'?ecartTdee>0:Math.abs(ecartTdee)<150))?'var(--green)':'var(--text2)')
         :'')   /* la moyenne 7 j est dans le pilotage, juste dessous */
       +'</div>'
       +'<div style="font-size:11.5px;color:var(--text2);line-height:1.55;">'+phrase+'</div>'
@@ -5883,7 +5897,7 @@ function renderMargeSemaine(){
   if(td&&td.ok&&td.tdee>0){
     var d=Math.round(td.tdee-r.kcalMoy),kg=(Math.abs(d)*7/7700).toFixed(2).replace('.',',');
     reel='<div style="font-size:11px;color:var(--text3);margin-top:9px;padding-top:8px;border-top:0.5px solid var(--border);line-height:1.45;">'
-      +(d>=0?'Déficit':'Surplus')+' réel estimé (selon tes pesées) : <strong style="color:var(--text2);">≈ '+Math.abs(d)+' kcal/jour</strong>, soit ≈ '+kg+' kg par semaine'
+      +(d>=0?'Déficit':'Surplus')+' réel estimé cette semaine (selon tes pesées) : <strong style="color:var(--text2);">≈ '+Math.abs(d)+' kcal/jour</strong>, soit ≈ '+kg+' kg par semaine'
       +' (dépense estimée '+td.tdee+' kcal/jour, activité habituelle comprise).</div>';
   }
   return '<div id="marge-semaine" style="background:var(--bg2);border:0.5px solid var(--border);border-left:3px solid '+col+';border-radius:12px;padding:13px;margin-bottom:16px;">'
@@ -5937,7 +5951,7 @@ function renderCockpit(){
   } else {
     var dW=null;var arr=(S.weights||[]).slice().sort(function(a,b){return a.d<b.d?-1:1;});
     if(arr.length){var a7=_wAgo(arr,7);var last=arr[arr.length-1];if(a7&&a7.off<=4&&a7.x.d!==last.d)dW=last.w-a7.x.w;}
-    var calCol=avg.kcal<=TARGETS.kcal+60?'var(--green)':'var(--orange)';
+    var calCol=_moyenneDansCible(avg.kcal,_o)?'var(--green)':'var(--orange)';
     html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:10px;">'+
           '<div style="font-size:11px;color:var(--text3);margin-bottom:9px;">Moyenne sur '+avg.days+' jour'+(avg.days>1?'s':'')+' complet'+(avg.days>1?'s':'')+' (hors aujourd\'hui)</div>'+
           '<div style="display:flex;gap:8px;">'+
