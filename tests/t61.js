@@ -21,10 +21,11 @@ t('sans profil : le poids cible tranche, sinon seche',()=>{
 });
 
 console.log('\n=== XIB. Point du coach ===');
-t('*** surplus hebdomadaire : +150 kcal/j = 1050 kcal, pas 1400 ***',()=>{
+t('*** au-dessus de la cible : +150 kcal/j = 1050 kcal sur la semaine (pas 1400), sans parler de « surplus » ***',()=>{
   prepa('perte');for(let i=1;i<=7;i++)X("S.dayMeals[shiftDate(S.today,-"+i+")]="+repas(2150)+";");
   const h=X('renderCoachSummary()');
-  if(h.indexOf('1050 kcal de surplus')<0)throw new Error(h.match(/ça fait [^<]*/)+'');
+  if(h.indexOf('Sur 7 jours, moyenne de 2150 kcal : 150 au-dessus de ta cible chaque jour (≈ 1050 kcal sur une semaine). Resserre un peu.')<0)throw new Error(h.match(/Sur \d+ jours[^<]*/)+'');
+  if(/surplus/.test(h))throw new Error('« surplus » alors que ce n\'en est pas un');
 });
 t('*** moyenne 7 j : ni aujourd\'hui, ni journees incompletes, comme le pilotage ***',()=>{
   prepa('perte');
@@ -32,7 +33,7 @@ t('*** moyenne 7 j : ni aujourd\'hui, ni journees incompletes, comme le pilotage
   X("S.dayMeals[shiftDate(S.today,-1)]="+repas(2000)+";S.dayMeals[shiftDate(S.today,-2)]="+repas(2100)+";");
   X("S.dayMeals[shiftDate(S.today,-3)]="+repas(400)+";");                  // saisie partielle
   const h=X('renderCoachSummary()');
-  if(h.indexOf('Moyenne à 2050 kcal')<0)throw new Error('coach : '+(h.match(/Moyenne à \d+/)||[''])[0]);
+  if(h.indexOf('Sur 2 jours, moyenne de 2050 kcal')<0)throw new Error('coach : '+(h.match(/Sur \d+ jours?, moyenne de \d+/)||[''])[0]);
   eq(Math.round(X('avgMacrosOverDays(7).kcal')),2050,'pilotage');
   if(h.indexOf('sur 2 (7 jours précédents')<0)throw new Error('decompte proteines');
 });
@@ -46,6 +47,46 @@ t('titre du pilotage selon l\'objectif',()=>{
   if(X('renderCockpit()').indexOf('Pilotage du maintien')<0)throw new Error('maintien');
   prepa('perte');X("S.dayMeals[shiftDate(S.today,-1)]="+repas(2000)+";");
   if(X('renderCockpit()').indexOf('Pilotage de la sèche')<0)throw new Error('seche');
+});
+
+/* phrase du coach et tuile « Calories/j » du pilotage : une seule regle (5 % de la cible, 18/10/2026) */
+const coherence=(obj,cible,k)=>{
+  prepa(obj);X("TARGETS={kcal:"+cible+",prot:175,gluc:208,lip:80};");
+  for(let i=1;i<=7;i++)X("S.dayMeals[shiftDate(S.today,-"+i+")]="+repas(k)+";");
+  const coach=X('renderCoachSummary()'),tuile=(X('renderCockpit()').match(/Calories\/j<\/div><div style="[^"]*color:([^;]+);/)||[])[1];
+  return {coach,tuile,vert:/border-left:3px solid var\(--green\)/.test(coach)};
+};
+t('*** cas de Liam : 2430 pour 2310 (+120, palier 116) = au-dessus partout, plus de « pile sur ta cible » en vert au-dessus d\'une tuile orange ***',()=>{
+  const r=coherence('perte',2310,2430);
+  eq(r.tuile,'var(--orange)','tuile');eq(r.vert,false,'bordure du coach');
+  if(r.coach.indexOf('Sur 7 jours, moyenne de 2430 kcal : 120 au-dessus de ta cible chaque jour')<0)throw new Error(r.coach.match(/Sur 7[^<]*/)+'');
+  if(/pile sur ta cible|surplus/.test(r.coach))throw new Error('ancien libelle');
+});
+t('*** 2420 pour 2310 (+110, sous le palier) : dans ta cible partout ***',()=>{
+  const r=coherence('perte',2310,2420);eq(r.tuile,'var(--green)');eq(r.vert,true);
+  if(r.coach.indexOf('Sur 7 jours, moyenne de 2420 kcal : dans ta cible.')<0)throw new Error(r.coach.match(/Sur 7[^<]*/)+'');
+});
+t('seche bien en dessous : vert partout (le deficit est la)',()=>{
+  const r=coherence('perte',2310,1900);eq(r.tuile,'var(--green)');eq(r.vert,true);
+});
+t('prise de masse (palier 160 pour 3200) : 3050 tenu, 3000 trop court, au-dessus toujours bon',()=>{
+  let r=coherence('prise',3200,3050);eq(r.tuile,'var(--green)','3050');eq(r.vert,true,'3050 coach');
+  r=coherence('prise',3200,3000);eq(r.tuile,'var(--orange)','3000');eq(r.vert,false,'3000 coach');
+  r=coherence('prise',3200,3600);eq(r.tuile,'var(--green)','3600 : la tuile ne punit plus un surplus voulu');
+});
+t('maintien (palier 130 pour 2600) : ±130 dans la cible, au-dela de chaque cote = orange',()=>{
+  let r=coherence('maintien',2600,2700);eq(r.tuile,'var(--green)');eq(r.vert,true);
+  r=coherence('maintien',2600,2750);eq(r.tuile,'var(--orange)');eq(r.vert,false);
+  r=coherence('maintien',2600,2450);eq(r.tuile,'var(--orange)');eq(r.vert,false);
+});
+t('la tuile « Déficit/jour » du coach dit sa periode (7 j), la carte de la semaine dit « cette semaine »',()=>{
+  prepa('perte');X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");
+  for(let i=1;i<=7;i++)X("S.dayMeals[shiftDate(S.today,-"+i+")]="+repas(2430)+";");
+  const vrai=X('estimateTDEE');X("estimateTDEE=function(){return {ok:true,tdee:2787};}");
+  try{const h=X('renderCoachSummary()');
+    if(!/Déficit\/jour<\/div><div[^>]*>357<\/div><div[^>]*>kcal · 7 j</.test(h))throw new Error('tuile : '+(h.match(/Déficit\/jour.{0,200}/)||[''])[0]);
+    if(h.indexOf('Ce déficit moyen estimé (357 kcal/j)')<0)throw new Error('phrase');
+  }finally{sb.__e=vrai;X('estimateTDEE=__e');}
 });
 
 console.log('\n=== XIC. Conseils TDEE selon l\'objectif ===');
