@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-22 12h53 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-24 13h01 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-22-1253"></script>
+<script src="catalogue.js?v=2026-10-24-1301"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-22-1253';
+const BUILD_ID='2026-10-24-1301';
 const NOUVEAUTES=[
+  {b:'2026-10-24-1301',points:[
+    'Bilan : la tuile des protéines passe en orange quand le coach te signale des protéines courtes, et les poids s’affichent à la française (102,8 kg).'
+  ]},
   {b:'2026-10-22-1253',points:[
     'Bilan : le point du coach et la tuile des calories suivent la même règle (5 % autour de ta cible), et chaque déficit affiché dit sur quelle période il est calculé.'
   ]},
@@ -5280,7 +5283,10 @@ function deleteShopItem(){
 // ─── SUIVI DU POIDS ─────────────────────────────────────────────────────────
 function _wMA(arr,idx,days){var endT=new Date(arr[idx].d).getTime();var startT=endT-(days-1)*864e5;var s=0,n=0;for(var j=0;j<=idx;j++){var t=new Date(arr[j].d).getTime();if(t>=startT&&t<=endT){s+=arr[j].w;n++;}}return n?s/n:arr[idx].w;}
 function _wAgo(arr,days){if(!arr.length)return null;var tgt=new Date(arr[arr.length-1].d).getTime()-days*864e5;var best=null,bd=1e18;arr.forEach(function(x){var dd=Math.abs(new Date(x.d).getTime()-tgt);if(dd<bd){bd=dd;best=x;}});return{x:best,off:Math.round(bd/864e5)};}
-function _fmtKg(v){return (v>0?'+':'')+v.toFixed(1)+' kg';}
+/* chiffres a virgule a l'ecran (« 102,8 kg », comme « 0,93 kg » de la marge) ; jamais pour un champ de saisie ou un export */
+function _virg(v,n){return (+v).toFixed(n).replace('.',',');}
+function _signe(v){return v>0?'+':(v<0?'−':'');}
+function _fmtKg(v){return _signe(v)+_virg(Math.abs(v),1)+' kg';}
 function _wDateLabel(d){var p=(d||'').split('-');return p.length===3?p[2]+'/'+p[1]:d;}
 function addWeight(){var el=document.getElementById('weight-input');if(!el)return;var w=parseFloat((el.value||'').replace(',','.'));if(!w||w<30||w>400){el.style.borderColor='var(--red)';el.focus();return;}S.weights=S.weights||[];var i=S.weights.findIndex(function(x){return x.d===S.today;});if(i>=0)S.weights[i].w=w;else S.weights.push({d:S.today,w:w});S.weights.sort(function(a,b){return a.d<b.d?-1:1;});saveState();render();}
 function delWeight(d){_confirmer('Supprimer la pesée du '+_wDateLabel(d)+' ?',{ok:'Supprimer',danger:true}).then(function(ok){if(!ok)return;S.weights=(S.weights||[]).filter(function(x){return x.d!==d;});saveState();render();});}
@@ -5297,8 +5303,8 @@ function weightChartSVG(arr){
   var rawPts=arr.map(function(x){return X(x.d).toFixed(1)+','+Y(x.w).toFixed(1);});
   var maPts=arr.map(function(x,i){return X(x.d).toFixed(1)+','+Y(_wMA(arr,i,7)).toFixed(1);});
   var dots=arr.map(function(x){return '<circle cx="'+X(x.d).toFixed(1)+'" cy="'+Y(x.w).toFixed(1)+'" r="2.3" fill="rgba(140,151,171,.7)"/>';}).join('');
-  var yLabels='<text x="'+(mL-5)+'" y="'+(Y(wmax)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+wmax.toFixed(1)+'</text>'+
-              '<text x="'+(mL-5)+'" y="'+(Y(wmin)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+wmin.toFixed(1)+'</text>';
+  var yLabels='<text x="'+(mL-5)+'" y="'+(Y(wmax)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+_virg(wmax,1)+'</text>'+
+              '<text x="'+(mL-5)+'" y="'+(Y(wmin)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+_virg(wmin,1)+'</text>';
   var xLabels='<text x="'+mL+'" y="'+(H-6)+'" text-anchor="start" font-size="9" fill="var(--text3)">'+_wDateLabel(arr[0].d)+'</text>'+
               '<text x="'+(W-mR)+'" y="'+(H-6)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+_wDateLabel(arr[arr.length-1].d)+'</text>';
   return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block;">'+
@@ -5523,7 +5529,7 @@ function renderWeightHTML(){
         '</div></div>';
   if(!arr.length){html+='<div style="text-align:center;color:var(--text3);font-size:13px;padding:8px 0 4px;">Pèse-toi pour démarrer le suivi 📈</div></div>';return html;}
   html+='<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;">'+
-        '<span style="font-size:32px;font-weight:700;color:var(--text);">'+cur.toFixed(1)+'</span>'+
+        '<span style="font-size:32px;font-weight:700;color:var(--text);">'+_virg(cur,1)+'</span>'+
         '<span style="font-size:14px;color:var(--text3);">kg</span><span style="flex:1;"></span>'+
         '<span style="font-size:11px;color:var(--text3);">le '+_wDateLabel(last.d)+'</span></div>';
   var chips=[chip('Dernière pesée',dPrev),chip('7 jours',d7),chip('30 jours',d30)].filter(Boolean).join('');
@@ -5533,7 +5539,7 @@ function renderWeightHTML(){
         weightChartSVG(arr)+'</div>';
   var recent=arr.slice(-12).reverse();
   html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Historique</div>';
-  recent.forEach(function(x){html+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:9px;margin-bottom:6px;"><span style="flex:1;font-size:13px;color:var(--text2);">'+_wDateLabel(x.d)+'</span><span style="font-size:14px;font-weight:600;color:var(--text);">'+x.w.toFixed(1)+' kg</span><button onclick="delWeight(\''+x.d+'\')" style="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:0 2px;">🗑</button></div>';});
+  recent.forEach(function(x){html+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:9px;margin-bottom:6px;"><span style="flex:1;font-size:13px;color:var(--text2);">'+_wDateLabel(x.d)+'</span><span style="font-size:14px;font-weight:600;color:var(--text);">'+_virg(x.w,1)+' kg</span><button onclick="delWeight(\''+x.d+'\')" style="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:0 2px;">🗑</button></div>';});
   html+='</div>';
   return html;
 }
@@ -5650,7 +5656,7 @@ function renderTDEEBlock(t){
     return '<div style="background:var(--bg2);border:0.5px dashed var(--border);border-radius:12px;padding:14px;font-size:12px;color:var(--text3);line-height:1.5;"><strong style="color:var(--text2);">⚙ Dépense réelle estimée</strong><br>'+msg+'.</div>';
   }
   var rec=Math.round((t.tdee-DEFICIT_PREVU)/10)*10;
-  var perWeekTxt=(t.perWeek>0?'−':'+')+Math.abs(t.perWeek).toFixed(2)+' kg/sem';
+  var perWeekTxt=(t.perWeek>0?'−':'+')+_virg(Math.abs(t.perWeek),2)+' kg/sem';
   var tip;
   // rec = TDEE − 550 : environ −0,5 kg par semaine. Le conseil ne l'annonce que
   // s'il est sous la cible actuelle ; sinon, c'est l'ecart a la cible qui freine.
@@ -5682,7 +5688,7 @@ function renderTDEEBlock(t){
   return '<div style="background:linear-gradient(135deg,rgba(192,87,70,.13),rgba(99,102,241,.05));border:0.5px solid rgba(192,87,70,.35);border-radius:12px;padding:14px;">'+
     '<div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">Dépense réelle estimée</div>'+
     '<div style="display:flex;align-items:baseline;gap:8px;"><span style="font-size:27px;font-weight:700;color:var(--text);">'+t.tdee+'</span><span style="font-size:12px;color:var(--text3);">kcal/j</span></div>'+
-    '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+(t.days+1)+' j : ~'+t.avgCal+' kcal/j sur '+t.logs+' journée'+(t.logs>1?'s':'')+' complète'+(t.logs>1?'s':'')+' · '+perWeekTxt+'</div>'+
+    '<div style="font-size:11px;color:var(--text3);margin-top:4px;">Sur '+(t.days+1)+' jours : ~'+t.avgCal+' kcal/j mangées en moyenne ('+t.logs+' journée'+(t.logs>1?'s':'')+' complète'+(t.logs>1?'s':'')+'), poids '+perWeekTxt+'</div>'+
     ((t.ecartes&&t.ecartes.length)?'<div style="font-size:11px;color:var(--gold);margin-top:5px;line-height:1.4;">'+t.ecartes.length+' journée'+(t.ecartes.length>1?'s':'')+' écartée'+(t.ecartes.length>1?'s':'')+' (sous '+t.seuil+' kcal, saisie probablement incomplète) : '+t.ecartes.slice(0,6).join(', ')+(t.ecartes.length>6?'…':'')+'</div>':'')+
     '<div style="font-size:12px;color:var(--accent2);margin-top:9px;line-height:1.45;">💡 '+tip+'</div>'+
     // Conseil chiffre : on peut l'appliquer d'un geste (cible modifiable ensuite dans le profil)
@@ -5748,6 +5754,9 @@ function renderBurnBlock(){
 // Moyenne de calories face a la cible : une seule regle pour la phrase du coach et la
 // tuile « Calories/j » du pilotage, au palier de la marge (MARGE_PALIER, 5 % de la cible).
 // Seche : en dessous, c'est le deficit ; prise : au-dessus, c'est le surplus voulu.
+/* Moyenne de proteines : « Attention aux protéines » du coach et couleur de la tuile du pilotage (90 % de la cible ;
+   un jour « atteint », lui, reste _protOk a 95 %). Avant le 24/10/2026, tuile toujours verte. */
+function _protMoyOk(moy){return Math.round(moy)>=(TARGETS.prot||0)*0.9;}
 function _moyenneDansCible(moy,obj){
   var t=TARGETS.kcal,pal=Math.round(t*MARGE_PALIER),ec=Math.round(moy)-t;
   if(obj==='prise')return ec>=-pal;
@@ -5783,7 +5792,7 @@ function renderCoachSummary(){
     else if(bulk){
       if(_moyenneDansCible(mk,'prise')){phrase='Tu tiens ton surplus : '+mk+' kcal en moyenne sur '+n+' jour'+(n>1?'s':'')+'. C\'est là que la masse se construit.';col='var(--green)';}
       else{phrase=sur+' : '+(T.kcal-mk)+' sous ta cible. Sur la semaine, ça freine la prise.';col='var(--warn)';}
-      if(mp<T.prot*0.9)phrase+=' Tes protéines aussi sont courtes ('+mp+' g/jour).';
+      if(!_protMoyOk(mp))phrase+=' Tes protéines aussi sont courtes ('+mp+' g/jour).';
     }else{
       /* meme regle que la tuile « Calories/j » du pilotage (_moyenneDansCible, 5 % comme la marge) :
          avant, ±120 ici et +60 la-bas (« pile sur ta cible » en vert au-dessus d'un 2430 orange) */
@@ -5792,7 +5801,7 @@ function renderCoachSummary(){
       else if(ec>0){phrase=sur+' : '+ec+' au-dessus de ta cible chaque jour (≈ '+Math.round(ec*7/10)*10+' kcal sur une semaine). Resserre un peu.';col='var(--warn)';}   /* « au-dessus de ta cible », pas « surplus » : le deficit reel peut tenir (ligne suivante) */
       else if(obj==='maintien'){phrase=sur+' : '+(-ec)+' sous ta cible. Pour un maintien, remonte un peu : sinon tu perdras du poids.';col='var(--warn)';}
       else{phrase=sur+' : '+(-ec)+' sous ta cible. Le déficit est là ; veille juste à ne pas creuser trop vite.';col='var(--green)';}
-      if(mp<T.prot*0.9)phrase+=' Attention aux protéines : '+mp+' g/jour en moyenne pour '+T.prot+' visés.';
+      if(!_protMoyOk(mp))phrase+=' Attention aux protéines : '+mp+' g/jour en moyenne pour '+T.prot+' visés.';
       else phrase+=' Protéines tenues à '+mp+' g/jour, c\'est ce qui protège ton muscle.';
     }
     // Ecart moyen a la depense reelle (TDEE, activite habituelle comprise) :
@@ -5956,8 +5965,8 @@ function renderCockpit(){
           '<div style="font-size:11px;color:var(--text3);margin-bottom:9px;">Moyenne sur '+avg.days+' jour'+(avg.days>1?'s':'')+' complet'+(avg.days>1?'s':'')+' (hors aujourd\'hui)</div>'+
           '<div style="display:flex;gap:8px;">'+
           _statBox('Calories/j',Math.round(avg.kcal),TARGETS.kcal,'',calCol)+
-          _statBox('Protéines/j',Math.round(avg.prot),TARGETS.prot,'g','var(--green)')+
-          (dW!==null?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Poids 7 j</div><div style="font-size:16px;font-weight:600;color:'+(dW<-0.05?'var(--green)':(dW>0.05?'var(--orange)':'var(--text2)'))+';margin-top:3px;">'+(dW>0?'+':'')+dW.toFixed(1)+'</div><div style="font-size:11px;color:var(--text3);">kg</div></div>':'')+
+          _statBox('Protéines/j',Math.round(avg.prot),TARGETS.prot,'g',_protMoyOk(avg.prot)?'var(--green)':'var(--orange)')+
+          (dW!==null?'<div style="flex:1;background:var(--bg3);border-radius:9px;padding:9px;text-align:center;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;">Poids 7 j</div><div style="font-size:16px;font-weight:600;color:'+(dW<-0.05?'var(--green)':(dW>0.05?'var(--orange)':'var(--text2)'))+';margin-top:3px;">'+_signe(dW)+_virg(Math.abs(dW),1)+'</div><div style="font-size:11px;color:var(--text3);">kg</div></div>':'')+
           '</div></div>';
     html+=renderTDEEBlock(estimateTDEE());
   }
@@ -6035,7 +6044,7 @@ function renderGoalBlock(){
       '</div></div>';
   }
   var goal=S.weightGoal;
-  if(!w.length){return '<div style="'+box+'"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">🎯 Objectif : '+goal.toFixed(1)+' kg</span><button onclick="clearWeightGoal()" style="background:none;border:0;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;">modifier</button></div><div style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.5;">Ajoute des pesées pour voir ta progression et la date estimée.</div></div>';}
+  if(!w.length){return '<div style="'+box+'"><div style="display:flex;justify-content:space-between;align-items:center;"><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">🎯 Objectif : '+_virg(goal,1)+' kg</span><button onclick="clearWeightGoal()" style="background:none;border:0;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;">modifier</button></div><div style="font-size:12px;color:var(--text3);margin-top:8px;line-height:1.5;">Ajoute des pesées pour voir ta progression et la date estimée.</div></div>';}
   var sorted=w.slice().sort(function(a,b){return a.d<b.d?-1:1;});
   var tr=weightTrendPerWeek();
   var current=tr?tr.current:sorted[sorted.length-1].w;
@@ -6045,10 +6054,10 @@ function renderGoalBlock(){
   var totalPlanned=(goal-start)*dir,done=(current-start)*dir;
   var pct=totalPlanned>0?Math.max(0,Math.min(100,Math.round(done/totalPlanned*100))):(remaining<=0.1?100:0);
   var html='<div style="'+box+'">';
-  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">🎯 Objectif : '+goal.toFixed(1)+' kg</span><button onclick="clearWeightGoal()" style="background:none;border:0;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;">modifier</button></div>';
-  html+='<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px;"><span>'+start.toFixed(1)+'</span><span>'+goal.toFixed(1)+' kg</span></div>';
+  html+='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;"><span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">🎯 Objectif : '+_virg(goal,1)+' kg</span><button onclick="clearWeightGoal()" style="background:none;border:0;color:var(--text3);font-size:11px;cursor:pointer;text-decoration:underline;">modifier</button></div>';
+  html+='<div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text3);margin-bottom:4px;"><span>'+_virg(start,1)+'</span><span>'+_virg(goal,1)+' kg</span></div>';
   html+='<div style="height:10px;background:var(--bg3);border-radius:5px;overflow:hidden;margin-bottom:6px;"><div style="width:'+pct+'%;height:100%;background:linear-gradient(90deg,var(--green),var(--green));border-radius:5px;"></div></div>';
-  html+='<div style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:10px;">Actuel <strong style="color:var(--text);">'+current.toFixed(1)+' kg</strong> · '+pct+'% du chemin</div>';
+  html+='<div style="text-align:center;font-size:11px;color:var(--text3);margin-bottom:10px;">Tendance <strong style="color:var(--text);">'+_virg(current,1)+' kg</strong> (moyenne 7 j) · '+pct+' % du chemin</div>';
   var proj;
   if(remaining<=0.1){
     proj='<div style="font-size:13px;color:var(--green);font-weight:600;text-align:center;">🎉 Objectif atteint, bravo !</div>';
@@ -6056,11 +6065,11 @@ function renderGoalBlock(){
     var weeks=remaining/Math.abs(tr.perWeek);
     var date=shiftDate(S.today,Math.round(weeks*7));
     var dlabel=new Date(date+'T00:00:00').toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'});
-    proj='<div style="border-top:0.5px solid var(--border);padding-top:10px;font-size:12px;color:var(--text2);line-height:1.6;text-align:center;">À ton rythme (<strong style="color:var(--green);">'+(tr.perWeek>0?'+':'')+tr.perWeek.toFixed(2)+' kg/sem</strong>), encore <strong>'+remaining.toFixed(1)+' kg</strong>.<br>Tu y es vers le <strong style="color:var(--text);">'+dlabel+'</strong> (~'+(Math.round(weeks*10)/10)+' sem).</div>';
+    proj='<div style="border-top:0.5px solid var(--border);padding-top:10px;font-size:12px;color:var(--text2);line-height:1.6;text-align:center;">À ton rythme (<strong style="color:var(--green);">'+_signe(tr.perWeek)+_virg(Math.abs(tr.perWeek),2)+' kg/sem</strong>), encore <strong>'+_virg(remaining,1)+' kg</strong>.<br>Tu y es vers le <strong style="color:var(--text);">'+dlabel+'</strong> (~'+_virg(Math.round(weeks*10)/10,1)+' sem).</div>';
   } else if(!tr){
-    proj='<div style="border-top:0.5px solid var(--border);padding-top:10px;font-size:12px;color:var(--text2);line-height:1.5;text-align:center;">Encore '+remaining.toFixed(1)+' kg. Pèse-toi régulièrement : une date estimée apparaîtra après quelques pesées.</div>';
+    proj='<div style="border-top:0.5px solid var(--border);padding-top:10px;font-size:12px;color:var(--text2);line-height:1.5;text-align:center;">Encore '+_virg(remaining,1)+' kg. Pèse-toi régulièrement : une date estimée apparaîtra après quelques pesées.</div>';
   } else {
-    proj='<div style="border-top:0.5px solid var(--border);padding-top:10px;font-size:12px;color:var(--orange);line-height:1.5;text-align:center;">Encore '+remaining.toFixed(1)+' kg. '+(dir>0?'Ton poids ne monte pas assez pour estimer une date — continue le suivi ou ajuste ton surplus.':'Ton poids ne baisse pas assez pour estimer une date — continue le suivi ou ajuste ton déficit.')+'</div>';
+    proj='<div style="border-top:0.5px solid var(--border);padding-top:10px;font-size:12px;color:var(--orange);line-height:1.5;text-align:center;">Encore '+_virg(remaining,1)+' kg. '+(dir>0?'Ton poids ne monte pas assez pour estimer une date — continue le suivi ou ajuste ton surplus.':'Ton poids ne baisse pas assez pour estimer une date — continue le suivi ou ajuste ton déficit.')+'</div>';
   }
   html+=proj+'</div>';
   return html;

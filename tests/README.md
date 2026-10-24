@@ -76,7 +76,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t58.js` | Mensurations (saisie, écarts, synchro) et photos de progression (chemins séparés, comparaison, export/import) |
 | `t59.js` | Analyse IA d’un repas : réponse lue par extractJSON (neutralisée), réponse vide |
 | `t60.js` | Fibres : table par familles, articles, recettes, repas, barre et explication, saisie (fiche, ajout, IA, OpenFoodFacts) |
-| `t61.js` | Coach : trois objectifs (sèche, maintien, prise), moyennes sur journées complètes, dépassement hebdomadaire (« au-dessus de ta cible », jamais « surplus »), phrase du coach et tuile « Calories/j » sur la même règle (5 %, cas 2430 pour 2310), période des déficits (7 j / cette semaine), conseils TDEE par objectif |
+| `t61.js` | Coach : trois objectifs (sèche, maintien, prise), moyennes sur journées complètes, dépassement hebdomadaire (« au-dessus de ta cible », jamais « surplus »), phrase du coach et tuile « Calories/j » sur la même règle (5 %, cas 2430 pour 2310), période des déficits (7 j / cette semaine), tuile « Protéines/j » orange comme l'alerte du coach, poids à la virgule et « Tendance (moyenne 7 j) », conseils TDEE par objectif |
 | `t62.js` | Activité selon l’objectif (cible du jour), seuil unique des protéines (95 %), tuile Déficit/Reste, fibres dans le coach, bilan de la semaine |
 | `t63.js` | Carte « Ta journée » de l’accueil : message selon le moment (cap, point d’étape, bilan), chiffres, activité |
 | `t64.js` | Fibres de l’inventaire remplies une fois par article (`FIBRES_INVENTAIRE`, `S.fibInv`), bouton de déconnexion à gauche |
