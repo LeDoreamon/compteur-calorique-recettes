@@ -89,6 +89,25 @@ t('la tuile « Déficit/jour » du coach dit sa periode (7 j), la carte de la se
   }finally{sb.__e=vrai;X('estimateTDEE=__e');}
 });
 
+t('*** tuile « Protéines/j » du pilotage : orange quand le coach dit « Attention aux protéines » (avant : toujours verte) ***',()=>{
+  const prot=(obj,p)=>{prepa(obj);X("TARGETS={kcal:2310,prot:175,gluc:208,lip:80};");
+    for(let i=1;i<=7;i++)X("S.dayMeals[shiftDate(S.today,-"+i+")]="+JSON.stringify([{rid:'x',name:'R',macros:{kcal:2200,prot:p,gluc:0,lip:0}}])+";");
+    return {tuile:(X('renderCockpit()').match(/Protéines\/j<\/div><div style="[^"]*color:([^;]+);/)||[])[1],alerte:/Attention aux protéines/.test(X('renderCoachSummary()'))};};
+  let r=prot('perte',124);eq(r.tuile,'var(--orange)','124 pour 175');eq(r.alerte,true);
+  r=prot('perte',158);eq(r.tuile,'var(--green)','158 >= 90 %');eq(r.alerte,false);
+  r=prot('perte',157);eq(r.tuile,'var(--orange)','157 < 157,5');eq(r.alerte,true);
+});
+t('*** poids : virgule decimale et vrai signe moins, « Tendance (moyenne 7 j) » au lieu de « Actuel » ***',()=>{
+  prepa('perte');
+  const ws=[];for(let i=30;i>=0;i-=2)ws.push({d:X("shiftDate(S.today,-"+i+")"),w:+(105-(30-i)*0.1).toFixed(1)});
+  X("S.weights="+JSON.stringify(ws)+";S.weightGoal=88;");
+  eq(X('_fmtKg(-1.2)'),'−1,2 kg');eq(X('_fmtKg(0.3)'),'+0,3 kg');eq(X('_fmtKg(0)'),'0,0 kg');
+  const h=X('renderGoalBlock()+renderWeightHTML()+renderTDEEBlock(estimateTDEE())');
+  if(/\d\.\d kg|\d\.\d\d kg\/sem/.test(h.replace(/<[^>]+>/g,' ')))throw new Error('point decimal restant : '+(h.replace(/<[^>]+>/g,' ').match(/[^ ]*\d\.\d[^ ]* kg[^ ]*/)||[''])[0]);
+  if(!/Tendance <strong[^>]*>10\d,\d kg<\/strong> \(moyenne 7 j\) · \d+ % du chemin/.test(h))throw new Error('tendance : '+(h.match(/Tendance.{0,120}/)||['absente'])[0]);
+  if(/>Actuel /.test(h))throw new Error('ancien libelle');
+});
+
 console.log('\n=== XIC. Conseils TDEE selon l\'objectif ===');
 const bloc=pw=>X('renderTDEEBlock')({ok:true,tdee:2400,perWeek:pw,days:28,avgCal:2400,logs:20});
 t('*** maintien : stable = cible validee, perte = remonter vers le TDEE ***',()=>{
