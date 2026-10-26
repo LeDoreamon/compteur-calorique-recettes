@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-24 13h01 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-26 23h40 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-24-1301"></script>
+<script src="catalogue.js?v=2026-10-26-2340"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-24-1301';
+const BUILD_ID='2026-10-26-2340';
 const NOUVEAUTES=[
+  {b:'2026-10-26-2340',points:[
+    'La marge du jour s’affiche aussi quand tes pas sont sous ta routine : ils sont déjà comptés dans ta cible, et l’appli te le dit.'
+  ]},
   {b:'2026-10-24-1301',points:[
     'Bilan : la tuile des protéines passe en orange quand le coach te signale des protéines courtes, et les poids s’affichent à la française (102,8 kg).'
   ]},
@@ -4495,16 +4498,23 @@ function _etatMarge(obj,marge,cibleJour,enCours,kcal){
   if(ecart>2*tol)return 'tropFort';if(ecart>tol)return 'trop';if(ecart>=-tol)return 'atteinte';
   if(enCours)return 'ok';return ecart<-2*tol?'manqueFort':'manque';
 }
+// Journee dont l'activite a ete saisie (pas ou activites), meme a 0 kcal : des pas sous la
+// routine sont deja comptes dans la cible, mais l'utilisateur a bien fait sa saisie (26/10/2026,
+// Liam : 9 300 pas pour une routine de 9 900, et plus aucune marge affichee).
+function _activiteSaisie(jour){var b=null;try{b=getBurn(jour);}catch(e){}return !!(b&&((+b.steps||0)>0||(b.activities||[]).length));}
 function _margeJour(jour){
   var act=_depenseDuJour(jour),obj=_objectif(),m=getDayMacros(jour);
   var reste=Math.round(TARGETS.kcal-m.kcal),marge=Math.round(TARGETS.kcal+act-m.kcal);
-  if(!(act>0)&&!(_repasDuJour(jour).length&&(jour<S.today||reste<0)))return null;
+  var saisie=act>0||_activiteSaisie(jour);
+  if(!saisie&&!(_repasDuJour(jour).length&&(jour<S.today||reste<0)))return null;
   var etat=_etatMarge(obj,marge,TARGETS.kcal+act,jour>=S.today,m.kcal);
-  return {jour:jour,act:act,reste:reste,marge:marge,ecart:-marge,etat:etat,obj:obj,couleur:_COUL_MARGE[etat]};
+  var b=null;try{b=getBurn(jour);}catch(e){}
+  return {jour:jour,act:act,reste:reste,marge:marge,ecart:-marge,etat:etat,obj:obj,couleur:_COUL_MARGE[etat],pas:(b&&+b.steps)||0};
 }
 function _texteMarge(g){
   var aComp=g.obj==='perte'?'':' à compenser',act=g.act>0;
-  var calcul=!act?(g.reste>=0?(g.reste+' kcal sous ta cible'):((-g.reste)+' kcal au-dessus de ta cible'))+', sans activité enregistrée'
+  var calcul=!act?(g.reste>=0?(g.reste+' kcal sous ta cible'):((-g.reste)+' kcal au-dessus de ta cible'))
+      +(g.pas>0?' ; tes '+g.pas.toLocaleString('fr-FR')+' pas restent sous ta routine ('+pasBase().toLocaleString('fr-FR')+'), déjà comptée dans ta cible':', sans activité enregistrée')
     :(g.reste>=0?(g.reste+(g.jour<S.today?' kcal sous ta cible + ':' restantes + ')+g.act+' d\'activité'+aComp):(g.act+' d\'activité'+aComp+' − '+(-g.reste)+' au-dessus de ta cible'));
   var quand=g.jour===S.today?'aujourd\'hui':'ce jour-là',etat;
   if(g.obj!=='perte'){
@@ -7440,7 +7450,13 @@ var _coachTid=null;
 function coachActivite(day){
   var b=(typeof getBurn==='function')?getBurn(day):null;
   var tot=(b&&b.total)||0;
-  if(!tot)return {titre:'Activité enregistrée',corps:'Rien à décompter pour cette journée.',ton:'mixte'};
+  if(!tot){
+    /* pas sous la routine : rien a ajouter, mais la marge du jour reste utile (26/10/2026) */
+    var g0=(b&&b.steps>0)?_margeJour(day):null;
+    if(!g0)return {titre:'Activité enregistrée',corps:'Rien à décompter pour cette journée.',ton:'mixte'};
+    var t0=_texteMarge(g0);
+    return {titre:'\ud83d\udd25 Activité enregistrée',corps:b.steps.toLocaleString('fr-FR')+' pas, sous ta routine de '+pasBase().toLocaleString('fr-FR')+' : rien à ajouter, ils sont déjà comptés dans ta cible. Marge du jour : '+t0.valeur+'. '+t0.etat,ton:'ok'};
+  }
   var det=[];
   if(b.steps>0)det.push(b.steps.toLocaleString('fr-FR')+' pas');
   if(b.actKcal>0)det.push((b.activities||[]).length+' activité'+(((b.activities||[]).length>1)?'s':''));
