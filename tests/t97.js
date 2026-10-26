@@ -189,6 +189,21 @@ t('les pas seuls comptent comme activite (au-dessus de la routine)',()=>{
   const g=M(),b=X('getBurn(S.today)');
   if(!g||!(b.total>0))throw new Error('pas ignores');eq(g.marge,420+b.total);
 });
+t('*** pas saisis mais sous la routine (cas de Liam du 26/10 : 9300 pour 9900) : la marge s\'affiche quand meme, avec la raison ***',()=>{
+  jour(2012,0);X("S.pasBase=9900;");X('__setBurn')({[S.today]:{steps:9300,activities:[]}});
+  eq(X('getBurn(S.today)').total,0,'0 kcal en plus');
+  const g=M();if(!g)throw new Error('encadre absent');eq(g.marge,288);eq(g.etat,'ok');eq(g.pas,9300);
+  const h=vis(X('_htmlMarge')(S.today));
+  if(!/Marge du jour 288 kcal/.test(h))throw new Error(h);
+  if(!/288 kcal sous ta cible ; tes 9.300 pas restent sous ta routine \(9.900\), déjà comptée dans ta cible/.test(h))throw new Error('calcul : '+h);
+  if(/sans activité enregistrée/.test(h))throw new Error('« sans activite » alors que les pas sont saisis');
+  if(!/Pour l'instant, tu es dans ta cible, avec de la marge\./.test(h))throw new Error('etat : '+h);
+  const c=X('coachActivite(S.today)');
+  if(!/9.300 pas, sous ta routine de 9.900 : rien à ajouter, ils sont déjà comptés dans ta cible\. Marge du jour : 288 kcal\./.test(c.corps))throw new Error('message : '+c.corps);
+  X("S.mainTab='recipes';S.displayDate=S.today;");
+  if(/marge/.test(X('_htmlBarreReste()')))throw new Error('barre : la marge y vaut le reste, pas de doublon');
+  X("S.pasBase=undefined;");
+});
 t('*** Repas : l\'encadre est en bas du bloc, sous « Copier vers », pour le jour affiche (demande du 12/10/2026) ***',()=>{
   const hier=X('shiftDate(S.today,-1)');jour(2500,400,'perte',hier);
   X("S.mainTab='recipes';S.displayDate='"+hier+"';");
