@@ -338,7 +338,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 01h52 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 02h05 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -603,12 +603,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-28-0152"></script>
+<script src="catalogue.js?v=2026-10-28-0205"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-28-0152';
+const BUILD_ID='2026-10-28-0205';
 const NOUVEAUTES=[
+  {b:'2026-10-28-0205',points:[
+    'Inventaire : l’onglet Frigo a sa propre icône, un frigo à une porte (au lieu du verre de lait).'
+  ]},
   {b:'2026-10-28-0152',points:[
     'Mode Modifier de l’inventaire : la date d’un article se change dans une petite fenêtre avec « OK ». Ouvrir le calendrier sans rien choisir ne met plus la date du jour.'
   ]},
@@ -829,7 +832,13 @@ if(typeof RCP==='undefined'||typeof INV_DEFAULT==='undefined'||typeof MEALS_DEFA
   throw new Error('catalogue.js absent');
 }
 
-const CINFO={frigo:{label:'Frigo',court:'Frigo',sym:'🥛',coul:'var(--blue)'},congelateur:{label:'Congélateur',court:'Congél.',sym:'🧊',coul:'var(--sky)'},placards:{label:'Placards',court:'Placards',sym:'🥫',coul:'var(--gold)'},epices:{label:'Épices',court:'Épices',sym:'🧂',coul:'var(--green)'}};
+/* Frigo a une porte (28/10/2026, demande de Liam : plus de verre de lait) ; distinct du frigo a deux portes de l'onglet Inventaire (ICONE_FRIGO) */
+const ICONE_FRIGO_PORTE='<svg class="ico-frigo" viewBox="0 0 24 24" width="1.2em" height="1.2em" aria-hidden="true" style="vertical-align:-.25em;">'
+  +'<rect x="6.2" y="20" width="2.6" height="2.8" rx=".6" fill="#8FA6B5"/><rect x="15.2" y="20" width="2.6" height="2.8" rx=".6" fill="#8FA6B5"/>'
+  +'<rect x="4.6" y="1.2" width="14.8" height="20.3" rx="3.2" fill="#E6EEF3" stroke="#8FA6B5" stroke-width="1.2"/>'
+  +'<rect x="6.7" y="3.8" width="1.1" height="15.2" rx=".55" fill="#FFFFFF" opacity=".85"/>'
+  +'<rect x="15" y="4.4" width="1.9" height="8" rx=".95" fill="#5F7889"/></svg>';
+const CINFO={frigo:{label:'Frigo',court:'Frigo',sym:ICONE_FRIGO_PORTE,coul:'var(--blue)'},congelateur:{label:'Congélateur',court:'Congél.',sym:'🧊',coul:'var(--sky)'},placards:{label:'Placards',court:'Placards',sym:'🥫',coul:'var(--gold)'},epices:{label:'Épices',court:'Épices',sym:'🧂',coul:'var(--green)'}};
 const MEAL_TABS=[{k:'breakfast',l:'Petit-déj'},{k:'lunch',l:'Déjeuner'},{k:'snack',l:'Collation'},{k:'dinner',l:'Dîner'},{k:'perso',l:'👨‍🍳 Mes recettes'},{k:'urgent',l:'⚠ DLC'},{k:'favs',l:'⭐ Favoris'}];
 // Tri de la liste de recettes. Les favoris restent epingles en tete quel que
 // soit le critere ; le tri ne joue qu'entre recettes de meme statut.

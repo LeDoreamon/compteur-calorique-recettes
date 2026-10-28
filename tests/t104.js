@@ -24,7 +24,7 @@ console.log('\n=== LXXV. Inventaire en onglets ===');
 t('*** quatre onglets, frigo par defaut, nombre d\'articles en stock (plats maison et articles a 0 exclus) ***',()=>{
   prepa();const h=X('renderInvCats()');
   eq((h.match(/data-action="inv-tab"/g)||[]).length,4);
-  const n=c=>(h.match(new RegExp('data-val="'+c+'"[^>]*>(?:<span class="io-al"[^>]*>\\d+</span>)?<span class="io-sym">[^<]*</span><span class="io-lib">[^<]*</span><span class="io-n">(\\d+)</span>'))||[])[1];
+  const n=c=>(h.match(new RegExp('data-val="'+c+'"[^>]*>(?:<span class="io-al"[^>]*>\\d+</span>)?<span class="io-sym">(?:(?!</span>)[^])*</span><span class="io-lib">[^<]*</span><span class="io-n">(\\d+)</span>'))||[])[1];
   eq(n('frigo'),4,'poulet, skyr, creme, avocats');eq(n('congelateur'),1);eq(n('placards'),2);eq(n('epices'),1,'« présent » compte');
   if(!/class="inv-onglet on"[^>]*data-val|data-val="frigo" class="inv-onglet on"/.test(h))throw new Error('frigo pas actif');
 });
@@ -115,6 +115,14 @@ t('*** l\'ecran : tri par DLC garde tel quel en haut, puis recherche + Modifier 
 });
 t('quantites a la francaise',()=>{
   eq(X("qtyLabel({qty:410,unit:'g',pkg:{size:500}})"),'410 g · 0,8 × 500 g');eq(X("qtyLabel({qty:1.5,unit:'kg'})"),'1,5 kg');
+});
+t('*** icone du frigo : un frigo a une porte en SVG, plus de verre de lait, distinct de l\'icone de l\'onglet Inventaire ***',()=>{
+  const s=X('CINFO.frigo.sym');if(!/^<svg[^>]*viewBox="0 0 24 24"[^]*<\/svg>$/.test(s))throw new Error('pas un SVG');
+  if(/🥛/.test(s)||/🥛/.test(X('renderInvCats()')))throw new Error('verre de lait');
+  if(s===X('ICONE_FRIGO'))throw new Error('meme icone que la barre du bas');
+  if(!/width="1\.2em"/.test(s))throw new Error('taille relative au texte (onglets 17 px, intitules 10 px)');
+  S.inv={frigo:[{id:'lait',name:'Lait',qty:1,unit:'L'}],placards:[],congelateur:[],epices:[]};S.invSearch='';S.editMode=false;X("S.invTab='frigo'");
+  if(X('renderInvCats()').indexOf('<span class="io-sym">'+s+'</span>')<0)throw new Error('onglet Frigo sans l\'icone');
 });
 
 console.log('---- '+pass+' ok, '+fail+' KO');
