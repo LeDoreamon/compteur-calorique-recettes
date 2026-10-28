@@ -338,7 +338,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 02h05 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 12h02 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -603,12 +603,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-28-0205"></script>
+<script src="catalogue.js?v=2026-10-28-1202"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-28-0205';
+const BUILD_ID='2026-10-28-1202';
 const NOUVEAUTES=[
+  {b:'2026-10-28-1202',points:[
+    'Repas : le bouton « Point du coach » est plus petit, à gauche sur la ligne de la synchronisation.'
+  ]},
   {b:'2026-10-28-0205',points:[
     'Inventaire : l’onglet Frigo a sa propre icône, un frigo à une porte (au lieu du verre de lait).'
   ]},
@@ -4635,8 +4638,7 @@ function renderMacros(){
     ${rem}
     ${meals.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text3);">Copier vers</span><input type="date" id="copy-day-target" value="${shiftDate(dd,1)}" style="font-size:11px;padding:2px 5px;background:var(--bg);border:0.5px solid var(--border);border-radius:5px;color:var(--text2);"><button onclick="copyDayTo(document.getElementById('copy-day-target').value)" style="font-size:11px;padding:3px 10px;background:var(--blue);color:#fff;border:0;border-radius:5px;cursor:pointer;font-weight:500;">⧉ Jour entier</button></div><div style="font-size:11px;color:var(--text3);margin-top:4px;">Astuce : le ⧉ à côté d'un repas le copie seul vers cette date.</div>`:''}
     ${_htmlMarge(dd,'10px 0 0')}
-    ${(meals.length||(function(){var b=getBurn(dd);return b&&b.total>0;})())?`<button data-action="revoir-coach" style="display:block;width:100%;margin-top:10px;font-size:12px;padding:8px 12px;background:var(--bg3);border:0.5px solid var(--border);border-radius:10px;color:var(--text2);cursor:pointer;">💬 Revoir le point du coach</button>`:''}
-    <div style="margin-top:6px;display:flex;align-items:center;justify-content:flex-end;gap:8px;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:11px;color:var(--text3);">Modifiable de J−7 à J+1</span></div>
+    <div class="suivi-pied" style="margin-top:10px;display:flex;flex-wrap:wrap;align-items:center;gap:6px 8px;">${(meals.length||(function(){var b=getBurn(dd);return b&&b.total>0;})())?`<button data-action="revoir-coach" style="flex-shrink:0;white-space:nowrap;font-size:11px;padding:5px 9px;background:var(--bg3);border:0.5px solid var(--border);border-radius:8px;color:var(--text2);cursor:pointer;" title="Revoir le point du coach" aria-label="Revoir le point du coach">💬 Point du coach</button>`:''}<span style="margin-left:auto;display:flex;align-items:center;gap:8px;"><span id="sync-badge">${_syncBadge()}</span><span style="font-size:11px;color:var(--text3);white-space:nowrap;">Modifiable de J−7 à J+1</span></span></div>
   </div>`;
 }
 

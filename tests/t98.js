@@ -44,7 +44,11 @@ t('*** bouton en bas du suivi, pour le jour affiche, des qu\'il y a un repas ou 
   jour(S.today,1500,0);X("S.mainTab='recipes';S.displayDate=S.today;");
   let h=X('renderMacros()');const b=h.indexOf('data-action="revoir-coach"'),s=h.indexOf('id="sync-badge"'),c=h.indexOf('copy-day-target');
   if(b<0)throw new Error('bouton absent');if(!(c<b&&b<s))throw new Error('mal place');
-  if(h.indexOf('💬 Revoir le point du coach')<0)throw new Error('libelle');
+  if(h.indexOf('>💬 Point du coach</button>')<0||h.indexOf('aria-label="Revoir le point du coach"')<0)throw new Error('libelle');
+  /* 28/10/2026, demande de Liam : petit bouton a gauche, sur la ligne du sync */
+  const pied=(h.match(/<div class="suivi-pied"[^]*?Modifiable de J−7 à J\+1<\/span><\/span><\/div>/)||[''])[0];
+  if(pied.indexOf('revoir-coach')<0||pied.indexOf('id="sync-badge"')<pied.indexOf('revoir-coach'))throw new Error('pas sur la ligne du sync, a gauche');
+  if(/width:100%|display:block/.test(pied.split('</button>')[0]))throw new Error('encore en pleine largeur');
   jour(S.today,0,300);if(X('renderMacros()').indexOf('revoir-coach')<0)throw new Error('activite seule');
   jour(S.today,0,0);if(X('renderMacros()').indexOf('revoir-coach')>=0)throw new Error('journee vide : rien a revoir');
 });
