@@ -118,6 +118,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t100.js` | Champs Fibres des fenêtres d'ajout d'article, de fiche article et d'ajout de repas : au moins 6 px sous la grille des macros (la marge négative de « Ajouter un item » faisait chevaucher la case) |
 | `t101.js` | Plats maison : ✕ rouge par plat en mode Modifier (pas hors édition), plat retiré de la carte sans toucher aux autres articles, restaurable depuis « Récemment supprimés » |
 | `t102.js` | Copier un repas (seul ou le jour entier), le refaire, le supprimer : le stock bouge tout de suite, avec la même recherche que la cuisson (identifiant puis nom : un article recréé depuis est retrouvé), le même dessert (poids d'un pot), rien pour un stock illimité, un article disparu ou un repas hors inventaire |
+| `t103.js` | Inventaire en mode Modifier : articles à 0 en bas de leur catégorie (ordre alphabétique par groupe), grisés mais modifiables, intitulé « Épuisés », remontée immédiate quand la quantité repasse en positif, à la main ou par +1 (et descente à 0), « présent » jamais vide, mode normal inchangé, recherche |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
