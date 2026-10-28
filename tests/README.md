@@ -69,7 +69,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t49.js` | Séances du programme de musculation dans la saisie de dépense |
 | `t52.js` | Clé Groq à la reconnexion sur un autre compte, réponse IA vide, refus du jeton de session |
 | `t53.js` | Confirmation avant suppression d’un repas, service worker (délai de 6 s, erreurs serveur, hors ligne) |
-| `t54.js` | Fenêtres de dialogue maison (file d’attente, texte non interprété, Échap), plus de fenêtres système, lisibilité (tailles, contraste) |
+| `t54.js` | Fenêtres de dialogue maison (file d’attente, texte non interprété, Échap, champ date gardé seulement sur « OK »), plus de fenêtres système, lisibilité (tailles, contraste) |
 | `t55.js` | Bouton + et volet d’ajout, repas habituels, cible conseillée par étapes de 300 kcal, barre « Reste » de Recettes |
 | `t56.js` | Dessert « autre » : analyse par Groq (plus d’appel Anthropic), réponse neutralisée |
 | `t57.js` | Calendrier du mois : état des journées (cible, dessus, dessous, incomplète), navigation, détail d’un jour |
@@ -119,7 +119,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t101.js` | Plats maison : ✕ rouge par plat en mode Modifier (pas hors édition), plat retiré de la carte sans toucher aux autres articles, restaurable depuis « Récemment supprimés » |
 | `t102.js` | Copier un repas (seul ou le jour entier), le refaire, le supprimer : le stock bouge tout de suite, avec la même recherche que la cuisson (identifiant puis nom : un article recréé depuis est retrouvé), le même dessert (poids d'un pot), rien pour un stock illimité, un article disparu ou un repas hors inventaire |
 | `t103.js` | Inventaire en mode Modifier : articles à 0 en bas de leur catégorie (ordre alphabétique par groupe), grisés mais modifiables, intitulé « Épuisés », remontée immédiate quand la quantité repasse en positif, à la main ou par +1 (et descente à 0), « présent » jamais vide, mode normal inchangé, recherche |
-| `t104.js` | Inventaire en onglets : quatre onglets (compte en stock, pastille rouge), une catégorie à la fois, onglet retenu par appareil, recherche dans tout l'inventaire, onglet vide ; dates affichées à 14 jours ou moins ; mode Modifier compact (pastille de date, −1/+1), date enregistrée ; « À consommer vite » (5 plus proches, +N autres, masqué en mode Modifier) ; ordre de l'écran avec le tri par DLC gardé tel quel ; quantités à la française |
+| `t104.js` | Inventaire en onglets : quatre onglets (compte en stock, pastille rouge), une catégorie à la fois, onglet retenu par appareil, recherche dans tout l'inventaire, onglet vide ; dates affichées à 14 jours ou moins ; mode Modifier compact (pastille de date qui ouvre une fenêtre : ouvrir puis fermer ne change rien, OK enregistre, Enlever retire ; −1/+1), date enregistrée ; « À consommer vite » (5 plus proches, +N autres, masqué en mode Modifier) ; ordre de l'écran avec le tri par DLC gardé tel quel ; quantités à la française |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

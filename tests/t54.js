@@ -110,6 +110,20 @@ t('export impossible : texte a copier et bouton Copier',async()=>{
     eq(copie,'{"a":1}');
   }finally{delete sb.navigator.clipboard;demonte();}
 });
+t('*** fenetre avec un champ date : rien n\'est garde avant « OK » ; OK = {date}, Enlever = {date:null}, Annuler = false ***',async()=>{
+  monte();try{
+    let r1,r2,r3;
+    X('_dialogue')({message:'Date limite\n\nConfiture',date:'',ok:'OK',annuler:'Annuler',effacer:'Enlever'}).then(v=>{r1=v;});
+    const champ=tous(fenetre()).find(n=>n.tag==='input');if(!champ||champ.type!=='date')throw new Error('champ date absent');
+    eq(boutons().map(b=>b.textContent).join('|'),'Enlever|Annuler|OK');
+    champ.value='2026-11-03';boutons()[2].onclick();await tick();eq(JSON.stringify(r1),'{"date":"2026-11-03"}');
+    X('_dialogue')({message:'Date limite',date:'2026-10-28',ok:'OK',annuler:'Annuler',effacer:'Enlever'}).then(v=>{r2=v;});
+    boutons()[0].onclick();await tick();eq(JSON.stringify(r2),'{"date":null}');
+    X('_dialogue')({message:'Date limite',date:'',ok:'OK',annuler:'Annuler'}).then(v=>{r3=v;});
+    const c3=tous(fenetre()).find(n=>n.tag==='input');c3.value='2026-10-28';   /* iOS remplit aujourd'hui a l'ouverture */
+    boutons()[0].onclick();await tick();eq(r3,false,'Annuler : rien');
+  }finally{demonte();}
+});
 t('*** plus aucune fenetre systeme dans le script ***',()=>{
   const m=script.match(/(^|[^A-Za-z_.$])(alert|confirm|prompt)\(/g);
   if(m)throw new Error(m.length+' appel(s) : '+m.join(' '));
