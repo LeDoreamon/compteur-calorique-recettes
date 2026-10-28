@@ -305,7 +305,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-26 23h40 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 01h17 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +570,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-26-2340"></script>
+<script src="catalogue.js?v=2026-10-28-0117"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-26-2340';
+const BUILD_ID='2026-10-28-0117';
 const NOUVEAUTES=[
+  {b:'2026-10-28-0117',points:[
+    'Inventaire, mode Modifier : les articles épuisés passent en bas de leur catégorie, grisés, et remontent dès que tu leur remets une quantité.'
+  ]},
   {b:'2026-10-26-2340',points:[
     'La marge du jour s’affiche aussi quand tes pas sont sous ta routine : ils sont déjà comptés dans ta cible, et l’appli te le dit.'
   ]},
@@ -987,7 +990,11 @@ function stepInvPkg(cat,id,dir){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(
   if(it.unit&&it.unit!=='g'&&it.unit!=='ml')return;
   /* un paquet se compte en poids, pas en pieces */
   it.qty=Math.max(0,Math.round(((it.qty||0)+dir*it.pkg.size)*10)/10);saveState();render();}
-function updateInvQty(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(!it)return;const n=parseFloat(v);it.qty=(v===''||isNaN(n))?0:Math.max(0,n);saveState();}
+// Article a 0 (pas « present » sans quantite) : en bas de sa categorie et grise en mode Modifier
+function _invVideArt(it){return !!it&&it.qty!==null&&it.qty!==undefined&&!(it.qty>0);}
+function updateInvQty(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(!it)return;const avant=_invVideArt(it);const n=parseFloat(v);it.qty=(v===''||isNaN(n))?0:Math.max(0,n);saveState();
+  if(_invVideArt(it)!==avant)render();   /* passe de 0 a positif (ou l'inverse) : l'article change de place tout de suite */
+}
 function updateInvDlc(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(it){it.dlc=v||null;it.dlcAuto=false;}}
 // ─── DLC ─────────────────────────────────
 function effDlc(it){
@@ -4986,14 +4993,16 @@ function renderInvCats(){
     items=(Array.isArray(items)?items:[]).filter(function(i){return i&&!i.plat;});   // tableaux troues Firebase ; plats maison a part
     let base=(S.editMode?items.slice():items.filter(i=>i.qty===null||i.qty>0));
     if(q)base=base.filter(i=>_normNom(i.name).indexOf(q)>=0);
-    const visible=base.sort((a,b)=>(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'}));
+    /* mode Modifier : les articles a 0 en bas de leur categorie, grises (28/10/2026, idee de Liam) */
+    const visible=base.sort((a,b)=>(S.editMode?(_invVideArt(a)-_invVideArt(b)):0)||(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'}));
     const info=CINFO[cat],urg=visible.filter(i=>i.urgent&&(i.qty===null||i.qty>0)),open=S.editMode?true:S.openCat[cat];
-    const rows=open?visible.map(it=>{
+    const rows=open?visible.map((it,idx)=>{
       const isUrg=it.urgent&&(it.qty===null||it.qty>0);
       const isEp=cat==='epices';
       const dlc=it.dlc?getDlcStatus(effDlc(it)):null;
       if(S.editMode){
-        return`<div class="irow" style="flex-wrap:wrap;gap:4px;align-items:center;">
+        const _vd=_invVideArt(it),_sep=_vd&&(idx===0||!_invVideArt(visible[idx-1]));
+        return`${_sep?'<div class="inv-vides" style="padding:8px 15px 3px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Épuisés</div>':''}<div class="irow${_vd?' inv-vide':''}" style="flex-wrap:wrap;gap:4px;align-items:center;${_vd?'opacity:.5;':''}">
           <span onclick="openItemDetail('${cat}','${it.id}')" style="color:${isUrg?'var(--red)':'var(--text2)'};flex:1;font-size:12px;min-width:100px;cursor:pointer;">${it.name}${it.dessert?'<span title="Propos\u00e9 comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">\ud83c\udf70</span>':''}${_badgeNova(it)}</span>
           ${isEp?`<span style="font-size:11px;color:var(--text3);">présent</span>`:`<button onclick="toggleInvPresent('${cat}','${it.id}')" title="Présent / quantité" style="padding:4px 7px;border-radius:6px;border:0.5px solid ${it.qty===null?'var(--green)':'var(--border)'};background:${it.qty===null?'rgba(111,191,115,.12)':'transparent'};color:${it.qty===null?'var(--green)':'var(--text3)'};font-size:12px;cursor:pointer;white-space:nowrap;">∞</button>${it.qty===null?`<span style="font-size:11px;color:var(--green);margin-left:3px;">présent</span>`:`<input type="number" value="${it.qty||0}" min="0" onchange="updateInvQty('${cat}','${it.id}',this.value)" style="width:56px;padding:4px 6px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none;text-align:center;box-sizing:border-box;margin-left:3px;">${it.pkg&&it.pkg.size>0&&(!it.unit||it.unit==='g'||it.unit==='ml')?`<button onclick="stepInvPkg('${cat}','${it.id}',-1)" style="padding:4px 6px;margin-left:3px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">−1</button><button onclick="stepInvPkg('${cat}','${it.id}',1)" style="padding:4px 6px;margin-left:2px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">+1</button><span style="font-size:11px;color:var(--text3);margin-left:4px;white-space:nowrap;">${Math.round((it.qty||0)/it.pkg.size*10)/10} × ${it.pkg.size}${it.unit||"g"}</span>`:``}<span style="font-size:11px;color:var(--text3);margin-left:2px;">${it.unit}</span>`}`}
           <input type="date" value="${it.dlc||''}" onchange="updateInvDlc('${cat}','${it.id}',this.value)" title="Date p\u00e9remption" style="padding:3px 6px;background:var(--bg);border:0.5px solid ${dlc?dlc.color:'var(--border)'};border-radius:6px;color:${dlc?dlc.color:'var(--text3)'};font-size:11px;outline:none;cursor:pointer;"/>
