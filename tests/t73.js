@@ -60,11 +60,11 @@ t('Inventaire : explication des plats maison derriere ⓘ',()=>{
   if(h.indexOf('Un gâteau, des lasagnes')>=0)throw new Error('explication affichee');if(h.indexOf('Préparer un plat')<0)throw new Error('bouton');
   X('_platsAide=true');if(X('renderPlatsMaison()').indexOf('Un gâteau, des lasagnes')<0)throw new Error('ⓘ sans effet');X('_platsAide=false');
 });
-t('*** pastille « à consommer » : ouvre l\'inventaire, categories concernees depliees ***',()=>{
+t('*** pastille « à consommer » : ouvre l\'inventaire sur l\'onglet concerne ***',()=>{
   prepa();X("S.mainTab='bilan';S.inv.frigo=[{id:'x',name:'Avocats',qty:2,unit:'pcs',urgent:true}];S.inv.placards=[{id:'y',name:'Riz',qty:500,unit:'g'}]");
   if(!/data-action="voir-urgents"[^>]*>⚠ 1 à consommer<\/button>/.test(src.replace(/\$\{urgTotal\}/,'1')))throw new Error('pastille non cliquable');
   X("_onActionClick({target:{closest:function(){return {dataset:{action:'voir-urgents',val:''}};}}})");
-  eq(X('S.mainTab'),'inventory');eq(X('S.openCat.frigo'),1);eq(X('S.openCat.placards'),undefined,'categorie sans urgence ouverte');
+  eq(X('S.mainTab'),'inventory');eq(X('S.invTab'),'frigo','onglet du frigo (pas les placards, sans urgence)');
 });
 console.log('\n=== XXIV. Nouveautes apres une mise a jour ===');
 t('*** chaque build a ses nouveautes : BUILD_ID = sw.js = premiere entree ***',()=>{
