@@ -59,6 +59,39 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
 .irow { display: flex; justify-content: space-between; align-items: center; padding: 7px 15px; border-top: 0.5px solid var(--border); font-size: 13px; color: var(--text2); }
 .irow.urg { background: var(--red-bg); }
 .irow.urgo { background: var(--orange-bg); }
+/* Inventaire en onglets (28/10/2026) */
+.inv-outils { display: flex; gap: 8px; align-items: stretch; margin-bottom: 12px; }
+.inv-modif { flex-shrink: 0; padding: 0 12px; border: 0.5px solid var(--border); border-radius: 10px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.inv-onglets { position: sticky; top: var(--hdr-h, 62px); z-index: 20; display: flex; gap: 5px; padding: 6px 0 8px; margin-bottom: 2px;
+  background: rgba(14,10,7,.92); -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px); }
+.inv-onglet { position: relative; flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 1px; padding: 7px 2px 6px;
+  background: var(--bg2); border: 0.5px solid var(--border); border-radius: 10px; color: var(--text2); cursor: pointer; }
+.inv-onglet.on { background: color-mix(in srgb, var(--c) 16%, var(--bg2)); border-color: var(--c); color: var(--text); }
+.inv-onglet .io-sym { font-size: 17px; line-height: 1.1; }
+.inv-onglet .io-lib { font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.inv-onglet .io-n { font-size: 11px; color: var(--text3); }
+.inv-onglet.on .io-n { color: var(--c); }
+.inv-onglet .io-al { position: absolute; top: -5px; right: -3px; min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; border-radius: 9px;
+  background: var(--red); color: #fff; font-size: 11px; font-weight: 700; line-height: 17px; text-align: center; }
+.inv-grp { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin: 4px 2px 6px; }
+.inv-rien { padding: 16px 15px; font-size: 12.5px; color: var(--text3); text-align: center; }
+.inv-nom { cursor: pointer; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+.irow.ied { gap: 8px; padding: 6px 12px 6px 15px; }
+.ied-nom { flex: 1; min-width: 0; font-size: 12.5px; cursor: pointer; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
+.ied-ctl { display: flex; align-items: center; gap: 4px; flex-shrink: 0; }
+.ied-qte { width: 52px; padding: 4px 5px; background: var(--bg); border: 0.5px solid var(--border); border-radius: 6px; color: var(--text); font-size: 12px; outline: none; text-align: center; box-sizing: border-box; }
+.ied-u { font-size: 11px; color: var(--text3); }
+.inv-date { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 30px; padding: 4px 6px; box-sizing: border-box;
+  border: 0.5px solid var(--border); border-radius: 6px; font-size: 11px; white-space: nowrap; cursor: pointer; }
+.inv-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; font-size: 16px; cursor: pointer; }
+.inv-vite { background: var(--bg2); border: 0.5px solid var(--border); border-left: 3px solid var(--orange); border-radius: var(--radius); padding: 10px 12px 8px; margin-bottom: 12px; }
+.inv-vite .iv-t { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px; }
+.inv-vite .iv-l { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 0.5px solid rgba(246,237,227,.06); cursor: pointer; }
+.inv-vite .iv-l:first-of-type { border-top: 0; }
+.inv-vite .iv-n { flex: 1; min-width: 0; font-size: 13px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.inv-vite .iv-q { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.inv-vite .iv-d { font-size: 11px; padding: 1px 6px; border-radius: 4px; font-weight: 500; white-space: nowrap; }
+.inv-vite .iv-tout { display: block; margin: 4px 0 0 auto; background: none; border: 0; color: var(--accent2); font-size: 11.5px; cursor: pointer; padding: 4px 0; }
 .meal-tabs { display: flex; overflow-x: auto; border-bottom: 0.5px solid var(--border); margin-bottom: 14px; scrollbar-width: none; gap: 0; }
 .meal-tabs::-webkit-scrollbar { display: none; }
 .chip { display: inline-flex; align-items: center; gap: 3px; border-radius: 6px; padding: 2px 8px; font-size: 11px; font-weight: 500; }
@@ -305,7 +338,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 01h17 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 01h42 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -570,12 +603,17 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-28-0117"></script>
+<script src="catalogue.js?v=2026-10-28-0142"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-28-0117';
+const BUILD_ID='2026-10-28-0142';
 const NOUVEAUTES=[
+  {b:'2026-10-28-0142',points:[
+    'Inventaire en onglets : une catégorie à la fois (Frigo, Congélateur, Placards, Épices), avec une pastille rouge quand quelque chose est à consommer vite.',
+    'Nouveau bandeau « À consommer vite » en haut de l’inventaire : les 5 dates limites les plus proches, toutes catégories confondues. Le tri par DLC reste là pour tout voir.',
+    'La recherche couvre tout l’inventaire, et le mode Modifier tient sur une ligne par article (la date se change d’un toucher).'
+  ]},
   {b:'2026-10-28-0117',points:[
     'Inventaire, mode Modifier : les articles épuisés passent en bas de leur catégorie, grisés, et remontent dès que tu leur remets une quantité.'
   ]},
@@ -788,7 +826,7 @@ if(typeof RCP==='undefined'||typeof INV_DEFAULT==='undefined'||typeof MEALS_DEFA
   throw new Error('catalogue.js absent');
 }
 
-const CINFO={frigo:{label:'Frigo',sym:'🌡'},congelateur:{label:'Congélateur',sym:'❄'},placards:{label:'Placards',sym:'▣'},epices:{label:'Épices',sym:'∿'}};
+const CINFO={frigo:{label:'Frigo',court:'Frigo',sym:'🥛',coul:'var(--blue)'},congelateur:{label:'Congélateur',court:'Congél.',sym:'🧊',coul:'var(--sky)'},placards:{label:'Placards',court:'Placards',sym:'🥫',coul:'var(--gold)'},epices:{label:'Épices',court:'Épices',sym:'🧂',coul:'var(--green)'}};
 const MEAL_TABS=[{k:'breakfast',l:'Petit-déj'},{k:'lunch',l:'Déjeuner'},{k:'snack',l:'Collation'},{k:'dinner',l:'Dîner'},{k:'perso',l:'👨‍🍳 Mes recettes'},{k:'urgent',l:'⚠ DLC'},{k:'favs',l:'⭐ Favoris'}];
 // Tri de la liste de recettes. Les favoris restent epingles en tete quel que
 // soit le critere ; le tri ne joue qu'entre recettes de meme statut.
@@ -869,7 +907,6 @@ const S={
   inv:JSON.parse(JSON.stringify(INV_DEFAULT)),
   recipeDesserts:{},customDesserts:{},customInputs:{},
   mainTab:'accueil',mealTab:'breakfast',weights:[],mesures:[],weightGoal:null,favs:[],invDlcSort:false,openRec:null,
-  openCat:{frigo:1,congelateur:1,placards:1,epices:1},
   editMode:false,
   today:TODAY,displayDate:TODAY,
   dayMeals:JSON.parse(JSON.stringify(MEALS_DEFAULT)),
@@ -995,7 +1032,7 @@ function _invVideArt(it){return !!it&&it.qty!==null&&it.qty!==undefined&&!(it.qt
 function updateInvQty(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(!it)return;const avant=_invVideArt(it);const n=parseFloat(v);it.qty=(v===''||isNaN(n))?0:Math.max(0,n);saveState();
   if(_invVideArt(it)!==avant)render();   /* passe de 0 a positif (ou l'inverse) : l'article change de place tout de suite */
 }
-function updateInvDlc(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(it){it.dlc=v||null;it.dlcAuto=false;}}
+function updateInvDlc(cat,id,v){const it=(S.inv[cat]||[]).find(i=>i.id===id);if(it){it.dlc=v||null;it.dlcAuto=false;saveState();}}   /* avant le 28/10/2026 : pas d'enregistrement */
 // ─── DLC ─────────────────────────────────
 function effDlc(it){
   if(!it||!it.dlc)return null;
@@ -3286,7 +3323,7 @@ function _tutoDemoInv(){
       frigo:[{id:'tz1',name:'Blancs de poulet',qty:600,unit:'g',dlc:_tutoJour(2)},{id:'tz2',name:'Yaourts grecs',qty:4,unit:'pots',dlc:_tutoJour(9)},{id:'tz3',name:'Œufs',qty:6,unit:'pcs'}],
       congelateur:[{id:'tz4',name:'Haricots verts',qty:750,unit:'g'}],
       placards:[{id:'tz5',name:'Riz basmati',qty:1000,unit:'g'},{id:'tz6',name:'Pâtes complètes',qty:500,unit:'g'}],epices:[]},
-    waiting:[],invSearch:'',editMode:false,openCat:{frigo:1,congelateur:1,placards:1,epices:0}},function(){return renderInvCats();});
+    waiting:[],invSearch:'',editMode:false,invTab:'frigo'},function(){return renderInvCats();});
 }
 function _tutoDemoCourses(){
   var it=function(id,n,ck){return {id:id,name:n,rayon:_guessRayon(n),checked:!!ck};};
@@ -4803,11 +4840,11 @@ function renderCard(r){
 function qtyLabel(it){
   if(it.qty===null)return 'présent';
   if(it.plat)return _libParts(it.qty);
-  let s=it.qty+' '+it.unit;
+  let s=String(it.qty).replace('.',',')+' '+it.unit;
   // Un emballage se compte en poids. Sur un article denombrable, « 12 pc »
   // divise par une taille de 100 donnait « 0.1 × 100pc », qui ne veut rien dire.
   const auPoids=(!it.unit||it.unit==='g'||it.unit==='ml');
-  if(auPoids&&it.pkg&&it.pkg.size>0){const n=it.qty/it.pkg.size;s+=' · '+(Number.isInteger(n)?n:n.toFixed(1))+'×'+it.pkg.size+it.unit;}
+  if(auPoids&&it.pkg&&it.pkg.size>0){const n=it.qty/it.pkg.size;s+=' · '+(Number.isInteger(n)?n:n.toFixed(1).replace('.',','))+' × '+it.pkg.size+' '+(it.unit||'g');}
   return s;
 }
 // ─── 🔎 Diagnostic + recherche d'inventaire ─────────────────────────────────
@@ -4968,7 +5005,7 @@ function renderInvDiag(){
 }
 function invSearchBox(){
   var q=S.invSearch||'';
-  return '<div style="position:relative;margin-bottom:12px;">'
+  return '<div style="position:relative;flex:1;min-width:0;">'
     +'<input id="inv-search" type="text" value="'+String(q).replace(/"/g,'&quot;')+'" oninput="onInvSearch(this.value)" placeholder="\ud83d\udd0d Rechercher un aliment\u2026" style="width:100%;box-sizing:border-box;padding:9px 32px 9px 11px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;outline:none;">'
     +(q?'<button onclick="onInvSearch(\'\')" style="position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:0;color:var(--text3);font-size:16px;cursor:pointer;padding:2px 6px;">\u00d7</button>':'')
     +'</div>';
@@ -4982,50 +5019,128 @@ function onInvSearch(v){
 function renderInv(){
   if(_invVide()&&!S.editMode)return '<div id="inv-list">'+renderInvCats()+'</div>';   /* ni tri, ni edition, ni recherche sur un inventaire vide */
   if(S.invDlcSort)return _invDlcBar()+'<div style="animation:dlcIn .25s ease;">'+renderDlcSortedInventory()+'</div>';
-  const editBtn=_invDlcBar()+`<button onclick="toggleEditMode()" style="padding:6px 14px;background:${S.editMode?'rgba(95,168,201,.2)':'transparent'};border:0.5px solid ${S.editMode?'var(--blue)':'var(--border)'};border-radius:8px;color:${S.editMode?'var(--blue)':'var(--text2)'};font-size:13px;cursor:pointer;margin-bottom:14px;display:block;width:100%;">${S.editMode?'\u2713 Terminer l\'édition':'\u270f\ufe0f Éditer l\'inventaire'}</button>`;
+  /* tri par DLC garde tel quel (vue d'ensemble, toutes categories) ; recherche et Modifier sur une ligne */
+  const editBtn=_invDlcBar()+'<div class="inv-outils">'+invSearchBox()+`<button onclick="toggleEditMode()" class="inv-modif" style="background:${S.editMode?'rgba(95,168,201,.2)':'var(--bg2)'};border-color:${S.editMode?'var(--blue)':'var(--border)'};color:${S.editMode?'var(--blue)':'var(--text2)'};">${S.editMode?'\u2713 Terminer':'\u270f\ufe0f Modifier'}</button></div>`;
   // Ajouter depuis le haut, sans avoir a derouler jusqu'a la bonne categorie
   const topAdd=S.editMode?'<button onclick="openAddItem(\'frigo\')" style="width:100%;padding:11px;margin:2px 0 12px;background:rgba(111,191,115,.14);border:0.5px solid rgba(111,191,115,.45);border-radius:10px;color:var(--green);font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un article</button>':'';
-  return editBtn+topAdd+renderInvDiag()+renderPlatsMaison()+invSearchBox()+'<div id="inv-list">'+renderInvCats()+'</div>';
+  return editBtn+topAdd+renderInvDiag()+renderPlatsMaison()+renderConsommerVite()+'<div id="inv-list">'+renderInvCats()+'</div>';
 }
+// Inventaire en onglets, une categorie a la fois (28/10/2026, demande de Liam : la liste
+// complete faisait 3 ecrans, 11 en mode Modifier). L'onglet est retenu par appareil.
+function _invOnglet(){
+  var t=S.invTab;
+  if(!t){try{t=localStorage.getItem('dz_inv_onglet');}catch(e){}}
+  return CINFO[t]?t:'frigo';
+}
+function _invEnStock(i){return !!i&&!i.plat&&(i.qty===null||i.qty>0);}
+/* pastille rouge d'un onglet : perissable marque ou date limite a moins de 7 jours (ou depassee) */
+function _invAlerte(it){
+  if(!_invEnStock(it))return false;
+  if(it.urgent)return true;
+  var d=it.dlc?getDlcStatus(effDlc(it)):null;
+  return !!(d&&(d.color==='var(--red)'||d.label==='Expiré'));
+}
+/* date limite affichee dans la liste : seulement quand elle compte (14 jours ou moins, ou depassee) */
+function _dlcUtile(st){return !!st&&(st.label==='Expiré'||st.color!=='var(--text3)');}
+function _dateCourte(d){return d?String(d).slice(8,10)+'/'+String(d).slice(5,7):'';}
+function _hauteurEntete(){try{var h=document.querySelector('.apphead');return h?h.offsetHeight:0;}catch(e){return 0;}}
+function _majHauteurEntete(){try{var h=_hauteurEntete();if(h)document.documentElement.style.setProperty('--hdr-h',h+'px');}catch(e){}}
+function choisirOngletInv(c){
+  if(!CINFO[c])return;
+  S.invTab=c;try{localStorage.setItem('dz_inv_onglet',c);}catch(e){}
+  render();
+  /* les onglets restent colles en haut : si on etait loin dans un long onglet, la nouvelle liste repart du debut */
+  try{var o=document.querySelector('.inv-onglets'),l=document.querySelector('.inv-liste');
+    if(o&&l){var haut=_hauteurEntete()+o.offsetHeight+6,y=l.getBoundingClientRect().top;if(y<haut)window.scrollTo(0,window.scrollY+y-haut);}}catch(e){}
+}
+function _ligneInv(cat,it,idx,liste){
+  const isUrg=it.urgent&&(it.qty===null||it.qty>0);
+  const isEp=cat==='epices';
+  const dlc=it.dlc?getDlcStatus(effDlc(it)):null;
+  const dessert=it.dessert?'<span title="Proposé comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">🍰</span>':'';
+  if(S.editMode){
+    /* une seule ligne : nom, quantite, date en pastille (touche = calendrier), ✕ */
+    const _vd=_invVideArt(it),_sep=_vd&&(idx===0||!_invVideArt(liste[idx-1]));
+    const _pk=it.qty!==null&&it.pkg&&it.pkg.size>0&&(!it.unit||it.unit==='g'||it.unit==='ml');
+    const _b='padding:4px 6px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;';
+    return`${_sep?'<div class="inv-vides" style="padding:8px 15px 3px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Épuisés</div>':''}<div class="irow ied${_vd?' inv-vide':''}" style="${_vd?'opacity:.5;':''}">
+      <span class="ied-nom" onclick="openItemDetail('${cat}','${it.id}')" style="color:${isUrg?'var(--red)':'var(--text2)'};">${it.name}${dessert}${_badgeNova(it)}</span>
+      <span class="ied-ctl">${isEp?`<span style="font-size:11px;color:var(--text3);">présent</span>`:`<button onclick="toggleInvPresent('${cat}','${it.id}')" title="Présent sans quantité / avec quantité" style="padding:4px 6px;border-radius:6px;border:0.5px solid ${it.qty===null?'var(--green)':'var(--border)'};background:${it.qty===null?'rgba(111,191,115,.12)':'transparent'};color:${it.qty===null?'var(--green)':'var(--text3)'};font-size:12px;cursor:pointer;">∞</button>${it.qty===null?`<span style="font-size:11px;color:var(--green);">présent</span>`:`<input type="number" class="ied-qte" value="${it.qty||0}" min="0" onchange="updateInvQty('${cat}','${it.id}',this.value)"><span class="ied-u">${it.unit||''}</span>${_pk?`<button onclick="stepInvPkg('${cat}','${it.id}',-1)" title="Un emballage de moins" style="${_b}">−1</button><button onclick="stepInvPkg('${cat}','${it.id}',1)" title="Un emballage de plus" style="${_b}">+1</button>`:''}`}`}<label class="inv-date" title="Date limite" style="color:${dlc?dlc.color:'var(--text3)'};border-color:${dlc&&dlc.color!=='var(--text3)'?dlc.color:'var(--border)'};">${it.dlc?_dateCourte(it.dlc):'📅'}<input type="date" value="${it.dlc||''}" onchange="updateInvDlc('${cat}','${it.id}',this.value);render()"></label><button onclick="deleteInvItem('${cat}','${it.id}')" title="Retirer" style="background:var(--red-bg);border:0.5px solid var(--red);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;padding:4px 7px;">✕</button></span>
+    </div>`;
+  }
+  const _dOr=dlc&&dlc.color==='var(--orange)';const _dRed=(isUrg||(dlc&&dlc.color==='var(--red)'))&&!_dOr;const _hot=_dRed||_dOr;const _cls=_dRed?' urg':(_dOr?' urgo':'');const _nc=isUrg?'var(--red)':((dlc&&(dlc.color==='var(--red)'||dlc.color==='var(--orange)'))?dlc.color:'var(--text2)');
+  return`<div class="irow${_cls}">
+    <span class="inv-nom" onclick="openItemDetail('${cat}','${it.id}')" style="color:${_nc};">${_hot?`<span title="${isUrg&&!it.dlc?'Produit périssable : à consommer rapidement':'Date limite proche'}">⏱ </span>`:''}${it.name}${dessert}${_badgeNova(it)}</span>
+    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+      <span style="font-size:12px;color:var(--text3);white-space:nowrap;">${qtyLabel(it)}</span>
+      ${_dlcUtile(dlc)?`<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:${dlc.bg};color:${dlc.color};font-weight:500;white-space:nowrap;">DLC ${dlc.label}</span>`:''}
+    </div>
+  </div>`;
+}
+function _listeInv(cat,items){
+  /* mode Modifier : les articles a 0 en bas de leur categorie, grises (28/10/2026, idee de Liam) */
+  const l=items.sort((a,b)=>(S.editMode?(_invVideArt(a)-_invVideArt(b)):0)||(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'}));
+  return l.map((it,idx)=>_ligneInv(cat,it,idx,l)).join('');
+}
+// « À consommer vite » (28/10/2026, valide par Liam) : les 5 dates limites les plus proches,
+// toutes categories, 14 jours ou moins ; le tri par DLC donne la vue complete.
+const VITE_JOURS=14,VITE_MAX=5;
+function _aConsommerVite(){
+  var out=[],auj=new Date(getToday());
+  Object.keys(CINFO).forEach(function(cat){
+    (Array.isArray(S.inv&&S.inv[cat])?S.inv[cat]:[]).forEach(function(it){
+      if(!_invEnStock(it)||!it.dlc)return;
+      var d=effDlc(it);if(!d)return;
+      var j=Math.round((new Date(d)-auj)/864e5);if(j>VITE_JOURS)return;
+      out.push({it:it,cat:cat,d:d,j:j});
+    });
+  });
+  return out.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:(a.it.name||'').localeCompare(b.it.name||'','fr'));});
+}
+function renderConsommerVite(){
+  if(S.editMode)return '';
+  var l=_aConsommerVite();if(!l.length)return '';
+  return '<div class="inv-vite"><div class="iv-t">⏳ À consommer vite</div>'
+    +l.slice(0,VITE_MAX).map(function(o){
+      var st=getDlcStatus(o.d)||{label:'',color:'var(--text3)',bg:'var(--bg3)'};
+      return '<div class="iv-l" onclick="openItemDetail(\''+o.cat+'\',\''+o.it.id+'\')"><span>'+CINFO[o.cat].sym+'</span><span class="iv-n">'+o.it.name+'</span><span class="iv-q">'+qtyLabel(o.it)+'</span><span class="iv-d" style="color:'+st.color+';background:'+st.bg+';">'+st.label+'</span></div>';
+    }).join('')
+    +'<button class="iv-tout" onclick="toggleInvDlcSort()">'+(l.length>VITE_MAX?'+'+(l.length-VITE_MAX)+' autre'+(l.length-VITE_MAX>1?'s':'')+' · ':'')+'Tout voir par date ›</button></div>';
+}
+const _OU_INV={frigo:'le frigo',congelateur:'le congélateur',placards:'les placards',epices:'les épices'};
 function renderInvCats(){
   const q=_normNom(S.invSearch||'');
-  const cats=Object.entries(S.inv||{}).map(([cat,items])=>{
-    items=(Array.isArray(items)?items:[]).filter(function(i){return i&&!i.plat;});   // tableaux troues Firebase ; plats maison a part
-    let base=(S.editMode?items.slice():items.filter(i=>i.qty===null||i.qty>0));
-    if(q)base=base.filter(i=>_normNom(i.name).indexOf(q)>=0);
-    /* mode Modifier : les articles a 0 en bas de leur categorie, grises (28/10/2026, idee de Liam) */
-    const visible=base.sort((a,b)=>(S.editMode?(_invVideArt(a)-_invVideArt(b)):0)||(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'}));
-    const info=CINFO[cat],urg=visible.filter(i=>i.urgent&&(i.qty===null||i.qty>0)),open=S.editMode?true:S.openCat[cat];
-    const rows=open?visible.map((it,idx)=>{
-      const isUrg=it.urgent&&(it.qty===null||it.qty>0);
-      const isEp=cat==='epices';
-      const dlc=it.dlc?getDlcStatus(effDlc(it)):null;
-      if(S.editMode){
-        const _vd=_invVideArt(it),_sep=_vd&&(idx===0||!_invVideArt(visible[idx-1]));
-        return`${_sep?'<div class="inv-vides" style="padding:8px 15px 3px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Épuisés</div>':''}<div class="irow${_vd?' inv-vide':''}" style="flex-wrap:wrap;gap:4px;align-items:center;${_vd?'opacity:.5;':''}">
-          <span onclick="openItemDetail('${cat}','${it.id}')" style="color:${isUrg?'var(--red)':'var(--text2)'};flex:1;font-size:12px;min-width:100px;cursor:pointer;">${it.name}${it.dessert?'<span title="Propos\u00e9 comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">\ud83c\udf70</span>':''}${_badgeNova(it)}</span>
-          ${isEp?`<span style="font-size:11px;color:var(--text3);">présent</span>`:`<button onclick="toggleInvPresent('${cat}','${it.id}')" title="Présent / quantité" style="padding:4px 7px;border-radius:6px;border:0.5px solid ${it.qty===null?'var(--green)':'var(--border)'};background:${it.qty===null?'rgba(111,191,115,.12)':'transparent'};color:${it.qty===null?'var(--green)':'var(--text3)'};font-size:12px;cursor:pointer;white-space:nowrap;">∞</button>${it.qty===null?`<span style="font-size:11px;color:var(--green);margin-left:3px;">présent</span>`:`<input type="number" value="${it.qty||0}" min="0" onchange="updateInvQty('${cat}','${it.id}',this.value)" style="width:56px;padding:4px 6px;background:var(--bg);border:0.5px solid var(--border);border-radius:6px;color:var(--text);font-size:12px;outline:none;text-align:center;box-sizing:border-box;margin-left:3px;">${it.pkg&&it.pkg.size>0&&(!it.unit||it.unit==='g'||it.unit==='ml')?`<button onclick="stepInvPkg('${cat}','${it.id}',-1)" style="padding:4px 6px;margin-left:3px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">−1</button><button onclick="stepInvPkg('${cat}','${it.id}',1)" style="padding:4px 6px;margin-left:2px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;">+1</button><span style="font-size:11px;color:var(--text3);margin-left:4px;white-space:nowrap;">${Math.round((it.qty||0)/it.pkg.size*10)/10} × ${it.pkg.size}${it.unit||"g"}</span>`:``}<span style="font-size:11px;color:var(--text3);margin-left:2px;">${it.unit}</span>`}`}
-          <input type="date" value="${it.dlc||''}" onchange="updateInvDlc('${cat}','${it.id}',this.value)" title="Date p\u00e9remption" style="padding:3px 6px;background:var(--bg);border:0.5px solid ${dlc?dlc.color:'var(--border)'};border-radius:6px;color:${dlc?dlc.color:'var(--text3)'};font-size:11px;outline:none;cursor:pointer;"/>
-          <button onclick="deleteInvItem('${cat}','${it.id}')" style="background:var(--red-bg);border:0.5px solid var(--red);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;padding:3px 8px;flex-shrink:0;">✕</button>
-        </div>`;
-      }
-      const _dOr=dlc&&dlc.color==='var(--orange)';const _dRed=(isUrg||(dlc&&dlc.color==='var(--red)'))&&!_dOr;const _hot=_dRed||_dOr;const _cls=_dRed?' urg':(_dOr?' urgo':'');const _nc=isUrg?'var(--red)':((dlc&&(dlc.color==='var(--red)'||dlc.color==='var(--orange)'))?dlc.color:'var(--text2)');return`<div class="irow${_cls}">
-        <span onclick="openItemDetail('${cat}','${it.id}')" style="color:${_nc};cursor:pointer;">${_hot?`<span title="${isUrg&&!it.dlc?'Produit périssable : à consommer rapidement':'Date limite proche'}">⏱ </span>`:''}${it.name}${it.dessert?'<span title="Propos\u00e9 comme dessert" style="margin-left:5px;font-size:11px;opacity:.85;">\ud83c\udf70</span>':''}${_badgeNova(it)}</span>
-        <div style="display:flex;align-items:center;gap:6px;">
-          <span style="font-size:12px;color:var(--text3);">${qtyLabel(it)}</span>
-          ${dlc?`<span style="font-size:11px;padding:1px 6px;border-radius:4px;background:${dlc.bg};color:${dlc.color};font-weight:500;">DLC ${dlc.label}</span>`:''}
-        </div>
-      </div>`;
-    }).join(''):'';
-    const addBtn=S.editMode&&open?`<div style="padding:6px 15px;border-top:0.5px solid var(--border);"><button onclick="openAddItem('${cat}')" style="width:100%;padding:8px;background:transparent;border:0.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">\u2795 Ajouter dans ${info.label}</button></div>`:'';
-    return`<div class="catcard"><div class="chead" data-action="toggle-cat" data-val="${cat}"><span style="font-size:15px;">${info.sym}</span><span style="flex:1;">${info.label}</span>${urg.length?`<span class="chip" style="background:var(--red-bg);color:var(--red);margin-right:6px;">\u26a0 ${urg.length}</span>`:''}<span class="chev" style="font-size:14px;color:var(--text3);transform:rotate(${open?'90deg':'0deg'});">▸</span></div><div class="cwrap${!S.editMode&&S._anim==='c:'+cat?' unfold':''}" data-cat="${cat}">${rows}${addBtn}</div></div>`;
-  }).join('');
+  const cats=Object.keys(CINFO);
+  const arts=function(cat){return (Array.isArray(S.inv&&S.inv[cat])?S.inv[cat]:[]).filter(function(i){return i&&!i.plat;});};   // tableaux troues Firebase ; plats maison a part
+  const garder=function(i){return S.editMode||_invEnStock(i);};
+  let corps;
+  if(q){
+    /* la recherche couvre tout l'inventaire, quel que soit l'onglet */
+    const grp=cats.map(function(cat){
+      const l=arts(cat).filter(garder).filter(function(i){return _normNom(i.name).indexOf(q)>=0;});
+      if(!l.length)return '';
+      return '<div class="inv-grp">'+CINFO[cat].sym+' '+CINFO[cat].label+'</div><div class="catcard inv-liste" data-cat="'+cat+'" style="border-left:3px solid '+CINFO[cat].coul+';">'+_listeInv(cat,l)+'</div>';
+    }).join('');
+    corps='<div style="font-size:11px;color:var(--text3);margin:0 2px 8px;">Recherche dans tout l’inventaire</div>'+(grp||'<div class="inv-rien">Aucun article ne correspond.</div>');
+  }else{
+    const tab=_invOnglet();
+    const onglets='<div class="inv-onglets" role="tablist">'+cats.map(function(c){
+      const a=arts(c),n=a.filter(_invEnStock).length,al=a.filter(_invAlerte).length,on=c===tab;
+      return '<button role="tab" aria-selected="'+on+'" data-action="inv-tab" data-val="'+c+'" class="inv-onglet'+(on?' on':'')+'" style="--c:'+CINFO[c].coul+';">'
+        +(al?'<span class="io-al" title="'+al+' à consommer vite">'+al+'</span>':'')
+        +'<span class="io-sym">'+CINFO[c].sym+'</span><span class="io-lib">'+CINFO[c].court+'</span><span class="io-n">'+n+'</span></button>';
+    }).join('')+'</div>';
+    const l=arts(tab).filter(garder);
+    const vide=l.length?'':'<div class="inv-rien">'+(S.editMode?'Aucun article dans cette catégorie.':'Rien en stock dans '+_OU_INV[tab]+'.')+'</div>';
+    const addBtn=S.editMode?`<div style="padding:6px 15px;border-top:0.5px solid var(--border);"><button onclick="openAddItem('${tab}')" style="width:100%;padding:8px;background:transparent;border:0.5px dashed var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">➕ Ajouter dans ${CINFO[tab].label}</button></div>`:'';
+    corps=onglets+'<div class="catcard inv-liste" data-cat="'+tab+'" style="border-left:3px solid '+CINFO[tab].coul+';">'+_listeInv(tab,l)+vide+addBtn+'</div>';
+  }
   const _del=getDeletedItems();
   const histSection=S.editMode&&_del.length?`<div style="margin-top:16px;padding:12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:10px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">🗑 Récemment supprimés · récupérables 24h, sinon définitif</div>${_del.map((d,i)=>{const hh=Math.floor((Date.now()-d.deletedAt)/3600000);const left=Math.max(1,24-hh);const ci=CINFO[d.cat];return`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:0.5px solid var(--border);"><span style="flex:1;font-size:12px;color:var(--text2);">${d.item.name} <span style="color:var(--text3);font-size:11px;">· ${ci?ci.label:d.cat} · encore ${left}h pour récupérer</span></span><button onclick="restoreDeletedItem(${i})" style="padding:4px 10px;background:var(--green-bg);border:0.5px solid var(--green);border-radius:6px;color:var(--green);font-size:11px;cursor:pointer;flex-shrink:0;">↩ Restaurer</button></div>`;}).join('')}</div>`:'';
   const bottomAdd=S.editMode?`<button onclick="openAddItem('frigo')" style="width:100%;padding:11px;margin-top:14px;background:linear-gradient(135deg,var(--green),var(--green));border:none;border-radius:10px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button>`:'';
   const waitSection=(S.waiting&&S.waiting.length)?`<div style="background:rgba(192,87,70,.07);border:0.5px solid rgba(192,87,70,.25);border-radius:12px;padding:12px;margin-bottom:14px;"><div style="font-size:12px;color:var(--accent2);font-weight:600;margin-bottom:2px;">\ud83d\uded2 À ranger \u00b7 ${S.waiting.length}</div><div style="font-size:11px;color:var(--text3);margin-bottom:10px;">Articles achet\u00e9s \u00e0 ranger. Touche un article : s\u2019il est d\u00e9j\u00e0 dans ton inventaire, indique juste la quantit\u00e9 achet\u00e9e ; \u2715 pour le retirer.</div>${S.waiting.map(w=>`<div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg);border-radius:8px;margin-bottom:6px;"><span onclick="openWaitingItem('${w.id}')" style="flex:1;font-size:13px;color:var(--text);cursor:pointer;">${w.name}</span><span onclick="openWaitingItem('${w.id}')" style="font-size:15px;color:var(--accent);cursor:pointer;">\u2192</span><button onclick="deleteWaiting('${w.id}')" style="background:none;border:0;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:2px 6px;">\u2715</button></div>`).join('')}</div>`:'';
   if(_invVide()&&!S.editMode)return waitSection+'<div style="text-align:center;padding:2rem 1rem;"><div style="font-size:32px;margin-bottom:10px;">🌿</div><div style="font-size:14px;color:var(--text2);margin-bottom:6px;">Ton inventaire est vide.</div><div style="font-size:12.5px;color:var(--text3);line-height:1.5;margin-bottom:14px;">Ajoute ce que tu as chez toi (frigo, placards…) : les recettes proposées en dépendent. Un code-barres remplit les valeurs tout seul.</div><button onclick="openAddItem(\'frigo\')" style="padding:10px 20px;background:linear-gradient(135deg,#C86050,#A63F32);border:none;border-radius:8px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">\u2795 Ajouter un aliment</button></div>';
-  return waitSection+cats+bottomAdd+histSection;
+  return waitSection+corps+bottomAdd+histSection;
 }
 /* Rien en stock (articles a 0 et plats exclus) : l'onglet n'affiche que l'essentiel */
 function _invVide(){return !Object.values(S.inv||{}).some(function(a){return (Array.isArray(a)?a:[]).some(function(i){return i&&(i.plat||i.qty===null||+i.qty>0);});});}
@@ -7680,6 +7795,7 @@ function render(){
   </div>`;
   _animateTabs();
   _majBarreReste();
+  _majHauteurEntete();
   if(_tutoDemoActif)_tutoInjecterDemo();   /* un rendu pendant le tutoriel (chargement du Bilan…) ne doit pas effacer l'exemple */
 }
 
@@ -7694,9 +7810,10 @@ function _onActionClick(e){
   const{action,val}=el.dataset;
   if(action==='main-tab')S.mainTab=val;
   else if(action==='voir-urgents'){
-    /* l'inventaire, avec les categories qui contiennent un article a consommer deja ouvertes */
-    S.mainTab='inventory';S.openCat=S.openCat||{};
-    Object.keys(S.inv||{}).forEach(function(c){if((S.inv[c]||[]).some(function(i){return i&&!i.plat&&i.urgent&&(i.qty===null||i.qty>0);}))S.openCat[c]=1;});
+    /* l'inventaire, sur l'onglet qui contient un article a consommer */
+    S.mainTab='inventory';
+    var _cU=Object.keys(CINFO).filter(function(c){return (S.inv[c]||[]).some(function(i){return i&&!i.plat&&i.urgent&&(i.qty===null||i.qty>0);});})[0];
+    if(_cU)S.invTab=_cU;   /* l'onglet qui contient un article a consommer */
     render();try{window.scrollTo(0,0);}catch(e){}return;
   }
   else if(action==='cal-mois'){var _cm=(_calMois||S.today.slice(0,7)).split('-'),_cd=new Date(+_cm[0],+_cm[1]-1+parseInt(val,10),1);
@@ -7726,11 +7843,7 @@ function _onActionClick(e){
     if(wo){const el=document.querySelector('.rbody[data-rec="'+val+'"]');if(el){el.classList.add('refold');const cv=el.closest('.rcard');if(cv){const ch=cv.querySelector('.chev');if(ch)ch.style.transform='rotate(0deg)';}setTimeout(()=>{if(S.openRec===val){S.openRec=null;render();}},500);return;}S.openRec=null;}
     else{S.openRec=val;S._anim='r:'+val;}
   }
-  else if(action==='toggle-cat'){
-    const wo=S.openCat[val];
-    if(wo&&!S.editMode){const el=document.querySelector('.cwrap[data-cat="'+val+'"]');if(el){el.classList.add('refold');const cv=el.closest('.catcard');if(cv){const ch=cv.querySelector('.chev');if(ch)ch.style.transform='rotate(0deg)';}setTimeout(()=>{if(S.openCat[val]){S.openCat[val]=0;render();}},500);return;}S.openCat[val]=0;}
-    else{S.openCat[val]=wo?0:1;S._anim=wo?null:'c:'+val;}
-  }
+  else if(action==='inv-tab'){choisirOngletInv(val);return;}
   else if(action==='select-dessert'){const _d=el.dataset.dessert;const _cur=S.recipeDesserts[val]||'none';S.recipeDesserts[val]=(_cur===_d)?'none':_d;if(S.recipeDesserts[val]!=='autre'){delete S.customDesserts[val];delete S.customInputs[val];}}
   else if(action==='submit-custom-dessert'){const inp=document.querySelector(`[data-custom-input="${val}"]`);const txt=inp?inp.value.trim():S.customInputs[val]||'';if(txt)analyzeCustomDessert(val,txt);return;}
   else if(action==='prev-day'){const p=shiftDate(S.displayDate,-1);if(p>=shiftDate(S.today,-6))S.displayDate=p;}

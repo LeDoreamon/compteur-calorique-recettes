@@ -10,7 +10,7 @@ const prepa=()=>{
   S.inv={frigo:[{id:'beurre',name:'Beurre',qty:0,unit:'g'},{id:'skyr',name:'Skyr',qty:4,unit:'pcs'},{id:'ail',name:'Ail',qty:0,unit:'pcs'},
     {id:'oeufs',name:'Œufs',qty:6,unit:'pcs'},{id:'citron',name:'Citron',qty:null,unit:'pcs'},{id:'jambon',name:'Jambon',qty:0,unit:'tranches'}],
     placards:[{id:'riz',name:'Riz',qty:0,unit:'g'}],congelateur:[],epices:[]};
-  S.invSearch='';X('S.editMode=true');
+  S.invSearch='';X("S.invTab='frigo'");X('S.editMode=true');
 };
 /* ordre des articles d'une categorie dans le HTML rendu */
 const ordre=(h,cat)=>{const bloc=h.split('data-cat="'+cat+'"')[1]||'';return (bloc.split('</div></div>')[0].match(/openItemDetail\('[a-z]+','([a-z_]+)'\)/g)||[]).map(s=>s.match(/,'([a-z_]+)'\)/)[1]);};
@@ -22,15 +22,15 @@ t('*** mode Modifier : les articles a 0 en bas de leur categorie, chaque groupe 
 });
 t('grises (opacite) mais toujours modifiables : champ quantite, date, ✕',()=>{
   prepa();const h=X('renderInvCats()');
-  const rangee=(h.match(/<div class="irow inv-vide"[^]*?✕<\/button>/)||[''])[0];
+  const rangee=(h.match(/<div class="irow ied inv-vide"[^]*?✕<\/button>/)||[''])[0];
   if(!/opacity:\.5/.test(rangee))throw new Error('pas grise');
   if(!/updateInvQty\('frigo','ail',this\.value\)/.test(rangee))throw new Error('quantite non modifiable');
   if(!/deleteInvItem\('frigo','ail'\)/.test(rangee))throw new Error('✕ absent');
   if(/inv-vide[^>]*>[^]*?openItemDetail\('frigo','skyr'\)/.test(h.split('Épuisés')[0]))throw new Error('un article en stock est grise');
 });
 t('un intitule « Épuisés » par categorie, juste avant le premier article a 0',()=>{
-  prepa();const h=X('renderInvCats()');
-  eq((h.match(/class="inv-vides"/g)||[]).length,2,'frigo et placards');
+  prepa();X("S.invTab='placards'");eq((X('renderInvCats()').match(/class="inv-vides"/g)||[]).length,1,'placards');X("S.invTab='frigo'");const h=X('renderInvCats()');
+  eq((h.match(/class="inv-vides"/g)||[]).length,1,'frigo (un onglet a la fois)');
   const f=h.split('data-cat="frigo"')[1];if(f.indexOf('Épuisés')>f.indexOf("'frigo','ail'"))throw new Error('intitule apres le premier article vide');
   X("S.inv.frigo.forEach(function(i){if(!i.qty&&i.qty!==null)i.qty=1;})");if(/Épuisés/.test(X('renderInvCats()').split('data-cat="placards"')[0]))throw new Error('intitule sans article vide');
 });

@@ -20,13 +20,13 @@ t('idem pour « pcs » et autres unites denombrables',()=>{
   });
 });
 t('*** un article au poids garde son compte de paquets ***',()=>{
-  eq(qtyLabel({qty:400,unit:'g',pkg:{size:100}}),'400 g · 4×100g');
+  eq(qtyLabel({qty:400,unit:'g',pkg:{size:100}}),'400 g · 4 × 100 g');
 });
 t('les millilitres aussi',()=>{
-  eq(qtyLabel({qty:3000,unit:'ml',pkg:{size:1000}}),'3000 ml · 3×1000ml');
+  eq(qtyLabel({qty:3000,unit:'ml',pkg:{size:1000}}),'3000 ml · 3 × 1000 ml');
 });
 t('fraction affichee proprement au poids',()=>{
-  eq(qtyLabel({qty:350,unit:'g',pkg:{size:100}}),'350 g · 3.5×100g');
+  eq(qtyLabel({qty:350,unit:'g',pkg:{size:100}}),'350 g · 3,5 × 100 g');
 });
 t('stock illimite',()=>eq(qtyLabel({qty:null,unit:'g'}),'présent'));
 t('sans emballage, libelle simple',()=>eq(qtyLabel({qty:250,unit:'g'}),'250 g'));
