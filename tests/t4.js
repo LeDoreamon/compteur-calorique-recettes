@@ -37,9 +37,11 @@ t('le mode inventaire est actif d\'office',()=>{
 t('le repas demarre vide',()=>{
   eq(docEl('addmeal-kcal').value,0,'kcal de depart');
 });
-t('la liste est peuplee',()=>{
+t('la liste est peuplee (une categorie a la fois, onglets depuis le 28/10/2026)',()=>{
   const h=docEl('invpick-list').innerHTML;
-  if(!h.includes('Poulet')||!h.includes('Riz'))throw new Error('articles absents');
+  if(!h.includes('Poulet')||h.includes('Riz'))throw new Error('onglet Frigo attendu');
+  sb.choisirOngletPick('placards');if(!docEl('invpick-list').innerHTML.includes('Riz'))throw new Error('Riz absent des Placards');
+  sb.choisirOngletPick('frigo');
 });
 t('le bouton HTML appelle bien invAddMeal()',()=>{
   const fs=require('fs');const html=fs.readFileSync('index.html','utf8');

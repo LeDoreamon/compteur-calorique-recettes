@@ -73,6 +73,23 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
 .inv-onglet.on .io-n { color: var(--c); }
 .inv-onglet .io-al { position: absolute; top: -5px; right: -3px; min-width: 17px; height: 17px; padding: 0 4px; box-sizing: border-box; border-radius: 9px;
   background: var(--red); color: #fff; font-size: 11px; font-weight: 700; line-height: 17px; text-align: center; }
+/* Selecteur « Qu'as-tu utilise ? » en onglets (28/10/2026), memes onglets que l'inventaire ; hauteur fixe : les onglets ne bougent pas d'un onglet a l'autre */
+.pick-onglets { position: static; z-index: auto; padding: 5px 0 8px; margin: 0; background: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.inv-onglet .io-al.io-sel { background: var(--green); color: var(--bg); }
+.pick-choix { display: flex; flex-wrap: wrap; align-items: center; gap: 5px 6px; padding: 0 0 8px; }
+.pick-choix .pc-tit { flex-shrink: 0; font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; }
+.pick-chip { flex-shrink: 0; white-space: nowrap; padding: 4px 9px; background: var(--green-bg); border: 0.5px solid rgba(111,191,115,.45); border-radius: 12px; color: var(--text); font-size: 11.5px; cursor: pointer; }
+.pick-chip b { color: var(--green); font-weight: 600; margin-left: 3px; }
+.pick-grp { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .06em; margin: 9px 0 3px; }
+.pick-row { display: flex; align-items: center; gap: 8px; padding: 5px 4px 5px 8px; border-bottom: 0.5px solid rgba(246,237,227,.05); border-radius: 6px; }
+.pick-row.on { background: var(--green-bg); box-shadow: inset 3px 0 0 var(--green); }
+.pick-row .pk-nom { flex: 1; min-width: 0; font-size: 12.5px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pick-row.plat .pk-nom { color: var(--gold); }
+.pick-row.on .pk-nom { color: var(--text); }
+.pick-row .pk-reste { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.pick-row .pk-in { border-color: var(--border); }
+.pick-row.trop .pk-reste { color: var(--red); }
+.pick-row.trop .pk-in { border-color: var(--red); }
 .inv-grp { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin: 4px 2px 6px; }
 .inv-rien { padding: 16px 15px; font-size: 12.5px; color: var(--text3); text-align: center; }
 .inv-nom { cursor: pointer; min-width: 0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; line-height: 1.3; }
@@ -300,12 +317,14 @@ body.auth-ouvert #root { display: none; }
 
 <!-- Settings modal -->
 <div id="invpick-overlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.65);z-index:260;align-items:center;justify-content:center;padding:16px;padding:calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));">
-  <div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:86vh;display:flex;flex-direction:column;">
+  <div style="background:var(--bg2);border:0.5px solid rgba(246,237,227,.1);border-radius:14px;padding:18px;width:100%;max-width:440px;height:86vh;max-height:86vh;box-sizing:border-box;display:flex;flex-direction:column;">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div style="font-size:15px;font-weight:600;color:var(--text);">📦 Qu'as-tu utilisé ?</div>
       <button onclick="closeInvPick()" style="background:none;border:none;color:var(--text3);font-size:19px;cursor:pointer;line-height:1;">✕</button>
     </div>
-    <input id="invpick-search" type="text" oninput="renderInvPick()" placeholder="🔍 Rechercher…" style="width:100%;box-sizing:border-box;padding:8px 11px;background:var(--bg);border:0.5px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;outline:none;margin-bottom:10px;">
+    <input id="invpick-search" type="text" oninput="renderInvPick()" placeholder="🔍 Rechercher…" style="width:100%;box-sizing:border-box;padding:8px 11px;background:var(--bg);border:0.5px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;outline:none;margin-bottom:8px;">
+    <div id="invpick-tabs"></div>
+    <div id="invpick-choix"></div>
     <div id="invpick-list" style="flex:1;overflow-y:auto;overflow-x:hidden;min-height:0;"></div>
     <div id="invpick-sum" style="font-size:11px;color:var(--text3);margin:9px 0 8px;text-align:right;"></div>
     <button onclick="applyInvPick()" style="width:100%;padding:11px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">✓ Ajouter au repas</button>
@@ -338,7 +357,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 12h02 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 23h58 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -603,12 +622,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-28-1202"></script>
+<script src="catalogue.js?v=2026-10-28-2358"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-28-1202';
+const BUILD_ID='2026-10-28-2358';
 const NOUVEAUTES=[
+  {b:'2026-10-28-2358',points:[
+    'Repas composé depuis l’inventaire : la fenêtre « Qu’as-tu utilisé ? » passe en onglets (Frigo, Congélateur, Placards, Épices), avec une pastille verte pour ce que tu as choisi et un rappel « Dans ton repas ».'
+  ]},
   {b:'2026-10-28-1202',points:[
     'Repas : le bouton « Point du coach » est plus petit, à gauche sur la ligne de la synchronisation.'
   ]},
@@ -8163,7 +8185,9 @@ function openInvPick(){
     _invPick[s.id]=qi?(parseFloat(qi.value)||0):(s.qty||0);   // pré-coché : ce que l'IA a déjà proposé
   });
   var s=document.getElementById('invpick-search');if(s)s.value='';
+  _pickOnglet=_ongletPickInitial();
   renderInvPick();
+  var l=document.getElementById('invpick-list');if(l)l.scrollTop=0;
   document.getElementById('invpick-overlay').style.display='flex';
 }
 function closeInvPick(){
@@ -8179,6 +8203,9 @@ function closeInvPick(){
 function invPickQty(id,v){
   var q=parseFloat(v)||0;
   if(q>0)_invPick[id]=q;else delete _invPick[id];
+  var row=document.getElementById('pick-row-'+id),it=findItem(id);
+  if(row&&row.classList){row.classList.toggle('on',q>0);row.classList.toggle('trop',!!it&&it.qty!==null&&q>it.qty+1e-9);}
+  _invPickEntete();
   _invPickSum();
 }
 function _fmtMacG(v){
@@ -8203,43 +8230,100 @@ function _invPickSum(){
     +'<span style="color:var(--red);">'+_fmtMacG(t.lip)+' g lip.</span>'
     +'</div>';
 }
+// Onglets (28/10/2026, demande de Liam, comme l'inventaire : la liste complete faisait ~70 lignes).
+// Une categorie a la fois ; la recherche couvre tout ; « Dans ton repas » garde la vue de ce qui
+// est coche dans les autres onglets ; plats maison en tete de leur categorie.
+var _pickOnglet='frigo';
+function _ongletPickInitial(){
+  var cats=Object.keys(CINFO);
+  for(var i=0;i<cats.length;i++){
+    if((S.inv[cats[i]]||[]).some(function(it){return it&&_invPick[it.id]>0;}))return cats[i];   /* ce que l'IA a deja coche */
+  }
+  var t=null;try{t=localStorage.getItem('dz_pick_onglet');}catch(e){t=null;}
+  return CINFO[t]?t:'frigo';
+}
+function choisirOngletPick(c){
+  if(!CINFO[c])return;
+  _pickOnglet=c;try{localStorage.setItem('dz_pick_onglet',c);}catch(e){/* stockage indisponible : l'onglet ne sera pas retenu */}
+  renderInvPick();
+  var l=document.getElementById('invpick-list');if(l)l.scrollTop=0;
+}
+/* article montre dans le selecteur : en stock (ou illimite), ou deja choisi */
+function _pickVisible(it){return !!it&&!!it.name&&(it.qty===null||it.qty>0||!!_invPick[it.id]);}
+function _pickArticles(cat,q){
+  return (S.inv[cat]||[]).filter(function(i){return _pickVisible(i)&&(!q||_normNom(i.name).indexOf(q)>=0);})
+    .sort(function(a,b){return (b.plat?1:0)-(a.plat?1:0)||(a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'});});
+}
+function _qtePick(it,q){return it.plat?_libParts(q):_fmtMacG(q)+' '+(it.macPiece?(it.unit||'pc'):(it.unit||'g'));}
+function allerArticlePick(id){
+  var cat=_catDeLArticle(id);if(!CINFO[cat])return;
+  var s=document.getElementById('invpick-search');if(s)s.value='';
+  choisirOngletPick(cat);
+  var r=document.getElementById('pick-row-'+id);if(r&&r.scrollIntoView)r.scrollIntoView({block:'nearest'});
+}
+function _invPickEntete(){
+  var q=_normNom((document.getElementById('invpick-search')||{}).value||'');
+  var tb=document.getElementById('invpick-tabs');
+  if(tb)tb.innerHTML=q?'':'<div class="inv-onglets pick-onglets" role="tablist">'+Object.keys(CINFO).map(function(c){
+    var l=(S.inv[c]||[]).filter(_pickVisible),on=c===_pickOnglet;
+    var n=l.filter(function(it){return _invPick[it.id]>0;}).length;
+    return '<button role="tab" aria-selected="'+on+'" onclick="choisirOngletPick(\''+c+'\')" class="inv-onglet'+(on?' on':'')+'" style="--c:'+CINFO[c].coul+';">'
+      +(n?'<span class="io-al io-sel" title="'+n+' choisi'+(n>1?'s':'')+'">'+n+'</span>':'')
+      +'<span class="io-sym">'+CINFO[c].sym+'</span><span class="io-lib">'+CINFO[c].court+'</span><span class="io-n">'+l.length+'</span></button>';
+  }).join('')+'</div>';
+  var ch=document.getElementById('invpick-choix');if(!ch)return;
+  var puces=[];
+  Object.keys(S.inv||{}).forEach(function(cat){
+    _pickArticles(cat,'').forEach(function(it){
+      var v=_invPick[it.id];if(!(v>0))return;
+      puces.push('<button class="pick-chip" onclick="allerArticlePick(\''+it.id+'\')">'+_attr(_nomCourt(it.name))+'<b>'+_qtePick(it,Math.round(v*100)/100)+'</b></button>');
+    });
+  });
+  ch.innerHTML=puces.length?'<div class="pick-choix"><span class="pc-tit">Dans ton repas</span>'+puces.join('')+'</div>':'';
+}
+function _lignePick(it){
+  var sel=_invPick[it.id]||'';
+  var trop=(it.qty!==null&&sel>0&&sel>it.qty+1e-9);
+  var cls='pick-row'+(it.plat?' plat':'')+(sel>0?' on':'')+(trop?' trop':'');
+  var champ='width:62px;flex:0 0 auto;box-sizing:border-box;padding:5px;background:var(--bg);border-width:0.5px;border-style:solid;border-radius:7px;color:var(--text);font-size:12px;text-align:center;outline:none;';
+  if(it.plat){
+    var enG=!!_invPickG[it.id]&&it.pieceG>0,val=sel?(enG?Math.round(sel*it.pieceG):Math.round(sel*100)/100):'';
+    return '<div id="pick-row-'+it.id+'" class="'+cls+'">'
+      +'<span class="pk-nom">\ud83c\udf73 '+_attr(it.name)+'</span>'
+      +'<span class="pk-reste">reste '+_libParts(it.qty)+'</span>'
+      +'<input class="pk-in" type="number" min="0" step="'+(enG?'10':'0.5')+'" inputmode="decimal" value="'+val+'" oninput="invPickQtyPlat(\''+it.id+'\',this.value)" placeholder="0" style="'+champ+'">'
+      +(it.pieceG>0?'<button onclick="invPickUnitePlat(\''+it.id+'\')" title="Changer d\u2019unité" style="width:44px;flex:0 0 auto;padding:4px 0;background:var(--gold-bg);border:0.5px solid rgba(233,161,59,.45);border-radius:6px;color:var(--gold);font-size:11px;cursor:pointer;">'+(enG?'g':'parts')+' \u21c4</button>'
+        :'<span style="font-size:11px;color:var(--text3);width:44px;">parts</span>')
+      +'</div>';
+  }
+  var reste=(it.qty===null)?'\u221e':_fmtMacG(it.qty)+' '+(it.unit||'');
+  var unit=it.macPiece?(it.unit||'pc'):(it.unit||'g');
+  return '<div id="pick-row-'+it.id+'" class="'+cls+'">'
+    +'<span class="pk-nom">'+_attr(it.name)+'</span>'
+    +'<span class="pk-reste">reste '+reste+'</span>'
+    +'<input class="pk-in" type="number" min="0" step="1" inputmode="decimal" value="'+sel+'" oninput="invPickQty(\''+it.id+'\',this.value)" placeholder="0" style="'+champ+'">'
+    +'<span style="font-size:11px;color:var(--text3);width:22px;">'+unit+'</span>'
+    +'</div>';
+}
 function renderInvPick(){
   var el=document.getElementById('invpick-list');if(!el)return;
   var q=_normNom((document.getElementById('invpick-search')||{}).value||'');
+  if(!CINFO[_pickOnglet])_pickOnglet='frigo';
   var html='';
-  Object.keys(S.inv||{}).forEach(function(cat){
-    var items=(S.inv[cat]||[]).filter(function(i){
-      if(!i||!i.name)return false;
-      if(i.qty!==null&&i.qty<=0&&!_invPick[i.id])return false;   // épuisé et non choisi : masqué
-      return !q||_normNom(i.name).indexOf(q)>=0;
-    }).sort(function(a,b){return (a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'});});
-    if(!items.length)return;
-    var info=(typeof CINFO!=='undefined'&&CINFO[cat])?CINFO[cat]:null;
-    html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;margin:9px 0 3px;">'+((info&&info.sym)?info.sym+' ':'')+((info&&info.label)||cat)+'</div>';
-    html+=items.map(function(it){
-      var sel=_invPick[it.id]||'';
-      var reste=(it.qty===null)?'\u221e':(Math.round((+it.qty||0)*10)/10)+(it.unit||'');
-      var unit=it.macPiece?(it.unit||'pc'):(it.unit||'g');
-      var trop=(it.qty!==null&&sel>0&&sel>it.qty+1e-9);
-      if(it.plat){
-        var enG=!!_invPickG[it.id]&&it.pieceG>0,val=sel?(enG?Math.round(sel*it.pieceG):Math.round(sel*100)/100):'';
-        return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid rgba(246,237,227,.05);">'
-          +'<span style="flex:1;min-width:0;font-size:12.5px;color:'+(sel>0?'var(--text)':'var(--gold)')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">\ud83c\udf73 '+_attr(it.name)+'</span>'
-          +'<span style="font-size:11px;color:'+(trop?'var(--red)':'var(--text3)')+';white-space:nowrap;">reste '+_libParts(it.qty)+'</span>'
-          +'<input type="number" min="0" step="'+(enG?'10':'0.5')+'" inputmode="decimal" value="'+val+'" oninput="invPickQtyPlat(\''+it.id+'\',this.value)" placeholder="0" style="width:62px;flex:0 0 auto;box-sizing:border-box;padding:5px;background:var(--bg);border:0.5px solid '+(trop?'var(--red)':'var(--border)')+';border-radius:7px;color:var(--text);font-size:12px;text-align:center;outline:none;">'
-          +(it.pieceG>0?'<button onclick="invPickUnitePlat(\''+it.id+'\')" title="Changer d\u2019unité" style="width:44px;flex:0 0 auto;padding:4px 0;background:var(--gold-bg);border:0.5px solid rgba(233,161,59,.45);border-radius:6px;color:var(--gold);font-size:11px;cursor:pointer;">'+(enG?'g':'parts')+' \u21c4</button>'
-            :'<span style="font-size:11px;color:var(--text3);width:44px;">parts</span>')
-          +'</div>';
-      }
-      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:0.5px solid rgba(246,237,227,.05);">'
-        +'<span style="flex:1;min-width:0;font-size:12.5px;color:'+(sel>0?'var(--text)':'var(--text2)')+';overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+it.name+'</span>'
-        +'<span style="font-size:11px;color:'+(trop?'var(--red)':'var(--text3)')+';white-space:nowrap;">reste '+reste+'</span>'
-        +'<input type="number" min="0" step="1" value="'+sel+'" oninput="invPickQty(\''+it.id+'\',this.value)" placeholder="0" style="width:62px;flex:0 0 auto;box-sizing:border-box;padding:5px;background:var(--bg);border:0.5px solid '+(trop?'var(--red)':'var(--border)')+';border-radius:7px;color:var(--text);font-size:12px;text-align:center;outline:none;">'
-        +'<span style="font-size:11px;color:var(--text3);width:22px;">'+unit+'</span>'
-        +'</div>';
-    }).join('');
-  });
-  el.innerHTML=html||'<div style="font-size:12px;color:var(--text3);padding:12px 0;text-align:center;">Aucun article ne correspond.</div>';
+  if(q){   /* recherche : tout l'inventaire, groupe par categorie */
+    Object.keys(S.inv||{}).forEach(function(cat){
+      var items=_pickArticles(cat,q);if(!items.length)return;
+      var info=CINFO[cat]||null;
+      html+='<div class="pick-grp">'+(info?info.sym+' '+info.label:_attr(cat))+'</div>'+items.map(_lignePick).join('');
+    });
+    html=html||'<div style="font-size:12px;color:var(--text3);padding:12px 0;text-align:center;">Aucun article ne correspond.</div>';
+  }else{
+    var items=_pickArticles(_pickOnglet,'');
+    html=items.length?items.map(_lignePick).join('')
+      :'<div style="font-size:12px;color:var(--text3);padding:12px 0;text-align:center;">Rien en stock ici.</div>';
+  }
+  el.innerHTML=html;
+  _invPickEntete();
   _invPickSum();
 }
 // ─── Titre automatique d'un repas composé depuis l'inventaire ─────────────
