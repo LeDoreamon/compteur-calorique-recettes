@@ -62,21 +62,34 @@ t('*** dates limites : affichees a 14 jours ou moins (et depassees), masquees au
 });
 
 console.log('\n=== LXXVI. Mode Modifier compact ===');
-t('*** une ligne par article : nom, quantite, date en pastille (jj/mm) qui ouvre le calendrier, ✕ ***',()=>{
+t('*** une ligne par article : nom, quantite, date en pastille (jj/mm) qui ouvre une petite fenetre, ✕ ***',()=>{
   prepa();X('S.editMode=true');const h=X('renderInvCats()');
   const l=(h.match(/<div class="irow ied"[^]*?openItemDetail\('frigo','poulet'\)[^]*?✕<\/button><\/span>/)||[''])[0];
   if(!l)throw new Error('ligne compacte absente');
-  const d=J(3);if(l.indexOf('>'+d.slice(8,10)+'/'+d.slice(5,7)+'<input type="date" value="'+d+'"')<0)throw new Error('pastille de date : '+l);
+  const d=J(3);if(!new RegExp("onclick=\"choisirDateArticle\\('frigo','poulet'\\)\"[^>]*>"+d.slice(8,10)+'/'+d.slice(5,7)+'</button>').test(l))throw new Error('pastille de date : '+l);
+  if(/type="date"/.test(l))throw new Error('champ date en direct : iOS le remplit au simple toucher');
   if(/updateInvQty\('frigo','poulet',this\.value\)/.test(l)===false)throw new Error('quantite');
   if(/× \d+ ?g/.test(vis(l)))throw new Error('detail des paquets en mode Modifier');
 });
 t('sans date : pastille 📅 ; un paquet garde −1 / +1',()=>{
   prepa();X('S.editMode=true');X("S.invTab='placards'");const h=X('renderInvCats()');
-  if(!/openItemDetail\('placards','riz'\)[^]*?stepInvPkg\('placards','riz',1\)[^]*?>📅<input type="date" value=""/.test(h))throw new Error(h.slice(0,400));
+  if(!/openItemDetail\('placards','riz'\)[^]*?stepInvPkg\('placards','riz',1\)[^]*?choisirDateArticle\('placards','riz'\)[^>]*>📅<\/button>/.test(h))throw new Error(h.slice(0,400));
 });
 t('*** changer une date en mode Modifier l\'enregistre (avant : rien n\'etait sauve) ***',()=>{
   prepa();let n=0;const vrai=X('saveState');sb.__s=()=>{n++;};X('saveState=__s');
   try{X("updateInvDlc('frigo','skyr','2026-12-01')");eq(n,1,'saveState');eq(S.inv.frigo[1].dlc,'2026-12-01');}finally{sb.__v=vrai;X('saveState=__v');}
+});
+
+t('*** la pastille de date (video de Liam du 28/10) : ouvrir puis fermer ne change rien ; OK enregistre ; Enlever retire ***',()=>{
+  prepa();const vrai=sb._dialogue;let rep,vu=null;sb._dialogue=o=>{vu=o;return {then:f=>f(rep)};};
+  try{
+    rep=false;X("choisirDateArticle('frigo','creme')");eq(S.inv.frigo[2].dlc,J(10),'Annuler');
+    if(vu.date!==J(10)||vu.effacer!=='Enlever'||!/Crème/.test(vu.message))throw new Error('fenetre : '+JSON.stringify(vu));
+    rep={date:J(10)};X("choisirDateArticle('frigo','creme')");eq(S.inv.frigo[2].dlc,J(10),'meme date');
+    rep={date:'2026-12-24'};X("choisirDateArticle('frigo','creme')");eq(S.inv.frigo[2].dlc,'2026-12-24','OK');
+    rep={date:null};X("choisirDateArticle('frigo','creme')");eq(S.inv.frigo[2].dlc,null,'Enlever');
+    X("choisirDateArticle('frigo','creme')");eq(vu.effacer,null,'pas de « Enlever » sans date');eq(vu.date,'','champ vide');
+  }finally{sb._dialogue=vrai;}
 });
 
 console.log('\n=== LXXVII. À consommer vite ===');

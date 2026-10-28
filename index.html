@@ -83,7 +83,6 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
 .ied-u { font-size: 11px; color: var(--text3); }
 .inv-date { position: relative; display: inline-flex; align-items: center; justify-content: center; min-width: 30px; padding: 4px 6px; box-sizing: border-box;
   border: 0.5px solid var(--border); border-radius: 6px; font-size: 11px; white-space: nowrap; cursor: pointer; }
-.inv-date input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; font-size: 16px; cursor: pointer; }
 .inv-vite { background: var(--bg2); border: 0.5px solid var(--border); border-left: 3px solid var(--orange); border-radius: var(--radius); padding: 10px 12px 8px; margin-bottom: 12px; }
 .inv-vite .iv-t { font-size: 10px; color: var(--text3); text-transform: uppercase; letter-spacing: .07em; margin-bottom: 4px; }
 .inv-vite .iv-l { display: flex; align-items: center; gap: 8px; padding: 6px 0; border-top: 0.5px solid rgba(246,237,227,.06); cursor: pointer; }
@@ -278,6 +277,7 @@ body.auth-ouvert #root { display: none; }
 .dz-dlg-boutons { display: flex; gap: 8px; margin-top: 16px; }
 .dz-dlg-b { flex: 1; min-height: 44px; padding: 10px 12px; border-radius: 10px; border: 0.5px solid var(--border); background: var(--bg3); color: var(--text); font-size: 14px; font-weight: 500; line-height: 1.25; }
 .dz-dlg-b:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.dz-dlg-date { display: block; width: 100%; box-sizing: border-box; margin-top: 12px; padding: 10px 12px; background: var(--bg); border: 0.5px solid var(--border); border-radius: 10px; color: var(--text); font-size: 16px; color-scheme: dark; }
 .dz-dlg-ok { background: var(--gold); border-color: var(--gold); color: #1a120b; font-weight: 600; }
 .dz-dlg-danger { background: var(--red); border-color: var(--red); color: #fff; font-weight: 600; }
 @keyframes dzDlgFond { from { opacity: 0; } to { opacity: 1; } }
@@ -338,7 +338,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 01h42 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 01h52 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -603,12 +603,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-28-0142"></script>
+<script src="catalogue.js?v=2026-10-28-0152"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-28-0142';
+const BUILD_ID='2026-10-28-0152';
 const NOUVEAUTES=[
+  {b:'2026-10-28-0152',points:[
+    'Mode Modifier de l’inventaire : la date d’un article se change dans une petite fenêtre avec « OK ». Ouvrir le calendrier sans rien choisir ne met plus la date du jour.'
+  ]},
   {b:'2026-10-28-0142',points:[
     'Inventaire en onglets : une catégorie à la fois (Frigo, Congélateur, Placards, Épices), avec une pastille rouge quand quelque chose est à consommer vite.',
     'Nouveau bandeau « À consommer vite » en haut de l’inventaire : les 5 dates limites les plus proches, toutes catégories confondues. Le tri par DLC reste là pour tout voir.',
@@ -3266,6 +3269,8 @@ function _dlgSuivant(){
   carte.appendChild(el('div','dz-dlg-titre',parts[0]));
   if(parts.length>1)carte.appendChild(el('div','dz-dlg-corps',parts.slice(1).join('\n\n')));
   if(o.texte!=null){var ta=el('textarea','dz-dlg-texte');ta.readOnly=true;ta.value=o.texte;carte.appendChild(ta);}
+  /* champ date (o.date !== undefined) : rien n'est garde avant « OK » ; resout {date} ou false */
+  var champ=null;if(o.date!==undefined){champ=el('input','dz-dlg-date');champ.type='date';champ.value=o.date||'';carte.appendChild(champ);}
   var rang=el('div','dz-dlg-boutons');
   var fermer=function(v){
     if(!_dlgOuvert)return;
@@ -3275,11 +3280,12 @@ function _dlgSuivant(){
   };
   var clavier=function(e){if(e.key==='Escape'){e.preventDefault();fermer(!o.annuler);}};
   var bA=null;
+  if(o.effacer){var bE=el('button','dz-dlg-b',o.effacer);bE.type='button';bE.onclick=function(){fermer({date:null});};rang.appendChild(bE);}
   if(o.annuler){bA=el('button','dz-dlg-b',o.annuler);bA.type='button';bA.onclick=function(){fermer(false);};rang.appendChild(bA);}
   if(o.copier){var bC=el('button','dz-dlg-b','Copier');bC.type='button';
     bC.onclick=function(){try{navigator.clipboard.writeText(o.texte).then(function(){bC.textContent='\u2713 Copi\u00e9';},function(){});}catch(e){}};
     rang.appendChild(bC);}
-  var bO=el('button','dz-dlg-b '+(o.danger?'dz-dlg-danger':'dz-dlg-ok'),o.ok||'OK');bO.type='button';bO.onclick=function(){fermer(true);};
+  var bO=el('button','dz-dlg-b '+(o.danger?'dz-dlg-danger':'dz-dlg-ok'),o.ok||'OK');bO.type='button';bO.onclick=function(){fermer(champ?{date:champ.value||null}:true);};
   rang.appendChild(bO);carte.appendChild(rang);fond.appendChild(carte);
   document.body.appendChild(fond);
   document.addEventListener('keydown',clavier,true);
@@ -5045,6 +5051,17 @@ function _dlcUtile(st){return !!st&&(st.label==='Expiré'||st.color!=='var(--tex
 function _dateCourte(d){return d?String(d).slice(8,10)+'/'+String(d).slice(5,7):'';}
 function _hauteurEntete(){try{var h=document.querySelector('.apphead');return h?h.offsetHeight:0;}catch(e){return 0;}}
 function _majHauteurEntete(){try{var h=_hauteurEntete();if(h)document.documentElement.style.setProperty('--hdr-h',h+'px');}catch(e){}}
+// Pastille de date du mode Modifier : une petite fenetre avec « OK » (28/10/2026, video de Liam :
+// sur iPhone, ouvrir le calendrier d'un champ vide le remplit deja avec aujourd'hui ; le champ en
+// direct enregistrait cette date au simple toucher, sans rien choisir).
+function choisirDateArticle(cat,id){
+  var it=(S.inv[cat]||[]).find(function(i){return i&&i.id===id;});if(!it)return;
+  _dialogue({message:'Date limite\n\n'+it.name,date:it.dlc||'',ok:'OK',annuler:'Annuler',effacer:it.dlc?'Enlever':null}).then(function(r){
+    if(!r||typeof r!=='object')return;              /* Annuler */
+    var v=r.date||null;if(v===(it.dlc||null))return;
+    updateInvDlc(cat,id,v||'');render();
+  });
+}
 function choisirOngletInv(c){
   if(!CINFO[c])return;
   S.invTab=c;try{localStorage.setItem('dz_inv_onglet',c);}catch(e){}
@@ -5065,7 +5082,7 @@ function _ligneInv(cat,it,idx,liste){
     const _b='padding:4px 6px;border-radius:6px;border:0.5px solid var(--border);background:transparent;color:var(--text3);font-size:11px;cursor:pointer;white-space:nowrap;';
     return`${_sep?'<div class="inv-vides" style="padding:8px 15px 3px;font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.06em;">Épuisés</div>':''}<div class="irow ied${_vd?' inv-vide':''}" style="${_vd?'opacity:.5;':''}">
       <span class="ied-nom" onclick="openItemDetail('${cat}','${it.id}')" style="color:${isUrg?'var(--red)':'var(--text2)'};">${it.name}${dessert}${_badgeNova(it)}</span>
-      <span class="ied-ctl">${isEp?`<span style="font-size:11px;color:var(--text3);">présent</span>`:`<button onclick="toggleInvPresent('${cat}','${it.id}')" title="Présent sans quantité / avec quantité" style="padding:4px 6px;border-radius:6px;border:0.5px solid ${it.qty===null?'var(--green)':'var(--border)'};background:${it.qty===null?'rgba(111,191,115,.12)':'transparent'};color:${it.qty===null?'var(--green)':'var(--text3)'};font-size:12px;cursor:pointer;">∞</button>${it.qty===null?`<span style="font-size:11px;color:var(--green);">présent</span>`:`<input type="number" class="ied-qte" value="${it.qty||0}" min="0" onchange="updateInvQty('${cat}','${it.id}',this.value)"><span class="ied-u">${it.unit||''}</span>${_pk?`<button onclick="stepInvPkg('${cat}','${it.id}',-1)" title="Un emballage de moins" style="${_b}">−1</button><button onclick="stepInvPkg('${cat}','${it.id}',1)" title="Un emballage de plus" style="${_b}">+1</button>`:''}`}`}<label class="inv-date" title="Date limite" style="color:${dlc?dlc.color:'var(--text3)'};border-color:${dlc&&dlc.color!=='var(--text3)'?dlc.color:'var(--border)'};">${it.dlc?_dateCourte(it.dlc):'📅'}<input type="date" value="${it.dlc||''}" onchange="updateInvDlc('${cat}','${it.id}',this.value);render()"></label><button onclick="deleteInvItem('${cat}','${it.id}')" title="Retirer" style="background:var(--red-bg);border:0.5px solid var(--red);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;padding:4px 7px;">✕</button></span>
+      <span class="ied-ctl">${isEp?`<span style="font-size:11px;color:var(--text3);">présent</span>`:`<button onclick="toggleInvPresent('${cat}','${it.id}')" title="Présent sans quantité / avec quantité" style="padding:4px 6px;border-radius:6px;border:0.5px solid ${it.qty===null?'var(--green)':'var(--border)'};background:${it.qty===null?'rgba(111,191,115,.12)':'transparent'};color:${it.qty===null?'var(--green)':'var(--text3)'};font-size:12px;cursor:pointer;">∞</button>${it.qty===null?`<span style="font-size:11px;color:var(--green);">présent</span>`:`<input type="number" class="ied-qte" value="${it.qty||0}" min="0" onchange="updateInvQty('${cat}','${it.id}',this.value)"><span class="ied-u">${it.unit||''}</span>${_pk?`<button onclick="stepInvPkg('${cat}','${it.id}',-1)" title="Un emballage de moins" style="${_b}">−1</button><button onclick="stepInvPkg('${cat}','${it.id}',1)" title="Un emballage de plus" style="${_b}">+1</button>`:''}`}`}<button class="inv-date" onclick="choisirDateArticle('${cat}','${it.id}')" title="Date limite" style="background:transparent;color:${dlc?dlc.color:'var(--text3)'};border-color:${dlc&&dlc.color!=='var(--text3)'?dlc.color:'var(--border)'};">${it.dlc?_dateCourte(it.dlc):'📅'}</button><button onclick="deleteInvItem('${cat}','${it.id}')" title="Retirer" style="background:var(--red-bg);border:0.5px solid var(--red);border-radius:6px;color:var(--red);font-size:11px;cursor:pointer;padding:4px 7px;">✕</button></span>
     </div>`;
   }
   const _dOr=dlc&&dlc.color==='var(--orange)';const _dRed=(isUrg||(dlc&&dlc.color==='var(--red)'))&&!_dOr;const _hot=_dRed||_dOr;const _cls=_dRed?' urg':(_dOr?' urgo':'');const _nc=isUrg?'var(--red)':((dlc&&(dlc.color==='var(--red)'||dlc.color==='var(--orange)'))?dlc.color:'var(--text2)');
