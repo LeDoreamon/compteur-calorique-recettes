@@ -238,6 +238,10 @@ body.auth-ouvert #root { display: none; }
 /* Cle API masquee sans type="password" : sinon le navigateur la prend pour
    un mot de passe et propose de l'enregistrer */
 .champ-cle { -webkit-text-security: disc; }
+/* Mot de passe : bouton œil pour l'afficher ou le masquer (30/10/2026, demande d'un nouvel utilisateur : impossible de voir une faute de frappe a l'inscription) */
+.mdp-zone { position: relative; }
+.mdp-oeil { position: absolute; top: 0; right: 0; bottom: 0; width: 42px; display: flex; align-items: center; justify-content: center; padding: 0; background: none; border: none; color: var(--text3); cursor: pointer; }
+.mdp-oeil:active, .mdp-oeil[aria-pressed="true"] { color: var(--text); }
 .apphead { position: sticky; top: 0; z-index: 60; display: flex; align-items: center; gap: 12px;
   margin: -14px -12px 12px; padding: calc(12px + env(safe-area-inset-top, 0px)) 12px 12px; background: rgba(14,10,7,.82);
   -webkit-backdrop-filter: blur(16px) saturate(1.3); backdrop-filter: blur(16px) saturate(1.3);
@@ -357,7 +361,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-28 23h58 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-30 17h47 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -622,12 +626,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-28-2358"></script>
+<script src="catalogue.js?v=2026-10-30-1747"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-28-2358';
+const BUILD_ID='2026-10-30-1747';
 const NOUVEAUTES=[
+  {b:'2026-10-30-1747',points:[
+    'Connexion et inscription : un bouton œil permet d’afficher le mot de passe pour vérifier qu’il n’y a pas de faute de frappe, puis de le masquer à nouveau.'
+  ]},
   {b:'2026-10-28-2358',points:[
     'Repas composé depuis l’inventaire : la fenêtre « Qu’as-tu utilisé ? » passe en onglets (Frigo, Congélateur, Placards, Épices), avec une pastille verte pour ce que tu as choisi et un rappel « Dans ton repas ».'
   ]},
@@ -9305,7 +9312,11 @@ function _ouvrirSuppressionCompte(){
   bSauv.onclick=function(){try{exportBackup();}catch(e){}};
   var mdp=el('input');mdp.type='password';mdp.id='suppr-mdp';mdp.placeholder='Mot de passe';
   try{mdp.setAttribute('autocomplete','current-password');}catch(e){}
-  mdp.style.cssText='width:100%;margin-top:12px;padding:11px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-family:inherit;';
+  var zoneMdp=el('div','mdp-zone');zoneMdp.style.marginTop='12px';
+  var oeil=el('button','mdp-oeil');oeil.type='button';oeil.innerHTML=ICONE_OEIL;
+  try{oeil.setAttribute('aria-label','Afficher le mot de passe');oeil.setAttribute('aria-pressed','false');}catch(e){/* libelle d'accessibilite seulement */}
+  oeil.onclick=function(){basculerMdp(mdp,oeil);};
+  mdp.style.cssText='width:100%;box-sizing:border-box;padding:11px 42px 11px 12px;background:var(--bg);border:0.5px solid var(--border);border-radius:10px;color:var(--text);font-size:16px;font-family:inherit;';
   var err=el('div','dz-dlg-corps');err.id='suppr-err';err.style.color='var(--red)';
   var rang=el('div','dz-dlg-boutons');
   var bA=el('button','dz-dlg-b','Annuler');bA.type='button';
@@ -9320,7 +9331,8 @@ function _ouvrirSuppressionCompte(){
   };
   mdp.addEventListener('keydown',function(e){if(e.key==='Enter')bS.onclick();});
   rang.appendChild(bA);rang.appendChild(bS);
-  carte.appendChild(bSauv);carte.appendChild(mdp);carte.appendChild(err);carte.appendChild(rang);fond.appendChild(carte);
+  zoneMdp.appendChild(mdp);zoneMdp.appendChild(oeil);
+  carte.appendChild(bSauv);carte.appendChild(zoneMdp);carte.appendChild(err);carte.appendChild(rang);fond.appendChild(carte);
   document.body.appendChild(fond);
   setTimeout(function(){try{mdp.focus();}catch(e){}},60);
 }
@@ -9512,6 +9524,23 @@ var _ST_BTN='width:100%;padding:12px;border-radius:11px;font-size:14px;font-weig
 function _attr(v){return String(v==null?'':v).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');}
 function _val(id){var e=document.getElementById(id);return e?String(e.value||'').trim():'';}
 function _champ(lbl,inner){return '<div style="margin-bottom:12px;"><div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:5px;">'+lbl+'</div>'+inner+'</div>';}
+const ICONE_OEIL='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
+const ICONE_OEIL_BARRE='<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/><path d="M3.5 3.5l17 17"/></svg>';
+/* champ mot de passe avec son bouton œil (masque par defaut) */
+function _inpMdp(id,val,ph,extra){
+  return '<div class="mdp-zone"><input id="'+id+'" type="password" value="'+_attr(val)+'" placeholder="'+_attr(ph||'')+'" style="'+_ST_IN+'padding-right:42px;" '+(extra||'')+'>'
+    +'<button type="button" class="mdp-oeil" onclick="basculerMdp(\''+id+'\',this)" aria-label="Afficher le mot de passe" title="Afficher le mot de passe" aria-pressed="false">'+ICONE_OEIL+'</button></div>';
+}
+function basculerMdp(id,b){
+  var i=typeof id==='string'?document.getElementById(id):id;if(!i)return;
+  var voir=i.type==='password';
+  i.type=voir?'text':'password';
+  if(b){
+    b.innerHTML=voir?ICONE_OEIL_BARRE:ICONE_OEIL;
+    var lib=voir?'Masquer le mot de passe':'Afficher le mot de passe';
+    try{b.setAttribute('aria-label',lib);b.setAttribute('title',lib);b.setAttribute('aria-pressed',voir?'true':'false');}catch(e){/* attribut refuse : seul le libelle d'accessibilite manque */}
+  }
+}
 function _inp(id,type,val,ph,extra){return '<input id="'+id+'" type="'+type+'" value="'+_attr(val)+'" placeholder="'+_attr(ph||'')+'" style="'+_ST_IN+'" '+(extra||'')+'>';}
 function _sel(id,opts,val){return '<select id="'+id+'" style="'+_ST_IN+'">'+opts.map(function(o){return '<option value="'+_attr(o[0])+'"'+(String(o[0])===String(val)?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select>';}
 function _deux(a,b){return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">'+a+b+'</div>';}
@@ -9602,7 +9631,7 @@ function renderAuth(){
       +'<button onclick="_authMode(\'inscription\')" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.25);color:var(--text);">Créer un compte</button>';
   }else if(_auth.mode==='connexion'){
     h=tete+err+_champ('Identifiant ou e-mail',_inp('au-login','text',_auth.login||'','','autocomplete="username" autocapitalize="none"'))
-      +_champ('Mot de passe',_inp('au-mdp','password','','','autocomplete="current-password"'))
+      +_champ('Mot de passe',_inpMdp('au-mdp','','','autocomplete="current-password"'))
       +'<button onclick="validerConnexion()"'+dis+' style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;">'+(_auth.occupe?'Connexion\u2026':'Se connecter')+'</button>'
       +'<button onclick="demanderReinitialisation()" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;margin-top:12px;width:100%;text-decoration:underline;">Mot de passe oublié ?</button>'+retour;
   }else{
@@ -9653,8 +9682,8 @@ function _renderInscription(err,dis,retour){
   if(e===0){
     corps=_champ('Identifiant ou e-mail',_inp('au-login','text',_ins.login,'ex. liam ou liam@mail.fr','autocomplete="username" autocapitalize="none"'))
       +'<div style="font-size:11px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;">Avec une <strong style="color:var(--text2);">adresse e-mail</strong>, tu pourras récupérer ton mot de passe en cas d\'oubli. Avec un simple identifiant, ce ne sera pas possible.</div>'
-      +_champ('Mot de passe',_inp('au-mdp','password',_ins.mdp,'6 caractères minimum','autocomplete="new-password"'))
-      +_champ('Confirmation',_inp('au-mdp2','password',_ins.mdp,'','autocomplete="new-password"'));
+      +_champ('Mot de passe',_inpMdp('au-mdp',_ins.mdp,'6 caractères minimum','autocomplete="new-password"'))
+      +_champ('Confirmation',_inpMdp('au-mdp2',_ins.mdp,'','autocomplete="new-password"'));
   }else if(e===1)corps=_secToi(p);
   else if(e===2)corps=_secObjectif(p);
   else if(e===3)corps=_secAlim(p);
@@ -9770,7 +9799,7 @@ function ouvrirEditionProfil(){
       +(estEmail(_lg)?'':'<div style="font-size:11px;color:var(--gold);line-height:1.45;margin-bottom:10px;">Sans adresse e-mail, un mot de passe oublié ne peut pas être récupéré. Tu peux en ajouter une ci-dessous.</div>')
       +_champ('Nouvel identifiant ou e-mail',_inp('pf-login','text','','','autocomplete="username" autocapitalize="none"'))
       +'<button onclick="modifierIdentifiant()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:12px;">Changer l\'identifiant</button>'
-      +_deux(_champ('Nouveau',_inp('pf-mdp1','password','','','autocomplete="new-password"')),_champ('Confirmation',_inp('pf-mdp2','password','','','autocomplete="new-password"')))
+      +_deux(_champ('Nouveau',_inpMdp('pf-mdp1','','','autocomplete="new-password"')),_champ('Confirmation',_inpMdp('pf-mdp2','','','autocomplete="new-password"')))
       +'<button onclick="modifierMotDePasse()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:6px;">Changer le mot de passe</button>';
   }
   h+='<div style="display:flex;gap:8px;margin-top:16px;">'
