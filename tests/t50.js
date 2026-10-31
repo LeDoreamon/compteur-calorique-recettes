@@ -9,9 +9,9 @@ const C=id=>G('_composition')(R(id));
 const ILL=r=>G('illustrationRecette')(r);
 
 console.log('\n=== HA. Lecture des recettes ===');
-t('*** avoine & fromage blanc : bol blanc, avoine et fraises ***',()=>{
+t('*** avoine & fromage blanc : bol blanc, avoine et fruits rouges (framboises depuis le catalogue v9) ***',()=>{
   const c=C('liam_v6_avoine_fraises');eq(c.contenant,'bol');eq(c.fond,'blanc');
-  if(c.garn.indexOf('avoine')<0||c.garn.indexOf('fraises')<0)throw new Error(c.garn);
+  if(c.garn.indexOf('avoine')<0||c.garn.indexOf('framboises')<0)throw new Error(c.garn);
 });
 t('porridge cacao : bol au fond cacao',()=>{const c=C('liam_v6_porridge_whey');eq(c.contenant+'/'+c.fond,'bol/cacao');});
 t('*** Banania : une tasse, pas un shaker malgre la whey ***',()=>eq(C('liam_v6_bol_banania').contenant,'tasse'));
