@@ -20,7 +20,7 @@ S.inv={frigo:frigo,placards:[],congelateur:[],epices:[]};
 const liam=(sb.RCP||[]).filter(r=>r.profile==='liam'&&r.slots&&r.slots.length);
 
 console.log('\n=== AM. Le catalogue colle a l\'inventaire ===');
-t('55 recettes visibles pour Liam (catalogue v9 du 31/10/2026)',()=>eq(liam.length,55));
+t('57 recettes visibles pour Liam (catalogue v9 du 31/10/2026, brunoise ajoutee)',()=>eq(liam.length,57));
 t('*** chaque ingredient existe dans l\'inventaire ***',()=>{
   const manque=[];
   liam.forEach(r=>(r.used||[]).forEach(u=>{
