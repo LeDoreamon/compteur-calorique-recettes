@@ -40,8 +40,12 @@ t('une collation seule : pas de ligne ; collation faible jamais signalee',()=>{p
 t('tout au-dessus de 25 g : pas de conseil',()=>{prepBas('H');repas('breakfast',30);repas('dinner',40);if(acc().indexOf('Vise 25 à 40 g')>=0)throw new Error('conseil a tort');});
 console.log('\n=== XL. Nutrition : portions adaptees a la seche ===');
 t('*** catalogue : aucun plat principal au-dessus de 700 kcal, aucun petit-dejeuner au-dessus de 550 ***',()=>{
-  const trop=X("RCP.filter(function(r){return /^liam_v[67]_/.test(r.id)&&r.slots&&r.slots.length}).filter(function(r){var princ=r.slots.indexOf('lunch')>=0||r.slots.indexOf('dinner')>=0;return princ?r.kcal>700:(r.slots.indexOf('breakfast')>=0&&r.kcal>550);}).map(function(r){return r.name+' '+r.kcal})");
+  const trop=X("RCP.filter(function(r){return /^liam_v\\d+_/.test(r.id)&&r.slots&&r.slots.length}).filter(function(r){var princ=r.slots.indexOf('lunch')>=0||r.slots.indexOf('dinner')>=0;return princ?r.kcal>700:(r.slots.indexOf('breakfast')>=0&&r.kcal>550);}).map(function(r){return r.name+' '+r.kcal})");
   if(trop.length)throw new Error(trop.join(' | '));
+});
+t('*** catalogue v9 : chaque plat entre 550 et 700 kcal, au moins 35 g de proteines (hors omelettes, mozzarella-tomates, soupe) ***',()=>{
+  const ko=X("RCP.filter(function(r){return /^liam_v\\d+_/.test(r.id)&&r.slots&&(r.slots.indexOf('lunch')>=0||r.slots.indexOf('dinner')>=0)&&!/omelette|mozza_tomates|soupe_potiron/.test(r.id)}).filter(function(r){return r.kcal<550||r.kcal>700||r.prot<35}).map(function(r){return r.name+' '+r.kcal+' kcal '+r.prot+' g'})");
+  if(ko.length)throw new Error(ko.join(' | '));
 });
 t('*** generation IA en perte de poids : consigne de portions (550-700 kcal, 35 g de proteines) ***',()=>{
   const src=require('fs').readFileSync('index.html','utf8');
