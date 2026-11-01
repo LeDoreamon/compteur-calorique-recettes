@@ -361,7 +361,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-10-31 23h22 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-01 20h48 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -626,12 +626,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-10-31-2322"></script>
+<script src="catalogue.js?v=2026-11-01-2048"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-10-31-2322';
+const BUILD_ID='2026-11-01-2048';
 const NOUVEAUTES=[
+  {b:'2026-11-01-2048',points:[
+    'Bilan : le graphique du poids se règle sur 7 jours, 1 mois, 3 mois ou tout l’historique, et toucher la courbe affiche la date et le poids d’une pesée.'
+  ]},
   {b:'2026-10-31-2322',points:[]},
   {b:'2026-10-31-2321',points:[]},
   {b:'2026-10-31-2314',points:[]},
@@ -5485,29 +5488,82 @@ function _fmtKg(v){return _signe(v)+_virg(Math.abs(v),1)+' kg';}
 function _wDateLabel(d){var p=(d||'').split('-');return p.length===3?p[2]+'/'+p[1]:d;}
 function addWeight(){var el=document.getElementById('weight-input');if(!el)return;var w=parseFloat((el.value||'').replace(',','.'));if(!w||w<30||w>400){el.style.borderColor='var(--red)';el.focus();return;}S.weights=S.weights||[];var i=S.weights.findIndex(function(x){return x.d===S.today;});if(i>=0)S.weights[i].w=w;else S.weights.push({d:S.today,w:w});S.weights.sort(function(a,b){return a.d<b.d?-1:1;});saveState();render();}
 function delWeight(d){_confirmer('Supprimer la pesée du '+_wDateLabel(d)+' ?',{ok:'Supprimer',danger:true}).then(function(ok){if(!ok)return;S.weights=(S.weights||[]).filter(function(x){return x.d!==d;});saveState();render();});}
-function weightChartSVG(arr){
+// Graphique du poids (01/11/2026, demande de Liam) : periode au choix (7 j, 1 mois, 3 mois, tout),
+// retenue par appareil, et un toucher sur la courbe montre la date et le poids de la pesee la plus
+// proche (les points font ~5 px : on vise la courbe, pas le point) ; un clic ailleurs referme.
+// Sert aussi au tour de taille des mensurations (unite cm, sans periode).
+var PERIODES_POIDS=[{k:'7',l:'7 j',j:7},{k:'30',l:'1 mois',j:30},{k:'90',l:'3 mois',j:90},{k:'tout',l:'Tout',j:0}];
+var _perPoids=null;
+function _periodePoids(){
+  var p=_perPoids;
+  if(!p){try{p=localStorage.getItem('dz_poids_periode');}catch(e){p=null;}}
+  return PERIODES_POIDS.some(function(x){return x.k===p;})?p:'tout';
+}
+function choisirPeriodePoids(k){
+  if(!PERIODES_POIDS.some(function(x){return x.k===k;}))return;
+  _perPoids=k;try{localStorage.setItem('dz_poids_periode',k);}catch(e){/* stockage indisponible : choix garde pour la session */}
+  render();
+}
+function _pointProche(pts,x){var b=null,bd=1e9;(pts||[]).forEach(function(p){var d=Math.abs(p[0]-x);if(d<bd){bd=d;b=p;}});return b;}
+function _libPointPoids(p,u){return _wDateLabel(p[2])+' · '+_virg(p[3],1)+' '+(u||'kg');}
+var _graphOuvert=null;
+function _fermerGraphPoids(){
+  if(!_graphOuvert)return;
+  try{var g=_graphOuvert.querySelector('.gp-tip');if(g)g.style.display='none';}catch(e){/* graphique deja redessine */}
+  _graphOuvert=null;
+}
+function toucheGraphPoids(evt,svg){
+  try{
+    var pts=JSON.parse(svg.getAttribute('data-pts')||'[]');if(!pts.length)return;
+    var r=svg.getBoundingClientRect(),vb=svg.viewBox.baseVal;if(!r.width)return;
+    var p=_pointProche(pts,(evt.clientX-r.left)/r.width*vb.width);if(!p)return;
+    var g=svg.querySelector('.gp-tip'),c=g.querySelector('.gp-pt'),bg=g.querySelector('.gp-bg'),tx=g.querySelector('.gp-tx');
+    c.setAttribute('cx',p[0]);c.setAttribute('cy',p[1]);
+    tx.textContent=_libPointPoids(p,svg.getAttribute('data-u'));
+    g.style.display='';
+    var w=(tx.getComputedTextLength?tx.getComputedTextLength():tx.textContent.length*5.4)+14,hh=17;
+    var bx=Math.max(2,Math.min(vb.width-w-2,p[0]-w/2)),by=p[1]-hh-8;if(by<2)by=p[1]+8;
+    bg.setAttribute('x',bx);bg.setAttribute('y',by);bg.setAttribute('width',w);bg.setAttribute('height',hh);
+    tx.setAttribute('x',bx+w/2);tx.setAttribute('y',by+12);
+    if(_graphOuvert&&_graphOuvert!==svg)_fermerGraphPoids();
+    _graphOuvert=svg;
+  }catch(e){/* graphique sans interaction plutot qu'une erreur */}
+}
+try{if(document.addEventListener)document.addEventListener('click',function(e){if(_graphOuvert&&!(e.target&&_graphOuvert.contains&&_graphOuvert.contains(e.target)))_fermerGraphPoids();},true);}catch(e){/* pas de document (tests) */}
+function weightChartSVG(arr,o){
+  o=o||{};
   if(arr.length<2)return '<div style="text-align:center;color:var(--text3);font-size:12px;padding:18px 0;">Ajoute au moins 2 pesées pour voir la courbe.</div>';
   var W=320,H=170,mL=34,mR=10,mT=12,mB=22;var pW=W-mL-mR,pH=H-mT-mB;
-  var ws=arr.map(function(x){return x.w;});
+  /* moyenne 7 j calculee sur tout l'historique : le debut d'une periode tient compte des pesees d'avant */
+  var mas=arr.map(function(x,i){return _wMA(arr,i,7);});
+  var idx=[];arr.forEach(function(x,i){if(!o.debut||x.d>=o.debut)idx.push(i);});
+  if(idx.length<2)return '<div style="text-align:center;color:var(--text3);font-size:12px;padding:18px 0;">Pas assez de pesées sur cette période (au moins 2).</div>';
+  var pts=idx.map(function(i){return arr[i];}),ma=idx.map(function(i){return mas[i];});
+  var ws=pts.map(function(x){return x.w;}).concat(ma);
   var wmin=Math.min.apply(null,ws),wmax=Math.max.apply(null,ws);
   if(wmax-wmin<1){wmax+=0.5;wmin-=0.5;}
   var pad=(wmax-wmin)*0.12;var lo=wmin-pad,hi=wmax+pad;
-  var t0=new Date(arr[0].d).getTime(),t1=new Date(arr[arr.length-1].d).getTime();var span=t1-t0||1;
+  /* periode : l'axe couvre le calendrier (un trou de pesees se voit) ; « tout » : premiere a derniere pesee */
+  var dDeb=o.debut||pts[0].d,dFin=(o.fin&&o.fin>pts[pts.length-1].d)?o.fin:pts[pts.length-1].d;
+  var t0=new Date(dDeb).getTime(),t1=new Date(dFin).getTime();var span=t1-t0||1;
   function X(d){return mL+(new Date(d).getTime()-t0)/span*pW;}
   function Y(w){return mT+(1-(w-lo)/(hi-lo))*pH;}
-  var rawPts=arr.map(function(x){return X(x.d).toFixed(1)+','+Y(x.w).toFixed(1);});
-  var maPts=arr.map(function(x,i){return X(x.d).toFixed(1)+','+Y(_wMA(arr,i,7)).toFixed(1);});
-  var dots=arr.map(function(x){return '<circle cx="'+X(x.d).toFixed(1)+'" cy="'+Y(x.w).toFixed(1)+'" r="2.3" fill="rgba(140,151,171,.7)"/>';}).join('');
+  var rawPts=pts.map(function(x){return X(x.d).toFixed(1)+','+Y(x.w).toFixed(1);});
+  var maPts=pts.map(function(x,i){return X(x.d).toFixed(1)+','+Y(ma[i]).toFixed(1);});
+  var dots=pts.map(function(x){return '<circle cx="'+X(x.d).toFixed(1)+'" cy="'+Y(x.w).toFixed(1)+'" r="2.3" fill="rgba(140,151,171,.7)"/>';}).join('');
+  var data=pts.map(function(x){return [+X(x.d).toFixed(1),+Y(x.w).toFixed(1),x.d,x.w];});
   var yLabels='<text x="'+(mL-5)+'" y="'+(Y(wmax)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+_virg(wmax,1)+'</text>'+
               '<text x="'+(mL-5)+'" y="'+(Y(wmin)+3).toFixed(1)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+_virg(wmin,1)+'</text>';
-  var xLabels='<text x="'+mL+'" y="'+(H-6)+'" text-anchor="start" font-size="9" fill="var(--text3)">'+_wDateLabel(arr[0].d)+'</text>'+
-              '<text x="'+(W-mR)+'" y="'+(H-6)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+_wDateLabel(arr[arr.length-1].d)+'</text>';
-  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;display:block;">'+
+  var xLabels='<text x="'+mL+'" y="'+(H-6)+'" text-anchor="start" font-size="9" fill="var(--text3)">'+_wDateLabel(dDeb)+'</text>'+
+              '<text x="'+(W-mR)+'" y="'+(H-6)+'" text-anchor="end" font-size="9" fill="var(--text3)">'+_wDateLabel(dFin)+'</text>';
+  return '<svg class="graph-poids" viewBox="0 0 '+W+' '+H+'" data-u="'+_attr(o.unite||'kg')+'" data-pts="'+_attr(JSON.stringify(data))+'" onclick="toucheGraphPoids(event,this)" onmousemove="toucheGraphPoids(event,this)" style="width:100%;height:auto;display:block;cursor:pointer;touch-action:pan-y;">'+
     '<line x1="'+mL+'" y1="'+Y(wmax).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+Y(wmax).toFixed(1)+'" stroke="rgba(246,237,227,.05)" stroke-width="1"/>'+
     '<line x1="'+mL+'" y1="'+Y(wmin).toFixed(1)+'" x2="'+(W-mR)+'" y2="'+Y(wmin).toFixed(1)+'" stroke="rgba(246,237,227,.05)" stroke-width="1"/>'+
     '<polyline points="'+rawPts.join(' ')+'" fill="none" stroke="rgba(140,151,171,.35)" stroke-width="1"/>'+
     '<polyline points="'+maPts.join(' ')+'" fill="none" stroke="var(--green)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>'+
-    dots+yLabels+xLabels+'</svg>';
+    dots+yLabels+xLabels+
+    '<g class="gp-tip" style="display:none;pointer-events:none;"><circle class="gp-pt" r="4.2" fill="var(--text)" stroke="var(--bg2)" stroke-width="1.5"/>'+
+    '<rect class="gp-bg" rx="5" fill="var(--bg3)" stroke="rgba(246,237,227,.22)" stroke-width=".6"/><text class="gp-tx" font-size="10" font-weight="600" fill="var(--text)" text-anchor="middle"></text></g></svg>';
 }
 // ─── 📏 Mensurations ───────────────────────────────────────────────────────
 // Une entree par jour : {d, taille, hanches, poitrine, bras, cuisse} en cm.
@@ -5557,7 +5613,7 @@ function renderMesuresHTML(){
     html+='<div style="display:flex;align-items:baseline;gap:8px;margin-bottom:8px;"><span style="font-size:24px;font-weight:700;color:var(--text);">'+_cm(der.taille)+'</span><span style="font-size:13px;color:var(--text3);">cm de tour de taille</span></div>';
     if(e30&&e30.jours>0){var col=e30.delta<-0.05?'var(--green)':(e30.delta>0.05?'var(--orange)':'var(--text2)');
       html+='<div style="font-size:12px;color:'+col+';margin-bottom:10px;">'+(e30.delta>0?'+':'')+_cm(e30.delta)+' cm en '+e30.jours+' jour'+(e30.jours>1?'s':'')+'</div>';}
-    if(tailles.length>=2)html+='<div style="margin:0 -4px 10px;">'+weightChartSVG(tailles.map(function(x){return {d:x.d,w:x.taille};}))+'</div>';
+    if(tailles.length>=2)html+='<div style="margin:0 -4px 10px;">'+weightChartSVG(tailles.map(function(x){return {d:x.d,w:x.taille};}),{unite:'cm'})+'</div>';
   }
   html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">'
     +MESURES.map(function(m){return '<label style="display:block;"><span style="display:block;font-size:11px;color:var(--text3);margin-bottom:3px;">'+m.l+'</span>'
@@ -5730,8 +5786,12 @@ function renderWeightHTML(){
   var chips=[chip('Dernière pesée',dPrev),chip('7 jours',d7),chip('30 jours',d30)].filter(Boolean).join('');
   if(chips)html+='<div style="display:flex;gap:8px;margin-bottom:14px;">'+chips+'</div>';
   html+='<div style="background:var(--bg2);border:0.5px solid var(--border);border-radius:12px;padding:12px 10px 6px;margin-bottom:14px;">'+
-        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:0 0 4px 6px;">Tendance — moyenne 7 j en vert</div>'+
-        weightChartSVG(arr)+'</div>';
+        '<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin:0 0 8px 6px;">Tendance — moyenne 7 j en vert</div>'+
+        '<div class="per-poids" role="tablist" style="display:flex;gap:5px;margin:0 0 6px;">'+PERIODES_POIDS.map(function(p){var on=_periodePoids()===p.k;
+          return '<button role="tab" aria-selected="'+on+'" data-action="poids-periode" data-val="'+p.k+'" style="flex:1;padding:6px 0;border-radius:999px;border:0.5px solid '+(on?'var(--gold)':'var(--border)')+';background:'+(on?'var(--gold)':'transparent')+';color:'+(on?'var(--bg)':'var(--text2)')+';font-size:12px;font-weight:'+(on?'600':'400')+';cursor:pointer;">'+p.l+'</button>';}).join('')+'</div>'+
+        (function(){var P=PERIODES_POIDS.find(function(p){return p.k===_periodePoids();});
+          return weightChartSVG(arr,P.j?{debut:shiftDate(S.today,-(P.j-1)),fin:S.today}:{});})()+   /* 7 j = aujourd'hui et les 6 jours d'avant */
+        '<div style="font-size:11px;color:var(--text3);margin:2px 6px 4px;">Touche la courbe pour voir la date et le poids d\'une pesée.</div></div>';
   var recent=arr.slice(-12).reverse();
   html+='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;">Historique</div>';
   recent.forEach(function(x){html+='<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;background:var(--bg2);border:0.5px solid var(--border);border-radius:9px;margin-bottom:6px;"><span style="flex:1;font-size:13px;color:var(--text2);">'+_wDateLabel(x.d)+'</span><span style="font-size:14px;font-weight:600;color:var(--text);">'+_virg(x.w,1)+' kg</span><button onclick="delWeight(\''+x.d+'\')" style="background:none;border:none;color:var(--text3);font-size:14px;cursor:pointer;padding:0 2px;">🗑</button></div>';});
@@ -7905,6 +7965,7 @@ function _onActionClick(e){
     else{S.openRec=val;S._anim='r:'+val;}
   }
   else if(action==='inv-tab'){choisirOngletInv(val);return;}
+  else if(action==='poids-periode'){choisirPeriodePoids(val);return;}
   else if(action==='select-dessert'){const _d=el.dataset.dessert;const _cur=S.recipeDesserts[val]||'none';S.recipeDesserts[val]=(_cur===_d)?'none':_d;if(S.recipeDesserts[val]!=='autre'){delete S.customDesserts[val];delete S.customInputs[val];}}
   else if(action==='submit-custom-dessert'){const inp=document.querySelector(`[data-custom-input="${val}"]`);const txt=inp?inp.value.trim():S.customInputs[val]||'';if(txt)analyzeCustomDessert(val,txt);return;}
   else if(action==='prev-day'){const p=shiftDate(S.displayDate,-1);if(p>=shiftDate(S.today,-6))S.displayDate=p;}
