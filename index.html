@@ -40,6 +40,8 @@
   --red: #E05C4F;
   --lime: #B5CC5C;   /* marge du jour : cible depassee, largement couverte par l'activite */
   --sky: #8FD6F5;    /* marge du jour : cible atteinte et deficit au-dela du prevu (demande de Liam, 13/10/2026) */
+  --citron: #E8DC4F; /* repas au-dessus de sa part (02/11/2026) : jaune citron, distinct de l'ambre du petit-dejeuner ; pas de rouge */
+  --menthe: #8EE6B8; /* repas dans sa part, proteines comprises : vert clair, distinct du vert du dejeuner */
   --red-bg: rgba(224,92,79,0.12);
   --warn: #F0B93E;
   --warn-bg: rgba(240,185,62,0.12);
@@ -314,6 +316,33 @@ body.auth-ouvert #root { display: none; }
 .coach-out { animation: coachOut .4s var(--ease) both; }
 @media (prefers-reduced-motion: reduce) { .coach-in, .coach-out { animation: none !important; } }
 
+/* Suivi du jour (02/11/2026) : bandeau de la semaine et cartes par repas */
+.bandeau-jours { display: flex; gap: 4px; margin: 0 0 12px; }
+.bj { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 6px 0 5px;
+  border-radius: 12px; cursor: pointer; background: transparent; border: 1px solid transparent; color: var(--text2); font-family: inherit; }
+.bj.auj { border-color: var(--gold); }
+.bj.on { background: var(--gold); border-color: var(--gold); color: var(--bg); }
+.bj-j { font-size: 10px; text-transform: uppercase; letter-spacing: .04em; opacity: .85; }
+.bj-n { font-size: 15px; font-weight: 600; line-height: 1.1; }
+.bj.on .bj-n { font-weight: 700; }
+.bj-pt { width: 6px; height: 6px; border-radius: 50%; box-sizing: border-box; }
+.carte-moment { margin-top: 10px; padding: 9px 10px 4px; border-radius: 10px; background: var(--bg3); border-left: 3px solid var(--text3); }
+.cm-tete { display: flex; align-items: center; gap: 6px; min-height: 22px; }
+.cm-nom { flex: 1; min-width: 0; font-size: 12.5px; font-weight: 600; color: var(--text); }
+.cm-k { font-size: 12px; font-weight: 600; color: var(--text); white-space: nowrap; }
+.cm-part { font-size: 11px; color: var(--text3); white-space: nowrap; }
+.cm-p { font-size: 11px; color: var(--green); white-space: nowrap; margin-left: 4px; }
+.cm-p span { color: var(--text3); }
+.cm-plus { flex-shrink: 0; width: 28px; height: 28px; margin: -4px -4px -4px 2px; border-radius: 50%; background: none;
+  border: 0.5px solid var(--border); color: var(--text2); font-size: 16px; line-height: 1; cursor: pointer; font-family: inherit; }
+.cm-barre { height: 4px; border-radius: 2px; background: rgba(246,237,227,.08); margin: 6px 0 4px; overflow: hidden; }
+.cm-barre > span { display: block; height: 100%; border-radius: 2px; }
+.cm-vide { display: flex; align-items: center; gap: 8px; padding: 0 0 2px; }
+.cm-vide > span { flex: 1; font-size: 11.5px; color: var(--text3); }
+.cm-ajout { background: none; border: 0; color: var(--gold); font-size: 12px; font-weight: 600; cursor: pointer;
+  padding: 8px 0 8px 12px; margin: -6px 0; font-family: inherit; }
+.cm-bravo { font-size: 11.5px; color: var(--menthe); padding: 3px 0 5px; line-height: 1.4; }
+.cm-aide { font-size: 11.5px; color: var(--text3); padding: 2px 0 4px; }
 .pastille-nova{display:inline-flex;align-items:center;margin-left:6px;vertical-align:-1px;color:var(--orange);opacity:.85;}.icone-nova{display:block;}
 </style>
 </head>
@@ -361,7 +390,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-02 22h36 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-03 01h08 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -626,15 +655,19 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-02-2236"></script>
+<script src="catalogue.js?v=2026-11-03-0108"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-02-2236';
+const BUILD_ID='2026-11-03-0108';
 const NOUVEAUTES=[
-  {b:'2026-11-02-2236',points:[
+  {b:'2026-11-03-0108',points:[
+    'Repas : une bande avec les 7 derniers jours et demain remplace les flèches. Touche un jour pour l’ouvrir ; son petit point dit comment s’est passée la journée (vert : dans ta cible, orange : au-dessus, bleu : en dessous).',
+    'Tes repas sont rangés par moment, chacun avec sa part de ta cible (par exemple « Petit déjeuner 440 / 554 kcal »). Jaune : au-dessus de la part ; vert clair : dans la part, avec assez de protéines. « + Ajouter » sur un moment l’ajoute directement au bon endroit.',
+    'Chaque repas a maintenant son moment (petit-déj, déjeuner, dîner ou collation). La part de chaque repas se règle dans Réglages › Modifier le profil (24 / 30 / 30 / 16 % par défaut).',
     '💬 De la part de Liam : « Coucou Seth et Sarah ! Si jamais vous rencontrez des bugs, qu’une option, une fonction ou quoi n’est pas claire, n’hésitez pas à m’envoyer un message pour me le dire ou si besoin que je vous explique ce qu’il faut ! Bisous »'
   ]},
+  {b:'2026-11-02-2236',points:[]},   /* message de Liam a Seth et Sarah : repris dans l'entree suivante (02/11/2026) */
   {b:'2026-11-02-2233',points:[]},
   {b:'2026-11-01-2048',points:[
     'Bilan : le graphique du poids se règle sur 7 jours, 1 mois, 3 mois ou tout l’historique, et toucher la courbe affiche la date et le poids d’une pesée.'
@@ -956,7 +989,7 @@ function getToday(){var p=_partsProfil();return p.y+'-'+p.m+'-'+p.d;}
 // Heure locale du profil : garde nocturne et phase de journee du coach
 function heureProfil(){return _partsProfil().h;}
 function shiftDate(d,days){const dt=new Date(d+'T00:00:00');dt.setDate(dt.getDate()+days);return`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;}
-const TODAY=getToday();const TOMORROW=shiftDate(TODAY,1);
+const TODAY=getToday();   /* « demain » se calcule depuis S.today (TOMORROW, fige au chargement, retire le 02/11/2026) */
 
 const S={
   inv:JSON.parse(JSON.stringify(INV_DEFAULT)),
@@ -1387,7 +1420,8 @@ function _lireFib(id){var e=document.getElementById(id);if(!e)return null;var s=
 // ─── CONFIRM COOK ────────────────────────
 let _cc={rid:null,mult:1,day:null,ings:[]};
 var _ccMoment=null;
-function setCcMoment(s){_ccMoment=(_ccMoment===s)?null:s;renderCcMoments();}
+function setCcMoment(s){if(moment(s))_ccMoment=s;renderCcMoments();}   /* plus de deselection (02/11/2026) */
+var MSG_MOMENT_REQUIS='Choisis le moment du repas\n\nPetit-déj, déjeuner, dîner ou collation : chaque repas est rangé dans ta journée.';
 function renderCcMoments(){
   var c=document.getElementById('cc-moments');if(!c)return;
   c.innerHTML=MOMENTS.map(function(m){
@@ -1408,10 +1442,10 @@ function openConfirmCook(rid,mult,day,subst){
   _cc={rid,mult,day,subst:!!subst,ings:(r.used||[]).map(u=>{const it=resolveInv(u.id,u.n);const m=getM100(it?it.id:u.id);const need=_qteMult(u.qty,mult,it?it.unit:'');const avail=it?(it.qty===null?Infinity:it.qty):0;const q=subst?Math.min(need,avail):need;return{id:it?it.id:u.id,n:u.n,name:it?it.name:(u.n||u.id),qty:(q===Infinity?need:q),unit:it?it.unit:'',m100:m,flex:!!u.flex,_miss:!!subst&&avail<need&&!u.flex};})};
   document.getElementById('cc-title').textContent=(subst?'🔁 ':'')+(mult===2?'\u00d72 \u2014 ':(mult!==1?'\u00d7'+String(mult).replace('.',',')+' \u2014 ':''))+r.name;
   _ccMoment=(function(){
-    var s=(r.slots||[]);
-    if(!s.length)return null;
+    var s=(r.slots||[]).filter(function(x){return !!moment(x);});   /* « dessert », « urgent » ne sont pas des moments */
+    if(!s.length)return _momentDefaut(day||S.today);
     if(s.length===1)return s[0];
-    var p=(typeof prochainMoment==='function')?prochainMoment(day||S.today):null;
+    var p=prochainMoment(day||S.today);
     return (p&&s.indexOf(p.id)>=0)?p.id:s[0];   // le prochain moment s'il colle
   })();
   renderCcMoments();
@@ -1510,10 +1544,10 @@ function executeCook(){
   if(!S.dayMeals[day])S.dayMeals[day]=[];
   const _pings=_cc.ings.map((g,i)=>{const el=document.getElementById('cc-'+i);const uq=el?parseFloat(el.value)||0:g.qty;if(uq<=0)return null;const it=findItem(g.id);let mm={kcal:0,prot:0,gluc:0,lip:0};if(it&&(it.mac100||it.macPiece)){mm=itemMealMacros(it,uq);}else if(g.m100){const f=uq/100;mm={kcal:(g.m100.kcal||0)*f,prot:(g.m100.prot||0)*f,gluc:(g.m100.gluc||0)*f,lip:(g.m100.lip||0)*f};}return{id:g.id,n:g.n,name:g.name,qty:Math.round(uq/parts*10)/10,unit:g.unit||'',kcal:Math.round(mm.kcal/parts),prot:Math.round(mm.prot/parts*10)/10,gluc:Math.round(mm.gluc/parts*10)/10,lip:Math.round(mm.lip/parts*10)/10};}).filter(Boolean);
   const _entry={rid,mult:1,dessert:did!=='none'?did:null,customDessert:did==='autre'&&cd&&!cd.loading&&!cd.error?cd:null,name:r.name};_entry.macros=_per;if(_pings.length)_entry.ings=_pings;if(ccExtras.length)_entry.extras=ccExtras;
-  if(_ccMoment)_entry.slot=_ccMoment;   /* moment choisi a la confirmation */
+  _entry.slot=moment(_ccMoment)?_ccMoment:_momentDefaut(day);   /* moment choisi a la confirmation, toujours pose */
   S.dayMeals[day].push(_entry);
   // \u00d72 : la 2e portion part automatiquement sur le lendemain (meal prep)
-  if(mult>=2){const nd=shiftDate(day,1);if(!S.dayMeals[nd])S.dayMeals[nd]=[];const _e2={rid,mult:1,dessert:null,customDessert:null,macros:_per,name:r.name};if(_pings.length)_e2.ings=JSON.parse(JSON.stringify(_pings));if(ccExtras.length)_e2.extras=JSON.parse(JSON.stringify(ccExtras));S.dayMeals[nd].push(_e2);}
+  if(mult>=2){const nd=shiftDate(day,1);if(!S.dayMeals[nd])S.dayMeals[nd]=[];const _e2={rid,mult:1,dessert:null,customDessert:null,macros:_per,name:r.name,slot:_entry.slot};if(_pings.length)_e2.ings=JSON.parse(JSON.stringify(_pings));if(ccExtras.length)_e2.extras=JSON.parse(JSON.stringify(ccExtras));S.dayMeals[nd].push(_e2);}
   const sp=getSpicesUsedByRecipe(r);S.pendingSpiceCheck=sp.length?sp.map(s=>({id:s.id,name:s.name})):null;
   closeConfirmCook();render();saveState();
   showCoachToast(_cc&&_cc.day?_cc.day:S.today);
@@ -3122,6 +3156,12 @@ function _applyState(d){
   else S.invFix1004=!!d.invFix1004;
   if(_catalogue()===PROFIL_HERITE&&!d.invFix1004b){if(_corrigerPouletCru())_etatCorrige=true;S.invFix1004b=true;}
   else S.invFix1004b=!!d.invFix1004b;
+  /* repartition par repas de Liam (02/11/2026, « tu pourrais régler le mien ») : 25/35/32/8,
+     d'apres ses repas d'octobre (23/38/32/5) ; une seule fois, jamais par-dessus un reglage */
+  if(_catalogue()===PROFIL_HERITE&&!d.repartLiam){
+    if(S.profil&&!_repartitionValide(S.profil.repartition)){S.profil=Object.assign({},S.profil,{repartition:{breakfast:25,lunch:35,dinner:32,snack:8}});_etatCorrige=true;}
+    S.repartLiam=true;
+  }else S.repartLiam=!!d.repartLiam;
   /* migrations de format, en dernier : l'etat est entierement charge */
   if(!_schemaTropRecent&&_migrerSchema(d.schema))_etatCorrige=true;
 }
@@ -3362,7 +3402,7 @@ var _nvFait=false;
 var TUTO=[
   {tab:'accueil',sel:'#acc-objectif',titre:'Ton objectif du jour',txt:'Les calories et macros à viser aujourd’hui. Les barres se remplissent à chaque repas noté.'},
   {tab:'accueil',sel:'#fab-ajout',titre:'Le bouton +',txt:'Tout s’ajoute ici : un repas (décrit, en photo, par code-barres ou à la main), tes pas, une activité, ta pesée.'},
-  {tab:'recipes',sel:'#daypane',titre:'Ta journée',txt:'Dans « Repas » : ce que tu as mangé, ce qu’il te reste, puis des recettes qui rentrent dans ce reste.'},
+  {tab:'recipes',sel:'#daypane',titre:'Ta journée',txt:'Dans « Repas » : la semaine en haut (touche un jour pour l’ouvrir), tes repas rangés par moment avec leur part de la journée, puis des recettes qui rentrent dans ce qu’il te reste.'},
   {tab:'inventory',demo:'_tutoDemoInv',sel:'#tuto-demo',titre:'Ton inventaire',txt:'Ce que tu as chez toi, rangé par endroit, avec les dates limites. Plus il est complet, plus les recettes proposées sont faisables avec ce que tu as.'},
   {tab:'courses',demo:'_tutoDemoCourses',sel:'#tuto-demo',titre:'Tes courses',txt:'Ta liste, rangée par rayon : tu coches ce que tu mets dans le panier. Ce qui est presque fini s’y ajoute tout seul, et tes achats passent ensuite dans l’inventaire.'},
   {tab:'weight',demo:'_tutoDemoBilan',sel:'#tuto-demo',titre:'Ton bilan',txt:'Après quelques semaines : ta progression vers ton objectif, la date estimée, et le calendrier (vert = journée dans ta cible). Pèse-toi 2 ou 3 fois par semaine.'},
@@ -3513,7 +3553,7 @@ function _etatPourEnvoi(_newRev){
     dupMerged:S.dupMerged||false,
     fibInv:S.fibInv||false,
     epicesFix2:S.epicesFix2||false,
-    invFix1004:!!S.invFix1004,invFix1004b:!!S.invFix1004b,
+    invFix1004:!!S.invFix1004,invFix1004b:!!S.invFix1004b,repartLiam:!!S.repartLiam,
     removedSpices:S.removedSpices||[],
     shop:S.shop||{list:[],graveyard:[]},
     waiting:S.waiting||[],
@@ -4655,26 +4695,80 @@ function _htmlMarge(jour,marges){
     +'<div style="font-size:11.5px;color:'+g.couleur+';margin-top:3px;line-height:1.4;">'+t.etat+'</div>'
   +'</div>';
 }
+// ─── Suivi du jour : bandeau de la semaine et cartes par repas (02/11/2026) ───
+// Bandeau : de J−6 a demain (les jours modifiables), il remplace les fleches. Sous chaque
+// jour passe, l'etat du calendrier du Bilan (_etatJour) ; aujourd'hui et demain : point dore
+// des qu'un repas est saisi.
+var _COUL_BANDEAU={cible:'var(--green)',dessus:'var(--orange)',dessous:'var(--blue)',partiel:'var(--text3)',encours:'var(--gold)'};
+var _LIB_BANDEAU={cible:'dans la cible',dessus:'au-dessus de la cible',dessous:'sous la cible',partiel:'journée incomplète',encours:'repas saisis',vide:'rien de saisi'};
+function _bandeauJours(dd){
+  var J=['dim','lun','mar','mer','jeu','ven','sam'],h='<div class="bandeau-jours" role="group" aria-label="Choisir le jour">';
+  for(var i=-6;i<=1;i++){
+    var d=shiftDate(S.today,i),on=d===dd,auj=d===S.today,dt=new Date(d+'T00:00:00');
+    var e=d<S.today?_etatJour(d).etat:((S.dayMeals[d]||[]).length?'encours':'vide');
+    var c=_COUL_BANDEAU[e];
+    var pt=(on||!c)?'<span class="bj-pt"></span>':'<span class="bj-pt" style="'+(e==='partiel'?'border:1px solid '+c:'background:'+c)+';"></span>';
+    var lib=dt.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'})+(auj?' (aujourd\'hui)':'')+' : '+_LIB_BANDEAU[e];
+    h+='<button data-action="jour-bandeau" data-val="'+d+'" class="bj'+(on?' on':'')+(auj?' auj':'')+'" aria-pressed="'+on+'" aria-label="'+_attr(lib)+'">'
+      +'<span class="bj-j">'+(i===1?'dem.':J[dt.getDay()])+'</span><span class="bj-n">'+dt.getDate()+'</span>'+pt+'</button>';
+  }
+  return h+'</div>';
+}
+// Cartes par repas : la part de la cible prevue pour le moment (_repartition), ce qui y est
+// mange et ses proteines. Pas de rouge (Liam : « ça peut caler un petit stress pour rien ») :
+// jaune citron au-dessus de la part, vert clair dans la part avec les proteines qui vont avec
+// (et seulement la, un petit mot), sinon la couleur du moment.
+const REPAS_TOLERANCE=1.05;   /* comme RENTRE_TOLERANCE : jusqu'a 5 % au-dessus, on reste dans la part */
+const REPAS_PROT_OK=0.9;      /* proteines de la part : 90 %, comme « Attention aux protéines » (_protMoyOk) */
+function _etatMoment(kcal,prot,partK,partP){
+  if(kcal>partK*REPAS_TOLERANCE)return 'dessus';
+  return (prot>=partP*REPAS_PROT_OK)?'bien':'neutre';
+}
+function _carteMoment(mo,dd,lignes){
+  var part=_partMoment(mo.id),partK=Math.round(TARGETS.kcal*part),partP=Math.round(TARGETS.prot*part);
+  var k=0,p=0;lignes.forEach(function(l){k+=l.kcal;p+=l.prot;});
+  var vide=!lignes.length,etat=vide?'vide':_etatMoment(k,p,partK,partP);
+  var coul=etat==='dessus'?'var(--citron)':(etat==='bien'?'var(--menthe)':mo.couleur);
+  var pct=partK>0?Math.min(100,Math.round(k/partK*100)):0;
+  var aj='data-action="ajout-moment" data-val="'+mo.id+'" aria-label="Ajouter '+_AU_MOMENT[mo.id]+'" title="Ajouter '+_AU_MOMENT[mo.id]+'"';
+  return '<div class="carte-moment" data-moment="'+mo.id+'" data-etat="'+etat+'" style="border-left-color:'+mo.couleur+';">'
+    +'<div class="cm-tete"><span class="cm-nom">'+mo.nom+'</span>'
+      +'<span class="cm-k" style="color:'+(etat==='dessus'||etat==='bien'?coul:(vide?'var(--text3)':'var(--text)'))+';">'+Math.round(k)+'</span><span class="cm-part">/ '+partK+' kcal</span>'
+      +(vide?'':'<span class="cm-p">'+Math.round(p)+'<span>/'+partP+' g</span></span><button class="cm-plus" '+aj+'>+</button>')+'</div>'
+    +'<div class="cm-barre"><span style="width:'+pct+'%;background:'+coul+';"></span></div>'
+    +(vide?'<div class="cm-vide"><span>'+(dd<S.today?'Rien de noté':'Rien pour l\'instant')+'</span><button class="cm-ajout" '+aj+'>+ Ajouter</button></div>'
+      :lignes.map(function(l){return l.html;}).join(''))
+    +(etat==='bien'?'<div class="cm-bravo">Bien joué : dans la part prévue, avec '+Math.round(p)+' g de protéines.</div>':'')
+  +'</div>';
+}
+// Anciens repas sans moment (avant le 02/11/2026) : a part, sans part de cible
+function _carteSansMoment(lignes){
+  var k=0;lignes.forEach(function(l){k+=l.kcal;});
+  return '<div class="carte-moment" data-moment="aucun">'
+    +'<div class="cm-tete"><span class="cm-nom">Sans moment</span><span class="cm-k">'+Math.round(k)+'</span><span class="cm-part">kcal</span></div>'
+    +'<div class="cm-aide">Touche un repas pour lui choisir un moment.</div>'
+    +lignes.map(function(l){return l.html;}).join('')
+  +'</div>';
+}
 function renderMacros(){
   const dd=S.displayDate;const m=getDayMacros(dd);const meals=S.dayMeals[dd]||[];
-  const isToday=dd===S.today,isTomorrow=dd===TOMORROW;
-  const canPrev=dd>shiftDate(S.today,-6),canNext=dd<TOMORROW;
+  const isToday=dd===S.today,isTomorrow=dd===shiftDate(S.today,1);
   const dt=new Date(dd+'T00:00:00');
   const dateLabel=dt.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
   const suffix=isToday?' <span style="font-size:11px;color:var(--text3);">· aujourd\'hui</span>':isTomorrow?' <span style="font-size:11px;color:var(--blue);">· demain</span>':'';
-  const list=_ordreRepas(meals).map((idx)=>{const {rid,dessert,customDessert,extras,macros,name}=meals[idx];const r=findRecipe(rid);const base=macros||r;if(!base)return'';const _nm=name||(r&&r.name)||'Repas';let dl='';if(dessert&&dessert!=='none'){if(dessert==='autre'&&customDessert)dl=` + ${customDessert.name}`;else{const d=allDesserts().find(x=>x.id===dessert);if(d)dl=` + ${d.name}`;}}const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0)}),{kcal:0,prot:0});if(extras&&extras.length)dl+=' + '+extras.map(e=>e.name).join(', ');const _mo=moment(meals[idx]&&meals[idx].slot);
-    const _lis=_mo?`border-left:3px solid ${_mo.couleur};padding-left:7px;`:'border-left:3px solid transparent;padding-left:7px;';
-    return `<div style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);${_lis}"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(base.kcal+dm.kcal+ex.kcal)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round((base.prot+dm.prot+ex.prot)*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" title="Supprimer ce repas" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;width:40px;height:40px;margin:-10px -10px -10px -6px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;">✕</button></div>`;}).filter(Boolean).join('');
+  const lignes={},hors=[];
+  _ordreRepas(meals).forEach((idx)=>{const {rid,dessert,customDessert,extras,macros,name}=meals[idx];const r=findRecipe(rid);const base=macros||r;if(!base)return;const _nm=name||(r&&r.name)||'Repas';let dl='';if(dessert&&dessert!=='none'){if(dessert==='autre'&&customDessert)dl=` + ${customDessert.name}`;else{const d=allDesserts().find(x=>x.id===dessert);if(d)dl=` + ${d.name}`;}}const dm=getDessertMacros(dessert,customDessert);const ex=(extras||[]).reduce((a,e)=>({kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0)}),{kcal:0,prot:0});if(extras&&extras.length)dl+=' + '+extras.map(e=>e.name).join(', ');const _mo=moment(meals[idx]&&meals[idx].slot);
+    const _k=(base.kcal||0)+dm.kcal+ex.kcal,_p=(base.prot||0)+dm.prot+ex.prot;
+    const _html=`<div class="ligne-repas" style="display:flex;align-items:center;gap:5px;padding:4px 0;border-top:0.5px solid var(--border);"><span data-action="edit-meal" data-day="${dd}" data-idx="${idx}" style="flex:1;font-size:12px;color:var(--text2);cursor:pointer;">${_nm}${dl}</span><span style="font-size:11px;color:var(--orange);white-space:nowrap;">${Math.round(_k)}kcal</span><span style="font-size:11px;color:var(--green);white-space:nowrap;margin-left:4px;">${Math.round(_p*10)/10}g</span><button onclick="copyMealTo('${dd}',${idx},document.getElementById('copy-day-target').value)" title="Copier ce repas vers la date choisie" style="background:none;border:none;color:var(--text3);font-size:12px;cursor:pointer;padding:1px 5px;flex-shrink:0;line-height:1;">⧉</button><button data-action="delete-meal" data-day="${dd}" data-idx="${idx}" title="Supprimer ce repas" style="background:none;border:none;color:var(--text3);font-size:13px;cursor:pointer;width:40px;height:40px;margin:-10px -10px -10px -6px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;line-height:1;">✕</button></div>`;
+    (_mo?(lignes[_mo.id]=lignes[_mo.id]||[]):hors).push({html:_html,kcal:_k,prot:_p});});
+  const list=MOMENTS.map(mo=>_carteMoment(mo,dd,lignes[mo.id]||[])).join('')+(hors.length?_carteSansMoment(hors):'');
   const rem=meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text2);">${isToday?'Reste':'Écart'} : <strong style="color:var(--text);">${isToday?(Math.round(Math.max(0,TARGETS.kcal-m.kcal))+' kcal'):((m.kcal>TARGETS.kcal?'+':'')+Math.round(m.kcal-TARGETS.kcal)+' kcal')}</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${isToday?(Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10+'g'):(Math.round(m.prot*10)/10+'/'+TARGETS.prot+'g')}</strong></span></div>`:'';
-  const ICNAV={'chevron-left':'←','chevron-right':'→'};
-  const navBtn=(a,icon,en)=>`<button data-action="${a}" ${!en?'data-disabled="true"':''} style="background:none;border:0.5px solid var(--border);border-radius:6px;width:28px;height:28px;display:flex;align-items:center;justify-content:center;cursor:${en?'pointer':'default'};color:${en?'var(--text2)':'var(--border)'};flex-shrink:0;font-size:16px;">${ICNAV[icon]||icon}</button>`;
   return`<div id="daypane" style="background:var(--bg2);border:0.5px solid ${isTomorrow?'var(--blue)':'var(--border)'};border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;">
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">${navBtn('prev-day','chevron-left',canPrev)}<div style="flex:1;display:flex;align-items:center;justify-content:center;gap:7px;background:var(--bg3);border-radius:99px;padding:7px 12px;min-width:0;"><span style="font-size:13px;">\ud83d\udcc5</span><span style="font-size:13px;font-weight:600;color:var(--text);text-transform:capitalize;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dateLabel}${suffix}</span></div>${navBtn('next-day','chevron-right',canNext)}</div>
+    <div style="text-align:center;font-size:15px;font-weight:600;color:var(--text);text-transform:capitalize;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dateLabel}${suffix}</div>${_bandeauJours(dd)}
     <div style="text-align:center;font-size:11px;color:var(--text3);margin:-4px 0 8px;">${meals.length} repas</div>
     ${calorieRing(m.kcal,TARGETS.kcal,(function(){var b=getBurn(dd);return b?b.total:0;})())}
     <div style="display:grid;grid-template-columns:65px 1fr 75px;align-items:center;gap:5px;row-gap:7px;">${macroBar('Protéines',m.prot,TARGETS.prot,'g','--green','prot')}${macroBar('Glucides',m.gluc,TARGETS.gluc,'g','--blue','gluc')}${macroBar('Lipides',m.lip,TARGETS.lip,'g','--text2','lip')}${_barreFibres(dd)}</div>
-    ${meals.length===0?'<div style="text-align:center;padding:10px 0 2px;font-size:12px;color:var(--text3);">Aucun repas enregistré</div>':''}
-    ${list?`<div style="margin-top:8px;">${list}</div>`:''}
+    <div class="repas-moments" style="margin-top:4px;">${list}</div>
     ${rem}
     ${meals.length>0?`<div style="margin-top:8px;padding-top:8px;border-top:0.5px solid var(--border);display:flex;align-items:center;gap:6px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text3);">Copier vers</span><input type="date" id="copy-day-target" value="${shiftDate(dd,1)}" style="font-size:11px;padding:2px 5px;background:var(--bg);border:0.5px solid var(--border);border-radius:5px;color:var(--text2);"><button onclick="copyDayTo(document.getElementById('copy-day-target').value)" style="font-size:11px;padding:3px 10px;background:var(--blue);color:#fff;border:0;border-radius:5px;cursor:pointer;font-weight:500;">⧉ Jour entier</button></div><div style="font-size:11px;color:var(--text3);margin-top:4px;">Astuce : le ⧉ à côté d'un repas le copie seul vers cette date.</div>`:''}
     ${_htmlMarge(dd,'10px 0 0')}
@@ -6784,7 +6878,7 @@ function _emMkRow(g){
   return{id:g.id,n:g.n,name:g.name||g.n||g.id,qty:q,unit:g.unit||'',src:g.src||'inv',_pu:pu};
 }
 var _emMoment=null;
-function setEmMoment(s){_emMoment=(_emMoment===s)?null:s;renderEmMoments();}
+function setEmMoment(s){if(moment(s))_emMoment=s;renderEmMoments();}   /* plus de deselection (02/11/2026) */
 function renderEmMoments(){
   var c=document.getElementById('em-moments');if(!c)return;
   c.innerHTML=MOMENTS.map(function(m){
@@ -6792,7 +6886,7 @@ function renderEmMoments(){
     return '<button onclick="setEmMoment(\''+m.id+'\')" style="flex:1;min-width:0;padding:7px 4px;border-radius:8px;cursor:pointer;font-size:11px;'
       +'background:'+(on?m.couleur+'22':'transparent')+';border:0.5px solid '+(on?m.couleur:'rgba(246,237,227,.14)')+';'
       +'color:'+(on?m.couleur:'var(--text3)')+';">'+m.court+'</button>';
-  }).join('');
+  }).join('')+(moment(_emMoment)?'':'<div style="flex-basis:100%;font-size:11.5px;color:var(--gold);">Choisis le moment de ce repas.</div>');
 }
 function openEditMeal(day,idx){
   var list=S.dayMeals[day];if(!list||!list[idx])return;
@@ -6935,9 +7029,10 @@ function closeEditMeal(){document.getElementById('editmeal-overlay').style.displ
 function saveEditMeal(){
   if(!_editMeal)return;
   var list=S.dayMeals[_editMeal.day];var m=list&&list[_editMeal.idx];if(!m){closeEditMeal();return;}
+  if(!moment(_emMoment)){_alerte(MSG_MOMENT_REQUIS);return;}   /* avant toute modification */
   var nm=(document.getElementById('em-name').value||'').trim();
   if(nm)m.name=nm;
-  if(_emMoment)m.slot=_emMoment; else delete m.slot;   // moment corrige apres coup
+  m.slot=_emMoment;   // moment corrige apres coup
   if(_emMode==='ings'){
     syncEmRows();
     var rows=_emRows.filter(function(r){return r.qty>0;});
@@ -7754,11 +7849,23 @@ function _repasHabituels(n){
   liste.sort(function(a,b){return (b.nb-a.nb)||(a.jour<b.jour?1:(a.jour>b.jour?-1:0));});
   return liste.slice(0,n||6);
 }
-function ouvrirMenuAjout(){
+// « + Ajouter » d'une carte du suivi : le volet s'ouvre avec ce moment, repris par l'ajout
+// (openAddMeal) et par « Refaire un repas habituel ». Le bouton + general n'en impose aucun.
+var _menuMoment=null;
+function _deJour(d){
+  if(d===S.today)return "d'aujourd'hui";
+  if(d===shiftDate(S.today,-1))return "d'hier";
+  if(d===shiftDate(S.today,1))return 'de demain';
+  return 'du '+new Date(d+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+}
+function ouvrirMenuAjout(slot){
   var ov=document.getElementById('menu-ajout'),c=document.getElementById('menu-ajout-corps');if(!ov||!c)return;
   var jour=_jourAjout();
+  _menuMoment=moment(slot)?slot:null;
+  var mo=moment(_menuMoment);
   var b=function(act,ic,lib){return '<button class="ma-b" onclick="menuAjoutAction(\''+act+'\')"><span class="ma-i">'+ic+'</span><span>'+lib+'</span></button>';};
-  var h=(jour!==S.today?'<div style="margin:-4px 0 12px;padding:8px 11px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.4);border-radius:8px;font-size:12px;color:var(--blue);">Pour '+_libJour(jour)+' (jour affiché dans le tracker)</div>':'')
+  var h=(mo?'<div id="menu-ajout-moment" style="margin:-4px 0 12px;padding:8px 11px;background:'+mo.couleur+'1f;border:0.5px solid '+mo.couleur+'66;border-radius:8px;font-size:12px;color:'+mo.couleur+';">Pour '+_LE_MOMENT[mo.id]+' '+_deJour(jour)+'</div>'
+    :(jour!==S.today?'<div style="margin:-4px 0 12px;padding:8px 11px;background:rgba(95,168,201,.12);border:0.5px solid rgba(95,168,201,.4);border-radius:8px;font-size:12px;color:var(--blue);">Pour '+_libJour(jour)+' (jour affiché dans le tracker)</div>':''))
     +'<div class="ma-grille">'
     +((!_iaPrevue(false)&&!_iaPrevue(true))
       ? b('code','\u25a5','Code-barres')+b('manuel','\ud83d\udd22','Saisie manuelle')+b('inventaire','\ud83d\udce6','Mon inventaire')
@@ -7780,10 +7887,10 @@ function ouvrirMenuAjout(){
   c.innerHTML=h;
   ov.style.display='flex';
 }
-function fermerMenuAjout(){var ov=document.getElementById('menu-ajout');if(ov)ov.style.display='none';}
+function fermerMenuAjout(){var ov=document.getElementById('menu-ajout');if(ov)ov.style.display='none';_menuMoment=null;}
 // Les boutons du volet ouvrent les parcours existants, sans les dupliquer
 function menuAjoutAction(a){
-  var jour=_jourAjout();
+  var jour=_jourAjout(),mo=_menuMoment;
   fermerMenuAjout();
   S.displayDate=jour;          // openAddMeal et la fiche d'activite partent de ce jour
   if(a==='activite'){openBurnLog(jour);return;}
@@ -7793,7 +7900,7 @@ function menuAjoutAction(a){
     try{var w=document.getElementById('weight-input');if(w){w.scrollIntoView({block:'center'});w.focus();}}catch(e){}
     return;
   }
-  openAddMeal(a==='photo'?'photo':'text');   // la photo doit partir du geste de l'utilisateur
+  openAddMeal(a==='photo'?'photo':'text',mo);   // la photo doit partir du geste de l'utilisateur
   if(a==='code')openScanner('meal');
   else if(a==='inventaire')invAddMeal();
   else if(a==='manuel')manualAddMeal();
@@ -7802,7 +7909,8 @@ function refaireRepas(jour,idx){
   var src=(S.dayMeals[jour]||[])[idx];if(!src)return;
   var cible=_jourAjout();
   var copie=JSON.parse(JSON.stringify(src));
-  if(!copie.slot){var _mo=prochainMoment(cible);copie.slot=_mo?_mo.id:null;}
+  if(moment(_menuMoment))copie.slot=_menuMoment;          // ajoute depuis la carte d'un moment
+  else if(!moment(copie.slot))copie.slot=_momentDefaut(cible);
   fermerMenuAjout();
   _mealStock(copie,-1);                 // comme une copie de repas : le stock suit
   if(cible===S.today&&heureProfil()<4){  // garde nocturne : « hier ou aujourd'hui ? » (affichee dans Recettes)
@@ -7972,8 +8080,8 @@ function _onActionClick(e){
   else if(action==='poids-periode'){choisirPeriodePoids(val);return;}
   else if(action==='select-dessert'){const _d=el.dataset.dessert;const _cur=S.recipeDesserts[val]||'none';S.recipeDesserts[val]=(_cur===_d)?'none':_d;if(S.recipeDesserts[val]!=='autre'){delete S.customDesserts[val];delete S.customInputs[val];}}
   else if(action==='submit-custom-dessert'){const inp=document.querySelector(`[data-custom-input="${val}"]`);const txt=inp?inp.value.trim():S.customInputs[val]||'';if(txt)analyzeCustomDessert(val,txt);return;}
-  else if(action==='prev-day'){const p=shiftDate(S.displayDate,-1);if(p>=shiftDate(S.today,-6))S.displayDate=p;}
-  else if(action==='next-day'){const n=shiftDate(S.displayDate,1);if(n<=TOMORROW)S.displayDate=n;}
+  else if(action==='jour-bandeau'){if(/^\d{4}-\d\d-\d\d$/.test(val||'')&&val>=shiftDate(S.today,-6)&&val<=shiftDate(S.today,1))S.displayDate=val;}
+  else if(action==='ajout-moment'){if(moment(val))ouvrirMenuAjout(val);return;}
   else if(action==='spice-ok'){
     // Encore en stock : on enlève juste la ligne.
     S.pendingSpiceCheck=(S.pendingSpiceCheck||[]).filter(s=>s.id!==val);
@@ -8061,7 +8169,7 @@ function setMealStock(yes){
   if(y)y.style.cssText=yes?on:off;if(n)n.style.cssText=!yes?on:off;
 }
 function _erreurAjout(msg){var e=document.getElementById('addmeal-err');if(!e)return;e.textContent=msg||'';e.style.display=msg?'block':'none';}
-function openAddMeal(type) {_scanBase=null;_erreurAjout('');
+function openAddMeal(type,slot) {_scanBase=null;_erreurAjout('');
   const ov = document.getElementById('addmeal-overlay');
   ov.style.display = 'flex';
   // Reset states
@@ -8079,8 +8187,7 @@ function openAddMeal(type) {_scanBase=null;_erreurAjout('');
   _majBandeauJour();
   _amBaseName='';   // sinon le nom du repas precedent servirait de base au suivant
   try{
-    var _pm=prochainMoment(_addMealDay);
-    _amSlot=_pm?_pm.id:null;      // pose sans passer par setAmSlot, qui renommerait le repas
+    _amSlot=moment(slot)?slot:_momentDefaut(_addMealDay);      // pose sans passer par setAmSlot, qui renommerait le repas
     renderAmSlots();
   }catch(e){}
   setMealStock(_aDuStock());   /* inventaire vide : « Non » par defaut */
@@ -8720,6 +8827,37 @@ function _ordreRepas(meals){
   });
 }
 function moment(id){return MOMENTS.find(function(m){return m.id===id;})||null;}
+// Part de la cible prevue pour chaque moment, en % (02/11/2026, demande de Liam : 24/30/30/16
+// par defaut, reglable dans « Modifier le profil », S.profil.repartition). Sert aux cartes par
+// repas du suivi (« Petit déjeuner 440 / 554 kcal »).
+const REPARTITION_DEFAUT={breakfast:24,lunch:30,dinner:30,snack:16};
+function _repartitionValide(r){
+  if(!r||typeof r!=='object')return false;
+  var s=0;
+  for(var i=0;i<MOMENTS.length;i++){
+    var v=r[MOMENTS[i].id];
+    if(typeof v!=='number'||!(v>=0&&v<=100)||Math.round(v)!==v)return false;
+    s+=v;
+  }
+  return s===100;
+}
+function _repartition(){var r=S&&S.profil&&S.profil.repartition;return _repartitionValide(r)?r:REPARTITION_DEFAUT;}
+function _partMoment(id){return (_repartition()[id]||0)/100;}
+var _AU_MOMENT={breakfast:'au petit déjeuner',lunch:'au déjeuner',dinner:'au dîner',snack:'à la collation'};
+var _LE_MOMENT={breakfast:'le petit déjeuner',lunch:'le déjeuner',dinner:'le dîner',snack:'la collation'};
+// Tout repas a un moment (02/11/2026, demande de Liam : « obliger l'utilisateur à ranger chacun
+// de ses repas »). Propose : le premier moment qui manque dans la journee ; les quatre pris,
+// selon l'heure pour aujourd'hui, sinon une collation.
+function _momentDefaut(jour){
+  var p=prochainMoment(jour||S.today);if(p)return p.id;
+  if((jour||S.today)===S.today){
+    var h=heureProfil();
+    if(h>=4&&h<11)return 'breakfast';
+    if(h>=11&&h<16)return 'lunch';
+    if(h>=18&&h<23)return 'dinner';
+  }
+  return 'snack';
+}
 // Les photos vivent dans leur propre noeud : les joindre a l'etat ferait
 // repartir des centaines de kilo-octets a chaque enregistrement.
 var PHOTOS={},_photosChargees=false,_photosGen=0;   // _photosGen : invalide un chargement devenu perime
@@ -9516,6 +9654,7 @@ function _texteCibles(p,kcal){
 function majTexteCibles(){
   var e=document.getElementById('pf-cibles-txt'),k=document.getElementById('pf-kcal');
   if(e&&_pCibles)e.innerHTML=_texteCibles(_pCibles,k?parseFloat(k.value):0);
+  majRepartition();   /* kcal par repas, s'il y a la section (edition du profil) */
 }
 function _ciblesValides(c){
   return !!c&&['kcal','prot','gluc','lip'].every(function(k){return typeof c[k]==='number'&&isFinite(c[k])&&c[k]>=0;})&&c.kcal>=800;
@@ -9665,6 +9804,30 @@ function _secCibles(c,note){
     +_deux(_champ('Glucides (g)',_inp('pf-gluc','number',c.gluc,'','min="0" max="900" inputmode="numeric"')),
            _champ('Lipides (g)',_inp('pf-lip','number',c.lip,'','min="0" max="400" inputmode="numeric"')));
 }
+// Repartition de la cible entre les repas (02/11/2026) : quatre parts en %, total 100
+function _secRepartition(r){
+  return '<div style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:10px;">La part de ta cible prévue pour chaque repas, en %. Elle sert aux cartes de ta journée dans « Repas ».</div>'
+    +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;">'
+    +MOMENTS.map(function(mo){return _champ(mo.court,_inp('pf-rep-'+mo.id,'number',r[mo.id],'','min="0" max="100" step="1" inputmode="numeric" oninput="majRepartition()"'));}).join('')
+    +'</div><div id="pf-rep-total" style="font-size:12px;line-height:1.45;margin:-4px 0 2px;"></div>'
+    +'<button type="button" onclick="repartitionParDefaut()" style="background:none;border:0;color:var(--accent2);font-size:11.5px;cursor:pointer;text-decoration:underline;padding:6px 0;">Revenir à '+MOMENTS.map(function(mo){return REPARTITION_DEFAUT[mo.id];}).join(' / ')+'</button>';
+}
+/* null : les quatre champs vides (repartition par defaut) */
+function _lireRepartition(){
+  var r={},vide=true;
+  MOMENTS.forEach(function(mo){var v=_num('pf-rep-'+mo.id);if(v!=='')vide=false;r[mo.id]=v===''?0:Math.round(v);});
+  return vide?null:r;
+}
+function _totalRepartition(r){var s=0;MOMENTS.forEach(function(mo){s+=r[mo.id]||0;});return s;}
+function majRepartition(){
+  var e=document.getElementById('pf-rep-total');if(!e)return;
+  var r=_lireRepartition()||REPARTITION_DEFAUT,s=_totalRepartition(r);
+  var k=parseFloat(_val('pf-kcal'))||TARGETS.kcal;
+  e.style.color=s===100?'var(--text3)':'var(--orange)';
+  e.textContent=s===100?('Total 100 % · soit '+MOMENTS.map(function(mo){return Math.round(k*r[mo.id]/100);}).join(' / ')+' kcal')
+    :('Total '+s+' % : '+(s<100?('il manque '+(100-s)+' %'):((s-100)+' % de trop'))+' pour arriver à 100 %.');
+}
+function repartitionParDefaut(){MOMENTS.forEach(function(mo){var e=document.getElementById('pf-rep-'+mo.id);if(e)e.value=REPARTITION_DEFAUT[mo.id];});majRepartition();}
 function _num(id){var v=parseFloat(_val(id).replace(',','.'));return isNaN(v)?'':v;}
 function _lireToi(){return {prenom:_val('pf-prenom'),nom:_val('pf-nom'),emoji:_pfEmoji,sexe:_val('pf-sexe')||'H',
   naissance:_val('pf-naissance'),taille:_num('pf-taille'),poids:_num('pf-poids')};}
@@ -9860,7 +10023,8 @@ function ouvrirEditionProfil(){
     +'<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Alimentation</div>'+_secAlim(p)
     +'<div style="display:flex;justify-content:space-between;align-items:baseline;margin:14px 0 10px;"><span style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;">Cibles</span>'
     +'<button onclick="recalculerCiblesProfil()" style="background:none;border:0;color:var(--accent2);font-size:11.5px;cursor:pointer;text-decoration:underline;">Recalculer depuis mes infos</button></div>'
-    +(_pCibles=p,_secCibles(c,_texteCibles(p,c.kcal)));
+    +(_pCibles=p,_secCibles(c,_texteCibles(p,c.kcal)))
+    +'<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Répartition par repas</div>'+_secRepartition(_repartition());
   if(sessionActive()){
     var _lg=(sessionActive()||{}).login||'';
     h+='<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Connexion</div>'
@@ -9875,6 +10039,7 @@ function ouvrirEditionProfil(){
     +'<button onclick="fermerEditionProfil()" style="'+_ST_BTN+'flex:1;background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);">Annuler</button>'
     +'<button onclick="enregistrerProfil()" style="'+_ST_BTN+'flex:2;background:var(--gold);border:0;color:#1a120b;">Enregistrer</button></div>';
   var pan=document.getElementById('profil-panneau');if(pan)pan.innerHTML=h;
+  majRepartition();
   var o=document.getElementById('profil-overlay');if(o)o.style.display='flex';
 }
 function fermerEditionProfil(){var o=document.getElementById('profil-overlay');if(o)o.style.display='none';}
@@ -9892,6 +10057,10 @@ function enregistrerProfil(){
   var p=_profilSaisi();
   var er=validerProfil(p);
   if(er.length){_errProfil('À vérifier : '+er.join(', ')+'.');return;}
+  var rp=_lireRepartition();
+  if(rp&&!_repartitionValide(rp)){_errProfil('Répartition par repas : des parts de 0 à 100 %, pour un total de 100 % (là : '+_totalRepartition(rp)+' %).');return;}
+  /* la repartition par defaut n'est pas recopiee dans le profil */
+  if(rp&&MOMENTS.some(function(mo){return rp[mo.id]!==REPARTITION_DEFAUT[mo.id];}))p.repartition=rp;else delete p.repartition;
   var c=_lireCibles();
   p.cibles=_ciblesValides(c)?c:(calculerCibles(p)||TARGETS);
   S.profil=_neutre(p);
@@ -10275,7 +10444,8 @@ function setAmSlot(s){
   // l'ouverture : sans la seconde condition, le nom de base n'etait jamais
   // capture et le renommage ne se declenchait plus.
   if(_amSlot===null||!_amBaseName){var e0=document.getElementById('addmeal-name');if(e0&&e0.value.trim())_amBaseName=e0.value.trim();}
-  _amSlot=(_amSlot===s)?null:s;
+  if(!moment(s))return;
+  _amSlot=s;      // plus de deselection : tout repas a un moment (02/11/2026)
   var L={breakfast:'Petit d\u00e9jeuner',lunch:'D\u00e9jeuner',snack:'Collation',dinner:'D\u00eener'};
   var el=document.getElementById('addmeal-name');
   // Sans nom de base, il n'y a rien a prefixer : « Dejeuner a base de » tout
@@ -10324,7 +10494,8 @@ function manualAddMeal(){_scanBase=null;_iaAnalyse='';_addMealFreeItems=[];
 function applyPendingMealToConfirm(){
   if(!_pendingMeal)return;
   document.getElementById('addmeal-name').value=_pendingMeal.name;_amBaseName=_pendingMeal.name||'';
-  try{var _pm2=prochainMoment(_addMealDay||S.today);_amSlot=_pm2?_pm2.id:null;}catch(e){_amSlot=null;}
+  /* garde le moment deja choisi (ecran de saisie, carte du suivi) ; avant, l'analyse le remplacait */
+  if(!moment(_amSlot)){try{_amSlot=_momentDefaut(_addMealDay||S.today);}catch(e){_amSlot='snack';}}
   renderAmSlots();renderMealBreakdown();
   document.getElementById('addmeal-kcal').value=_pendingMeal.kcal;
   document.getElementById('addmeal-prot').value=_pendingMeal.prot;
@@ -10496,6 +10667,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
 }
 
 function confirmAddMealFinal() {
+  if(!moment(_amSlot)){_alerte(MSG_MOMENT_REQUIS);return;}   /* avant toute deduction du stock */
   const name = document.getElementById('addmeal-name').value.trim() || 'Repas libre';
   const kcal = parseInt(document.getElementById('addmeal-kcal').value)||0;
   const prot = parseInt(document.getElementById('addmeal-prot').value)||0;
@@ -10554,7 +10726,7 @@ function confirmAddMealFinal() {
       gluc:Math.round((m.gluc||0)*10)/10,lip:Math.round((m.lip||0)*10)/10});
   });
   const _meal={rid:id, mult:1, dessert:null, customDessert:null, macros:(fib!==null?{kcal,prot,gluc,lip,fib}:{kcal,prot,gluc,lip}), name,
-               slot:_amSlot||null};   // le moment choisi servait seulement a nommer le repas
+               slot:_amSlot};   // obligatoire depuis le 02/11/2026 (cartes par repas du suivi)
   if(_ings.length)_meal.ings=_ings;
   if(fib!==null&&_fibAjoutPartiel)_meal.fibPartiel=true;
   var _jour=_addMealDay||S.today;

@@ -25,16 +25,23 @@ t('moment() repond pour chaque identifiant, null sinon',()=>{
 });
 
 console.log('\n=== EW. Le repas retient son moment ===');
-t('*** le moment choisi est enregistre avec le repas ***',()=>{
-  if(!/slot:_amSlot\|\|null/.test(src))throw new Error('le moment n\'est pas conserve');
+t('*** le moment choisi est enregistre avec le repas (obligatoire depuis le 02/11/2026) ***',()=>{
+  if(!/slot:_amSlot\}/.test(src))throw new Error('le moment n\'est pas conserve');
+  if(!/function confirmAddMealFinal\(\) \{\n  if\(!moment\(_amSlot\)\)\{_alerte\(MSG_MOMENT_REQUIS\);return;\}/.test(src))throw new Error('repas sans moment accepte');
 });
-t('*** le liseré reprend la couleur du moment ***',()=>{
-  if(!/border-left:3px solid \$\{_mo\.couleur\}/.test(src))throw new Error('liseré absent');
-  if(!/border-left:3px solid transparent/.test(src))throw new Error('pas de repli sans moment');
+t('*** la carte du moment porte sa couleur (02/11/2026 : cartes par repas) ***',()=>{
+  S.inv={frigo:[],placards:[],congelateur:[],epices:[]};S.displayDate=S.today;
+  S.dayMeals[S.today]=[{rid:'x',name:'Soupe',mult:1,slot:'dinner',macros:{kcal:300,prot:20,gluc:30,lip:8}}];
+  const h=G('renderMacros')();
+  if(!/<div class="carte-moment" data-moment="dinner"[^>]*style="border-left-color:#8B7DD8;"/.test(h))throw new Error('couleur du diner absente');
+  const i=h.indexOf('data-moment="dinner"'),j=h.indexOf('>Soupe');
+  if(j<i||j>h.indexOf('data-moment="snack"'))throw new Error('repas hors de sa carte');
 });
-t('un repas sans moment garde le meme alignement',()=>{
-  const i=src.indexOf("border-left:3px solid transparent");
-  if(!/padding-left:7px/.test(src.slice(i,i+80)))throw new Error('alignement different');
+t('un ancien repas sans moment va dans « Sans moment »',()=>{
+  S.dayMeals[S.today]=[{rid:'x',name:'Vieux',mult:1,macros:{kcal:300,prot:20,gluc:30,lip:8}}];
+  const h=G('renderMacros')();const i=h.indexOf('data-moment="aucun"');
+  if(i<0||h.indexOf('>Vieux')<i)throw new Error('pas de carte « Sans moment »');
+  if(h.indexOf('Touche un repas pour lui choisir un moment')<0)throw new Error('explication');
 });
 
 console.log('\n=== EX. Corriger le moment apres coup ===');
@@ -62,13 +69,13 @@ t('*** choisir un moment puis enregistrer l\'applique ***',()=>{
   G('saveEditMeal')();
   eq(S.dayMeals[S.today][0].slot,'lunch');
 });
-t('recliquer sur le meme moment le retire',()=>{
+t('recliquer sur le meme moment le garde : tout repas a un moment (02/11/2026)',()=>{
   S.dayMeals[S.today]=[{rid:'x',name:'Test',mult:1,slot:'lunch',macros:{kcal:500,prot:30,gluc:40,lip:15}}];
   G('openEditMeal')(S.today,0);
   G('setEmMoment')('lunch');
   docEl('em-name').value='Test';
   G('saveEditMeal')();
-  if(S.dayMeals[S.today][0].slot)throw new Error('moment toujours pose');
+  eq(S.dayMeals[S.today][0].slot,'lunch');
 });
 t('le reste du repas survit au changement de moment',()=>{
   S.dayMeals[S.today]=[{rid:'x',name:'Mon repas',mult:1,macros:{kcal:500,prot:30,gluc:40,lip:15}}];
@@ -115,7 +122,7 @@ t('*** le selecteur existe dans la fenetre de cuisson ***',()=>{
   if(!/function renderCcMoments/.test(src))throw new Error('rendu absent');
 });
 t('*** le moment part avec le repas cuisine ***',()=>{
-  if(!/if\(_ccMoment\)_entry\.slot=_ccMoment;/.test(src))throw new Error('moment non enregistre');
+  if(!/_entry\.slot=moment\(_ccMoment\)\?_ccMoment:_momentDefaut\(day\);/.test(src))throw new Error('moment non enregistre');
 });
 t('*** une recette a un seul creneau le pre-remplit ***',()=>{
   S.inv={frigo:[],placards:[],congelateur:[],epices:[]};
@@ -147,7 +154,7 @@ t('on peut changer le moment propose',()=>{
   const i=h.indexOf("setCcMoment('dinner')");
   if(!/background:#/.test(h.slice(i,i+220)))throw new Error('changement sans effet');
 });
-t('recliquer sur le meme moment le retire',()=>{
+t('recliquer sur le meme moment le garde (02/11/2026)',()=>{
   // On repart d'un etat connu en rouvrant la fenetre
   S.dayMeals[S.today]=[];
   const r=(sb.RCP||[]).find(x=>x.slots&&x.slots.length===1&&x.profile==='liam');
@@ -160,7 +167,7 @@ t('recliquer sur le meme moment le retire',()=>{
   };
   if(!actif())throw new Error('le creneau de la recette devrait etre pre-selectionne');
   G('setCcMoment')(cible);
-  if(actif())throw new Error('le moment reste actif apres un second clic');
+  if(!actif())throw new Error('le moment a ete retire par un second clic');
 });
 
 console.log('\n=== FO. Le halo ne rejoue plus a chaque clic ===');
@@ -228,12 +235,12 @@ t('*** pre-remplir ne renomme pas le repas ***',()=>{
   const n=docEl('addmeal-name').value||'';
   if(/à base de/.test(n))throw new Error('le nom a ete prefixe : '+n);
 });
-t('les quatre moments couverts : aucun pre-remplissage',()=>{
+t('les quatre moments couverts : moment selon l\'heure (midi dans le bac a sable)',()=>{
   S.dayMeals[S.today]=['breakfast','lunch','dinner','snack'].map(function(s){
     return {rid:s,name:s,mult:1,slot:s,macros:{kcal:300,prot:20,gluc:30,lip:8}};
   });
   sb.openAddMeal('text');
-  eq(G('__amSlot')(),null);
+  eq(G('__amSlot')(),'lunch');
 });
 t('choisir un moment a la main renomme toujours le repas',()=>{
   S.dayMeals[S.today]=[];
@@ -322,16 +329,16 @@ t('liste vide ou nulle',()=>{
 t('*** l\'edition vise toujours le bon repas ***',()=>{
   S.inv={frigo:[],placards:[],congelateur:[],epices:[]};
   S.displayDate=S.today;
-  S.dayMeals[S.today]=[R('dinner','Diner'),R('breakfast','Petit')];
+  S.dayMeals[S.today]=[R('dinner','Soir'),R('breakfast','Matin')];
   S.mainTab='recipes';sb.render();
   const h=docEl('root').innerHTML;
-  const iP=h.indexOf('>Petit'),iD=h.indexOf('>Diner');
+  const iP=h.indexOf('>Matin'),iD=h.indexOf('>Soir');
   if(iP<0||iD<0)throw new Error('repas absents du rendu');
   if(iP>iD)throw new Error('le petit-dejeuner devrait s\'afficher en premier');
   const seg=h.slice(h.lastIndexOf('data-action="edit-meal"',iP),iP);
   if(!/data-idx="1"/.test(seg))throw new Error('le lien d\'edition pointe vers le mauvais repas');
 });
 t('les donnees ne sont pas reordonnees',()=>{
-  eq(S.dayMeals[S.today][0].name,'Diner','le tri ne doit toucher que l\'affichage');
+  eq(S.dayMeals[S.today][0].name,'Soir','le tri ne doit toucher que l\'affichage');
 });
 console.log('\n---- total '+pass+' ok, '+fail+' KO ----');
