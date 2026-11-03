@@ -77,7 +77,7 @@ t('*** fiche article : fibres ramenees a 100 g, champ vide = retour a la table *
   eq(X("findItem('av').mac100.fib"),undefined);
 });
 t('*** repas enregistre avec ses fibres, et le drapeau partiel ***',()=>{
-  prepa();X("_addMealInvMode=false;_addMealFreeItems=[];_addMealDay=S.today;");
+  prepa();X("_addMealInvMode=false;_addMealFreeItems=[];_addMealDay=S.today;_amSlot='lunch';");
   docEl('addmeal-name').value='Bol';['addmeal-kcal','addmeal-prot','addmeal-gluc','addmeal-lip'].forEach(k=>{docEl(k).value='100';});
   X('_majFibAjout(4.5,true)');X('confirmAddMealFinal()');
   const m=X('S.dayMeals[S.today][0]');eq(m.macros.fib,4.5);eq(m.fibPartiel,true);
