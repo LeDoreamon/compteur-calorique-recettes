@@ -40,7 +40,7 @@
   --red: #E05C4F;
   --lime: #B5CC5C;   /* marge du jour : cible depassee, largement couverte par l'activite */
   --sky: #8FD6F5;    /* marge du jour : cible atteinte et deficit au-dela du prevu (demande de Liam, 13/10/2026) */
-  --citron: #E8DC4F; /* repas au-dessus de sa part (02/11/2026) : jaune citron, distinct de l'ambre du petit-dejeuner ; pas de rouge */
+  --cuivre: #C96A33; /* repas au-dessus de sa part : orange cuivre, distinct de l'ambre du petit-dejeuner, pas de rouge (03/11/2026 : le jaune citron du 02/11 se voyait mal) */
   --menthe: #8EE6B8; /* repas dans sa part, proteines comprises : vert clair, distinct du vert du dejeuner */
   --red-bg: rgba(224,92,79,0.12);
   --warn: #F0B93E;
@@ -390,7 +390,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-03 01h08 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-03 22h35 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -655,15 +655,16 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-03-0108"></script>
+<script src="catalogue.js?v=2026-11-03-2235"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-03-0108';
+const BUILD_ID='2026-11-03-2235';
 const NOUVEAUTES=[
+  {b:'2026-11-03-2235',points:[]},
   {b:'2026-11-03-0108',points:[
     'Repas : une bande avec les 7 derniers jours et demain remplace les flèches. Touche un jour pour l’ouvrir ; son petit point dit comment s’est passée la journée (vert : dans ta cible, orange : au-dessus, bleu : en dessous).',
-    'Tes repas sont rangés par moment, chacun avec sa part de ta cible (par exemple « Petit déjeuner 440 / 554 kcal »). Jaune : au-dessus de la part ; vert clair : dans la part, avec assez de protéines. « + Ajouter » sur un moment l’ajoute directement au bon endroit.',
+    'Tes repas sont rangés par moment, chacun avec sa part de ta cible (par exemple « Petit déjeuner 440 / 554 kcal »). Orange cuivré : au-dessus de la part ; vert clair : dans la part, avec assez de protéines. « + Ajouter » sur un moment l’ajoute directement au bon endroit.',
     'Chaque repas a maintenant son moment (petit-déj, déjeuner, dîner ou collation). La part de chaque repas se règle dans Réglages › Modifier le profil (24 / 30 / 30 / 16 % par défaut).',
     '💬 De la part de Liam : « Coucou Seth et Sarah ! Si jamais vous rencontrez des bugs, qu’une option, une fonction ou quoi n’est pas claire, n’hésitez pas à m’envoyer un message pour me le dire ou si besoin que je vous explique ce qu’il faut ! Bisous »'
   ]},
@@ -4716,7 +4717,7 @@ function _bandeauJours(dd){
 }
 // Cartes par repas : la part de la cible prevue pour le moment (_repartition), ce qui y est
 // mange et ses proteines. Pas de rouge (Liam : « ça peut caler un petit stress pour rien ») :
-// jaune citron au-dessus de la part, vert clair dans la part avec les proteines qui vont avec
+// orange cuivre au-dessus de la part, vert clair dans la part avec les proteines qui vont avec
 // (et seulement la, un petit mot), sinon la couleur du moment.
 const REPAS_TOLERANCE=1.05;   /* comme RENTRE_TOLERANCE : jusqu'a 5 % au-dessus, on reste dans la part */
 const REPAS_PROT_OK=0.9;      /* proteines de la part : 90 %, comme « Attention aux protéines » (_protMoyOk) */
@@ -4728,7 +4729,7 @@ function _carteMoment(mo,dd,lignes){
   var part=_partMoment(mo.id),partK=Math.round(TARGETS.kcal*part),partP=Math.round(TARGETS.prot*part);
   var k=0,p=0;lignes.forEach(function(l){k+=l.kcal;p+=l.prot;});
   var vide=!lignes.length,etat=vide?'vide':_etatMoment(k,p,partK,partP);
-  var coul=etat==='dessus'?'var(--citron)':(etat==='bien'?'var(--menthe)':mo.couleur);
+  var coul=etat==='dessus'?'var(--cuivre)':(etat==='bien'?'var(--menthe)':mo.couleur);
   var pct=partK>0?Math.min(100,Math.round(k/partK*100)):0;
   var aj='data-action="ajout-moment" data-val="'+mo.id+'" aria-label="Ajouter '+_AU_MOMENT[mo.id]+'" title="Ajouter '+_AU_MOMENT[mo.id]+'"';
   return '<div class="carte-moment" data-moment="'+mo.id+'" data-etat="'+etat+'" style="border-left-color:'+mo.couleur+';">'

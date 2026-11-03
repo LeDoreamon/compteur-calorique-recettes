@@ -79,10 +79,10 @@ t('carte vide : « Rien pour l\'instant » et « + Ajouter » ; jour passe : « 
   X('S.displayDate=shiftDate(S.today,-1)');c=carte(html(),'snack');
   if(c.indexOf('Rien de noté')<0||c.indexOf('à la collation')<0)throw new Error('jour passe');
 });
-t('*** au-dessus de la part : jaune citron, sans message ; jamais de rouge ***',()=>{
+t('*** au-dessus de la part : orange cuivre, sans message ; jamais de rouge ***',()=>{
   prepa();S.dayMeals[X('S.today')]=[R('lunch','Burger',800,60)];
   const c=carte(html(),'lunch');
-  if(c.indexOf('data-etat="dessus"')<0||c.indexOf('color:var(--citron);">800</span>')<0||c.indexOf('background:var(--citron);')<0)throw new Error(c.slice(0,400));
+  if(c.indexOf('data-etat="dessus"')<0||c.indexOf('color:var(--cuivre);">800</span>')<0||c.indexOf('background:var(--cuivre);')<0)throw new Error(c.slice(0,400));
   if(/cm-bravo|--red/.test(c))throw new Error('message ou rouge');
   if(/<button class="cm-plus" data-action="ajout-moment" data-val="lunch"/.test(c)===false)throw new Error('+ de l\'en-tete');
 });
@@ -116,8 +116,8 @@ t('un moment inconnu passe dans « Sans moment », sans part de cible',()=>{
 });
 t('les couleurs d\'etat se distinguent des couleurs des moments',()=>{
   const v=n=>(src.match(new RegExp('--'+n+': (#[0-9A-F]{6});','i'))||[])[1];
-  const cit=v('citron'),men=v('menthe');if(!cit||!men)throw new Error('variables');
-  const autres=X('MOMENTS.map(function(m){return m.couleur})').concat([v('lime'),v('warn'),v('gold'),v('green')]).map(x=>x.toUpperCase());
+  const cit=v('cuivre'),men=v('menthe');if(!cit||!men)throw new Error('variables');
+  const autres=X('MOMENTS.map(function(m){return m.couleur})').concat([v('lime'),v('warn'),v('gold'),v('green'),v('orange'),v('red'),v('accent')]).map(x=>x.toUpperCase());
   if(autres.indexOf(cit.toUpperCase())>=0||autres.indexOf(men.toUpperCase())>=0)throw new Error('couleur en double');
 });
 
