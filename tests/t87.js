@@ -9,14 +9,14 @@ Object.values(INV).forEach(it=>{const o={id:it.id,name:it.n,unit:it.u,qty:(it.q=
 const remettre=()=>{sb.S.inv={frigo:fr.map(o=>Object.assign({},o)),placards:[],congelateur:[],epices:[]};};remettre();
 const R=id=>sb.RCP.find(r=>r.id===id);
 const etapes=r=>{const g=X('_ingRecette')(r);return (r.steps||[]).map(s=>X('_etapeSurlignee')(g,s));};
-const lisible=h=>h.replace(/<mark class="ing-hl">/g,'[').replace(/<\/mark>/g,']');
+const lisible=h=>h.replace(/<mark class="ing-hl(?: ing-[a-z]+)?">/g,'[').replace(/<\/mark>/g,']');
 const N=s=>X('_ingNorm')(s).n.replace(/[^a-z0-9]+/g,' ').trim();
 console.log('\n=== LI. Ingredients surlignes dans les etapes ===');
 t('*** catalogue : chaque ingredient est surligne au moins une fois ***',()=>{
   const manque=[];
   sb.RCP.filter(r=>r.profile==='liam'&&r.slots&&r.slots.length).forEach(r=>{
     const g=X('_ingRecette')(r),html=etapes(r).join(' ');
-    const marks=[...html.matchAll(/<mark class="ing-hl">([^<]*)<\/mark>/g)].map(m=>N(m[1]));
+    const marks=[...html.matchAll(/<mark class="ing-hl(?: ing-[a-z]+)?">([^<]*)<\/mark>/g)].map(m=>N(m[1]));
     g.forEach(x=>{if(!marks.some(m=>m===N(x.nom)||x.morceaux.some(k=>m.indexOf(k)===0)))manque.push(r.id+' : '+x.nom);});
   });
   if(manque.length)throw new Error(manque.join(' | '));
@@ -50,7 +50,7 @@ t('*** recette perso : les passages entre crochets sont surlignes (mode crochets
 });
 t('*** affichage : les etapes de la carte depliee sont surlignees ***',()=>{
   X("S.openRec='liam_v6_omelette_jambon'");const h=X("renderCard(RCP.find(function(r){return r.id==='liam_v6_omelette_jambon'}))");X('S.openRec=null');
-  if(h.indexOf('<mark class="ing-hl">St Morêt léger</mark>')<0)throw new Error('pas de surlignage');
+  if(!/<mark class="ing-hl(?: ing-[a-z]+)?">St Morêt léger<\/mark>/.test(h))throw new Error('pas de surlignage');
 });
 t('*** editeur perso : toucher un ingredient insere son nom complet a l\'emplacement du curseur ***',()=>{
   X("openCustRec(null,{name:'Test',rows:[{id:'cx_ms8yjwau',name:'St Morêt léger',qty:30}]})");

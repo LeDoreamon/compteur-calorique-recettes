@@ -41,7 +41,8 @@
   --lime: #B5CC5C;   /* marge du jour : cible depassee, largement couverte par l'activite */
   --sky: #8FD6F5;    /* marge du jour : cible atteinte et deficit au-dela du prevu (demande de Liam, 13/10/2026) */
   --cuivre: #C96A33; /* repas au-dessus de sa part : orange cuivre, distinct de l'ambre du petit-dejeuner, pas de rouge (03/11/2026 : le jaune citron du 02/11 se voyait mal) */
-  --menthe: #8EE6B8; /* repas dans sa part, proteines comprises : vert clair, distinct du vert du dejeuner */
+  --menthe: #8EE6B8;
+  --congel: #8E9CF2; /* congelateur (04/11/2026) : pervenche ; le bleu ciel d'avant se confondait avec le bleu du frigo dans les recettes */ /* repas dans sa part, proteines comprises : vert clair, distinct du vert du dejeuner */
   --red-bg: rgba(224,92,79,0.12);
   --warn: #F0B93E;
   --warn-bg: rgba(240,185,62,0.12);
@@ -171,7 +172,17 @@ input:focus, select:focus, textarea:focus { border-color: var(--accent) !importa
 /* Ecran de connexion ouvert : l'appli derriere n'est ni affichee ni defilable */
 body.auth-ouvert #root { display: none; }
 /* Tutoriel : calque sombre perce sur l'element montre, bulle d'explication */
-.ing-hl { background: rgba(111,191,115,.24); color: #9BDB9E; font-weight: 600; border-radius: 4px; padding: 0 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+.ing-hl { background: rgba(246,237,227,.10); color: #E6D9CB; font-weight: 600; border-radius: 4px; padding: 0 3px; -webkit-box-decoration-break: clone; box-decoration-break: clone; }
+/* Ingredient a la couleur de son rangement (04/11/2026, idee de Liam), comme les onglets de l'inventaire ;
+   contraste du texte sur son fond teinte : frigo 6,9:1, congelateur 7,0:1, placards 7,2:1, epices 7,4:1 ; sans rangement connu : neutre */
+.ing-frigo { background: rgba(95,168,201,.24); color: #8FC8E6; }
+.ing-congelateur { background: rgba(142,156,242,.26); color: #B9C3FF; }
+.ing-placards { background: rgba(233,161,59,.24); color: #F2C278; }
+.ing-epices { background: rgba(111,191,115,.24); color: #9BDB9E; }
+.ing-puce { border-radius: 6px; padding: 2px 9px; font-size: 11px; }
+.ing-legende { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 11px; color: var(--text3); }
+.ing-legende > span { display: inline-flex; align-items: center; gap: 4px; }
+.ing-pt { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
 #tuto { display: none; position: fixed; inset: 0; z-index: 400; }
 #tuto .tuto-trou { position: fixed; border-radius: 14px; border: 2px solid var(--gold); box-shadow: 0 0 0 9999px rgba(0,0,0,.76); pointer-events: none; transition: top .25s var(--ease), left .25s var(--ease), width .25s var(--ease), height .25s var(--ease); }
 #tuto .tuto-bulle { position: fixed; left: 16px; right: 16px; max-width: 380px; margin: 0 auto; background: var(--bg2); border: 0.5px solid var(--border); border-radius: 14px; padding: 14px 15px 12px; box-shadow: 0 10px 30px rgba(0,0,0,.55); animation: riseIn .3s var(--ease) both; }
@@ -390,7 +401,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-03 22h35 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-04 23h26 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -655,20 +666,24 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-03-2235"></script>
+<script src="catalogue.js?v=2026-11-04-2326"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-03-2235';
+const BUILD_ID='2026-11-04-2326';
 const NOUVEAUTES=[
+  {b:'2026-11-04-2326',points:[
+    'Recettes : chaque ingrédient prend la couleur de son rangement, dans « Ce qu’il faut » comme dans les étapes : frigo en bleu, congélateur en bleu-violet, placards en doré, épices en vert. Une petite légende rappelle les couleurs.',
+    'Le congélateur passe aussi en bleu-violet dans l’inventaire, pour ne plus se confondre avec le frigo.',
+    '💬 De la part de Liam : « Coucou Seth et Sarah ! Si jamais vous rencontrez des bugs, qu’une option, une fonction ou quoi n’est pas claire, n’hésitez pas à m’envoyer un message pour me le dire ou si besoin que je vous explique ce qu’il faut ! Bisous »'
+  ]},
   {b:'2026-11-03-2235',points:[]},
   {b:'2026-11-03-0108',points:[
     'Repas : une bande avec les 7 derniers jours et demain remplace les flèches. Touche un jour pour l’ouvrir ; son petit point dit comment s’est passée la journée (vert : dans ta cible, orange : au-dessus, bleu : en dessous).',
     'Tes repas sont rangés par moment, chacun avec sa part de ta cible (par exemple « Petit déjeuner 440 / 554 kcal »). Orange cuivré : au-dessus de la part ; vert clair : dans la part, avec assez de protéines. « + Ajouter » sur un moment l’ajoute directement au bon endroit.',
-    'Chaque repas a maintenant son moment (petit-déj, déjeuner, dîner ou collation). La part de chaque repas se règle dans Réglages › Modifier le profil (24 / 30 / 30 / 16 % par défaut).',
-    '💬 De la part de Liam : « Coucou Seth et Sarah ! Si jamais vous rencontrez des bugs, qu’une option, une fonction ou quoi n’est pas claire, n’hésitez pas à m’envoyer un message pour me le dire ou si besoin que je vous explique ce qu’il faut ! Bisous »'
+    'Chaque repas a maintenant son moment (petit-déj, déjeuner, dîner ou collation). La part de chaque repas se règle dans Réglages › Modifier le profil (24 / 30 / 30 / 16 % par défaut).'
   ]},
-  {b:'2026-11-02-2236',points:[]},   /* message de Liam a Seth et Sarah : repris dans l'entree suivante (02/11/2026) */
+  {b:'2026-11-02-2236',points:[]},   /* message de Liam a Seth et Sarah : repris a chaque fois dans l'entree la plus recente */
   {b:'2026-11-02-2233',points:[]},
   {b:'2026-11-01-2048',points:[
     'Bilan : le graphique du poids se règle sur 7 jours, 1 mois, 3 mois ou tout l’historique, et toucher la courbe affiche la date et le poids d’une pesée.'
@@ -915,7 +930,7 @@ const ICONE_FRIGO_PORTE='<svg class="ico-frigo" viewBox="0 0 24 24" width="1.2em
   +'<rect x="4.6" y="1.2" width="14.8" height="20.3" rx="3.2" fill="#E6EEF3" stroke="#8FA6B5" stroke-width="1.2"/>'
   +'<rect x="6.7" y="3.8" width="1.1" height="15.2" rx=".55" fill="#FFFFFF" opacity=".85"/>'
   +'<rect x="15" y="4.4" width="1.9" height="8" rx=".95" fill="#5F7889"/></svg>';
-const CINFO={frigo:{label:'Frigo',court:'Frigo',sym:ICONE_FRIGO_PORTE,coul:'var(--blue)'},congelateur:{label:'Congélateur',court:'Congél.',sym:'🧊',coul:'var(--sky)'},placards:{label:'Placards',court:'Placards',sym:'🥫',coul:'var(--gold)'},epices:{label:'Épices',court:'Épices',sym:'🧂',coul:'var(--green)'}};
+const CINFO={frigo:{label:'Frigo',court:'Frigo',sym:ICONE_FRIGO_PORTE,coul:'var(--blue)'},congelateur:{label:'Congélateur',court:'Congél.',sym:'🧊',coul:'var(--congel)'},placards:{label:'Placards',court:'Placards',sym:'🥫',coul:'var(--gold)'},epices:{label:'Épices',court:'Épices',sym:'🧂',coul:'var(--green)'}};
 const MEAL_TABS=[{k:'breakfast',l:'Petit-déj'},{k:'lunch',l:'Déjeuner'},{k:'snack',l:'Collation'},{k:'dinner',l:'Dîner'},{k:'perso',l:'👨‍🍳 Mes recettes'},{k:'urgent',l:'⚠ DLC'},{k:'favs',l:'⭐ Favoris'}];
 // Tri de la liste de recettes. Les favoris restent epingles en tete quel que
 // soit le critere ; le tri ne joue qu'entre recettes de meme statut.
@@ -4834,15 +4849,24 @@ function _ingMorceaux(nom){
   _ingMorceaux.sing=out;
   return Object.keys(out);
 }
+// Rangement d'un article de l'inventaire (frigo, congelateur, placards, epices) : sa couleur
+// dans les recettes (04/11/2026). null si l'article n'est pas dans l'inventaire.
+function _catIngredient(it){
+  if(!it)return null;var c=null;
+  Object.keys(CINFO).some(function(k){if((S.inv[k]||[]).indexOf(it)>=0){c=k;return true;}return false;});
+  return c;
+}
+function _clsIng(cat){return 'ing-hl'+(CINFO[cat]?' ing-'+cat:'');}
 function _ingRecette(r){
   var ings=[];
   (r&&r.used||[]).forEach(function(u){
     var it=null;try{it=resolveInv(u.id,u.n);}catch(e){}
     var nom=(it&&it.name)||u.n||'';if(!nom)return;
+    var cat=_catIngredient(it);
     var m={},sing={};
     [nom].concat(u.n&&u.n!==nom?[u.n]:[]).forEach(function(x){_ingMorceaux(x).forEach(function(k){if(_ingMorceaux.sing[k]===2){if(!m[k])sing[k]=1;}else{delete sing[k];}m[k]=1;});});
     var mots={};_ingNorm(nom).n.split(/[^a-z0-9]+/).forEach(function(w){if(w)mots[w]=1;});
-    ings.push({nom:nom,morceaux:Object.keys(m),sing:sing,mots:mots});
+    ings.push({nom:nom,morceaux:Object.keys(m),sing:sing,mots:mots,cat:cat});
   });
   /* morceau partage (« riz » : riz et vinaigre de riz) : il revient au seul ingredient dont le nom commence par lui, sinon a personne */
   var vus={};ings.forEach(function(g){g.n=_ingNorm(g.nom).n;g.morceaux.forEach(function(k){(vus[k]=vus[k]||[]).push(g);});});
@@ -4880,7 +4904,7 @@ function _ingMentions(ings,s){
         break;
       }
       while((mm=/([a-z0-9]+)[^a-z0-9]{1,3}$/.exec(N.n.slice(0,d)))&&dans(mm[1])&&!_ING_VIDES[mm[1]]&&libre(d-mm[0].length,d)){d-=mm[0].length;ext=true;}
-      pris.push([d,f]);trouves.push({d:N.map[d],f:N.map[f-1]+1,nom:p.g.sing[p.k]?null:p.g.nom});   /* singulier : le texte garde son accord */faits[p.gi]=1;break;
+      pris.push([d,f]);trouves.push({d:N.map[d],f:N.map[f-1]+1,nom:p.g.sing[p.k]?null:p.g.nom,cat:p.g.cat});   /* singulier : le texte garde son accord */faits[p.gi]=1;break;
     }
   });
   return trouves;
@@ -4898,15 +4922,15 @@ function _ingAffiche(orig,nom){
 function _etapeSurlignee(ings,s,crochets){
   s=String(s||'');
   if(crochets)return s.replace(/\[([^\[\]\n]{1,80})\]/g,function(tout,dedans){
-    var t=_ingMentions(ings,dedans),txt=dedans;
-    if(t.length){t.sort(function(a,b){return (b.f-b.d)-(a.f-a.d);});var m=t[0];txt=dedans.slice(0,m.d)+_ingAffiche(dedans.slice(m.d,m.f),m.nom)+dedans.slice(m.f);}
-    return '<mark class="ing-hl">'+txt.trim()+'</mark>';
+    var t=_ingMentions(ings,dedans),txt=dedans,cat=null;
+    if(t.length){t.sort(function(a,b){return (b.f-b.d)-(a.f-a.d);});var m=t[0];cat=m.cat;txt=dedans.slice(0,m.d)+_ingAffiche(dedans.slice(m.d,m.f),m.nom)+dedans.slice(m.f);}
+    return '<mark class="'+_clsIng(cat)+'">'+txt.trim()+'</mark>';
   });
   if(!ings||!ings.length)return s;
   var trouves=_ingMentions(ings,s);
   if(!trouves.length)return s;
   trouves.sort(function(a,b){return b.d-a.d;});
-  trouves.forEach(function(t){s=s.slice(0,t.d)+'<mark class="ing-hl">'+_ingAffiche(s.slice(t.d,t.f),t.nom)+'</mark>'+s.slice(t.f);});
+  trouves.forEach(function(t){s=s.slice(0,t.d)+'<mark class="'+_clsIng(t.cat)+'">'+_ingAffiche(s.slice(t.d,t.f),t.nom)+'</mark>'+s.slice(t.f);});
   return s;
 }
 // Conversion des recettes perso au format a crochets (migration 2) : les mentions
@@ -4917,8 +4941,10 @@ function _etapeEnCrochets(ings,s){
   return s;
 }
 function renderIngredients(r){
+  const cats={};
   const tr=(r.used||[]).map(u=>{
-    const it=findItem(u.id);
+    const it=resolveInv(u.id,u.n);   /* meme recherche que les etapes et canCook (avant : l'identifiant seul) */
+    const cat=_catIngredient(it);if(cat)cats[cat]=1;
     const nm=it?it.name:(u.n||u.name||(/^(cx_|sh_|cust_)/.test(u.id||'')?'Ingrédient supprimé':(u.id||'?')));
     const unit=(it&&it.unit)?''+it.unit:'';
     const flex=!!u.flex;
@@ -4926,6 +4952,8 @@ function renderIngredients(r){
     const st=miss?'background:rgba(224,92,79,.12);color:var(--red);border:0.5px solid rgba(224,92,79,.40);'
               :flex?'background:rgba(233,161,59,.12);color:var(--orange);border:0.5px solid rgba(233,161,59,.40);'
                  :'background:var(--bg3);color:var(--text2);';
+    /* manquant (rouge) et interchangeable (🔄) gardent leur style : c'est l'information qui compte ; sinon, la couleur du rangement */
+    if(!miss&&!flex&&cat)return `<span class="ing-puce ing-${cat}">${u.qty}${unit} · ${nm}</span>`;
     return `<span style="${st}border-radius:6px;padding:2px 9px;font-size:11px;">${flex?'\ud83d\udd04 ':''}${u.qty}${unit} · ${nm}${miss?' \u26a0':''}</span>`;
   }).join('');
   const exItems=(r.extras||[]).map(e=>`<span style="border:0.5px dashed var(--border);color:var(--text3);border-radius:6px;padding:2px 9px;font-size:11px;">${e.opt?'opt. ':''}${e.q?e.q+' · ':''}${e.n}</span>`);
@@ -4935,7 +4963,9 @@ function renderIngredients(r){
     .filter(sp=>!exNames.has(sp.name.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'')))
     .map(sp=>`<span style="border:0.5px dashed var(--green);color:var(--green);border-radius:6px;padding:2px 9px;font-size:11px;">opt. · ${sp.name} 🌿</span>`);
   const ex=[...exItems,...spiceItems].join('');
-  return tr||ex?`<div style="padding:10px 0 12px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;">Ce qu'il faut</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${tr}${ex}</div></div><div style="border-top:0.5px solid var(--border);"></div>`:'<div style="border-top:0.5px solid var(--border);"></div>';
+  if(spiceItems.length)cats.epices=1;
+  const legende=Object.keys(CINFO).filter(c=>cats[c]).map(c=>`<span><i class="ing-pt" style="background:${CINFO[c].coul};"></i>${CINFO[c].court}</span>`).join('');
+  return tr||ex?`<div style="padding:10px 0 12px;"><div style="display:flex;align-items:baseline;justify-content:space-between;gap:4px 10px;flex-wrap:wrap;margin-bottom:6px;"><div style="font-size:10px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;">Ce qu'il faut</div>${legende?`<div class="ing-legende" aria-label="Couleur selon le rangement">${legende}</div>`:''}</div><div style="display:flex;flex-wrap:wrap;gap:4px;">${tr}${ex}</div></div><div style="border-top:0.5px solid var(--border);"></div>`:'<div style="border-top:0.5px solid var(--border);"></div>';
 }
 
 function recipeMacros(r){
@@ -7102,7 +7132,7 @@ function renderCrInserer(){
   if(!_cr.rows.length){el.style.display='none';el.innerHTML='';return;}
   el.style.display='block';
   el.innerHTML='<div style="font-size:11px;color:var(--text3);margin-bottom:5px;">Toucher un ingrédient l’insère dans les étapes entre crochets, ex. [Sauce soja] : seul ce qui est entre crochets est surligné comme ingrédient, le reste reste ton texte.</div><div style="display:flex;flex-wrap:wrap;gap:5px;">'
-    +_cr.rows.map(function(g,i){return '<button onclick="crInsererIng('+i+')" class="ing-hl" style="border:0;font-size:12px;padding:4px 8px;cursor:pointer;font-family:inherit;">'+g.name+'</button>';}).join('')+'</div>';
+    +_cr.rows.map(function(g,i){return '<button onclick="crInsererIng('+i+')" class="'+_clsIng(_catIngredient(findItem(g.id)))+'" style="border:0;font-size:12px;padding:4px 8px;cursor:pointer;font-family:inherit;">'+g.name+'</button>';}).join('')+'</div>';
 }
 function crInsererIng(i){
   var g=_cr&&_cr.rows[i],ta=document.getElementById('cr-steps');if(!g||!ta)return;

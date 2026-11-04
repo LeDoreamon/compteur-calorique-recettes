@@ -8,7 +8,7 @@ const X=c=>vm.runInContext(c,sb);
 const INV=require('./data/inv.json');const fr=[];
 Object.values(INV).forEach(it=>{const o={id:it.id,name:it.n,unit:it.u,qty:(it.q===-1?null:it.q)};fr.push(o);});
 sb.S.inv={frigo:fr.map(o=>Object.assign({},o)),placards:[],congelateur:[],epices:[]};
-const lisible=h=>h.replace(/<mark class="ing-hl">/g,'[').replace(/<\/mark>/g,']');
+const lisible=h=>h.replace(/<mark class="ing-hl(?: ing-[a-z]+)?">/g,'[').replace(/<\/mark>/g,']');
 const aff=(r,s,cr)=>lisible(X('_etapeSurlignee')(X('_ingRecette')(r),s,cr));
 const sweet=()=>({id:'cust_sweet',custom:true,name:'Sweet chicken',profile:X('ACTIVE_PROFILE'),
   used:[{id:'soja',n:'Sauce soja sucrée',qty:20},{id:'miel',n:'Miel liquide',qty:10},{id:'cx_mqwkfekl',n:'Aiguillettes de poulet',qty:200}],
@@ -30,7 +30,7 @@ t('crochets autour d\'un aliment hors de la liste : surligne tel quel, crochets 
 t('*** l\'affichage d\'une recette perso passe en mode crochets ***',()=>{
   const r=sweet();r.steps=['Laisser la sauce s\'épaissir avec le [miel].'];X('RCP').push(r);X("S.openRec='cust_sweet'");
   try{const h=X("renderCard(RCP.find(function(x){return x.id==='cust_sweet'}))");
-    if(h.indexOf('Laisser la sauce s\'épaissir avec le <mark class="ing-hl">miel liquide</mark>.')<0)throw new Error(h.slice(h.indexOf('épaissir')-60,h.indexOf('épaissir')+120));}
+    if(!/Laisser la sauce s'épaissir avec le <mark class="ing-hl(?: ing-[a-z]+)?">miel liquide<\/mark>\./.test(h))throw new Error(h.slice(h.indexOf('épaissir')-60,h.indexOf('épaissir')+120));}
   finally{X("S.openRec=null");X("RCP.splice(RCP.findIndex(function(x){return x.id==='cust_sweet'}),1)");}
 });
 
