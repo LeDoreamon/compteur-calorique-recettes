@@ -404,7 +404,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 18h09 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 18h25 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -669,12 +669,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-06-1809"></script>
+<script src="catalogue.js?v=2026-11-06-1825"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-06-1809';
+const BUILD_ID='2026-11-06-1825';
 const NOUVEAUTES=[
+  {b:'2026-11-06-1825',points:[
+    'Génération de recettes : l’appli compte ce qu’il te manque sans les recettes IA qu’elle va remplacer, et en propose donc assez pour chaque repas.'
+  ]},
   {b:'2026-11-06-1809',points:[
     'Avant de générer de nouvelles recettes, l’appli prévient que les recettes IA qui ne sont pas en favori seront remplacées.'
   ]},
@@ -3894,9 +3897,11 @@ function _extractJSONArrayBrut(text){
 const RECETTES_PAR_REPAS=4,RECETTES_MAX_IA=8;
 const _LIB_REPAS={breakfast:'petit-déjeuner',lunch:'déjeuner',snack:'collation',dinner:'dîner'};
 function _besoinRecettes(){
-  var dispo={},manque={},n=0;
+  var dispo={},manque={},n=0,favs=S.favs||[];
   Object.keys(_LIB_REPAS).forEach(function(s){
-    dispo[s]=RCP.filter(function(r){return recetteVisible(r)&&Array.isArray(r.slots)&&r.slots.indexOf(s)>=0&&canCook(r,1);}).length;
+    /* les recettes IA hors favoris ne comptent pas : la generation les remplace (06/11/2026 ; avant, elles faisaient
+       dire « assez de recettes » ou demander trop peu, puis disparaissaient : 13 recettes IA → 3 apres « 2 de plus ») */
+    dispo[s]=RCP.filter(function(r){return recetteVisible(r)&&!(r.ai&&favs.indexOf(r.id)<0)&&Array.isArray(r.slots)&&r.slots.indexOf(s)>=0&&canCook(r,1);}).length;
     manque[s]=Math.max(0,RECETTES_PAR_REPAS-dispo[s]);n+=manque[s];
   });
   return {dispo:dispo,manque:manque,n:Math.min(RECETTES_MAX_IA,n)};
