@@ -19,7 +19,9 @@ t('les donnees ne sont plus dans index.html (pas de doublon)',()=>{
     if(html.indexOf(d)>=0)throw new Error(d+' encore dans index.html');
     if(cat.indexOf(d)<0)throw new Error(d+' absent de catalogue.js');});
 });
-t('le service worker ne bloque pas le fichier (mis en cache comme le reste)',()=>{if(/catalogue/.test(sw))throw new Error('regle particuliere inattendue');});
+t('le service worker ne bloque pas le fichier : mis en cache comme le reste, et precharge (audit du 06/11/2026)',()=>{
+  const f=sw.slice(sw.indexOf("addEventListener('fetch'"));if(/catalogue/.test(f))throw new Error('regle particuliere dans la reponse aux requetes');
+  if(!/'\.\/catalogue\.js\?v='\+BUILD/.test(sw))throw new Error('catalogue absent du prechargement');});
 t('catalogue absent (reseau coupe) : message et bouton Recharger, pas de page figee',()=>{
   const i=html.indexOf("if(typeof RCP==='undefined'");
   if(i<0)throw new Error('pas de garde');

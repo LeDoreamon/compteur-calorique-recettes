@@ -401,7 +401,7 @@ body.auth-ouvert #root { display: none; }
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-04 23h26 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 12h48 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -666,12 +666,13 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-04-2326"></script>
+<script src="catalogue.js?v=2026-11-06-1248"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-04-2326';
+const BUILD_ID='2026-11-06-1248';
 const NOUVEAUTES=[
+  {b:'2026-11-06-1248',points:[]},
   {b:'2026-11-04-2326',points:[
     'Recettes : chaque ingrédient prend la couleur de son rangement, dans « Ce qu’il faut » comme dans les étapes : frigo en bleu, congélateur en bleu-violet, placards en doré, épices en vert. Une petite légende rappelle les couleurs.',
     'Le congélateur passe aussi en bleu-violet dans l’inventaire, pour ne plus se confondre avec le frigo.',
@@ -1147,7 +1148,7 @@ function effDlc(it){
   // Œufs, yaourts, fromages blancs : tiennent généralement ~2 semaines après la date → +14j de marge
   const long=/oeuf|œuf|yaourt|fromage\s*blanc|fb[_\s]|skyr|petit\s*suisse/i.test(_s);
   if(!long)return it.dlc;
-  const d=new Date(it.dlc);d.setDate(d.getDate()+14);
+  const d=new Date(it.dlc);if(isNaN(d.getTime()))return it.dlc;d.setUTCDate(d.getUTCDate()+14);   /* tout en UTC : « AAAA-MM-JJ » est lu en UTC */
   return d.toISOString().slice(0,10);
 }
 // Une date depassee d'un jour n'est pas une anomalie de fiche. La tolerance
@@ -1175,7 +1176,7 @@ function dlcAnomalie(it){
   if(!base)return null;
   var d=new Date(base);
   if(isNaN(d.getTime()))return base;
-  d.setDate(d.getDate()+_toleranceDlc(it));
+  d.setUTCDate(d.getUTCDate()+_toleranceDlc(it));
   return d.toISOString().slice(0,10);
 }
 function getDlcStatus(dlc){
@@ -2050,7 +2051,7 @@ function saveItemDetail(){
   var _q=null;
   try{
     var _ne=document.getElementById('item-name');
-    var _nv=_ne?String(_ne.value||'').trim():'';
+    var _nv=_ne?_saisie(_ne):'';
     var _it0=_nv?findItem(_itemDetailRef.id):null;
     var _autre=(_it0&&_nv!==_it0.name)?findItemByName(_nv):null;
     if(_autre&&_autre.id!==_it0.id)_q='« '+_nv+' » existe déjà dans ton inventaire.\n\nGarder ce nom quand même ? Les deux articles resteront séparés.';
@@ -2065,7 +2066,7 @@ function _enregistrerItemDetail(){
   // pointer dessus ; on met a jour le nom de repli pour rester coherent.
   try{
     var _ne=document.getElementById('item-name');
-    var _nv=_ne?String(_ne.value||'').trim():'';
+    var _nv=_ne?_saisie(_ne):'';
     if(_nv){
       var _it0=findItem(_itemDetailRef.id);
       if(_it0&&_nv!==_it0.name){
@@ -2249,7 +2250,7 @@ function applyScannedProduct(name,macros,qtyStr){
 function setAICat(c){_aic=c;['frigo','congelateur','placards','epices'].forEach(k=>{const el=document.getElementById('aicat-'+k);if(!el)return;el.style.background=k===c?'rgba(95,168,201,.15)':'transparent';el.style.borderColor=k===c?'var(--blue)':'rgba(246,237,227,.12)';el.style.color=k===c?'var(--blue)':'var(--text2)';});const ep=(c==='epices');const qr=document.getElementById('ai-qtyrow'),pr=document.getElementById('ai-present-row');if(qr)qr.style.display=ep?'none':'grid';if(pr)pr.style.display=ep?'none':'flex';}
 
 async function aiLookupMacros(){
-  const n=document.getElementById('ai-name').value.trim();if(!n){_alerte('Entre un nom.');return;}
+  const n=_saisie('ai-name');if(!n){_alerte('Entre un nom.');return;}
   if(_macSrc.aim!=='auto')return;
   document.getElementById('ai-status').textContent='🔍 Recherche\u2026';
   try{
@@ -2274,7 +2275,7 @@ function toggleAIPkg(){
   if(on){const pr=document.getElementById('ai-present');if(pr&&pr.checked){pr.checked=false;toggleAIPresent();}}
 }
 function confirmAddItem(){
-  const n=document.getElementById('ai-name').value.trim();if(!n){document.getElementById('ai-status').textContent='⚠ Indique un nom.';return;}
+  const n=_saisie('ai-name');if(!n){document.getElementById('ai-status').textContent='⚠ Indique un nom.';return;}
   const cat=_aic,isEp=cat==='epices';
   const present=isEp||(document.getElementById('ai-present')&&document.getElementById('ai-present').checked);
   const pkgOn=document.getElementById('ai-pkg-on')&&document.getElementById('ai-pkg-on').checked;
@@ -2721,7 +2722,7 @@ function useActHistory(i){
   }
 }
 async function burnEstimateActivity(){
-  var name=(document.getElementById('burn-act-name').value||'').trim();
+  var name=_saisie('burn-act-name');
   var min=parseInt(document.getElementById('burn-act-min').value,10)||0;
   if(!name){_alerte('Indique une activité (ex. course, vélo, marche).');return;}
   if(min<=0){_alerte('Indique une durée en minutes.');return;}
@@ -3822,6 +3823,10 @@ function _neutre(v,prof){
   var o={};Object.keys(v).forEach(function(k){o[k]=(_CHAMPS_ID[k]&&typeof v[k]==='string')?_idSur(v[k]):_neutre(v[k],prof+1);});
   return o;
 }
+// Texte tape par l'utilisateur (nom d'article, de repas, de course…) : neutralise des
+// l'enregistrement, comme ce qui vient de Firebase (audit du 06/11/2026 : un « < » ou un
+// « " » restait brut jusqu'au rechargement et pouvait casser l'affichage).
+function _saisie(x){var e=(typeof x==='string')?document.getElementById(x):x;return e?_neutre(String(e.value||'').trim()):'';}
 // Identifiants : inseres tels quels dans les onclick="f('…')". Une apostrophe
 // (fichier de sauvegarde piege, reponse d'IA) en sortirait. Les identifiants
 // de l'appli n'ont que lettres, chiffres, _ et - : rien ne change pour eux.
@@ -5566,7 +5571,7 @@ function addScannedToShop(name,macros,qtyStr){
   render();
   openShopItem(id);
 }
-function addShopItem(){const nm=document.getElementById('shop-add-name');const ry=document.getElementById('shop-add-rayon');if(!nm||!nm.value.trim())return;_ajouterAuxCourses(nm.value.trim(),ry&&ry.value?ry.value:'');saveState();render();}   /* '' : rayon devine (_guessRayon) */
+function addShopItem(){const nm=document.getElementById('shop-add-name');const ry=document.getElementById('shop-add-rayon');if(!nm||!nm.value.trim())return;_ajouterAuxCourses(_saisie(nm),ry&&ry.value?ry.value:'');saveState();render();}   /* '' : rayon devine (_guessRayon) */
 function validateCourses(){
   const panier=(S.shop.list||[]).filter(i=>i.checked&&!i.achete);
   if(!panier.length){_alerte('Coche d’abord les articles mis dans ton panier.');return;}
@@ -5597,7 +5602,7 @@ let _shopItemRef=null;
 function closeShopItem(){const o=document.getElementById('shopitem-overlay');if(o)o.style.display='none';_shopItemRef=null;}
 function moveShopItem(){
   const it=(S.shop.list||[]).find(i=>i.id===_shopItemRef);if(!it){closeShopItem();return;}
-  const nmEl=document.getElementById('shopitem-name');if(nmEl&&nmEl.value.trim())it.name=nmEl.value.trim();
+  const nmEl=document.getElementById('shopitem-name');if(nmEl&&nmEl.value.trim())it.name=_saisie(nmEl);
   const sel=document.getElementById('shopitem-rayon');if(sel)it.rayon=sel.value;
   const gr=document.getElementById('shopitem-grave');if(gr){if(gr.checked)it.graveOnly=true;else delete it.graveOnly;}
   saveState();closeShopItem();render();
@@ -6996,7 +7001,7 @@ function emSaveAsRecipe(){
   syncEmRows();
   var rows=_emRows.filter(function(r){return r.qty>0;});
   if(!rows.length){_alerte('Ce repas n\'a pas d\'ingrédients détaillés. Utilise « Corriger la base » pour les détailler, puis réessaie.');return;}
-  var nm=(document.getElementById('em-name').value||'').trim();
+  var nm=_saisie('em-name');
   var slot=null;
   try{var mm=(S.dayMeals[_editMeal.day]||[])[_editMeal.idx];var rr=mm&&findRecipe(mm.rid);if(rr&&rr.slots&&rr.slots.length)slot=rr.slots[0];}catch(e){}
   var pre={name:nm,rows:rows.map(function(g){return{id:g.id,name:g.name,qty:g.qty,unit:g.unit};}),slot:slot};
@@ -7061,7 +7066,7 @@ function saveEditMeal(){
   if(!_editMeal)return;
   var list=S.dayMeals[_editMeal.day];var m=list&&list[_editMeal.idx];if(!m){closeEditMeal();return;}
   if(!moment(_emMoment)){_alerte(MSG_MOMENT_REQUIS);return;}   /* avant toute modification */
-  var nm=(document.getElementById('em-name').value||'').trim();
+  var nm=_saisie('em-name');
   if(nm)m.name=nm;
   m.slot=_emMoment;   // moment corrige apres coup
   if(_emMode==='ings'){
@@ -7184,13 +7189,13 @@ function updateCrTotals(){
 function saveCustRec(){
   if(!_cr)return;
   _crSync();
-  var name=(document.getElementById('cr-name').value||'').trim();
+  var name=_saisie('cr-name');
   if(!name){_alerte('Donne un nom à ta recette.');return;}
   var slots=Object.keys(_cr.slots).filter(function(s){return _cr.slots[s];});
   if(!slots.length){_alerte('Choisis au moins un type de repas (petit-déj, déjeuner…).');return;}
   var rows=_cr.rows.filter(function(r){return r.qty>0;});
   if(!rows.length){_alerte('Ajoute au moins un ingrédient.');return;}
-  var steps=(document.getElementById('cr-steps').value||'').split('\n').map(function(s){return s.trim();}).filter(Boolean);
+  var steps=(document.getElementById('cr-steps').value||'').split('\n').map(function(s){return _neutre(s.trim());}).filter(Boolean);
   var t=_crMacros();
   var rec={id:_cr.id||('cust_'+Date.now().toString(36)),custom:true,profile:ACTIVE_PROFILE,
     slots:slots,name:name,urgent:0,ur:null,time:Math.max(1,parseInt(document.getElementById('cr-time').value,10)||15),
@@ -8348,7 +8353,7 @@ function recalcAddMealMacros(){
   // Lignes estimees hors inventaire : la quantite saisie pilote leurs macros
   (_addMealFreeItems||[]).forEach(function(f,i){
     var ni=document.getElementById('free-nom-'+i);
-    if(ni&&ni.value.trim())f.n=ni.value.trim();
+    if(ni&&ni.value.trim())f.n=_saisie(ni);
     var qi=document.getElementById('free-qty-'+i);
     if(qi&&f.pu){var nv=parseFloat(qi.value);if(!isNaN(nv)&&nv>=0)f.qty=nv;}
     var m=f.pu?{kcal:f.pu.kcal*f.qty,prot:f.pu.prot*f.qty,gluc:f.pu.gluc*f.qty,lip:f.pu.lip*f.qty,fib:(typeof f.pu.fib==='number'?f.pu.fib*f.qty:null)}
@@ -8613,7 +8618,7 @@ var _ligneEnCours=-1;   // index de la ligne en cours de re-estimation
 function _lireLignesEstimees(){
   (_addMealFreeItems||[]).forEach(function(f,i){
     var n=document.getElementById('free-nom-'+i);
-    if(n&&n.value.trim())f.n=n.value.trim();
+    if(n&&n.value.trim())f.n=_saisie(n);
     var q=document.getElementById('free-qty-'+i);
     if(q&&f.pu){var v=parseFloat(q.value);if(!isNaN(v)&&v>=0)f.qty=v;}
   });
@@ -10699,7 +10704,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
 
 function confirmAddMealFinal() {
   if(!moment(_amSlot)){_alerte(MSG_MOMENT_REQUIS);return;}   /* avant toute deduction du stock */
-  const name = document.getElementById('addmeal-name').value.trim() || 'Repas libre';
+  const name = _saisie('addmeal-name') || 'Repas libre';
   const kcal = parseInt(document.getElementById('addmeal-kcal').value)||0;
   const prot = parseInt(document.getElementById('addmeal-prot').value)||0;
   const gluc = parseInt(document.getElementById('addmeal-gluc').value)||0;

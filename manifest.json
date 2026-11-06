@@ -1,7 +1,7 @@
 {
   "name": "Dorayaki",
   "short_name": "Dorayaki",
-  "description": "Dorayaki — recettes, macros et anti-gaspi (Liam & Maureen)",
+  "description": "Dorayaki — suivi calorique, recettes et anti-gaspi",
   "start_url": "/compteur-calorique-recettes/",
   "scope": "/compteur-calorique-recettes/",
   "display": "standalone",
