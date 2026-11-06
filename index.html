@@ -404,7 +404,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 16h04 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 16h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -669,12 +669,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-06-1604"></script>
+<script src="catalogue.js?v=2026-11-06-1630"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-06-1604';
+const BUILD_ID='2026-11-06-1630';
 const NOUVEAUTES=[
+  {b:'2026-11-06-1630',points:[
+    'Recettes générées par l’IA : quand le quota gratuit de Groq est atteint, l’appli passe tout de suite à un autre modèle Groq, puis à Gemini, au lieu d’abandonner. Gemini a aussi plus de temps pour rédiger les recettes.'
+  ]},
   {b:'2026-11-06-1604',points:[
     'Inscription : l’adresse e-mail est maintenant obligatoire, pour pouvoir récupérer ton compte si tu oublies ton mot de passe. Les comptes existants se connectent comme avant.',
     'Photo d’un repas : Gemini réfléchit moins longtemps avant de répondre, l’analyse devrait être nettement plus rapide.',
@@ -3964,9 +3967,12 @@ RÈGLES ABSOLUES:
     const _ask=async(n,tok)=>{
       const q=[{role:'user',content:'Génère '+n+' recettes variées et cohérentes maintenant, en JSON compact. Pas de texte hors du tableau JSON.'}];
       let d;
-      try{d=await callAI(q,tok,sys,MODELE_RECETTES,0.2,null,false,{reasoning:'medium'});}
+      /* Ordre (06/11/2026) : Groq 120b, puis Groq 20b (quota par minute distinct), puis Gemini. Avant, avec une cle
+         Gemini, l'echec du 120b (quota de 8 000 jetons/min vite atteint : ~5 500 par requete) passait d'abord par
+         Gemini, et l'erreur remontee etant celle de Gemini, le repli sur le 20b ne se declenchait jamais (rapport de Liam). */
+      try{d=await callAI(q,tok,sys,MODELE_RECETTES,0.2,null,false,{reasoning:'medium',sansGemini:true,sansAttente:true});}
       catch(e){
-        if(!/^API:/.test(e.message||'')||!/too large|tokens per minute|TPM|rate.?limit|model/i.test(e.message))throw e;
+        if(e&&e.message==='NO_KEY')throw e;
         d=await callAI(q,Math.min(tok,3000),sys,'openai/gpt-oss-20b',0.2,null,false,{reasoning:'low'});
       }
       return{raw:d.content.map(i=>i.text||'').join(''),d:d};
@@ -4149,9 +4155,11 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   if(!gq&&!gm){openSettings();throw new Error('NO_KEY');}
   const parGemini=async()=>{const g=await _callGemini(messages,maxTokens,system,temperature);_derniereIA='gemini';return g;};
   const parGroq=async()=>{const r=await _callGroq(messages,maxTokens,system,modelOverride,temperature,seed,_retried,opts);_derniereIA='groq';return r;};
-  const ordre=(hasImg?[gm&&parGemini,gq&&parGroq]:[gq&&parGroq,gm&&parGemini]).filter(Boolean);
+  /* opts.sansGemini : Groq seul (s'il y a une cle Groq), l'appelant gere lui-meme la suite (recettes : 120b, puis 20b, puis Gemini) */
+  const gmOk=gm&&!(opts&&opts.sansGemini&&gq);
+  const ordre=(hasImg?[gmOk&&parGemini,gq&&parGroq]:[gq&&parGroq,gmOk&&parGemini]).filter(Boolean);
   let err=null;const toutes=[];
-  const noms=(hasImg?[gm&&'Gemini',gq&&'Groq']:[gq&&'Groq',gm&&'Gemini']).filter(Boolean);
+  const noms=(hasImg?[gmOk&&'Gemini',gq&&'Groq']:[gq&&'Groq',gmOk&&'Gemini']).filter(Boolean);
   for(let i=0;i<ordre.length;i++){
     const dernier=(i===ordre.length-1);
     try{
@@ -4227,7 +4235,7 @@ async function _callGroq(messages,maxTokens=300,system=null,modelOverride=null,t
   if(data.error){
     const _em=data.error.message||JSON.stringify(data.error);
     const _wm=_em.match(/try again in ([\d.]+)\s*s/i);
-    if(!_retried&&/rate.?limit/i.test(_em)&&_wm){
+    if(!_retried&&!(opts&&opts.sansAttente)&&/rate.?limit/i.test(_em)&&_wm){
       const _w=Math.min(50,parseFloat(_wm[1])+1.5);
       if(typeof _aiRetryNotice==='function')_aiRetryNotice(_w);
       await new Promise(r=>setTimeout(r,_w*1000));
@@ -4269,7 +4277,7 @@ async function _callGroq(messages,maxTokens=300,system=null,modelOverride=null,t
 
 // Appel Gemini (REST generateContent) avec le meme format d'entree et de sortie
 // que callAI. Les images arrivent en {type:'image',source:{media_type,data}}.
-const GEMINI_REFLEXION_PHOTO=512;
+const GEMINI_REFLEXION_PHOTO=512,GEMINI_DELAI_LONG=90000;
 async function _callGemini(messages,maxTokens,system,temperature,_modele,_sansBorne){
   const key=getGeminiKey();if(!key)throw new Error('NO_GEMINI_KEY');
   const modele=_modele||MODELE_GEMINI;
@@ -4290,7 +4298,8 @@ async function _callGemini(messages,maxTokens,system,temperature,_modele,_sansBo
   const _photo=contents.some(function(c){return c.parts.some(function(x){return !!x.inline_data;});});
   if(_photo&&!_sansBorne)body.generationConfig.thinkingConfig={thinkingBudget:GEMINI_REFLEXION_PHOTO};
   if(system)body.systemInstruction={parts:[{text:system}]};
-  const ctrl=new AbortController(),tid=setTimeout(function(){ctrl.abort();},45000);
+  /* longue reponse (recettes) : 45 s ne suffisent pas a Gemini pour reflechir puis tout rediger */
+  const ctrl=new AbortController(),tid=setTimeout(function(){ctrl.abort();},(maxTokens||0)>=2000?GEMINI_DELAI_LONG:45000);
   let resp,data;
   try{
     resp=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+modele+':generateContent',

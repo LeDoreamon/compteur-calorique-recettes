@@ -80,6 +80,39 @@ t('*** reglages : le guide d\'utilisation en PDF, fichier present ***',()=>{
   const b=fs.readFileSync('guide.pdf');eq(b.slice(0,5).toString(),'%PDF-');
   if(b.length>8e6)throw new Error('guide trop lourd : '+b.length);
 });
+const INV_REC=`_loaded=true;S.favs=[];S.aiRecipes=[];S.inv={frigo:[{id:'po',name:'Poulet',qty:1000,unit:'g',mac100:{kcal:120,prot:23,gluc:0,lip:2}}],congelateur:[],placards:[{id:'ri',name:'Riz',qty:1000,unit:'g',mac100:{kcal:350,prot:7,gluc:78,lip:1}},{id:'pa',name:'Pâtes blanches',qty:1000,unit:'g',mac100:{kcal:350,prot:12,gluc:72,lip:1.5}},{id:'th',name:'Thon en conserve',qty:400,unit:'g',mac100:{kcal:116,prot:26,gluc:0,lip:1}},{id:'st',name:'Sauce tomate',qty:500,unit:'g',mac100:{kcal:35,prot:1.5,gluc:6,lip:0.5}}],epices:[]};`;
+const REP_REC=JSON.stringify([{name:'Poulet au riz',slots:['lunch'],kcal:600,prot:50,gluc:70,lip:8,ingredients:[{id:'po',name:'Poulet',qty:150},{id:'ri',name:'Riz',qty:80}],steps:['Cuire le riz.','Saisir le poulet.','Servir le poulet sur le riz.']}]);
+const TPM={error:{message:'Rate limit reached for model `openai/gpt-oss-120b` in organization `org_x` service tier `on_demand` on tokens per minute (TPM): Limit 8000, Used 6851, Requested 5485. Please try again in 32.52s.'}};
+t('*** recettes avec les deux cles : quota du 120b atteint → Groq 20b AVANT Gemini (rapport de Liam du 06/11) ***',async()=>{
+  X(INV_REC);LS.anthropic_key='gsk_x';LS.gemini_key=GK;const vus=[],attentes=[];
+  const st=sb.setTimeout;sb.setTimeout=(f,ms)=>{attentes.push(ms);return st(f,ms>1000?0:ms);};   /* pas de vraie attente */
+  try{
+    sb.fetch=async(url,opt)=>{const b=JSON.parse(opt.body);
+      if(/generativelanguage/.test(url)){vus.push('gemini');return{ok:true,status:200,json:async()=>({candidates:[{content:{parts:[{text:REP_REC}]},finishReason:'STOP'}]})};}
+      vus.push(b.model);
+      if(b.model==='openai/gpt-oss-120b')return{ok:true,status:200,json:async()=>TPM};
+      return{ok:true,status:200,json:async()=>({choices:[{message:{content:REP_REC},finish_reason:'stop'}]})};};
+    await X('generateStockRecipes')();
+  }finally{sb.setTimeout=st;}
+  eq(vus[0],'openai/gpt-oss-120b');eq(vus.indexOf('gemini'),-1,'Gemini appele avant le 20b : '+vus.join(' > '));
+  eq(vus[vus.length-1],'openai/gpt-oss-20b');eq(X('S.aiRecipes.length'),1);
+  eq(vus.filter(m=>m==='openai/gpt-oss-120b').length,1,'120b retente');eq(attentes.indexOf(34020),-1,'attente de 34 s avant le 20b');
+});
+t('*** ... et si le 20b echoue aussi, Gemini prend le relais ***',async()=>{
+  X(INV_REC);LS.anthropic_key='gsk_x';LS.gemini_key=GK;const vus=[];
+  const st=sb.setTimeout;sb.setTimeout=(f,ms)=>st(f,ms>1000?0:ms);
+  try{
+    sb.fetch=async(url,opt)=>{const b=JSON.parse(opt.body);
+      if(/generativelanguage/.test(url)){vus.push('gemini');return{ok:true,status:200,json:async()=>({candidates:[{content:{parts:[{text:REP_REC}]},finishReason:'STOP'}]})};}
+      vus.push(b.model);return{ok:true,status:200,json:async()=>TPM};};
+    await X('generateStockRecipes')();
+  }finally{sb.setTimeout=st;}
+  eq(vus[vus.length-1],'gemini',vus.join(' > '));eq(X('S.aiRecipes.length'),1);
+});
+t('Gemini : 90 s pour une longue reponse (recettes), 45 s sinon',()=>{
+  eq(X('GEMINI_DELAI_LONG'),90000);
+  if(!/\(maxTokens\|\|0\)>=2000\?GEMINI_DELAI_LONG:45000/.test(src))throw new Error('delai');
+});
 t('« Quoi de neuf » : plus de message aux collegues dans la derniere version',()=>{
   const n=X('NOUVEAUTES[0]');if(JSON.stringify(n.points).indexOf('Coucou')>=0)throw new Error('message encore la');
 });
