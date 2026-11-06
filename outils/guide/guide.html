@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Dorayaki — Guide d'utilisation</title>
+<style>
+@page { size: A4; margin: 15mm 15mm 17mm 15mm; }
+:root { --or:#E9A13B; --or-f:#B87516; --terre:#C05746; --encre:#1F1A16; --gris:#5E554D; --clair:#E6DBCB; --ligne:#D9CCBA; --vert:#3E8E45; --bleu:#2F7FA6; --rouge:#C0392B; }
+* { box-sizing: border-box; }
+html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+body { margin:0; font-family:'Inter',sans-serif; font-size:10.4pt; line-height:1.52; color:var(--encre); }
+h1,h2,h3 { font-family:'Inter Display','Inter',sans-serif; line-height:1.2; }
+p { margin:0 0 7px; }
+ul,ol { margin:3px 0 8px; padding-left:18px; }
+li { margin:2px 0; }
+b, strong { font-weight:600; }
+.emoji { font-family:'Noto Color Emoji'; }
+/* couverture */
+.couv { height:265mm; display:flex; flex-direction:column; justify-content:space-between; page-break-after:always; position:relative; }
+.couv-haut { display:flex; align-items:center; gap:14px; }
+.couv-haut img { width:64px; height:64px; border-radius:16px; }
+.couv-haut .nom { font-family:'Inter Display'; font-weight:700; font-size:20pt; letter-spacing:-.01em; }
+.couv-milieu { display:grid; grid-template-columns:1fr 62mm; gap:14mm; align-items:center; }
+.couv h1 { font-size:36pt; font-weight:800; margin:0 0 8px; letter-spacing:-.02em; }
+.couv .sous { font-size:14pt; color:var(--gris); margin-bottom:22px; }
+.couv .pour { font-size:10.5pt; color:var(--gris); border-left:3px solid var(--or); padding:4px 0 4px 12px; }
+.couv .tel img { width:62mm; border-radius:7mm; border:1.2mm solid #111; }
+.couv-bas { font-size:9pt; color:var(--gris); display:flex; justify-content:space-between; border-top:1px solid var(--ligne); padding-top:8px; }
+/* sommaire */
+.sommaire { page-break-after:always; }
+.sommaire h1 { font-size:22pt; margin:0 0 14px; }
+.toc { list-style:none; padding:0; margin:0; }
+.toc > li { margin:7px 0 2px; font-weight:600; font-size:11pt; display:flex; gap:6px; align-items:baseline; }
+.toc li .t { flex:0 1 auto; }
+.toc li .pts { flex:1 1 auto; border-bottom:1px dotted #B9AEA2; margin:0 4px; transform:translateY(-3px); }
+.toc li .pg { flex:0 0 auto; min-width:18px; text-align:right; font-variant-numeric:tabular-nums; }
+.toc .sous-toc { list-style:none; padding:0 0 0 22px; margin:0; }
+.toc .sous-toc li { font-weight:400; font-size:10pt; margin:1px 0; color:#3B342E; }
+/* parties */
+.partie { page-break-before:always; }
+.h-partie { font-size:21pt; font-weight:800; margin:0 0 4px; display:flex; align-items:center; gap:10px; letter-spacing:-.01em; }
+.h-partie .num { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; border-radius:10px; background:var(--or); color:#1a120b; font-size:16pt; }
+.chapeau { font-size:11pt; color:var(--gris); margin:0 0 14px; padding-bottom:10px; border-bottom:2px solid var(--clair); }
+h2 { font-size:13.5pt; font-weight:700; margin:16px 0 6px; color:var(--encre); break-after:avoid; }
+h2 .n { color:var(--or-f); margin-right:4px; }
+h3 { font-size:11pt; font-weight:700; margin:10px 0 4px; break-after:avoid; }
+/* mise en page texte + telephone */
+.duo { display:grid; grid-template-columns:1fr 49mm; gap:7mm; align-items:start; margin:6px 0 10px; break-inside:avoid; }
+.duo.gauche { grid-template-columns:49mm 1fr; }
+.paire, .trio { display:flex; justify-content:center; align-items:flex-start; gap:8mm; margin:8px 0 10px; break-inside:avoid; }
+.trio { gap:4mm; }
+.paire > figure { width:56mm; }
+.trio > figure { width:50mm; }
+figure { margin:0; text-align:center; break-inside:avoid; }
+/* pas d'ombre portee : Chromium en laisse un trait en bas de page quand la capture passe a la page suivante */
+figure img { width:49mm; border-radius:5mm; border:1mm solid #151210; display:block; margin:0 auto; }
+.trio figure img { width:46mm; }
+.paire figure img { width:52mm; }
+figcaption { font-size:8.4pt; color:var(--gris); margin-top:4px; line-height:1.3; max-width:54mm; margin-left:auto; margin-right:auto; }
+/* encadres */
+.encadre { border-radius:8px; padding:8px 11px 8px 11px; margin:8px 0 10px; font-size:9.8pt; break-inside:avoid; }
+.encadre .tit { font-weight:700; display:block; margin-bottom:2px; }
+.astuce { background:#FFF6E6; border-left:4px solid var(--or); }
+.info { background:#EEF6FA; border-left:4px solid var(--bleu); }
+.attention { background:#FCEDEA; border-left:4px solid var(--rouge); }
+.encadre p:last-child, .encadre ul:last-child { margin-bottom:0; }
+/* etapes */
+ol.etapes { counter-reset:e; list-style:none; padding-left:0; }
+ol.etapes > li { counter-increment:e; position:relative; padding-left:28px; margin:6px 0; }
+ol.etapes > li::before { content:counter(e); position:absolute; left:0; top:1px; width:20px; height:20px; border-radius:50%; background:var(--encre); color:#fff; font-size:9pt; font-weight:700; display:flex; align-items:center; justify-content:center; }
+.bouton { display:inline-block; font-size:9pt; font-weight:600; padding:0 6px; border-radius:5px; background:#F1E8DC; border:1px solid #E0D3C2; white-space:nowrap; }
+.kbd { font-weight:600; }
+/* tableaux */
+table { border-collapse:collapse; width:100%; margin:6px 0 10px; font-size:9.6pt; }
+tr { break-inside:avoid; }
+th { text-align:left; background:var(--clair); font-weight:600; padding:5px 7px; border-bottom:1px solid var(--ligne); }
+td { padding:5px 7px; border-bottom:1px solid var(--ligne); vertical-align:top; }
+.pastille { display:inline-block; width:11px; height:11px; border-radius:50%; vertical-align:-1px; margin-right:5px; border:1px solid rgba(0,0,0,.15); }
+.pastille.creuse { background:transparent !important; border:1.5px solid #8A7F74; }
+.puce-txt { display:inline-block; padding:0 6px; border-radius:4px; font-weight:600; font-size:9pt; }
+.faq dt { font-weight:700; margin-top:6px; break-after:avoid; }
+.faq dd { margin:2px 0 4px 0; }
+.glossaire dt { font-weight:700; float:left; clear:left; width:42mm; }
+.glossaire dd { margin:0 0 6px 44mm; }
+.rapide { counter-reset:r; display:grid; grid-template-columns:1fr 1fr; gap:6mm; margin:8px 0; }
+.rapide > div { background:var(--clair); border-radius:10px; padding:10px 12px; break-inside:avoid; }
+.rapide .rn { display:inline-flex; width:22px; height:22px; border-radius:50%; background:var(--or); align-items:center; justify-content:center; font-weight:700; font-size:10pt; margin-right:6px; }
+.rapide .rt { font-weight:700; }
+.petit { font-size:9pt; color:var(--gris); }
+.sep { height:1px; background:var(--ligne); margin:12px 0; }
+</style>
+</head>
+<body>
+
+<!-- ============ COUVERTURE ============ -->
+<div class="couv">
+  <div class="couv-haut"><img src="icon.png" alt=""><span class="nom">Dorayaki</span></div>
+  <div class="couv-milieu">
+    <div>
+      <h1>Guide d'utilisation</h1>
+      <div class="sous">Suivi calorique, recettes et anti-gaspi : tout ce que l'appli sait faire, écran par écran.</div>
+      <div class="pour">Pour bien démarrer, ajouter tes repas en quelques secondes, cuisiner avec ce que tu as déjà, garder ton inventaire à jour et suivre tes progrès.</div>
+    </div>
+    <div class="tel"><img src="img/16-repas-haut.png" alt=""></div>
+  </div>
+  <div class="couv-bas"><span>Version de novembre 2026 (build du 6 novembre)</span><span>Les captures montrent un compte d'exemple, « Alex ».</span></div>
+</div>
+
+<!-- ============ SOMMAIRE ============ -->
+<div class="sommaire">
+  <h1>Sommaire</h1>
+  <ul class="toc" id="toc"></ul>
+</div>
+
+<!-- ============ 0 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">0</span>Démarrage rapide</h1>
+  <p class="chapeau">L'essentiel en cinq étapes. Chaque point renvoie à la partie du guide qui le détaille.</p>
+  <div class="rapide">
+    <div><span class="rn">1</span><span class="rt">Installe l'appli</span><p>Ouvre le lien de Dorayaki dans Safari (iPhone) ou Chrome (Android), puis ajoute-la à ton écran d'accueil. Voir <b>1.1</b>.</p></div>
+    <div><span class="rn">2</span><span class="rt">Crée ton compte</span><p>Six petites étapes : ton compte, toi, ton objectif, ton alimentation, tes cibles et les IA. Voir <b>1.2</b>.</p></div>
+    <div><span class="rn">3</span><span class="rt">Active l'IA (gratuit)</span><p>Une clé Groq suffit pour décrire un repas en une phrase ou le prendre en photo. Voir <b>1.4</b>.</p></div>
+    <div><span class="rn">4</span><span class="rt">Ajoute ton premier repas</span><p>Touche le gros bouton <span class="bouton">+</span> en bas à droite, puis « Décrire un repas ». Voir <b>4</b>.</p></div>
+    <div><span class="rn">5</span><span class="rt">Regarde ta journée</span><p>L'onglet <b>Repas</b> montre ce que tu as mangé, ce qu'il te reste et ta marge. Voir <b>5</b>.</p></div>
+    <div><span class="rn">+</span><span class="rt">Et ensuite</span><p>Remplis ton <b>inventaire</b> (partie 7) : l'appli te proposera des recettes avec ce que tu as déjà et retirera les ingrédients tout seule.</p></div>
+  </div>
+  <h2><span class="n">0.1</span>Comment lire ce guide</h2>
+  <p>Le guide suit l'appli : d'abord le démarrage, puis chaque onglet de la barre du bas, dans l'ordre. Les noms des boutons sont écrits <span class="bouton">comme ceci</span>. Trois sortes d'encadrés reviennent :</p>
+  <div style="display:flex;gap:4mm;">
+  <div class="encadre astuce" style="flex:1;margin:4px 0 8px;"><span class="tit">Astuce</span>Un raccourci ou une bonne habitude qui fait gagner du temps.</div>
+  <div class="encadre info" style="flex:1;margin:4px 0 8px;"><span class="tit">Bon à savoir</span>Comment l'appli calcule ou décide quelque chose.</div>
+  <div class="encadre attention" style="flex:1;margin:4px 0 8px;"><span class="tit">Attention</span>Une action qui ne s'annule pas, ou un piège à éviter.</div>
+  </div>
+  <p class="petit">Les captures viennent d'un compte d'exemple (« Alex », objectif : perte de poids, cible de 2200 kcal). Tes chiffres, tes recettes et ton inventaire seront différents. Sur iPhone, la police est un peu plus fine que sur les images.</p>
+  <h2><span class="n">0.2</span>Les mots qui reviennent</h2>
+  <table>
+    <tr><th style="width:32%">Mot</th><th>Ce que ça veut dire dans Dorayaki <span style="font-weight:400;color:var(--gris);">(glossaire complet : partie 15)</span></th></tr>
+    <tr><td><b>Cible</b></td><td>Ce que tu vises par jour : calories, protéines, glucides, lipides. Calculée à l'inscription, modifiable à tout moment.</td></tr>
+    <tr><td><b>Moment</b></td><td>Petit déjeuner, déjeuner, dîner ou collation. Chaque repas est rangé dans un moment.</td></tr>
+    <tr><td><b>Part du repas</b></td><td>La part de ta cible prévue pour un moment (par défaut 24 / 30 / 30 / 16 %).</td></tr>
+    <tr><td><b>Marge du jour</b></td><td>Cible + activité enregistrée − ce que tu as mangé.</td></tr>
+    <tr><td><b>Inventaire</b></td><td>Ce que tu as chez toi, rangé en Frigo, Congélateur, Placards et Épices.</td></tr>
+    <tr><td><b>DLC</b></td><td>La date limite d'un produit.</td></tr>
+  </table>
+</section>
+
+<!-- ============ 1 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">1</span>Bien démarrer</h1>
+  <p class="chapeau">Installer l'appli, créer ton compte, te connecter, activer l'IA et suivre la visite guidée.</p>
+
+  <h2><span class="n">1.1</span>Installer l'appli sur ton téléphone</h2>
+  <p>Dorayaki est une application web : elle s'ouvre depuis un lien, sans passer par l'App Store ni le Play Store. Une fois ajoutée à l'écran d'accueil, elle s'ouvre en plein écran comme une vraie appli et fonctionne même sans réseau.</p>
+  <h3>Sur iPhone (Safari)</h3>
+  <ol class="etapes">
+    <li>Ouvre le lien de Dorayaki dans <b>Safari</b> (pas dans un autre navigateur).</li>
+    <li>Touche le bouton <b>Partager</b> (le carré avec une flèche vers le haut).</li>
+    <li>Choisis <b>« Sur l'écran d'accueil »</b>, puis <b>Ajouter</b>.</li>
+    <li>Ouvre ensuite Dorayaki depuis sa nouvelle icône.</li>
+  </ol>
+  <h3>Sur Android (Chrome) et sur ordinateur</h3>
+  <p>Ouvre le lien dans Chrome. Touche le menu <b>⋮</b>, puis <b>« Installer l'application »</b> ou <b>« Ajouter à l'écran d'accueil »</b>. Sur ordinateur, l'appli fonctionne aussi dans le navigateur, et ton compte est le même partout.</p>
+  <div class="encadre info"><span class="tit">Bon à savoir</span>Quand une nouvelle version est publiée, un bandeau « Une nouvelle version de Dorayaki est prête · Recharger » apparaît au-dessus du bouton +. Rien ne se recharge en plein milieu d'une saisie : tu choisis le moment. La fenêtre « Quoi de neuf » résume ensuite les changements.</div>
+
+  <h2><span class="n">1.2</span>Créer ton compte</h2>
+  <div class="duo">
+    <div>
+      <p>Au premier lancement, l'écran d'accueil propose <span class="bouton">Se connecter</span> et <span class="bouton">Créer un compte</span>. La création se fait en six étapes ; une barre en haut indique où tu en es, et <span class="bouton">Précédent</span> permet de revenir en arrière.</p>
+      <ol class="etapes">
+        <li><b>Ton compte</b> : ton adresse e-mail et un mot de passe de 6 caractères minimum, à taper deux fois. L'œil à droite du champ affiche ce que tu as tapé, pour vérifier.</li>
+        <li><b>Toi</b> : prénom, icône, sexe, date de naissance, taille et poids. Le poids saisi devient ta première pesée.</li>
+        <li><b>Ton objectif</b> : perdre du poids, maintenir ou prendre de la masse, le poids visé, ton nombre de pas habituel et ton niveau d'activité.</li>
+        <li><b>Ton alimentation</b> : régime, allergies, aliments à éviter, équipement de cuisine et temps de cuisine maximum. L'IA en tient compte quand elle te propose des recettes.</li>
+        <li><b>Tes cibles</b> : l'appli calcule tes calories et tes macros, et t'explique le calcul (voir l'encadré plus bas). Tu peux corriger chaque valeur.</li>
+        <li><b>Les IA (facultatif)</b> : colle ta clé Groq, et éventuellement une clé Gemini, ou touche « Passer cette étape ».</li>
+      </ol>
+    </div>
+    <figure><img src="img/01-accueil-connexion.png"><figcaption>Premier écran : se connecter ou créer un compte.</figcaption></figure>
+  </div>
+  <div class="encadre info"><span class="tit">Pourquoi une adresse e-mail ?</span>Elle sert à te connecter et surtout à <b>récupérer ton mot de passe</b> si tu l'oublies. Dorayaki ne t'envoie rien d'autre. Les comptes créés avant novembre 2026 avec un simple identifiant se connectent toujours avec lui.</div>
+  <div class="trio">
+    <figure><img src="img/03-inscription-compte.png"><figcaption>Étape 1 : identifiant, mot de passe et confirmation.</figcaption></figure>
+    <figure><img src="img/04-inscription-toi.png"><figcaption>Étape 2 : toi.</figcaption></figure>
+    <figure><img src="img/05-inscription-cibles.png"><figcaption>Étape 5 : tes cibles, avec l'explication du calcul.</figcaption></figure>
+  </div>
+  <div class="encadre info"><span class="tit">Comment sont calculées tes cibles ?</span>L'appli estime ce que ton corps dépense par jour à partir de ton âge, ta taille, ton poids et ton activité. Pour perdre du poids, elle propose de manger un peu moins (environ un demi-kilo par semaine) ; pour prendre de la masse, un peu plus. Le texte te dit combien tu manges de moins ou de plus, combien de kilos cela représente par semaine, et vers quel mois tu atteindrais ton poids visé. C'est un point de départ : le Bilan l'affinera avec tes pesées (partie 9).</div>
+
+  <h2><span class="n">1.3</span>Se connecter, mot de passe oublié</h2>
+  <div class="duo">
+    <div>
+      <p>Touche <span class="bouton">Se connecter</span>, saisis ton adresse e-mail (ou ton identifiant, pour un compte créé avant novembre 2026) et ton mot de passe. L'œil à droite du champ affiche le mot de passe pour vérifier une faute de frappe ; un second toucher le masque.</p>
+      <p><b>Mot de passe oublié ?</b> Le lien sous le bouton envoie un e-mail de réinitialisation, à condition que ton compte ait une vraie adresse e-mail. Ouvre le lien de l'e-mail et choisis un nouveau mot de passe.</p>
+      <div class="encadre astuce"><span class="tit">Pas d'e-mail reçu ?</span>Regarde dans tes <b>spams</b> : l'expéditeur est « noreply@bouffe-frigo.firebaseapp.com » et Gmail le classe souvent en indésirable.</div>
+      <p>Une fois connecté, tu le restes : l'appli garde ta session sur l'appareil, mais jamais ton mot de passe. Si la session expire, l'écran de connexion revient et tes données t'attendent.</p>
+    </div>
+    <figure><img src="img/02-connexion.png"><figcaption>Connexion : l'œil affiche ou masque le mot de passe.</figcaption></figure>
+  </div>
+
+  <h2><span class="n">1.4</span>Activer l'IA (gratuit)</h2>
+  <div class="duo">
+    <div>
+      <p>Dorayaki s'appuie sur deux intelligences artificielles <b>gratuites</b>, sans carte bancaire :</p>
+      <ul>
+        <li><b>Groq</b> (la clé principale) : analyse un repas décrit en quelques mots, crée des recettes avec ce que tu as, estime les calories d'une activité et les valeurs d'un aliment.</li>
+        <li><b>Gemini</b> (facultatif) : plus précis pour reconnaître un plat en <b>photo</b>.</li>
+      </ul>
+      <p>Les deux s'entraident : si l'une est saturée ou ne répond pas, l'autre prend le relais. Une seule clé suffit pour tout faire.</p>
+      <h3>Obtenir ta clé Groq</h3>
+      <ol class="etapes">
+        <li>Ouvre <b>console.groq.com</b> et crée un compte (Google ou e-mail).</li>
+        <li>Va dans <b>API Keys</b>, touche <b>Create API Key</b> et donne-lui un nom, par exemple « Dorayaki ».</li>
+        <li>Copie la clé (elle commence par <b>gsk_</b>) : elle ne s'affiche qu'une fois.</li>
+        <li>Colle-la dans l'appli : à la dernière étape de l'inscription, ou plus tard dans <b>Réglages › Clé API Groq › Enregistrer la clé</b>.</li>
+      </ol>
+      <h3>Obtenir ta clé Gemini (facultatif)</h3>
+      <ol class="etapes">
+        <li>Ouvre <b>aistudio.google.com</b> avec un compte Google.</li>
+        <li>Touche <b>Create API key</b>, puis copie la clé (elle commence par <b>AQ.</b> ou <b>AIza</b>).</li>
+        <li>Colle-la dans <b>Réglages › Clé Gemini</b>.</li>
+      </ol>
+    </div>
+    <figure><img src="img/06-inscription-ia.png"><figcaption>La dernière étape de l'inscription explique les deux services pas à pas.</figcaption></figure>
+  </div>
+  <div class="encadre info"><span class="tit">Et sans clé ?</span>L'appli reste utilisable : code-barres, saisie manuelle, composition depuis l'inventaire, recettes, courses, pesées et Bilan fonctionnent. Seules la description en texte, la photo et la génération de recettes demandent une clé. Le menu + propose alors <span class="bouton">Activer l'IA</span>.</div>
+  <div class="encadre info"><span class="tit">Tes clés restent à toi</span>Chaque compte saisit sa propre clé. Elle est enregistrée avec ton compte, donc retrouvée sur tous tes appareils, mais elle n'apparaît jamais dans les sauvegardes ni dans les fichiers exportés.</div>
+
+  <h2><span class="n">1.5</span>La visite guidée</h2>
+  <div class="paire">
+    <figure><img src="img/50-tutoriel.png"><figcaption>Étape 1 : l'objectif du jour est mis en lumière.</figcaption></figure>
+    <figure><img src="img/51-tutoriel-2.png"><figcaption>Étape 2 : le bouton + pour tout ajouter.</figcaption></figure>
+  </div>
+  <p>À la première ouverture, une visite en 7 étapes présente l'objectif du jour, le bouton +, ta journée dans Repas, puis l'inventaire, les courses et le Bilan (avec des exemples), et enfin les Réglages. <span class="bouton">Précédent</span> revient en arrière, <span class="bouton">Passer le tutoriel</span> l'arrête. Tu peux la relancer à tout moment : <b>Réglages › Revoir le tutoriel</b>.</p>
+</section>
+
+<!-- ============ 2 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">2</span>Se repérer dans l'appli</h1>
+  <p class="chapeau">Cinq onglets en bas, un bouton + toujours à portée de pouce, les réglages en haut à droite.</p>
+  <div class="duo">
+    <div>
+      <h3>L'en-tête</h3>
+      <p>En haut : ton icône, ton prénom, ton objectif et ta cible de calories. La roue dentée <span class="emoji">⚙️</span> ouvre les <b>Réglages</b> (partie 11).</p>
+      <h3>La barre du bas</h3>
+      <table>
+        <tr><th>Onglet</th><th>À quoi il sert</th></tr>
+        <tr><td><b>Accueil</b></td><td>Ton objectif du jour, le point du coach et les recettes qui rentrent dans ce qu'il te reste.</td></tr>
+        <tr><td><b>Repas</b></td><td>Le suivi jour par jour (semaine, anneau, repas par moment, marge) et toutes tes recettes.</td></tr>
+        <tr><td><b>Inventaire</b></td><td>Ce que tu as chez toi, les dates limites, les plats maison, ce qui reste à ranger.</td></tr>
+        <tr><td><b>Courses</b></td><td>Ta liste par rayon, avec les produits à racheter d'après ton stock.</td></tr>
+        <tr><td><b>Bilan</b></td><td>Ta semaine, tes moyennes, ton poids, ton calendrier, tes mensurations et photos.</td></tr>
+      </table>
+      <h3>Le bouton +</h3>
+      <p>Le gros bouton doré en bas à droite ajoute tout : un repas (texte, photo, code-barres, inventaire, saisie manuelle), tes pas et activités, une pesée, un plat maison, ou un repas habituel en un toucher (partie 4).</p>
+    </div>
+    <figure><img src="img/10-accueil.png"><figcaption>L'Accueil, l'en-tête et la barre du bas.</figcaption></figure>
+  </div>
+  <div class="encadre info"><span class="tit">L'indicateur de synchronisation</span>Le petit « ☁ sync » vert confirme que tes données sont bien enregistrées en ligne. « hors ligne » : tes saisies sont gardées sur le téléphone et partiront dès le retour du réseau. « conflit — recharger » : voir la partie 12.</div>
+  <div class="encadre astuce"><span class="tit">Les ⓘ</span>Un petit ⓘ à côté d'un mot (Protéines, Fibres, Consommées…) ouvre une explication courte : à quoi sert ce nutriment, combien en viser, d'où viennent les chiffres.</div>
+</section>
+
+<!-- ============ 3 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">3</span>L'Accueil</h1>
+  <p class="chapeau">Un coup d'œil pour savoir où tu en es aujourd'hui et quoi manger ensuite.</p>
+  <div class="duo">
+    <div>
+      <h2><span class="n">3.1</span>Objectif du jour</h2>
+      <p>Le grand chiffre en haut à droite donne les calories déjà mangées sur ta cible (« 1140 / 2200 kcal »). Dessous, une barre par macro : protéines, glucides, lipides et fibres, chacune avec sa cible.</p>
+      <p>La ligne <b>Protéines par repas</b> détaille ce que chaque repas a apporté. Un repas principal sous 25 g de protéines apparaît en orange, avec un conseil si c'est sous 20 g : répartir les protéines sur la journée aide à garder tes muscles.</p>
+      <h2><span class="n">3.2</span>Rappels et garde-fous</h2>
+      <ul>
+        <li><b>Rappel de pesée</b> : si ta dernière pesée date de 2 jours ou plus, une carte te le rappelle (environ 3 pesées par semaine suffisent). « Plus tard » la cache pour la journée.</li>
+        <li><b>Journées très basses</b> : si 2 de tes 3 derniers jours complets sont sous 1500 kcal (1200 pour une femme), une carte orange te prévient. Manger trop peu fait perdre du muscle et finit souvent en fringale. « Compris » la ferme.</li>
+      </ul>
+    </div>
+    <figure><img src="img/10-accueil.png"><figcaption>Objectif du jour et carte « Ta journée ».</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">3.3</span>Ta journée : le point du coach</h2>
+      <p>Cette carte change au fil de la journée : un <b>cap</b> le matin, un <b>point d'étape</b> l'après-midi, un <b>bilan</b> le soir. Elle donne ce qu'il te reste en calories et en protéines, ton activité du jour, ta <b>marge</b> (voir 5.4), ta série de jours dans la cible et ton prochain repas.</p>
+      <p>Le bouton <span class="bouton">Ajouter mes pas et activités</span> ouvre directement la saisie de ta dépense (partie 10).</p>
+      <h2><span class="n">3.4</span>Ça rentre dans ce qu'il te reste</h2>
+      <p>En bas, l'appli propose des recettes de ton prochain moment qui tiennent dans ce qu'il te reste (à 5 % près), faisables avec ton inventaire, en privilégiant les protéines qui te manquent. Il peut y en avoir moins de trois, voire aucune : mieux vaut rien proposer que te faire dépasser. Un toucher ouvre la recette.</p>
+    </div>
+    <figure><img src="img/11-accueil-suite.png"><figcaption>Le point du coach et les recettes qui rentrent dans le reste.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ 4 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">4</span>Ajouter un repas</h1>
+  <p class="chapeau">Six façons d'ajouter ce que tu as mangé, de la plus rapide (une phrase) à la plus précise (tes ingrédients pesés).</p>
+  <div class="duo">
+    <div>
+      <h2><span class="n">4.1</span>Le menu du bouton +</h2>
+      <p>Touche <span class="bouton">+</span> en bas à droite. Le volet propose :</p>
+      <ul>
+        <li><b>Décrire un repas</b> : une phrase, l'IA calcule (4.2).</li>
+        <li><b>Photo</b> : l'IA reconnaît le plat (4.3).</li>
+        <li><b>Code-barres</b> : un produit emballé (4.4).</li>
+        <li><b>Mon inventaire</b> : tu choisis tes ingrédients et leurs quantités (4.5).</li>
+        <li><b>Pas et activités</b> et <b>Pesée</b> : voir les parties 10 et 9.</li>
+        <li><b>Préparer un plat</b> : un plat cuisiné en une fois et mangé en plusieurs (7.6).</li>
+        <li><b>Refaire un repas habituel</b> : tes repas fréquents des 30 derniers jours, en un toucher (4.7).</li>
+      </ul>
+      <p>Si tu regardes un autre jour que aujourd'hui dans l'onglet Repas, un bandeau bleu le rappelle : le repas sera ajouté à ce jour-là.</p>
+    </div>
+    <figure><img src="img/12-menu-ajout.png"><figcaption>Le volet « Ajouter » et tes repas habituels.</figcaption></figure>
+  </div>
+
+  <h2><span class="n">4.2</span>Décrire un repas en une phrase</h2>
+  <div class="duo">
+    <div>
+      <ol class="etapes">
+        <li><b>Stock de l'inventaire utilisé ?</b> <span class="bouton">Oui</span> si le repas vient de chez toi : les ingrédients reconnus seront retirés de ton stock. <span class="bouton">Non</span> pour un restaurant, un repas chez quelqu'un, un plat acheté.</li>
+        <li><b>Moment de la journée</b> : l'appli propose le premier moment qui manque aujourd'hui. Change-le d'un toucher si besoin. Chaque repas doit avoir un moment.</li>
+        <li><b>Décris ce que tu as mangé</b>, avec les quantités si tu les connais : « 200 g de poulet, 100 g de riz basmati, légumes sautés à l'huile d'olive ».</li>
+        <li>Touche <span class="bouton">✦ Analyser par IA</span>. L'écran annonce l'IA utilisée et son secours.</li>
+      </ol>
+      <div class="encadre astuce"><span class="tit">Plus c'est précis, plus c'est juste</span>Donne les poids (« 150 g »), le nombre (« 2 œufs »), la cuisson (« frit », « à l'huile ») et la marque si tu la connais. « Un bol de pâtes » marche aussi, mais l'IA devra deviner la portion.</div>
+    </div>
+    <figure><img src="img/13-ajout-saisie.png"><figcaption>Saisie : stock, moment, description.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h3>Vérifier avant d'enregistrer</h3>
+      <p>L'écran de confirmation montre :</p>
+      <ul>
+        <li>le <b>nom du repas</b>, modifiable, et le moment (que tu peux encore changer) ;</li>
+        <li>les <b>calories, protéines, glucides, lipides et fibres</b>, chacune modifiable ;</li>
+        <li><b>Déduire de l'inventaire ?</b> : les articles proposés, avec leur quantité, à cocher ou décocher ;</li>
+        <li><b>Estimé — hors inventaire</b> : chaque aliment reconnu sur sa ligne (nom, quantité, calories). Change une quantité, le total suit. Un aliment mal reconnu (un croissant à la place d'un Paris-brest) ? Corrige son nom et touche <span class="bouton">↻</span> : l'IA recalcule <b>cette ligne seule</b>. ✕ retire la ligne.</li>
+      </ul>
+      <p>Si l'IA a compris autre chose que ce que tu as écrit, elle te demande d'abord <b>« Est-ce bien : … ? »</b> : <span class="bouton">Oui, c'est ça</span> ou <span class="bouton">Non, je reformule</span>.</p>
+      <p>Touche <span class="bouton">✓ Ajouter au tracker</span>. Le repas apparaît dans l'onglet Repas, dans la carte de son moment, et le <b>point du coach</b> s'affiche quelques secondes (5.4).</p>
+    </div>
+    <figure><img src="img/14-ajout-confirmation.png"><figcaption>Confirmation : macros, moment et aliments reconnus, chacun corrigeable (↻).</figcaption></figure>
+  </div>
+
+  <h2><span class="n">4.3</span>Prendre le repas en photo</h2>
+  <p>Avant d'ouvrir l'appareil photo, l'appli demande si le repas vient de ton inventaire :</p>
+  <ul>
+    <li><span class="bouton">📦 Oui, avec mon inventaire</span> : les aliments reconnus sur la photo seront retirés de ton stock ;</li>
+    <li><span class="bouton">🍽️ Non, hors inventaire</span> : le repas est seulement compté (restaurant, plat acheté…).</li>
+  </ul>
+  <p>Prends la photo, puis vérifie et corrige comme pour une description. Gemini (si tu as sa clé) reconnaît mieux les plats ; sinon Groq s'en charge. Les photos lourdes sont réduites automatiquement.</p>
+  <div class="encadre astuce"><span class="tit">Pour une bonne photo</span>Prends l'assiette d'au-dessus, en entier, bien éclairée. Une fourchette ou un emballage à côté aide l'IA à estimer les portions.</div>
+
+  <h2><span class="n">4.4</span>Scanner un code-barres</h2>
+  <p>Touche <span class="bouton">Code-barres</span> et vise le code du produit. L'appli retrouve ses valeurs nutritionnelles (base OpenFoodFacts) et propose la quantité de l'emballage. Ajuste la <b>quantité</b> réellement mangée : les calories se recalculent toutes seules. Il faut une connexion et l'accès à l'appareil photo.</p>
+
+  <h2><span class="n">4.5</span>Composer depuis ton inventaire</h2>
+  <div class="duo">
+    <div>
+      <p><span class="bouton">📦 Composer depuis mon inventaire</span> (ou « Mon inventaire » dans le menu +) ouvre la fenêtre <b>« Qu'as-tu utilisé ? »</b>. Pour chaque ingrédient, tape la quantité utilisée ; les macros du repas s'additionnent en bas.</p>
+      <ul>
+        <li><b>Onglets</b> Frigo, Congél., Placards, Épices, comme dans l'inventaire. Sous chaque onglet, le nombre d'articles ; la pastille verte, ceux que tu as choisis.</li>
+        <li><b>Dans ton repas</b> : les ingrédients choisis, tous onglets confondus. Un toucher sur une pastille ouvre son onglet.</li>
+        <li><b>Dates limites</b> sous le nom, comme dans l'inventaire : rouge sous 7 jours, orange jusqu'à 14, « Expiré » ensuite. Pratique pour finir ce qui presse.</li>
+        <li><b>Plats maison</b> en tête de leur catégorie ; tu peux en compter en parts ou en grammes.</li>
+        <li><b>Recherche</b> : tape quelques lettres pour chercher dans tout l'inventaire.</li>
+        <li>« reste 900 g » rappelle ton stock ; au-delà, la ligne passe en rouge.</li>
+      </ul>
+      <p>Touche <span class="bouton">✓ Ajouter au repas</span>, puis vérifie le nom et le moment avant d'enregistrer. Les quantités sont retirées de ton stock.</p>
+    </div>
+    <figure><img src="img/15-composer-inventaire.png"><figcaption>« Qu'as-tu utilisé ? » : onglets, dates limites, ingrédients choisis.</figcaption></figure>
+  </div>
+
+  <h2><span class="n">4.6</span>Saisie manuelle</h2>
+  <p><span class="bouton">🔢 Manuel</span> ouvre l'écran de confirmation vide : nom, moment, calories et macros lues sur une étiquette ou une carte.</p>
+
+  <h2><span class="n">4.7</span>Refaire un repas habituel</h2>
+  <p>En bas du menu +, tes repas les plus fréquents des 30 derniers jours (« 2 fois en 30 j »), puis les plus récents. Le <span class="bouton">+</span> l'ajoute tel quel, au même moment, et retire les mêmes ingrédients du stock.</p>
+
+  <h2><span class="n">4.8</span>Après minuit : hier ou aujourd'hui ?</h2>
+  <p>Entre minuit et 4 h du matin, un repas ajouté « aujourd'hui » déclenche une question : <span class="bouton">Hier</span> ou <span class="bouton">Aujourd'hui</span>. Un en-cas à 1 h du matin compte souvent encore pour la veille.</p>
+</section>
+
+<!-- ============ 5 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">5</span>Repas : ta journée</h1>
+  <p class="chapeau">L'onglet Repas commence par ton suivi : la semaine, l'anneau des calories, tes repas rangés par moment et ta marge.</p>
+  <div class="duo">
+    <div>
+      <h2><span class="n">5.1</span>La bande de la semaine</h2>
+      <p>En haut, les 6 derniers jours, aujourd'hui (entouré de doré) et demain (« DEM. »). Touche un jour pour l'afficher : il passe en doré plein. Tu peux ainsi compléter un oubli d'hier ou préparer demain.</p>
+      <p>Le petit point sous chaque jour passé résume la journée :</p>
+      <table>
+        <tr><td style="width:46%"><span class="pastille" style="background:#6FBF73"></span>Vert</td><td>Dans ta cible (à 10 % près).</td></tr>
+        <tr><td><span class="pastille" style="background:#E9A13B"></span>Orange</td><td>Au-dessus de ta cible.</td></tr>
+        <tr><td><span class="pastille" style="background:#5FA8C9"></span>Bleu</td><td>En dessous de ta cible.</td></tr>
+        <tr><td><span class="pastille creuse"></span>Rond vide</td><td>Journée incomplète (moins de la moitié de la cible notée).</td></tr>
+        <tr><td><span class="pastille" style="background:#E9A13B;border-color:#B87516"></span>Doré (aujourd'hui, demain)</td><td>Au moins un repas saisi.</td></tr>
+      </table>
+      <h2><span class="n">5.2</span>L'anneau et les barres</h2>
+      <p>L'anneau donne les <b>kcal restantes</b> au centre, les <b>consommées</b> à gauche et les <b>dépensées</b> (activité) à droite. Dessous, les barres de protéines, glucides, lipides et fibres. Une barre qui dépasse sa cible passe en couleur d'alerte ; les fibres, elles, ne sont jamais « trop ».</p>
+    </div>
+    <figure><img src="img/16-repas-haut.png"><figcaption>La semaine, l'anneau et les macros du jour affiché.</figcaption></figure>
+  </div>
+
+  <h2><span class="n">5.3</span>Tes repas, rangés par moment</h2>
+  <div class="duo">
+    <div>
+      <p>Chaque moment a sa carte, toujours dans le même ordre : Petit déjeuner, Déjeuner, Dîner, Collation. L'en-tête montre ce que tu y as mangé sur la <b>part prévue</b> pour ce repas (« 420 / 528 kcal ») et les protéines (« 34/36 g »), avec une barre.</p>
+      <h3>Les couleurs d'une carte</h3>
+      <table>
+        <tr><td style="width:40%"><span class="puce-txt" style="background:#DDF7EA;color:#1F7A4D">Vert clair</span></td><td>Dans la part prévue <b>et</b> avec assez de protéines (au moins 90 % de la part). Un petit mot te félicite : « Bien joué ».</td></tr>
+        <tr><td><span class="puce-txt" style="background:#F6E0D2;color:#9C4A1C">Orange cuivré</span></td><td>Plus de 5 % au-dessus de la part prévue. Pas de reproche : c'est une information, à équilibrer sur les autres repas.</td></tr>
+        <tr><td><span class="puce-txt" style="background:#EFEAE4;color:#5E554D">Couleur du moment</span></td><td>Dans la part, mais un peu court en protéines.</td></tr>
+      </table>
+      <p>Une carte vide affiche « Rien pour l'instant » et un lien <span class="bouton">+ Ajouter</span> : le menu s'ouvre avec ce moment déjà choisi (« Pour le dîner d'aujourd'hui »). Une carte remplie a un petit <span class="bouton">+</span> dans son en-tête pour y ajouter autre chose.</p>
+      <div class="encadre info"><span class="tit">D'où vient la part prévue ?</span>Ta cible du jour est répartie entre les moments : par défaut 24 % au petit déjeuner, 30 % au déjeuner, 30 % au dîner et 16 % en collation. Tu peux changer cette répartition dans Réglages › Modifier le profil (11.2).</div>
+    </div>
+    <figure><img src="img/17-repas-cartes.png"><figcaption>Petit déjeuner en vert clair, déjeuner en orange cuivré, dîner et collation à venir.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h3>Modifier, copier, supprimer un repas</h3>
+      <ul>
+        <li><b>Modifier</b> : touche le nom du repas. Tu peux changer son moment, son nom, ses macros ou ses ingrédients (le stock suit).</li>
+        <li><b>Copier</b> <span class="bouton">⧉</span> : copie ce repas vers la date choisie dans « Copier vers » (sous les cartes). <span class="bouton">⧉ Jour entier</span> copie toute la journée. Le stock est retiré au moment de la copie, même pour un jour à venir.</li>
+        <li><b>Supprimer</b> <span class="bouton">✕</span> : l'appli demande confirmation, puis remet dans ton inventaire ce que le repas y avait pris.</li>
+      </ul>
+      <p>On peut modifier les jours de la semaine écoulée et demain (« Modifiable de J−7 à J+1 »).</p>
+      <div class="encadre astuce"><span class="tit">Prévoir demain</span>Cuisiné pour deux ? « Préparer pour 2 » (partie 6) met automatiquement la deuxième portion sur demain. Tu peux aussi copier un repas vers demain avec ⧉.</div>
+      <p class="petit">Les anciens repas enregistrés avant l'arrivée des moments sont regroupés dans une carte « Sans moment ». Touche-les pour leur en choisir un.</p>
+    </div>
+    <figure><img src="img/20-repas-jour-passe.png"><figcaption>Un jour passé : cartes, copie et marge du jour.</figcaption></figure>
+  </div>
+
+  <h2><span class="n">5.4</span>Marge du jour et point du coach</h2>
+  <div class="duo">
+    <div>
+      <p>Sous les cartes, l'encadré <b>Marge du jour</b> fait le compte : <b>ta cible + l'activité enregistrée − ce que tu as mangé</b>. Il n'utilise aucune estimation de dépense, seulement ce que tu as saisi.</p>
+      <p><b>En perte de poids</b>, la couleur dit où tu en es :</p>
+      <table>
+        <tr><td style="width:36%"><span class="pastille" style="background:#8FD6F5"></span>Bleu clair</td><td>Bien sous ta cible : ton déficit va au-delà du prévu.</td></tr>
+        <tr><td><span class="pastille" style="background:#6FBF73"></span>Vert</td><td>Dans ta cible, avec de la marge.</td></tr>
+        <tr><td><span class="pastille" style="background:#B5CC5C"></span>Vert-jaune</td><td>Tout juste dans ta cible.</td></tr>
+        <tr><td><span class="pastille" style="background:#E9A13B"></span>Orange</td><td>Un peu au-dessus : ça reste léger.</td></tr>
+        <tr><td><span class="pastille" style="background:#E05C4F"></span>Rouge</td><td>Au-delà de ta cible (et de ton activité).</td></tr>
+      </table>
+      <p>Une journée terminée très basse (sous 1500 kcal, 1200 pour une femme) est signalée en orange « Très bas ce jour-là » : un oubli de saisie, ou trop peu mangé.</p>
+      <p><b>En maintien et en prise de masse</b>, ton activité s'ajoute à la cible (elle est à compenser) : « Cible atteinte », « Encore N kcal à manger », « Un peu trop », « Pas assez »…</p>
+    </div>
+    <figure><img src="img/18-repas-marge.png"><figcaption>La marge du jour et le bouton « Point du coach ».</figcaption></figure>
+  </div>
+  <div class="duo gauche">
+    <figure><img src="img/19-point-coach.png"><figcaption>Le point du coach après un ajout.</figcaption></figure>
+    <div>
+      <h3>Le point du coach</h3>
+      <p>Après chaque ajout, un message apparaît en bas pendant quelques secondes : ce qu'il te reste, une idée pour la suite, un mot sur tes protéines. Touche-le pour le fermer.</p>
+      <p>Tu l'as manqué ? Le bouton <span class="bouton">💬 Point du coach</span>, sous la marge, le réaffiche pour le jour affiché, recalculé.</p>
+      <h3>La barre « Reste »</h3>
+      <p>Quand tu fais défiler l'onglet Repas vers tes recettes, une barre reste collée en haut : « Reste 1060 kcal · 68 g prot. ». Un toucher te ramène au suivi.</p>
+      <div class="encadre info"><span class="tit">Pourquoi l'activité ne s'ajoute pas à la cible en perte de poids ?</span>En perte de poids, bouger creuse ton déficit : c'est un plus, pas une permission de manger davantage. La marge te montre ce bonus. Les recettes proposées, elles, restent calées sur ta cible de base.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 6 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">6</span>Les recettes</h1>
+  <p class="chapeau">Sous ton suivi, l'onglet Repas liste tes recettes : celles de l'IA, les tiennes et tes favorites, avec ce qu'il te faut et les étapes.</p>
+  <div class="duo">
+    <div>
+      <h2><span class="n">6.1</span>Trouver une recette</h2>
+      <ul>
+        <li><b>Onglets</b> : Petit-déj, Déjeuner, Collation, Dîner, puis <b>Mes recettes</b> (les tiennes), <b>⚠ DLC</b> (des recettes pour finir ce qui arrive à date) et <b>⭐ Favoris</b>.</li>
+        <li><b>Trier</b> : A-Z, kcal, protéines, ou « Prot./100 kcal » pour les plus protéinées à calories égales. La flèche qui apparaît à côté inverse l'ordre.</li>
+        <li><b>Favori</b> : l'étoile ☆ devant le nom. Les favoris restent en tête.</li>
+        <li>Chaque carte donne le temps, les calories, les macros et les fibres. Le symbole ✨ marque une recette proposée par l'IA.</li>
+      </ul>
+      <h2><span class="n">6.2</span>Générer des recettes avec l'IA</h2>
+      <p>Le bouton <span class="bouton">✨ Générer des recettes selon mon stock</span>, au-dessus des onglets, demande à l'IA des recettes faites <b>uniquement avec ton inventaire</b>, adaptées à ton objectif (portions, protéines), à ton régime, tes allergies, ton équipement et ton temps de cuisine.</p>
+      <p>L'appli en demande juste assez pour avoir environ 4 recettes faisables par repas. Elle écarte les recettes incohérentes (un ingrédient absent de ton stock, une omelette sans œufs…). <span class="bouton">🗑 Effacer les recettes IA</span> les retire toutes, sauf tes favorites.</p>
+    </div>
+    <figure><img src="img/21-recettes-liste.png"><figcaption>Onglets, tri, favoris et recettes de l'IA.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">6.3</span>Lire une recette</h2>
+      <p>Touche une recette pour la déplier :</p>
+      <ul>
+        <li><b>Photo</b> : <span class="bouton">📷 Ajouter une photo</span> pour mettre la tienne ; sinon une illustration est dessinée automatiquement.</li>
+        <li><b>Ce qu'il faut</b> : chaque ingrédient avec sa quantité, <b>à la couleur de son rangement</b> (légende à droite) : <span class="puce-txt" style="background:#DCEBF3;color:#22648A">Frigo</span> <span class="puce-txt" style="background:#E3E6FB;color:#4450B5">Congélateur</span> <span class="puce-txt" style="background:#FBEBD2;color:#94600F">Placards</span> <span class="puce-txt" style="background:#DFF0DF;color:#2E6E33">Épices</span>.</li>
+        <li><span class="puce-txt" style="background:#FADCD8;color:#B03A2E">⚠ en rouge</span> : il t'en manque (ou pas assez). <span class="puce-txt" style="background:#FBEBD2;color:#94600F">🔄 en orange</span> : un ingrédient au choix, à préciser au moment de cuisiner.</li>
+        <li><b>Étapes</b> : les ingrédients y sont surlignés de la même couleur, avec leur nom exact dans ton inventaire.</li>
+        <li><b>Dessert</b> : ajoute un dessert de ton stock (marque un article avec 🍰 dans sa fiche pour qu'il apparaisse ici) ou « Autre… ».</li>
+      </ul>
+      <div class="encadre astuce"><span class="tit">Les couleurs t'évitent des allers-retours</span>Un coup d'œil suffit pour savoir s'il faut ouvrir le frigo, le congélateur ou les placards. Si un ingrédient n'a pas la couleur attendue, c'est qu'il est rangé dans une autre catégorie de ton inventaire.</div>
+    </div>
+    <figure><img src="img/22-recette-ouverte.png"><figcaption>Une recette dépliée : ingrédients et étapes à la couleur de leur rangement.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">6.4</span>Cuisiner une recette</h2>
+      <p>Sous la recette, choisis :</p>
+      <ul>
+        <li><span class="bouton">1 portion</span> : tu manges la recette maintenant ;</li>
+        <li><span class="bouton">Préparer pour 2</span> : deux portions, la deuxième est mise sur <b>demain</b>, au même moment ;</li>
+        <li>en prise de masse, une proposition <span class="bouton">💪 Portion prise de masse ×1,4</span> peut apparaître pour un plat trop petit pour ta cible (jamais imposée).</li>
+      </ul>
+      <p>La fenêtre de confirmation montre le <b>moment</b> (modifiable) et chaque ingrédient avec sa quantité : ajuste si tu as utilisé autre chose. <span class="bouton">+ Ajouter</span> sous « Ingrédients en plus ? » ajoute un extra (fromage, sauce…). Le total se met à jour. <span class="bouton">✓ Confirmer la cuisson</span> enregistre le repas et retire les ingrédients de ton stock.</p>
+      <p>Il te manque un ingrédient ? <span class="bouton">🔁 Remplacer &amp; cuisiner</span> ouvre la même fenêtre avec les manquants à 0 : ajoute ton substitut avec « + Ajouter ». La recette d'origine n'est pas modifiée.</p>
+      <p>Après la cuisson, la recette indique « Cuisiné aujourd'hui » avec un bouton <span class="bouton">Recuisiner</span>. Si la recette utilisait des épices, l'appli te demande si elles sont encore en stock.</p>
+    </div>
+    <figure><img src="img/24-confirmation-cuisson.png"><figcaption>Confirmation de cuisson : moment, quantités, extras.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">6.5</span>Créer tes propres recettes</h2>
+      <p>Dans l'onglet <b>Mes recettes</b>, crée une recette : nom, temps, types de repas, ingrédients de ton inventaire (avec quantités), étapes (une par ligne). Les macros se calculent toutes seules.</p>
+      <p>Pour qu'un ingrédient soit surligné dans les étapes, écris-le <b>entre crochets</b> : « Cuire le [riz] 12 min ». Le plus simple : touche un ingrédient dans la liste au-dessus des étapes, il s'insère au curseur avec ses crochets. Tout ce qui n'est pas entre crochets reste ton texte, tel quel.</p>
+      <p>Le symbole 🔄 sur un ingrédient le rend « au choix » : tu choisiras le vrai ingrédient au moment de cuisiner (par exemple n'importe quelles pâtes).</p>
+      <div class="encadre astuce"><span class="tit">Depuis un repas</span>Un repas que tu refais souvent ? Ouvre-le (touche son nom dans le suivi), puis <span class="bouton">👨‍🍳 Enregistrer comme recette perso</span>.</div>
+    </div>
+    <figure><img src="img/25-recette-perso.png"><figcaption>L'éditeur de recette : ingrédients, et étapes avec crochets.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ 7 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">7</span>L'inventaire</h1>
+  <p class="chapeau">Ce que tu as chez toi. Plus il est à jour, plus les recettes et les déductions automatiques sont justes.</p>
+  <div class="duo">
+    <div>
+      <h2><span class="n">7.1</span>Vue d'ensemble</h2>
+      <p>De haut en bas :</p>
+      <ul>
+        <li><b>Trier par DLC</b> : un interrupteur pour voir tout ton stock trié par date limite (7.7).</li>
+        <li><b>Rechercher</b> dans tout l'inventaire, et <span class="bouton">✏️ Modifier</span> pour passer en mode édition (7.3).</li>
+        <li><b>Points à corriger</b> : un bandeau si le diagnostic a repéré des fiches à vérifier (7.9).</li>
+        <li><b>Plats maison</b> : tes plats cuisinés en plusieurs parts (7.6).</li>
+        <li><b>⏳ À consommer vite</b> : les 5 dates limites les plus proches (14 jours ou moins, ou dépassées), toutes catégories. « Tout voir par date » ouvre le tri par DLC.</li>
+        <li><b>À ranger</b> : ce que tu as acheté, à mettre dans l'inventaire (7.8).</li>
+        <li>Puis les <b>onglets</b> Frigo, Congél., Placards, Épices.</li>
+      </ul>
+    </div>
+    <figure><img src="img/26-inventaire-haut.png"><figcaption>Le haut de l'inventaire.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">7.2</span>Les onglets</h2>
+      <p>Une catégorie à la fois : touche un onglet pour l'ouvrir ; l'appli se souvient du dernier utilisé. Sous chaque icône, le nombre d'articles en stock. Une <b>pastille rouge</b> signale les articles à surveiller (date à moins de 7 jours ou dépassée, produit périssable marqué). La barre d'onglets reste collée en haut quand tu fais défiler.</p>
+      <p>Chaque ligne donne le nom, la quantité (« 0,8 × 500 g » pour un paquet entamé) et la date limite quand elle approche (14 jours ou moins). Un ⏱ et un nom en rouge ou orange signalent ce qui presse. Touche un nom pour ouvrir sa <b>fiche</b> (7.4). Les articles à 0 sont masqués.</p>
+      <div class="encadre info"><span class="tit">Les couleurs des onglets</span>Frigo en bleu, Congélateur en bleu-violet, Placards en doré, Épices en vert. Ce sont les mêmes couleurs que dans les recettes.</div>
+    </div>
+    <figure><img src="img/27-inventaire-liste.png"><figcaption>L'onglet Frigo : quantités et dates qui approchent.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">7.3</span>Le mode Modifier</h2>
+      <p><span class="bouton">✏️ Modifier</span> passe tout l'inventaire en édition rapide, une ligne par article :</p>
+      <ul>
+        <li><b>∞</b> : « présent » sans quantité (sel, huile, épices…).</li>
+        <li><b>Quantité</b> : tape la nouvelle valeur ; <span class="bouton">−1</span> / <span class="bouton">+1</span> retirent ou ajoutent un paquet entier.</li>
+        <li><b>Date</b> : la pastille (jj/mm) ouvre une petite fenêtre ; rien n'est enregistré avant <span class="bouton">OK</span>. <span class="bouton">Enlever</span> supprime la date.</li>
+        <li><span class="bouton">✕</span> supprime l'article (récupérable 24 h dans « Récemment supprimés »).</li>
+        <li><b>Épuisés</b> : les articles à 0 passent en bas de leur catégorie, grisés ; ils remontent dès que tu leur remets une quantité.</li>
+        <li><span class="bouton">+ Ajouter un article</span> en haut (7.5).</li>
+      </ul>
+      <p>Touche <span class="bouton">✓ Terminer</span> pour revenir à la vue normale.</p>
+    </div>
+    <figure><img src="img/28-inventaire-modifier.png"><figcaption>Le mode Modifier.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">7.4</span>La fiche d'un article</h2>
+      <p>Touche le nom d'un article pour tout régler :</p>
+      <ul>
+        <li><b>Nom</b> et <b>date limite</b> (« Effacer » pour l'enlever) ;</li>
+        <li><b>Unité</b> (g, ml, pièces, pots…) et <b>poids d'une unité</b> pour les articles à la pièce (un œuf = 55 g) ;</li>
+        <li><b>Proposer comme dessert</b> 🍰 : il apparaîtra dans les desserts des recettes ;</li>
+        <li><b>Déplacer vers</b> une autre catégorie ;</li>
+        <li><b>Valeurs nutritionnelles</b> pour 100 g/ml ou par pièce, fibres comprises. <span class="bouton">✎ Manuel</span> pour les taper, <span class="bouton">✨ Auto</span> pour les faire estimer par l'IA, ou <b>scanner le code-barres</b> du produit.</li>
+      </ul>
+      <p>Pour un produit très transformé (classement NOVA 4 d'OpenFoodFacts), une petite usine orange s'affiche, avec une explication sans jugement.</p>
+    </div>
+    <figure><img src="img/29-fiche-article.png"><figcaption>La fiche d'un article.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">7.5</span>Ajouter un article</h2>
+      <p>En mode Modifier, <span class="bouton">+ Ajouter un article</span> ouvre le formulaire :</p>
+      <ol class="etapes">
+        <li><span class="bouton">📷 Scanner un code-barres</span> remplit tout seul le nom, l'emballage et les valeurs nutritionnelles. Sinon, tape le <b>nom</b>.</li>
+        <li><b>Emballage</b> (paquet, boîte…) : coche-le pour indiquer la taille d'un paquet ; les −1/+1 du mode Modifier compteront en paquets.</li>
+        <li><b>Quantité</b> et <b>unité</b>. Laisse vide pour « présent », ou coche « stock illimité ».</li>
+        <li><b>Date limite</b> (facultative), puis la <b>catégorie</b>.</li>
+        <li><b>Macros</b> : manuelles, ou <span class="bouton">❄ Chercher les macros</span> pour les faire trouver.</li>
+        <li><span class="bouton">✓ Ajouter</span>.</li>
+      </ol>
+      <div class="encadre info"><span class="tit">Déjà en stock ?</span>Si un article du même nom existe déjà, l'appli propose de le <b>recharger</b> (ajouter la quantité) plutôt que de créer un doublon. La date limite la plus proche est gardée.</div>
+    </div>
+    <figure><img src="img/30-ajout-article.png"><figcaption>Ajouter un article.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">7.6</span>Les plats maison</h2>
+      <p>Pour un plat que tu ne manges pas en une fois (gâteau, lasagnes, chili, meal prep) : <span class="bouton">+ Préparer un plat</span> dans la carte « Plats maison » (ou dans le menu +).</p>
+      <ol class="etapes">
+        <li>Indique les ingrédients de ton inventaire, avec leur quantité : ils sont <b>retirés du stock</b>. Un ingrédient que tu n'as pas en stock s'ajoute à part (macros à la main ou par l'IA).</li>
+        <li>Choisis en combien de <b>parts</b> tu le découpes. Pas besoin de peser : le poids d'une part est estimé par la somme des ingrédients.</li>
+        <li>Choisis le rangement (Frigo ou Congélateur) et la date limite.</li>
+      </ol>
+      <p>Le plat entier rejoint ton inventaire ; il ne compte pas dans ta journée tant que tu n'en manges pas. Pour en manger : <b>+ › Mon inventaire</b>, en parts ou en grammes. Fini, il disparaît tout seul ; il n'est jamais ajouté aux courses. En mode Modifier, la ✕ rouge le retire à la main (par exemple si quelqu'un d'autre a mangé la dernière part).</p>
+    </div>
+    <figure><img src="img/31-plat-maison.png"><figcaption>Préparer un plat : le mode d'emploi est dans la fenêtre.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">7.7</span>Trier par date limite</h2>
+      <p>L'interrupteur <b>Trier par DLC</b> affiche tout ton stock, toutes catégories, de la date la plus proche à la plus lointaine. Chaque ligne indique sa catégorie et le nombre de jours restants. Le signe « ~ » marque une date <b>estimée</b> pour un produit frais sans date (fruits, légumes).</p>
+      <div class="encadre info"><span class="tit">Œufs, yaourts, fromage blanc</span>Ils se gardent en général environ deux semaines après la date du carton : l'appli leur accorde 14 jours de marge dans ses alertes.</div>
+      <h2><span class="n">7.8</span>Ranger après les courses</h2>
+      <p>Quand tu valides tes courses (partie 8), les articles achetés arrivent dans <b>À ranger</b>. Touche <span class="bouton">→</span> à côté d'un article :</p>
+      <ul>
+        <li>s'il existe déjà dans ton inventaire, une petite fenêtre demande juste la <b>quantité achetée</b> (et la date) ;</li>
+        <li>si un nom proche existe, l'appli te le propose ;</li>
+        <li>sinon, le formulaire complet s'ouvre.</li>
+      </ul>
+      <p><span class="bouton">✕</span> retire un article de la liste sans le ranger.</p>
+      <h2><span class="n">7.9</span>Les points à corriger</h2>
+      <p>Le bandeau « ⚠ N points à corriger » ouvre le diagnostic : doublons à fusionner, dates dépassées, unités ou valeurs nutritionnelles qui semblent fausses, article épuisé qui ressemble à un article plein… Touche une ligne pour ouvrir la fiche concernée et corriger.</p>
+      <p class="petit">Un article épuisé n'est rapproché d'un article en stock que s'ils ont au moins deux mots importants en commun (« Crème fraîche légère » et « Crème fraîche épaisse »), ou si le nom le plus court est tout entier dans l'autre (« Lait » et « Lait sans lactose ») : « Fromage blanc » et « Fromage râpé » ne sont pas rapprochés. Si deux noms le sont à tort, <span class="bouton">Ce sont deux produits</span> masque la paire.</p>
+    </div>
+    <figure><img src="img/32-tri-dlc.png"><figcaption>Tout le stock trié par date limite.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ 8 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">8</span>Les courses</h1>
+  <p class="chapeau">Une liste rangée par rayon, qui se remplit d'après ton stock et alimente ton inventaire quand tu rentres.</p>
+  <div class="duo">
+    <div>
+      <h2><span class="n">8.1</span>Remplir la liste</h2>
+      <ul>
+        <li><span class="bouton">✨ N articles à racheter d'après ton stock</span> : l'appli propose ce qui est épuisé ou presque fini (il reste un quart ou moins depuis ton dernier achat). Décoche ce que tu ne veux pas ; le ✕ d'une ligne ne te le proposera plus.</li>
+        <li><b>Ajouter un article</b> : tape son nom ; le rayon est deviné (« Auto ») ou choisi dans la liste. Le bouton 📷 scanne un code-barres.</li>
+        <li>Pas de doublon : un article déjà sur la liste n'est pas ajouté deux fois.</li>
+      </ul>
+      <h2><span class="n">8.2</span>Au magasin</h2>
+      <ol class="etapes">
+        <li>Coche un article quand tu le mets dans ton panier : il reste visible, barré, « dans le panier ».</li>
+        <li>À la caisse, touche <span class="bouton">✓ Valider les courses</span> : les articles cochés passent en « achetés » et arrivent dans <b>À ranger</b> de l'inventaire (7.8).</li>
+      </ol>
+      <div class="encadre info"><span class="tit">Le petit carré à droite (🧾)</span>Pour un article qui ne va pas dans l'inventaire (éponges, produits ménagers…), coche ce carré : il est compté acheté sans passer par « À ranger ». Les rayons hors alimentation fonctionnent déjà ainsi.</div>
+      <h2><span class="n">8.3</span>Les achetés</h2>
+      <p><span class="bouton">Afficher les achetés</span> les montre dans leur rayon ; décocher un acheté le remet sur la liste. <span class="bouton">Effacer les achetés</span> fait le ménage. Racheter un article déjà acheté le fait simplement revenir sur la liste.</p>
+    </div>
+    <figure><img src="img/34-courses.png"><figcaption>La liste par rayon, avec le panier.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ 9 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">9</span>Le Bilan</h1>
+  <p class="chapeau">Prendre du recul sur ta semaine et voir ton poids évoluer, sans te noyer dans les chiffres.</p>
+  <div class="duo">
+    <div>
+      <h2><span class="n">9.1</span>La marge de la semaine</h2>
+      <p>Du lundi au dimanche, la somme des marges de tes <b>journées complètes</b> (« +1632 kcal sur 3 jours complets »). La couleur suit les mêmes règles que la marge du jour (5.4). Les 7 barres représentent les jours : aujourd'hui en pointillés, une journée incomplète en gris, les jours à venir vides.</p>
+      <p>Quand tes pesées le permettent, une ligne ajoute le <b>déficit réel estimé</b> : ce que ton poids dit vraiment de ta dépense.</p>
+      <p>Le lundi et le mardi, un <b>bilan de la semaine précédente</b> apparaît en haut ; tu peux le masquer.</p>
+      <h2><span class="n">9.2</span>Le point du coach et le pilotage</h2>
+      <p>« Sur 5 jours, moyenne de 2129 kcal : dans ta cible » : le coach résume tes journées complètes (hors aujourd'hui), tes protéines et tes fibres. Le <b>pilotage</b> affiche tes moyennes de calories et de protéines par jour et l'évolution de ton poids sur 7 jours. Une moyenne en dehors de ta cible passe en orange.</p>
+      <div class="encadre info"><span class="tit">Journée complète ?</span>Une journée passée où tu as noté au moins la moitié de ta cible. Les journées trop incomplètes faussent les moyennes : elles sont mises de côté.</div>
+    </div>
+    <figure><img src="img/36-bilan-haut.png"><figcaption>Marge de la semaine, coach et pilotage.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">9.3</span>Dépense et tendance sur 14 jours</h2>
+      <p><b>Dépense réelle estimée</b> : en comparant ce que tu manges et l'évolution de ton poids, l'appli estime ta vraie dépense quotidienne et te propose une <b>cible conseillée</b> (environ un demi-kilo par semaine en perte de poids). Le bouton <span class="bouton">Appliquer</span> la reprend : elle ne fait que baisser, par étapes de 300 kcal au plus, et garde tes protéines et tes lipides.</p>
+      <p><b>Dépense énergétique</b> : tes pas et activités jour par jour ; touche un jour pour compléter un oubli.</p>
+      <p><b>Tendance 14 jours</b> : deux graphiques en barres, calories et protéines, avec ta cible en pointillés. Vert = dans la cible, orange = au-dessus, bleu = en dessous, gris = journée non saisie ou incomplète. Une ligne t'encourage sur ta série de jours avec assez de protéines.</p>
+    </div>
+    <figure><img src="img/37-bilan-suite.png"><figcaption>Dépense énergétique et tendance sur 14 jours.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">9.4</span>Le calendrier du mois</h2>
+      <p>Chaque jour du mois prend la couleur de son bilan : <span class="pastille" style="background:#6FBF73"></span>vert dans la cible (à 10 % près, activité comprise), <span class="pastille" style="background:#E9A13B"></span>orange au-dessus, <span class="pastille" style="background:#5FA8C9"></span>bleu en dessous, en pointillés sous 50 % (journée incomplète). Un point vert signale les protéines atteintes. Les flèches changent de mois ; touche un jour pour voir son détail et l'ouvrir dans le suivi.</p>
+      <h2><span class="n">9.5</span>Ton objectif de poids</h2>
+      <p>La carte <b>Objectif</b> montre ta progression vers ton poids visé, ta <b>tendance</b> (moyenne sur 7 jours, plus fiable qu'une pesée isolée), ton rythme en kg par semaine et la date estimée d'arrivée. « modifier » change le poids visé.</p>
+    </div>
+    <figure><img src="img/40-bilan-calendrier.png"><figcaption>Le calendrier et l'objectif de poids.</figcaption></figure>
+  </div>
+  <h2><span class="n">9.6</span>Ton poids</h2>
+  <div class="paire">
+    <figure><img src="img/38-bilan-poids.png"><figcaption>Le graphique du poids, période « Tout ».</figcaption></figure>
+    <figure><img src="img/39-bilan-poids-touche.png"><figcaption>Toucher la courbe : la date et le poids de la pesée.</figcaption></figure>
+  </div>
+  <ul>
+    <li><b>Peser</b> : tape ton poids du matin dans « Poids du jour » et valide, ou passe par <b>+ › Pesée</b>. Une seule pesée par jour : la nouvelle remplace l'ancienne.</li>
+    <li><b>En haut</b> : ta dernière pesée et les écarts sur la dernière pesée, 7 jours et 30 jours.</li>
+    <li><b>Le graphique</b> : tes pesées (points) et la moyenne sur 7 jours (ligne verte). Choisis la période : <span class="bouton">7 j</span> <span class="bouton">1 mois</span> <span class="bouton">3 mois</span> <span class="bouton">Tout</span> (l'appli se souvient de ton choix). <b>Touche la courbe</b> pour afficher la date et le poids de la pesée la plus proche ; touche ailleurs pour fermer.</li>
+    <li><b>L'historique</b> : toutes tes pesées ; la corbeille en supprime une.</li>
+  </ul>
+  <div class="encadre astuce"><span class="tit">Regarde la tendance, pas la pesée du jour</span>Ton poids varie d'un jour à l'autre (eau, sel, repas de la veille). La moyenne sur 7 jours lisse ces variations : c'est elle qui compte pour juger tes progrès.</div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">9.7</span>Mensurations et photos de progression</h2>
+      <p><b>Mensurations</b> : tour de taille, hanches, poitrine, bras, cuisse, en centimètres. Mesure le matin, à jeun, au même endroit (tour de taille : au niveau du nombril). Le tour de taille a son propre graphique.</p>
+      <p><b>Photos de progression</b> : une photo de face, de profil et de dos, idéalement une par semaine, même lumière, même tenue. Elles sont <b>privées</b> (enregistrées avec ton compte) et tu peux en comparer deux côte à côte. Il faut du réseau pour les afficher.</p>
+    </div>
+    <figure><img src="img/41-bilan-mesures.png"><figcaption>Mensurations et photos de progression.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ 10 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">10</span>Pas et activités</h1>
+  <p class="chapeau">Ta dépense en plus de ta vie ordinaire : les pas au-delà de ta routine, tes séances et tes autres activités.</p>
+  <div class="duo">
+    <div>
+      <h2><span class="n">10.1</span>Saisir ta dépense du jour</h2>
+      <p>Ouvre <b>+ › Pas et activités</b> (ou le bouton de la carte « Ta journée »).</p>
+      <ol class="etapes">
+        <li>Vérifie le <b>jour</b>.</li>
+        <li>Tape ton <b>nombre de pas</b> (celui de ton téléphone ou de ta montre).</li>
+        <li>Ajoute une <b>séance de ton programme</b> (10.2) ou une <b>activité</b> : nom et durée (« course, vélo, muscu… »), puis <span class="bouton">✨ Estimer les calories &amp; ajouter</span>. Les activités récentes se remplissent d'un toucher.</li>
+        <li><span class="bouton">✓ Enregistrer</span>.</li>
+      </ol>
+      <div class="encadre info"><span class="tit">Pourquoi « au-dessus de ta routine » ?</span>Tes pas d'une journée ordinaire (indiqués à l'inscription, 8000 par exemple) sont déjà comptés dans ta cible. Seuls les pas au-delà s'ajoutent à ta dépense, calculés selon ton poids du jour. De même, l'IA estime une activité sans compter ce que ton corps dépense au repos : rien n'est compté deux fois.</div>
+      <p>La dépense s'ajoute à l'anneau (« dépensées »), à ta marge du jour et au Bilan. Si tes pas restent sous ta routine, l'appli le dit simplement : ta journée ordinaire est déjà dans ta cible.</p>
+    </div>
+    <figure><img src="img/42-activite.png"><figcaption>Dépense du jour : pas, séance, activités.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">10.2</span>Ton programme de séances</h2>
+      <p>Tu fais toujours les mêmes séances ? Décris-les une fois dans <b>Mon programme</b> (lien « Modifier mon programme » dans la fenêtre de dépense) :</p>
+      <ul>
+        <li>un <b>nom</b> (« Push », « Jambes », « Full body ») ;</li>
+        <li>les <b>exercices</b> (facultatif, pour t'en souvenir et aider l'IA) ;</li>
+        <li>la <b>durée</b> et l'<b>intensité</b> (légère, modérée, soutenue ou intense). <span class="bouton">✨ Estimer l'intensité et la durée avec l'IA</span> les propose à partir des exercices.</li>
+      </ul>
+      <p>Ensuite, dans la dépense du jour, choisis la séance dans la liste : sa dépense est calculée pour ton poids. « Modifier » et ✕ gèrent tes séances.</p>
+    </div>
+    <figure><img src="img/43-programme.png"><figcaption>Mon programme : tes séances habituelles.</figcaption></figure>
+  </div>
+</section>
+
+<!-- ============ 11 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">11</span>Les réglages</h1>
+  <p class="chapeau">La roue dentée ⚙️ en haut à droite : ton profil, tes clés IA, tes sauvegardes, l'aide et ton compte.</p>
+  <div class="duo">
+    <div>
+      <h2><span class="n">11.1</span>Ce que contiennent les réglages</h2>
+      <ul>
+        <li><b>Ton profil</b> en résumé et <span class="bouton">✏️ Modifier le profil</span> (11.2).</li>
+        <li><b>Clé API Groq</b> et <b>Clé Gemini</b> : enregistrer ou supprimer (1.4). Les clés sont masquées à l'écran.</li>
+        <li><b>Sauvegardes automatiques</b> et <b>fichier de sauvegarde</b> (11.3).</li>
+        <li><b>🩺 Un souci ?</b> (11.4), <b>Revoir le tutoriel</b> et <b>📖 Guide d'utilisation (PDF)</b> : ce guide, à jour de la dernière version.</li>
+        <li><b>Se déconnecter</b> et <b>Supprimer mon compte</b> (11.5).</li>
+        <li>Tout en bas, le numéro de version et le lien <b>Quoi de neuf ?</b></li>
+      </ul>
+    </div>
+    <figure><img src="img/44-reglages.png"><figcaption>Le haut des réglages : profil et clés IA.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">11.2</span>Modifier ton profil</h2>
+      <p>Le profil reprend les rubriques de l'inscription : <b>Toi</b>, <b>Objectif</b> (dont le poids visé et tes pas habituels), <b>Alimentation</b> et <b>Cibles</b>. Le texte au-dessus des cibles se met à jour quand tu changes les calories ; <span class="bouton">Recalculer depuis mes infos</span> refait le calcul.</p>
+      <h3>Répartition par repas</h3>
+      <p>La part de ta cible pour chaque moment, en % : Petit-déj, Déjeuner, Dîner, Collation. Le total doit faire 100 % ; la ligne dessous l'affiche en direct avec les calories de chaque repas (« Total 100 % · soit 528 / 660 / 660 / 352 kcal »). <span class="bouton">Revenir à 24 / 30 / 30 / 16</span> remet les valeurs par défaut.</p>
+      <div class="encadre astuce"><span class="tit">Adapte-la à ta vie</span>Gros déjeuner au travail et dîner léger ? Passe à 20 / 40 / 28 / 12 par exemple. Les cartes de l'onglet Repas suivront.</div>
+      <h3>Connexion</h3>
+      <p>Changer de mot de passe (avec confirmation et bouton œil) ou d'identifiant. Si l'appli répond que le changement d'adresse est refusé, c'est un réglage de sécurité du serveur : demande à Liam.</p>
+      <p><span class="bouton">Enregistrer</span> en bas valide tout.</p>
+    </div>
+    <figure><img src="img/48-profil-repartition.png"><figcaption>Cibles, répartition par repas et connexion.</figcaption></figure>
+  </div>
+  <div class="duo">
+    <div>
+      <h2><span class="n">11.3</span>Sauvegardes et fichiers</h2>
+      <ul>
+        <li><b>Sauvegardes automatiques</b> : un instantané par jour, les 14 derniers sont gardés. <span class="bouton">Sauvegarder maintenant</span> en fait un tout de suite.</li>
+        <li><span class="bouton">Voir les sauvegardes</span> : la liste, pour restaurer une version. On y trouve aussi les versions <b>mises de côté</b> par l'appli avant de remplacer tes données (par exemple « modifié sur un autre appareil », voir partie 12).</li>
+        <li><span class="bouton">⬇ Sauvegarde complète (.json)</span> : un fichier avec tout (repas, inventaire, recettes, poids), sauf tes clés IA. Sur iPhone, la feuille de partage permet de l'enregistrer dans Fichiers ou de l'envoyer.</li>
+        <li><span class="bouton">Restaurer une sauvegarde</span> : recharge un fichier .json.</li>
+        <li><span class="bouton">Poids (.csv)</span> : tes pesées, pour un tableur.</li>
+      </ul>
+      <div class="encadre attention"><span class="tit">Restaurer remplace tes données actuelles</span>L'appli met d'abord la version actuelle de côté (récupérable dans « Voir les sauvegardes »), mais vérifie bien la date de la sauvegarde avant de confirmer.</div>
+      <h2><span class="n">11.4</span>Un souci ?</h2>
+      <p>Quelque chose ne marche pas ? <span class="bouton">📋 Copier le rapport</span> copie un résumé des derniers problèmes rencontrés sur cet appareil (version, type d'appareil, état de la synchro, erreurs récentes). Colle-le dans un message à Liam. Les clés et adresses e-mail sont masquées, et <b>rien n'est envoyé tout seul</b>. <span class="bouton">Effacer</span> vide le journal.</p>
+    </div>
+    <figure><img src="img/46-reglages-fin.png"><figcaption>Sauvegardes, fichier, « Un souci ? » et compte.</figcaption></figure>
+  </div>
+  <h2><span class="n">11.5</span>Se déconnecter, supprimer ton compte</h2>
+  <p><span class="bouton">⏻ Se déconnecter</span> envoie d'abord tes dernières saisies (l'appli te prévient si l'une n'a pas pu partir), puis efface tes données de ce téléphone. Elles restent dans ton compte : reconnecte-toi pour les retrouver.</p>
+  <div class="encadre attention"><span class="tit">Supprimer mon compte est définitif</span>Le lien sous « Se déconnecter » efface ton compte et toutes tes données enregistrées en ligne. L'appli demande ton mot de passe et te propose de télécharger une sauvegarde avant. Rien ne peut être récupéré ensuite.</div>
+  <div class="duo gauche">
+    <figure><img src="img/49-quoi-de-neuf.png"><figcaption>« Quoi de neuf dans Dorayaki ? »</figcaption></figure>
+    <div>
+      <h2><span class="n">11.6</span>Quoi de neuf ?</h2>
+      <p>Après chaque mise à jour qui change quelque chose pour toi, une fenêtre résume les nouveautés, en clair. Elle ne s'affiche qu'une fois par appareil. Tu peux la revoir avec le lien <b>Quoi de neuf ?</b> tout en bas des réglages.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 12 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">12</span>Synchronisation, hors ligne et sécurité</h1>
+  <p class="chapeau">Comment tes données circulent entre tes appareils, et ce qui se passe sans réseau.</p>
+  <h2><span class="n">12.1</span>Plusieurs appareils</h2>
+  <p>Ton compte est le même sur ton téléphone, ta tablette et ton ordinateur : chaque modification est enregistrée en ligne, et l'autre appareil la récupère quand tu le rouvres. L'indicateur « ☁ sync » confirme que tout est parti.</p>
+  <h2><span class="n">12.2</span>« Modifié sur un autre appareil »</h2>
+  <p>Si tu as fait des changements sur deux appareils sans qu'ils se soient synchronisés entre-temps, l'appli ne choisit pas à ta place : elle te demande quelle version garder. La version écartée n'est pas perdue : elle est <b>mise de côté</b> et récupérable dans <b>Réglages › Voir les sauvegardes</b>.</p>
+  <div class="encadre astuce"><span class="tit">Pour l'éviter</span>Avant de changer d'appareil, attends que « ☁ sync » soit vert. En cas de doute, garde la version de l'appareil sur lequel tu viens de saisir.</div>
+  <h2><span class="n">12.3</span>Sans réseau</h2>
+  <ul>
+    <li>L'appli s'ouvre et fonctionne <b>hors ligne</b> (une fois installée et ouverte au moins une fois en ligne), même juste après une mise à jour.</li>
+    <li>Tes saisies sont gardées sur le téléphone ; l'indicateur affiche « hors ligne ». Elles partent toutes seules au retour du réseau.</li>
+    <li>Ce qui demande Internet : l'IA (description, photo, recettes, estimations), le code-barres, les photos de progression.</li>
+  </ul>
+  <h2><span class="n">12.4</span>Tes données et ta vie privée</h2>
+  <ul>
+    <li>Tes données sont liées à ton compte : personne d'autre ne peut les lire.</li>
+    <li>Ton mot de passe n'est jamais enregistré sur l'appareil.</li>
+    <li>Tes clés IA ne figurent ni dans les sauvegardes ni dans les fichiers exportés.</li>
+    <li>Ce que tu envoies à l'IA (une description, une photo) part chez Groq ou Google pour être analysé.</li>
+  </ul>
+</section>
+
+<!-- ============ 13 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">13</span>Les couleurs en un coup d'œil</h1>
+  <p class="chapeau">Dorayaki parle beaucoup en couleurs. Voici ce qu'elles veulent dire, écran par écran.</p>
+  <table>
+    <tr><th style="width:24%">Où</th><th style="width:28%">Couleur</th><th>Signification</th></tr>
+    <tr><td rowspan="5"><b>Bande de la semaine</b> (Repas) et <b>calendrier</b> (Bilan)</td><td><span class="pastille" style="background:#6FBF73"></span>Vert</td><td>Journée dans la cible (± 10 %)</td></tr>
+    <tr><td><span class="pastille" style="background:#E9A13B"></span>Orange</td><td>Au-dessus de la cible</td></tr>
+    <tr><td><span class="pastille" style="background:#5FA8C9"></span>Bleu</td><td>En dessous de la cible</td></tr>
+    <tr><td><span class="pastille creuse"></span>Creux / pointillés</td><td>Journée incomplète (moins de 50 % noté)</td></tr>
+    <tr><td><span class="pastille" style="background:#E9A13B"></span>Doré</td><td>Aujourd'hui ou demain, au moins un repas</td></tr>
+    <tr><td rowspan="3"><b>Cartes des repas</b> (Repas)</td><td><span class="puce-txt" style="background:#DDF7EA;color:#1F7A4D">Vert clair</span></td><td>Dans la part prévue, protéines au rendez-vous</td></tr>
+    <tr><td><span class="puce-txt" style="background:#F6E0D2;color:#9C4A1C">Orange cuivré</span></td><td>Plus de 5 % au-dessus de la part</td></tr>
+    <tr><td><span class="puce-txt" style="background:#EFEAE4;color:#5E554D">Couleur du moment</span></td><td>Dans la part, protéines un peu courtes</td></tr>
+    <tr><td rowspan="5"><b>Marge du jour et de la semaine</b> (perte de poids)</td><td><span class="pastille" style="background:#8FD6F5"></span>Bleu clair</td><td>Bien sous la cible : déficit au-delà du prévu</td></tr>
+    <tr><td><span class="pastille" style="background:#6FBF73"></span>Vert</td><td>Dans la cible, avec de la marge</td></tr>
+    <tr><td><span class="pastille" style="background:#B5CC5C"></span>Vert-jaune</td><td>Tout juste dans la cible</td></tr>
+    <tr><td><span class="pastille" style="background:#E9A13B"></span>Orange</td><td>Un peu au-dessus, ou journée très basse</td></tr>
+    <tr><td><span class="pastille" style="background:#E05C4F"></span>Rouge</td><td>Au-delà de la cible et de l'activité</td></tr>
+    <tr><td rowspan="4"><b>Recettes</b> et <b>inventaire</b></td><td><span class="puce-txt" style="background:#DCEBF3;color:#22648A">Bleu</span></td><td>Frigo</td></tr>
+    <tr><td><span class="puce-txt" style="background:#E3E6FB;color:#4450B5">Bleu-violet</span></td><td>Congélateur</td></tr>
+    <tr><td><span class="puce-txt" style="background:#FBEBD2;color:#94600F">Doré</span></td><td>Placards</td></tr>
+    <tr><td><span class="puce-txt" style="background:#DFF0DF;color:#2E6E33">Vert</span></td><td>Épices</td></tr>
+    <tr><td rowspan="2"><b>Recettes</b> (ingrédients)</td><td><span class="puce-txt" style="background:#FADCD8;color:#B03A2E">Rouge ⚠</span></td><td>Il t'en manque</td></tr>
+    <tr><td><span class="puce-txt" style="background:#FBEBD2;color:#94600F">Orange 🔄</span></td><td>Ingrédient au choix</td></tr>
+    <tr><td rowspan="3"><b>Dates limites</b> (inventaire, « Qu'as-tu utilisé ? »)</td><td><span class="puce-txt" style="background:#FADCD8;color:#B03A2E">DLC 3j ⚠</span></td><td>Moins de 7 jours</td></tr>
+    <tr><td><span class="puce-txt" style="background:#FBEBD2;color:#94600F">DLC 10j</span></td><td>7 à 14 jours</td></tr>
+    <tr><td><span class="puce-txt" style="background:#EFEAE4;color:#5E554D">DLC Expiré</span></td><td>Date dépassée</td></tr>
+    <tr><td><b>Tendance 14 jours</b> (Bilan)</td><td>Vert / orange / bleu / gris</td><td>Dans la cible / au-dessus / en dessous / non saisi ou incomplet</td></tr>
+  </table>
+</section>
+
+<!-- ============ 14 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">14</span>Questions fréquentes</h1>
+  <p class="chapeau">Les petits blocages les plus courants, et comment s'en sortir.</p>
+  <dl class="faq">
+    <dt>Je n'ai pas encore de clé IA. Je peux utiliser l'appli ?</dt>
+    <dd>Oui : code-barres, saisie manuelle, composition depuis l'inventaire, recettes perso, courses, pesées et Bilan fonctionnent sans IA. La clé Groq est gratuite et prend deux minutes à créer (1.4).</dd>
+    <dt>L'analyse IA échoue ou répond « quota ».</dt>
+    <dd>Les IA gratuites ont une limite par minute : attends un peu et réessaie. Avec les deux clés (Groq et Gemini), l'une prend le relais de l'autre.</dd>
+    <dt>Les calories proposées par l'IA me semblent fausses.</dt>
+    <dd>Corrige directement sur l'écran de confirmation : chaque ligne du détail et chaque macro sont modifiables. Pour la prochaine fois, précise les quantités dans ta description (4.2).</dd>
+    <dt>Je me suis trompé de jour ou de moment.</dt>
+    <dd>Touche le repas dans son suivi pour changer son moment. Pour le jour : copie-le vers le bon jour avec ⧉, puis supprime l'original avec ✕ (le stock est rendu).</dd>
+    <dt>J'ai oublié de noter un repas hier.</dt>
+    <dd>Dans l'onglet Repas, touche le jour d'hier dans la bande de la semaine, puis « + Ajouter » sur la carte du bon moment.</dd>
+    <dt>Un ingrédient n'a pas été retiré de mon inventaire.</dt>
+    <dd>Vérifie que « Stock de l'inventaire utilisé ? » était sur Oui et l'article coché. Sinon, corrige la quantité en mode Modifier (7.3).</dd>
+    <dt>Une recette apparaît « non faisable » alors que j'ai l'ingrédient.</dt>
+    <dd>Regarde les pastilles rouges ⚠ dans « Ce qu'il faut » : la quantité en stock est peut-être insuffisante. Sinon, utilise « 🔁 Remplacer &amp; cuisiner » avec ton propre ingrédient.</dd>
+    <dt>« Modifié sur un autre appareil » : que choisir ?</dt>
+    <dd>Garde la version de l'appareil où tu viens de saisir. L'autre version est mise de côté et récupérable dans Réglages › Voir les sauvegardes (12.2).</dd>
+    <dt>J'ai oublié mon mot de passe.</dt>
+    <dd>« Mot de passe oublié ? » sur l'écran de connexion, si ton compte a une adresse e-mail. Pense à regarder dans les spams. Pour un ancien compte à simple identifiant, demande à Liam.</dd>
+    <dt>L'appli ne montre pas les dernières nouveautés.</dt>
+    <dd>Touche « Recharger » sur le bandeau « Une nouvelle version de Dorayaki est prête ». Sinon, ferme l'appli et rouvre-la avec du réseau.</dd>
+    <dt>Je suis hors ligne : mes saisies sont-elles perdues ?</dt>
+    <dd>Non : elles restent sur le téléphone et partent au retour du réseau (« ☁ sync »).</dd>
+    <dt>Mon poids monte alors que je respecte ma cible.</dt>
+    <dd>Regarde la tendance (moyenne 7 jours) plutôt que la pesée du jour, et attends deux à trois semaines de pesées : le Bilan estimera ta vraie dépense et pourra te proposer une cible ajustée (9.3).</dd>
+    <dt>Comment signaler un bug ?</dt>
+    <dd>Réglages › 🩺 Un souci ? › Copier le rapport, puis colle-le dans un message à Liam avec une phrase sur ce que tu faisais (11.4).</dd>
+  </dl>
+</section>
+
+<!-- ============ 15 ============ -->
+<section class="partie">
+  <h1 class="h-partie"><span class="num">15</span>Glossaire</h1>
+  <p class="chapeau">Les mots de l'appli, en une phrase.</p>
+  <dl class="glossaire">
+    <dt>Activité</dt><dd>Une dépense en plus de ta journée ordinaire : séance, course, vélo… Estimée par l'IA selon ton poids et la durée.</dd>
+    <dt>À consommer vite</dt><dd>Les 5 dates limites les plus proches de ton inventaire (14 jours ou moins).</dd>
+    <dt>À ranger</dt><dd>Les articles achetés aux courses, en attente d'être rangés dans l'inventaire.</dd>
+    <dt>Cible</dt><dd>Tes objectifs quotidiens en calories, protéines, glucides et lipides.</dd>
+    <dt>Cible conseillée</dt><dd>La cible proposée par le Bilan d'après ta vraie dépense, estimée avec tes pesées.</dd>
+    <dt>Collation</dt><dd>Le quatrième moment de la journée : un en-cas, un dessert à part, un shaker.</dd>
+    <dt>DLC</dt><dd>Date limite de consommation d'un produit. Les œufs, yaourts et fromage blanc ont 14 jours de marge.</dd>
+    <dt>Déficit</dt><dd>En perte de poids, la différence entre ce que tu dépenses et ce que tu manges.</dd>
+    <dt>Fibres</dt><dd>Repère fixe de 30 g par jour. « ≥ » signale qu'un aliment du jour n'a pas de valeur connue.</dd>
+    <dt>Inventaire</dt><dd>Tes produits, rangés en Frigo, Congélateur, Placards et Épices.</dd>
+    <dt>Journée complète</dt><dd>Une journée passée avec au moins la moitié de ta cible notée ; seule à compter dans les moyennes.</dd>
+    <dt>Macros</dt><dd>Protéines, glucides et lipides (et fibres), en grammes.</dd>
+    <dt>Marge du jour</dt><dd>Cible + activité enregistrée − ce que tu as mangé.</dd>
+    <dt>Marge de la semaine</dt><dd>La somme des marges des journées complètes, du lundi au dimanche.</dd>
+    <dt>Moment</dt><dd>Petit déjeuner, déjeuner, dîner ou collation : chaque repas en a un.</dd>
+    <dt>Part du repas</dt><dd>La part de ta cible prévue pour un moment (réglable dans le profil).</dd>
+    <dt>Plat maison</dt><dd>Un plat cuisiné en une fois, découpé en parts, mangé en plusieurs fois.</dd>
+    <dt>Point du coach</dt><dd>Le message qui fait le point après un ajout, et la carte « Ta journée » de l'Accueil.</dd>
+    <dt>Présent (∞)</dt><dd>Un article en stock sans quantité précise (sel, huile, épices).</dd>
+    <dt>Routine de pas</dt><dd>Tes pas d'une journée ordinaire, déjà comptés dans ta cible.</dd>
+    <dt>Tendance</dt><dd>La moyenne de ton poids sur 7 jours, plus fiable qu'une pesée isolée.</dd>
+  </dl>
+  <div class="sep"></div>
+  <p class="petit">Une idée, une question, un bug ? Écris à Liam. Ce guide décrit la version de novembre 2026 ; l'appli évolue souvent, regarde « Quoi de neuf ? » dans les réglages pour les dernières nouveautés.</p>
+</section>
+
+</body>
+</html>

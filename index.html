@@ -401,9 +401,10 @@ body.auth-ouvert #root { display: none; }
     <div style="font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.45;">Si quelque chose ne marche pas, copie le rapport et envoie-le à Liam. Il reste sur ton appareil : rien n'est envoyé tout seul. <span id="set-journal-st"></span></div>
     <div style="display:flex;gap:8px;"><button onclick="copierRapport()" style="flex:1;padding:9px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:8px;color:var(--blue);font-size:12px;font-weight:600;cursor:pointer;">📋 Copier le rapport</button><button onclick="effacerJournal()" style="padding:9px 12px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">Effacer</button></div>
     <button onclick="closeSettings();lancerTuto()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;cursor:pointer;">🎓 Revoir le tutoriel</button>
+    <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 12h52 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 16h04 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -668,12 +669,19 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-06-1252"></script>
+<script src="catalogue.js?v=2026-11-06-1604"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-06-1252';
+const BUILD_ID='2026-11-06-1604';
 const NOUVEAUTES=[
+  {b:'2026-11-06-1604',points:[
+    'Inscription : l’adresse e-mail est maintenant obligatoire, pour pouvoir récupérer ton compte si tu oublies ton mot de passe. Les comptes existants se connectent comme avant.',
+    'Photo d’un repas : Gemini réfléchit moins longtemps avant de répondre, l’analyse devrait être nettement plus rapide.',
+    'Un aliment mal reconnu sur une photo ou dans une description ? Corrige son nom, puis touche ↻ à droite de la ligne : l’IA recalcule cet aliment seul. C’est maintenant expliqué à l’écran.',
+    'Inventaire : les « points à corriger » ne rapprochent plus deux produits qui n’ont qu’un mot en commun (fromage blanc et fromage râpé, par exemple).',
+    'Nouveau : le guide d’utilisation complet, en PDF, dans Réglages › « 📖 Guide d’utilisation ».'
+  ]},
   {b:'2026-11-06-1252',points:[
     '« Qu’as-tu utilisé ? » affiche maintenant les dates limites, comme l’inventaire : rouge à moins de 7 jours, orange jusqu’à 14, « Expiré » si elle est passée. Plus besoin d’aller vérifier dans l’inventaire en pleine saisie.',
     '💬 De la part de Liam : « Coucou Seth et Sarah ! Si jamais vous rencontrez des bugs, qu’une option, une fonction ou quoi n’est pas claire, n’hésitez pas à m’envoyer un message pour me le dire ou si besoin que je vous explique ce qu’il faut ! Bisous »'
@@ -4261,7 +4269,8 @@ async function _callGroq(messages,maxTokens=300,system=null,modelOverride=null,t
 
 // Appel Gemini (REST generateContent) avec le meme format d'entree et de sortie
 // que callAI. Les images arrivent en {type:'image',source:{media_type,data}}.
-async function _callGemini(messages,maxTokens,system,temperature,_modele){
+const GEMINI_REFLEXION_PHOTO=512;
+async function _callGemini(messages,maxTokens,system,temperature,_modele,_sansBorne){
   const key=getGeminiKey();if(!key)throw new Error('NO_GEMINI_KEY');
   const modele=_modele||MODELE_GEMINI;
   const contents=messages.map(function(m){
@@ -4275,6 +4284,11 @@ async function _callGemini(messages,maxTokens,system,temperature,_modele){
   });
   // Les modeles 2.5 « reflechissent » dans le budget de sortie : on le garde large
   const body={contents:contents,generationConfig:{temperature:temperature==null?0.2:temperature,maxOutputTokens:Math.max(2048,(maxTokens||300)*4)}};
+  /* Photo de repas : reflexion bornee (06/11/2026, Liam : analyse de photo tres longue). Sans borne, 2.5 Flash
+     reflechit autant qu'il veut avant de repondre ; reconnaitre et peser une assiette n'en demande pas tant.
+     Un modele qui refuserait le reglage est relance une fois sans lui. */
+  const _photo=contents.some(function(c){return c.parts.some(function(x){return !!x.inline_data;});});
+  if(_photo&&!_sansBorne)body.generationConfig.thinkingConfig={thinkingBudget:GEMINI_REFLEXION_PHOTO};
   if(system)body.systemInstruction={parts:[{text:system}]};
   const ctrl=new AbortController(),tid=setTimeout(function(){ctrl.abort();},45000);
   let resp,data;
@@ -4284,12 +4298,13 @@ async function _callGemini(messages,maxTokens,system,temperature,_modele){
     data=await resp.json();
   }catch(e){throw new Error(e.name==='AbortError'?'NETWORK:timeout':'NETWORK:'+e.message);}finally{clearTimeout(tid);}
   if(data&&data.error){
+    if(body.generationConfig.thinkingConfig&&/thinking/i.test(data.error.message||''))return _callGemini(messages,maxTokens,system,temperature,_modele,true);
     // Modele retire ou renomme : on tente l'alias « dernier Flash » une fois
-    if(!_modele&&(data.error.code===404||/not found|NOT_FOUND/i.test(data.error.status||data.error.message||'')))return _callGemini(messages,maxTokens,system,temperature,MODELE_GEMINI_REPLI);
+    if(!_modele&&(data.error.code===404||/not found|NOT_FOUND/i.test(data.error.status||data.error.message||'')))return _callGemini(messages,maxTokens,system,temperature,MODELE_GEMINI_REPLI,_sansBorne);
     // Flash sature (« high demand », 503) : Flash-Lite a sa propre capacite. Une tentative ;
     // s'il echoue aussi, c'est l'erreur de saturation d'origine qui remonte.
     if(_modele!==MODELE_GEMINI_LEGER&&(data.error.code===503||/UNAVAILABLE|high demand|overloaded/i.test((data.error.status||'')+' '+(data.error.message||'')))){
-      try{return await _callGemini(messages,maxTokens,system,temperature,MODELE_GEMINI_LEGER);}catch(_){}
+      try{return await _callGemini(messages,maxTokens,system,temperature,MODELE_GEMINI_LEGER,_sansBorne);}catch(_){}
     }
     var _rs=((data.error.details||[]).map(function(d){return d&&d.reason;}).filter(Boolean)[0])||data.error.status||'';
     throw new Error('GEMINI:'+(data.error.message||'erreur')+(_rs?' ['+_rs+']':''));
@@ -5069,6 +5084,13 @@ function reprendreVoisins(){S.paires0k={};saveState();render();}
 // Paires de noms proches dont l'un est a zero : le vide a sans doute ete
 // remplace par l'autre. Deux articles tous deux en stock ne sont pas
 // signales — ce sont souvent deux produits differents assumes.
+/* Deux noms « voisins » (un article epuise sans doute remplace par l'autre) : au moins deux mots-cles
+   en commun, ou tous ceux du nom le plus court (« Lait » / « Lait sans lactose »). Un seul mot partage
+   ne suffit plus (06/11/2026, Liam : « fromage blanc » et « fromage râpé » etaient rapproches par « fromage »). */
+function _nomsVoisins(ma,mb){
+  var communs=ma.filter(function(w,i){return mb.indexOf(w)>=0&&ma.indexOf(w)===i;}).length;
+  return communs>=2||(communs>0&&communs>=Math.min(ma.length,mb.length));
+}
 function paires0k(){
   var tous=[];
   Object.keys(S.inv||{}).forEach(function(cat){
@@ -5084,7 +5106,7 @@ function paires0k(){
       if(aVide===bVide)return;                       // il en faut un plein, un vide
       var ma=a.mots, mb=b.mots;
       if(!ma.length||!mb.length)return;
-      if(!ma.some(function(w){return mb.indexOf(w)>=0;}))return;
+      if(!_nomsVoisins(ma,mb))return;
       var cle=_clePaire(a.it.name,b.it.name);
       if(vus[cle]||ign[cle])return;
       vus[cle]=1;
@@ -8660,7 +8682,8 @@ async function reestimerLigne(i){
   try{
     var sys="Tu estimes les valeurs nutritionnelles d'UN SEUL aliment. "
       +"Réponds UNIQUEMENT avec un JSON valide, sans markdown :\n"
-      +'{"n":string,"q":number,"u":"g"|"ml"|"pc","kcal":integer,"prot":integer,"gluc":integer,"lip":integer}\n'
+      +'{"n":string,"q":number,"u":"g"|"ml"|"pc","kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"fib":number}\n'
+      +'fib = fibres alimentaires en g (0 pour viande, poisson, œufs, laitages, huiles). '
       +"n = le nom reformulé proprement. q et u = la quantité estimée pour une portion telle que décrite. "
       +"Les valeurs correspondent à CETTE quantité, pas à 100 g.";
     var dem='Aliment : '+nom+(f.qty>0?('\nQuantité indiquée : '+f.qty+' '+(f.unit||'g')):'');
@@ -8671,8 +8694,9 @@ async function reestimerLigne(i){
     var q=parseFloat(p.q)||f.qty||0;
     var u=(p.u==='ml'||p.u==='pc'||p.u==='pcs')?p.u:(f.unit||'g');
     var m={kcal:+p.kcal||0,prot:+p.prot||0,gluc:+p.gluc||0,lip:+p.lip||0};
+    if(typeof p.fib==='number'&&p.fib>=0)m.fib=p.fib;
     _addMealFreeItems[i]={n:p.n||nom,qty:q,baseQty:q,unit:(q>0?u:''),m:m,
-      pu:(q>0?{kcal:m.kcal/q,prot:m.prot/q,gluc:m.gluc/q,lip:m.lip/q}:null)};
+      pu:(q>0?{kcal:m.kcal/q,prot:m.prot/q,gluc:m.gluc/q,lip:m.lip/q,fib:(typeof m.fib==='number'?m.fib/q:undefined)}:null)};
   }catch(e){
     _alerte('Recalcul impossible : '+((e&&e.message)||e));
   }finally{
@@ -8767,7 +8791,8 @@ function renderInvSuggestions(suggestions) {
   }
   // Lignes estimees par l'IA : jamais melangees a l'inventaire, jamais deduites du stock
   if((_addMealFreeItems||[]).length){
-    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:0.5px solid rgba(95,168,201,.25);"><span style="font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;">Estimé — hors inventaire</span>'+(suggestions.length?'':oeil)+'</div>';
+    html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:0.5px solid rgba(95,168,201,.25);"><span style="font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;">Estimé — hors inventaire</span>'+(suggestions.length?'':oeil)+'</div>'
+      +'<div class="aide-recalcul" style="font-size:11px;color:var(--text3);line-height:1.4;margin:4px 0 2px;">Un aliment mal reconnu ? Corrige son nom, puis touche <span style="color:var(--green);">\u21bb</span> : l\'IA recalcule cette ligne seule.</div>';
     html += _addMealFreeItems.map(function(f,i){
       var m=f.pu?{kcal:f.pu.kcal*f.qty,prot:f.pu.prot*f.qty,gluc:f.pu.gluc*f.qty,lip:f.pu.lip*f.qty}:f.m;
       var occupe=(_ligneEnCours===i);
@@ -8778,7 +8803,7 @@ function renderInvSuggestions(suggestions) {
         +'<input type="number" id="free-qty-'+i+'" value="'+f.qty+'" min="0" '+(f.pu?'':'disabled ')+'style="width:54px;flex:0 0 auto;box-sizing:border-box;padding:4px 5px;background:var(--bg);border:0.5px solid rgba(95,168,201,.25);border-radius:6px;color:var(--blue);font-size:12px;outline:none;text-align:right;">'
         +'<span style="font-size:11px;color:var(--text3);min-width:20px;flex:0 0 auto;">'+(f.unit||'')+'</span>'
         +'<span style="font-size:11px;color:var(--orange);min-width:52px;flex-shrink:0;text-align:right;">'+Math.round(m.kcal)+' kcal</span>'
-        +'<button onclick="reestimerLigne('+i+')" '+(occupe?'disabled ':'')+'title="Recalculer cette ligne d\'après le nom corrigé" style="background:'+(occupe?'transparent':'rgba(111,191,115,.14)')+';border:0.5px solid rgba(111,191,115,'+(occupe?'.2':'.45')+');border-radius:7px;color:var('+(occupe?'--text3':'--green')+');font-size:13px;cursor:pointer;padding:7px 9px;margin-left:4px;line-height:1;flex:0 0 auto;">'+(occupe?'\u2026':'\u2726')+'</button>'
+        +'<button onclick="reestimerLigne('+i+')" '+(occupe?'disabled ':'')+'title="Recalculer cette ligne d\'après le nom corrigé" style="background:'+(occupe?'transparent':'rgba(111,191,115,.14)')+';border:0.5px solid rgba(111,191,115,'+(occupe?'.2':'.45')+');border-radius:7px;color:var('+(occupe?'--text3':'--green')+');font-size:13px;cursor:pointer;padding:7px 9px;margin-left:4px;line-height:1;flex:0 0 auto;">'+(occupe?'\u2026':'\u21bb')+'</button>'
         +'<button onclick="supprimerLigneEstimee('+i+')" title="Retirer cette ligne" style="background:none;border:0;border-radius:7px;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:7px 8px;margin-left:14px;flex:0 0 auto;">\u00d7</button>'
         +'</div>'+_ligneMacros(m,true);
     }).join('');
@@ -9911,7 +9936,7 @@ function renderAuth(){
     h=tete+'<button onclick="_authMode(\'connexion\')" style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;margin-bottom:10px;">Se connecter</button>'
       +'<button onclick="_authMode(\'inscription\')" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.25);color:var(--text);">Créer un compte</button>';
   }else if(_auth.mode==='connexion'){
-    h=tete+err+_champ('Identifiant ou e-mail',_inp('au-login','text',_auth.login||'','','autocomplete="username" autocapitalize="none"'))
+    h=tete+err+_champ('E-mail ou identifiant',_inp('au-login','text',_auth.login||'','ex. prenom@exemple.fr','autocomplete="username" autocapitalize="none"'))
       +_champ('Mot de passe',_inpMdp('au-mdp','','','autocomplete="current-password"'))
       +'<button onclick="validerConnexion()"'+dis+' style="'+_ST_BTN+'background:var(--gold);border:0;color:#1a120b;">'+(_auth.occupe?'Connexion\u2026':'Se connecter')+'</button>'
       +'<button onclick="demanderReinitialisation()" style="background:none;border:0;color:var(--text3);font-size:11.5px;cursor:pointer;margin-top:12px;width:100%;text-decoration:underline;">Mot de passe oublié ?</button>'+retour;
@@ -9922,6 +9947,9 @@ function renderAuth(){
   // de l'ecran, les marges automatiques tombent a zero et rien n'est coupe.
   ps.innerHTML='<div style="width:100%;max-width:420px;margin:auto;padding:calc(24px + env(safe-area-inset-top, 0px)) 20px calc(30px + env(safe-area-inset-bottom, 0px));box-sizing:border-box;">'+h+'</div>';
 }
+/* Inscription par adresse e-mail seulement (06/11/2026, demande de Liam) : sans elle, un mot de passe oublie
+   = compte perdu. Les comptes deja crees avec un simple identifiant se connectent toujours avec lui. */
+var MSG_EMAIL_REQUIS='Indique une adresse e-mail valide : c\'est elle qui te permettra de récupérer ton compte si tu oublies ton mot de passe.';
 var _ETAPES=['Ton compte','Toi','Ton objectif','Ton alimentation','Tes cibles','Les IA (facultatif)'];
 // Cle Groq : format gsk_ suivi de caracteres alphanumeriques (pas de verification en ligne)
 function _cleGroqValide(k){return /^gsk_[A-Za-z0-9]{20,}$/.test(String(k||''));}
@@ -9961,8 +9989,8 @@ function _renderInscription(err,dis,retour){
     +'<div style="font-size:19px;font-weight:600;color:var(--text);margin:3px 0 14px;">'+_ETAPES[e]+'</div>';
   var corps='';
   if(e===0){
-    corps=_champ('Identifiant ou e-mail',_inp('au-login','text',_ins.login,'ex. liam ou liam@mail.fr','autocomplete="username" autocapitalize="none"'))
-      +'<div style="font-size:11px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;">Avec une <strong style="color:var(--text2);">adresse e-mail</strong>, tu pourras récupérer ton mot de passe en cas d\'oubli. Avec un simple identifiant, ce ne sera pas possible.</div>'
+    corps=_champ('Adresse e-mail',_inp('au-login','email',_ins.login,'ex. prenom@exemple.fr','autocomplete="username" autocapitalize="none" inputmode="email"'))
+      +'<div style="font-size:11px;color:var(--text3);margin:-6px 0 12px;line-height:1.45;">Elle sert à te connecter et à <strong style="color:var(--text2);">récupérer ton mot de passe</strong> en cas d\'oubli. Dorayaki ne t\'envoie rien d\'autre.</div>'
       +_champ('Mot de passe',_inpMdp('au-mdp',_ins.mdp,'6 caractères minimum','autocomplete="new-password"'))
       +_champ('Confirmation',_inpMdp('au-mdp2',_ins.mdp,'','autocomplete="new-password"'));
   }else if(e===1)corps=_secToi(p);
@@ -9998,7 +10026,7 @@ async function etapeInscription(sens){
   if(sens>0){
     if(e===0){
       var m2=(document.getElementById('au-mdp2')||{}).value||'';
-      if(!loginValide(_ins.login)){_auth.err=_msgErreurAuth('IDENTIFIANT_INVALIDE');return renderAuth();}
+      if(!loginValide(_ins.login)||!estEmail(_loginNorm(_ins.login))){_auth.err=MSG_EMAIL_REQUIS;return renderAuth();}
       if(String(_ins.mdp).length<6){_auth.err='Mot de passe trop court : 6 caractères minimum.';return renderAuth();}
       if(m2!==_ins.mdp){_auth.err='Les deux mots de passe ne correspondent pas.';return renderAuth();}
     }
@@ -10505,7 +10533,9 @@ function setAmSlot(s){
 function renderMealBreakdown(){
   var el=document.getElementById('addmeal-breakdown');if(!el)return;
   var it=(_pendingMeal&&_pendingMeal.items)||[];
-  if(it.length<2){el.style.display='none';el.innerHTML='';return;}
+  /* Lignes modifiables presentes (nom, quantite, ↻) : ce detail en lecture seule faisait doublon et laissait
+     croire qu'on ne pouvait corriger que le total (06/11/2026). */
+  if(it.length<2||(_addMealFreeItems||[]).length){el.style.display='none';el.innerHTML='';return;}
   el.innerHTML='<div style="color:var(--text3);text-transform:uppercase;letter-spacing:.06em;font-size:10px;margin-bottom:5px;">Détail estimé — corrige le total si une ligne te semble fausse</div>'
     +it.map(function(x){return '<div style="display:flex;justify-content:space-between;gap:10px;"><span style="flex:1;min-width:0;">'+(x.n||'?')+'</span><span style="color:var(--orange);white-space:nowrap;">'+Math.round(+x.kcal||0)+' kcal</span></div>';}).join('');
   el.style.display='block';

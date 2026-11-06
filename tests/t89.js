@@ -15,12 +15,12 @@ t('*** voisins a zero : mots-cles calcules une fois par article, pas par paire *
   try{X('paires0k()');const n=X('_nMC');if(n>fr.length)throw new Error(n+' appels pour '+fr.length+' articles');}
   finally{X('_motsCles=_vraiMC;');}
 });
-t('voisins a zero : meme resultat qu\'avant (un plein, un vide, mot commun)',()=>{
-  sb.S.inv={frigo:[{id:'a',name:'Lait demi-écrémé',qty:0,unit:'ml'},{id:'b',name:'Lait sans lactose',qty:500,unit:'ml'},
+t('voisins a zero : un plein, un vide, deux mots en commun (regle du 06/11/2026, t112)',()=>{
+  sb.S.inv={frigo:[{id:'a',name:'Lait sans lactose demi-écrémé',qty:0,unit:'ml'},{id:'b',name:'Lait sans lactose',qty:500,unit:'ml'},
     {id:'c',name:'Beurre doux',qty:0,unit:'g'},{id:'d',name:'Jambon blanc',qty:4,unit:'tranches'},{id:'e',name:'Lait d\'avoine',qty:1000,unit:'ml'}],placards:[],congelateur:[],epices:[]};
   sb.S.paires0k={};
   const p=X('paires0k()').map(x=>x.plein.it.id+'>'+x.vide.it.id).sort().join(' ');
-  eq(p,'b>a e>a');
+  eq(p,'b>a');
 });
 t('diagnostic : date limite depassee toujours reperee (date du jour calculee une fois)',()=>{
   sb.S.inv={frigo:[{id:'x',name:'Yaourt',qty:2,unit:'pots',dlc:'2001-01-01'},{id:'y',name:'Skyr',qty:1,unit:'pots',dlc:'2999-01-01'}],placards:[],congelateur:[],epices:[]};

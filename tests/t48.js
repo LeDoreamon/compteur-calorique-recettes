@@ -207,7 +207,7 @@ await t('*** un identifiant invalide bloque la premiere etape ***',async()=>{
   docEl('au-login').value='x';docEl('au-mdp').value='secret1';docEl('au-mdp2').value='secret1';
   await G('etapeInscription')(1);
   eq(sb.window._ins.etape,0,'etape franchie');
-  if(!/Identifiant invalide/.test(docEl('profile-screen').innerHTML))throw new Error('pas de message');
+  if(!/adresse e-mail valide/.test(docEl('profile-screen').innerHTML))throw new Error('pas de message');
 });
 await t('des mots de passe differents bloquent aussi',async()=>{
   G('_authMode')('inscription');
@@ -217,7 +217,7 @@ await t('des mots de passe differents bloquent aussi',async()=>{
 });
 await t('un bon debut passe a l\'etape suivante',async()=>{
   G('_authMode')('inscription');
-  docEl('au-login').value='ana';docEl('au-mdp').value='secret1';docEl('au-mdp2').value='secret1';
+  docEl('au-login').value='ana@exemple.fr';docEl('au-mdp').value='secret1';docEl('au-mdp2').value='secret1';
   await G('etapeInscription')(1);
   eq(sb.window._ins.etape,1);
 });
