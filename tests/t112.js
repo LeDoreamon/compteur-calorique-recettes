@@ -158,6 +158,12 @@ t('generation sans recette IA a remplacer : aucune question en plus',async()=>{
   X(INV_REC);LS.anthropic_key='gsk_x';Q=[];sb.fetch=async()=>({ok:true,status:200,json:async()=>({choices:[{message:{content:REP_REC},finish_reason:'stop'}]})});
   repond(()=>true);await X('generateStockRecipes')();eq(Q.filter(m=>/Remplacer|remplacée/.test(m)).length,0);
 });
+t('*** besoin de recettes : les recettes IA hors favoris (remplacees a la generation) ne comptent pas ***',()=>{
+  X(INV_REC);X(`S.favs=['iaF'];['iaF','iaA','iaB','iaC'].forEach(function(id){var r={id:id,name:'Plat '+id,ai:true,profile:ACTIVE_PROFILE,slots:['dinner'],kcal:600,prot:40,gluc:60,lip:15,used:[{id:'po',qty:150},{id:'ri',qty:80}],steps:['A.'],extras:[]};S.aiRecipes.push(r);for(var j=RCP.length-1;j>=0;j--)if(RCP[j].id===id)RCP.splice(j,1);RCP.push(r);});`);
+  const avec=X("RCP.filter(r=>recetteVisible(r)&&(r.slots||[]).indexOf('dinner')>=0&&canCook(r,1)).length");
+  const b=X('_besoinRecettes()');eq(b.dispo.dinner,avec-3,'les 3 non favorites comptees');
+  if(avec-3<4&&b.manque.dinner!==4-(avec-3))throw new Error('manque '+b.manque.dinner);
+});
 t('Gemini : 90 s pour une longue reponse (recettes), 45 s sinon',()=>{
   eq(X('GEMINI_DELAI_LONG'),90000);
   if(!/\(maxTokens\|\|0\)>=2000\?GEMINI_DELAI_LONG:45000/.test(src))throw new Error('delai');
