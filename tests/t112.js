@@ -71,9 +71,41 @@ t('*** ligne mal reconnue : mode d\'emploi visible, bouton ↻, recalcul de cett
   const L=X('_addMealFreeItems');eq(L[0].n,'Paris-brest');eq(L[0].m.kcal,370);eq(L[0].m.fib,1.2);eq(L[1].n,'Café','autre ligne touchee');
   if(!/Paris-brest/.test(appels[0].body.messages.map(m=>typeof m.content==='string'?m.content:'').join(' ')))throw new Error('nom corrige non envoye');
 });
-t('*** « Effacer les recettes IA » garde les favorites ***',()=>{
-  X(`S.favs=['ia1'];S.aiRecipes=[{id:'ia1',name:'A',ai:true},{id:'ia2',name:'B',ai:true}];RCP.push({id:'ia1',name:'A',ai:true},{id:'ia2',name:'B',ai:true});clearAIRecipes()`);
-  eq(X('S.aiRecipes.map(r=>r.id).join()'),'ia1');eq(X("RCP.some(r=>r.id==='ia1')"),true);eq(X("RCP.some(r=>r.id==='ia2')"),false);
+/* recettes IA de test : sb.confirm repond selon la question (liste des questions posees dans Q) */
+let Q=[];
+const prepIA=(favs)=>{Q=[];X(`S.inv={frigo:[],congelateur:[],placards:[{id:'riz_t',name:'Riz basmati',qty:1000,unit:'g',mac100:{kcal:350,prot:7,gluc:78,lip:1}}],epices:[]};
+  S.customRecipes=[];S.favs=${JSON.stringify(favs)};S.aiRecipes=[];
+  ['ia1','ia2','ia3'].forEach(function(id,i){var r={id:id,name:'Riz '+(i+1),ai:true,profile:ACTIVE_PROFILE,slots:['lunch'],kcal:500,prot:30,gluc:80,lip:5,time:20,
+    used:[{id:'riz_t',qty:80}],steps:['Cuire 80 g de riz basmati.','Servir.'],extras:[]};S.aiRecipes.push(r);for(var j=RCP.length-1;j>=0;j--)if(RCP[j].id===id)RCP.splice(j,1);RCP.push(r);});`);};
+const repond=(f)=>{sb.confirm=m=>{Q.push(m);return f(m);};};
+t('*** « Effacer les recettes IA » : confirmation d\'abord ; « Annuler » ne touche a rien ***',async()=>{
+  prepIA([]);repond(()=>false);await X('clearAIRecipes()');
+  eq(Q.length,1);if(!/^Effacer les 3 recettes IA \?/.test(Q[0]))throw new Error(Q[0]);
+  eq(X('S.aiRecipes.length'),3,'efface malgre Annuler');
+  repond(()=>true);await X('clearAIRecipes()');eq(X('S.aiRecipes.length'),0);eq(X("RCP.some(r=>/^ia/.test(r.id))"),false);
+});
+t('*** favorites : gardees, puis proposition de les passer dans « Mes recettes » ***',async()=>{
+  prepIA(['ia1']);repond(()=>true);await X('clearAIRecipes()');
+  eq(Q.length,2);if(Q[0].indexOf('Ta favorite « Riz 1 » est gardée')<0)throw new Error(Q[0]);
+  if(!/^Passer ta favorite dans « Mes recettes » \?/.test(Q[1]))throw new Error(Q[1]);
+  eq(X('S.aiRecipes.length'),0,'reste en IA');
+  const r=X("S.customRecipes.find(r=>r.id==='ia1')");if(!r)throw new Error('absente de Mes recettes');
+  eq(r.custom,true);eq(r.ai,undefined,'marque IA');eq(r.profile,X('ACTIVE_PROFILE'));
+  if(r.steps[0].indexOf('[')<0)throw new Error('etape sans crochets : '+r.steps[0]);
+  eq(r.used[0].n,'Riz basmati','nom de l\'ingredient garde');
+  eq(X("S.favs.indexOf('ia1')>=0"),true,'favori perdu');eq(X("RCP.filter(r=>r.id==='ia1').length"),1,'doublon dans RCP');
+  eq(X("recetteVisible(RCP.find(r=>r.id==='ia1'))"),true);
+  eq(X("RCP.some(r=>r.id==='ia2')"),false,'non favorite gardee');
+});
+t('favorites : « Non » les laisse en recettes IA favorites (comme avant)',async()=>{
+  prepIA(['ia1','ia2']);repond(m=>/^Effacer/.test(m));await X('clearAIRecipes()');
+  eq(X('S.aiRecipes.map(r=>r.id).join()'),'ia1,ia2');eq(X('S.customRecipes.length'),0);
+  if(Q[0].indexOf('Tes 2 favorites')<0)throw new Error(Q[0]);
+});
+t('toutes en favori : rien a effacer, seulement la proposition',async()=>{
+  prepIA(['ia1','ia2','ia3']);repond(()=>true);await X('clearAIRecipes()');
+  eq(Q.length,1);if(!/^Rien à effacer/.test(Q[0])||Q[0].indexOf('Passer tes 3 favorites')<0)throw new Error(Q[0]);
+  eq(X('S.customRecipes.length'),3);eq(X('S.aiRecipes.length'),0);
 });
 t('*** reglages : le guide d\'utilisation en PDF, fichier present ***',()=>{
   if(!/<a id="set-guide" href="guide\.pdf"[^>]*>📖 Guide d'utilisation \(PDF\)<\/a>/.test(src))throw new Error('lien');

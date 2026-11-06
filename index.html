@@ -404,7 +404,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 16h30 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 17h39 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -669,12 +669,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-06-1630"></script>
+<script src="catalogue.js?v=2026-11-06-1739"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-06-1630';
+const BUILD_ID='2026-11-06-1739';
 const NOUVEAUTES=[
+  {b:'2026-11-06-1739',points:[
+    '« Effacer les recettes IA » demande maintenant confirmation. Si certaines sont dans tes favoris, l’appli propose de les passer dans « Mes recettes », où tu peux les garder et les modifier.'
+  ]},
   {b:'2026-11-06-1630',points:[
     'Recettes générées par l’IA : quand le quota gratuit de Groq est atteint, l’appli passe tout de suite à un autre modèle Groq, puis à Gemini, au lieu d’abandonner. Gemini a aussi plus de temps pour rédiger les recettes.'
   ]},
@@ -4100,15 +4103,47 @@ function _aiPhantomFood(r){
   for(const f of FOOD){if(words.has(f)&&!knownWords.has(f))return f;}
   return null;
 }
-function clearAIRecipes(){
+/* « Effacer les recettes IA » (06/11/2026, idee de Liam) : confirmation d'abord (avant : tout partait d'un toucher,
+   sauf les favorites) ; s'il y a des favorites, proposition de les passer dans « Mes recettes » : elles y restent
+   modifiables et ne genent plus un renouvellement des recettes IA. */
+async function clearAIRecipes(){
+  const ia=(S.aiRecipes||[]).slice();if(!ia.length)return;
   const favs=S.favs||[];
-  const gardees=(S.aiRecipes||[]).filter(r=>favs.indexOf(r.id)>=0);
-  (S.aiRecipes||[]).forEach(r=>{
-    if(favs.indexOf(r.id)>=0)return;
-    const i=RCP.findIndex(x=>x.id===r.id);if(i>=0)RCP.splice(i,1);
-  });
-  S.aiRecipes=gardees;
+  const fav=ia.filter(r=>favs.indexOf(r.id)>=0),autres=ia.filter(r=>favs.indexOf(r.id)<0);
+  const noms=fav.slice(0,3).map(r=>'« '+r.name+' »').join(', ')+(fav.length>3?'…':'');
+  const n=autres.length,k=fav.length,sk=k>1?'s':'';
+  if(n){
+    const msg=(n>1?'Effacer les '+n+' recettes IA ?':'Effacer la recette IA ?')+'\n\n'
+      +(k?(k>1?'Tes '+k+' favorites ('+noms+') sont gardées.':'Ta favorite '+noms+' est gardée.')+' ':'')
+      +(k?(n>1?'Les autres disparaissent':'L’autre disparaît'):(n>1?'Elles disparaissent':'Elle disparaît'))+' de ta liste ; tu pourras en générer de nouvelles.';
+    if(!await _confirmer(msg,{ok:'Effacer',danger:true}))return;
+    autres.forEach(r=>{const i=RCP.findIndex(x=>x.id===r.id);if(i>=0)RCP.splice(i,1);});
+    S.aiRecipes=fav;
+  }
+  if(k){
+    const q=(n?'':'Rien à effacer : '+(k>1?'tes recettes IA sont toutes':'ta recette IA est')+' en favori.\n\n')
+      +'Passer '+(k>1?'tes '+k+' favorites':'ta favorite')+' dans « Mes recettes » ?'
+      +(n?'\n\n':' ')+noms+(k>1?' y resteront':' y restera')+', modifiable'+sk+' comme tes propres recettes, et ne '+(k>1?'bougeront':'bougera')+' plus quand tu renouvelleras les recettes IA.';
+    if(await _confirmer(q,{ok:k>1?'Oui, les passer':'Oui, la passer',annuler:'Non'})){
+      fav.forEach(_versMesRecettes);
+      S.aiRecipes=[];
+      try{_infoToast(k>1?k+' recettes passées dans « Mes recettes »':'Recette passée dans « Mes recettes »','Onglet 👨‍🍳 des recettes : '+(k>1?'modifiables':'modifiable')+' avec ✎.');}catch(e){}
+    }
+  }
   saveState();render();
+}
+/* Recette IA -> « Mes recettes » : meme identifiant (photo, favori et historique gardes) ; etapes au format a
+   crochets des recettes perso, sinon plus aucun ingredient n'y serait surligne. */
+function _versMesRecettes(r){
+  const g=_ingRecette(r);
+  const rec=Object.assign({},r,{custom:true,profile:ACTIVE_PROFILE,urgent:0,ur:null,time:r.time||15,extras:r.extras||[],
+    steps:(r.steps||[]).map(x=>_etapeEnCrochets(g,x)),
+    used:(r.used||[]).map(u=>{const x=Object.assign({},u);if(!x.n){const it=resolveInv(u.id,u.name);if(it)x.n=it.name;}return x;})});
+  delete rec.ai;
+  S.customRecipes=S.customRecipes||[];
+  const ci=S.customRecipes.findIndex(x=>x.id===rec.id);if(ci>=0)S.customRecipes[ci]=rec;else S.customRecipes.push(rec);
+  const ri=RCP.findIndex(x=>x.id===rec.id);if(ri>=0)RCP[ri]=rec;else RCP.push(rec);
+  return rec;
 }
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -8083,7 +8118,7 @@ function render(){
       ${renderSpiceCheck()}
       <div style="margin-bottom:12px;">
         <button id="gen-recipes-btn" onclick="generateStockRecipes()" style="width:100%;padding:10px;background:linear-gradient(135deg,#C86050,#A63F32);border:none;border-radius:10px;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">✨ Générer des recettes selon mon stock</button>
-        ${S.aiRecipes&&S.aiRecipes.length?`<button onclick="clearAIRecipes()" style="width:100%;padding:7px;margin-top:6px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">🗑 Effacer les ${S.aiRecipes.length} recettes IA</button>`:''}
+        ${S.aiRecipes&&S.aiRecipes.length?`<button onclick="clearAIRecipes()" style="width:100%;padding:7px;margin-top:6px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text3);font-size:12px;cursor:pointer;">🗑 ${S.aiRecipes.length>1?'Effacer les '+S.aiRecipes.length+' recettes IA':'Effacer la recette IA'}</button>`:''}
       </div>
       <div class="meal-tabs">${tabBtns}</div>
       <div id="mealpane">${S.mealTab==='urgent'?renderDLCSection():''}${S.mealTab==='favs'?renderFavSection():''}${S.mealTab==='perso'?renderCustHeader():''}
