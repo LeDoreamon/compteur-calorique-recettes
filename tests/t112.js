@@ -141,6 +141,23 @@ t('*** ... et si le 20b echoue aussi, Gemini prend le relais ***',async()=>{
   }finally{sb.setTimeout=st;}
   eq(vus[vus.length-1],'gemini',vus.join(' > '));eq(X('S.aiRecipes.length'),1);
 });
+const prepGen=()=>{X(INV_REC);X(`S.favs=['iaf'];['iaf','iax','iay'].forEach(function(id){var r={id:id,name:'Vieille '+id,ai:true,profile:ACTIVE_PROFILE,slots:['lunch'],kcal:500,prot:30,gluc:60,lip:10,used:[{id:'absent_t',n:'Truffe',qty:5}],steps:['A.'],extras:[]};S.aiRecipes.push(r);for(var j=RCP.length-1;j>=0;j--)if(RCP[j].id===id)RCP.splice(j,1);RCP.push(r);});`);
+  LS.anthropic_key='gsk_x';delete LS.gemini_key;Q=[];};
+t('*** generation : confirmation quand des recettes IA hors favoris vont etre remplacees ; « Annuler » n\'appelle pas l\'IA ***',async()=>{
+  prepGen();let appelsIA=0;sb.fetch=async()=>{appelsIA++;return{ok:true,status:200,json:async()=>({choices:[{message:{content:REP_REC},finish_reason:'stop'}]})};};
+  repond(()=>false);await X('generateStockRecipes')();
+  eq(Q.length,1);if(!/^Remplacer tes recettes IA \?/.test(Q[0])||Q[0].indexOf('Tes 2 recettes IA qui ne sont pas en favori seront remplacées')<0)throw new Error(Q[0]);
+  eq(appelsIA,0,'IA appelee malgre Annuler');eq(X('S.aiRecipes.map(r=>r.id).join()'),'iaf,iax,iay');
+});
+t('*** ... « Générer » : nouvelles recettes, la favorite reste ***',async()=>{
+  prepGen();sb.fetch=async()=>({ok:true,status:200,json:async()=>({choices:[{message:{content:REP_REC},finish_reason:'stop'}]})});
+  repond(()=>true);await X('generateStockRecipes')();
+  const ids=X('S.aiRecipes.map(r=>r.id)');if(ids[0]!=='iaf'||ids.length!==2||ids.indexOf('iax')>=0)throw new Error(ids.join());
+});
+t('generation sans recette IA a remplacer : aucune question en plus',async()=>{
+  X(INV_REC);LS.anthropic_key='gsk_x';Q=[];sb.fetch=async()=>({ok:true,status:200,json:async()=>({choices:[{message:{content:REP_REC},finish_reason:'stop'}]})});
+  repond(()=>true);await X('generateStockRecipes')();eq(Q.filter(m=>/Remplacer|remplacée/.test(m)).length,0);
+});
 t('Gemini : 90 s pour une longue reponse (recettes), 45 s sinon',()=>{
   eq(X('GEMINI_DELAI_LONG'),90000);
   if(!/\(maxTokens\|\|0\)>=2000\?GEMINI_DELAI_LONG:45000/.test(src))throw new Error('delai');
