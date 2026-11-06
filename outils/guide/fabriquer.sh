@@ -10,7 +10,7 @@ PY="${PY:-$( [ -x /usr/bin/python3 ] && echo /usr/bin/python3 || echo python3 )}
 [ -f "$REPO/index.html" ] || { echo "a lancer depuis la racine du depot"; exit 1; }
 rm -rf "$W"; mkdir -p "$W"; cp "$SRC"/* "$W"/; cp "$REPO/icon-512.png" "$W/icon.png"; cd "$W"
 node shots.js "$REPO" demo.json img                          # 47 captures 390x844 du compte d'exemple « Alex »
-mkdir -p imgj; for f in img/*.png; do convert "$f" -resize 700x -quality 86 "imgj/$(basename "$f" .png).jpg"; done
+mkdir -p imgj; for f in img/*.png; do convert "$f" -resize 500x -quality 80 -strip "imgj/$(basename "$f" .png).jpg"; done
 node build.js guide.html passe1.pdf                          # 1re passe : ou tombe chaque titre ?
 "$PY" pages.py passe1.pdf _titres.json pages.json
 node build.js guide.html passe2.pdf pages.json               # 2e passe : sommaire numerote

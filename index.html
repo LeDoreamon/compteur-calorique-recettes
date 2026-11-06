@@ -404,7 +404,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 17h39 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 18h09 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -669,12 +669,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-06-1739"></script>
+<script src="catalogue.js?v=2026-11-06-1809"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-06-1739';
+const BUILD_ID='2026-11-06-1809';
 const NOUVEAUTES=[
+  {b:'2026-11-06-1809',points:[
+    'Avant de générer de nouvelles recettes, l’appli prévient que les recettes IA qui ne sont pas en favori seront remplacées.'
+  ]},
   {b:'2026-11-06-1739',points:[
     '« Effacer les recettes IA » demande maintenant confirmation. Si certaines sont dans tes favoris, l’appli propose de les passer dans « Mes recettes », où tu peux les garder et les modifier.'
   ]},
@@ -3917,11 +3920,17 @@ async function generateStockRecipes(){
     return;
   }
   let besoin=_besoinRecettes();
+  /* Une generation remplace les recettes IA hors favoris : on le dit avant (06/11/2026, demande de Liam),
+     dans la meme fenetre que « assez de recettes » s'il y en a une, pour ne pas enchainer deux questions. */
+  const _favs=S.favs||[],_remplacees=(S.aiRecipes||[]).filter(r=>_favs.indexOf(r.id)<0).length;
+  const _avert=_remplacees?(_remplacees>1?'Tes '+_remplacees+' recettes IA qui ne sont pas en favori seront remplacées par les nouvelles.':'Ta recette IA qui n’est pas en favori sera remplacée par les nouvelles.')+' Mets en favori ⭐ celles que tu veux garder.':'';
   if(!besoin.n){
     const det=Object.keys(_LIB_REPAS).map(function(s){return _LIB_REPAS[s]+' : '+besoin.dispo[s];}).join(', ');
-    const ok=await _confirmer('Tu as déjà assez de recettes faisables\n\nAvec ton stock actuel : '+det+'. En proposer 2 de plus quand même ?',{ok:'Oui, 2 de plus',annuler:'Non merci'});
+    const ok=await _confirmer('Tu as déjà assez de recettes faisables\n\nAvec ton stock actuel : '+det+'. En proposer 2 de plus quand même ?'+(_avert?'\n\n'+_avert:''),{ok:'Oui, 2 de plus',annuler:'Non merci'});
     if(!ok)return;
     besoin=_besoinMinimal(besoin);
+  }else if(_remplacees){
+    if(!await _confirmer((_remplacees>1?'Remplacer tes recettes IA ?':'Remplacer ta recette IA ?')+'\n\n'+_avert,{ok:'Générer',annuler:'Annuler'}))return;
   }
   const btn=document.getElementById('gen-recipes-btn');
   if(btn){btn.disabled=true;btn.textContent='✨ Génération de '+besoin.n+' recette'+(besoin.n>1?'s':'')+'… (15-30s)';}
