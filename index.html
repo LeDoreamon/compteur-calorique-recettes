@@ -404,7 +404,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-06 18h25 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-07 14h14 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -669,12 +669,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-06-1825"></script>
+<script src="catalogue.js?v=2026-11-07-1414"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-06-1825';
+const BUILD_ID='2026-11-07-1414';
 const NOUVEAUTES=[
+  {b:'2026-11-07-1414',points:[
+    'Analyse d’un repas : si la réponse de l’IA est coupée en route (assiette très garnie, buffet…), l’appli garde les aliments déjà reconnus au lieu d’afficher une erreur, et te prévient de vérifier la liste.'
+  ]},
   {b:'2026-11-06-1825',points:[
     'Génération de recettes : l’appli compte ce qu’il te manque sans les recettes IA qu’elle va remplacer, et en propose donc assez pour chaque repas.'
   ]},
@@ -3863,9 +3866,35 @@ function _cleSure(k){return typeof k==='string'&&k.length>0&&k.length<40&&!/['"`
 function _burnSur(b){var o={};if(b&&typeof b==='object')Object.keys(b).forEach(function(k){if(_cleSure(k)&&b[k]&&typeof b[k]==='object')o[k]=_neutre(b[k]);});return o;}
 function extractJSON(text){
   let t=text.replace(/<think>[\s\S]*?<\/think>/gi,'').replace(/```json/gi,'').replace(/```/g,'').trim();
-  const s=t.indexOf('{'),e=t.lastIndexOf('}');
+  const brut=t,s=t.indexOf('{'),e=t.lastIndexOf('}');
   if(s>=0&&e>s)t=t.slice(s,e+1);
-  return _neutre(JSON.parse(t));
+  _dernierJSONCoupe=false;
+  try{return _neutre(JSON.parse(t));}
+  catch(err){
+    try{const r=_jsonCoupe(brut);_dernierJSONCoupe=true;return _neutre(r);}catch(e2){}
+    throw err;
+  }
+}
+/* Reponse coupee en route (budget de jetons atteint en pleine liste d'aliments) : on garde tout ce qui est complet
+   et on referme les crochets restes ouverts. Avant (07/11/2026, rapport de Liam, buffet en photo) : « JSON Parse
+   error: Expected ']' » et toute l'analyse perdue. _dernierJSONCoupe previent l'appelant que la liste est partielle. */
+var _dernierJSONCoupe=false;
+function _jsonCoupe(t){
+  var s=t.indexOf('{');if(s<0)throw new Error('JSON illisible');
+  t=t.slice(s);
+  var pile=[],inStr=false,esc=false,coupes=[];
+  for(var i=0;i<t.length;i++){
+    var c=t[i];
+    if(inStr){if(esc)esc=false;else if(c==='\\')esc=true;else if(c==='"')inStr=false;continue;}
+    if(c==='"'){inStr=true;continue;}
+    if(c==='{'||c==='[')pile.push(c);
+    else if(c==='}'||c===']'){pile.pop();if(!pile.length)break;coupes.push({i:i,pile:pile.slice()});}
+  }
+  for(var k=coupes.length-1;k>=0&&k>=coupes.length-80;k--){
+    var x=coupes[k],fin=x.pile.slice().reverse().map(function(o){return o==='{'?'}':']';}).join('');
+    try{return JSON.parse(t.slice(0,x.i+1)+fin);}catch(e){}
+  }
+  throw new Error('JSON illisible');
 }
 function extractJSONArray(text){return _neutre(_extractJSONArrayBrut(text));}
 function _extractJSONArrayBrut(text){
@@ -10742,7 +10771,8 @@ Réponds UNIQUEMENT en JSON sans markdown:
 - Boisson sucrée ou énergisante = canette entière (Monster 50 cl ≈ 230 kcal, 60 g de sucre).
 - Plat de restaurant, traiteur ou street-food ≈ 1,3× la portion maison.
 - Si la taille ou le poids n'est pas précisé, suppose la portion STANDARD du commerce, jamais la version mini : 1 cookie au chocolat ≈ 30-35 g ≈ 160 kcal ; 1 croissant ≈ 55 g ≈ 230 kcal ; 1 banane ≈ 120 g ≈ 105 kcal ; 1 part de pizza ≈ 1/6 d'une pizza entière.
-- En cas de doute, arrondis les kcal vers le HAUT (légère surestimation), jamais vers le bas.`;
+- En cas de doute, arrondis les kcal vers le HAUT (légère surestimation), jamais vers le bas.
+- JSON COMPACT sur une seule ligne, sans espaces inutiles, noms d'aliments courts (5 mots au plus) : une assiette de buffet compte souvent plus de 10 lignes.`;
   }
   try {
     const data = await callAI(msgs, 1300, sys, msgs.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'))?null:'openai/gpt-oss-120b');
@@ -10751,7 +10781,10 @@ Réponds UNIQUEMENT en JSON sans markdown:
     if(data.empty)throw new Error('Réponse vide, réessaie.');
     // extractJSON : balises <think>, texte autour du JSON, et surtout _neutre
     // (le nom propose par l'IA finit dans la page)
-    const p = extractJSON(raw);
+    let p;
+    try{p=extractJSON(raw);}
+    catch(pe){throw new Error('Réponse de '+(_iaAnalyse==='gemini'?'Gemini':'Groq')+' illisible'+(data.truncated?' (coupée en route)':'')+' : '+((pe&&pe.message)||pe));}
+    const _coupe=_dernierJSONCoupe||!!data.truncated;
     if(_addMealUseStock){
       document.getElementById('addmeal-name').value = p.name || 'Repas';
       _addMealInvSuggestions = (p.inv_suggestions||[]).map(s=>{
@@ -10793,6 +10826,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
       document.getElementById('addmeal-analyzing').style.display='none';
       if(p.ok===false||changed){showMealVerify(corrected,macros,p.ok===false);}
       else{applyPendingMealToConfirm();}
+      if(_coupe){try{_infoToast('Liste peut-être incomplète','La réponse de l’IA a été coupée en route : vérifie les aliments et ajoute ceux qui manquent avec « + Ajouter manuellement ».');}catch(e){}}
     }
   } catch(err) {
     document.getElementById('addmeal-analyzing').style.display = 'none';
