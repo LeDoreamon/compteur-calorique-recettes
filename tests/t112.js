@@ -164,6 +164,27 @@ t('*** besoin de recettes : les recettes IA hors favoris (remplacees a la genera
   const b=X('_besoinRecettes()');eq(b.dispo.dinner,avec-3,'les 3 non favorites comptees');
   if(avec-3<4&&b.manque.dinner!==4-(avec-3))throw new Error('manque '+b.manque.dinner);
 });
+const COUPE='{"corrected":"Buffet asiatique","ok":true,"items":[{"n":"Brochettes bœuf fromage","q":3,"u":"pc","kcal":330,"prot":24,"gluc":6,"lip":23,"fib":0},{"n":"Nem","q":1,"u":"pc","kcal":180,"prot":6,"gluc":18,"lip":9,"fib":1},{"n":"Gyo';
+t('*** reponse coupee en pleine liste (« Expected \']\' » de Liam) : les aliments complets sont gardes ***',()=>{
+  let ko=null;try{JSON.parse(COUPE.slice(0,COUPE.lastIndexOf('}')+1));}catch(e){ko=e.message;}if(!ko)throw new Error('cas de depart mal construit');
+  const p=X('extractJSON')(COUPE);eq(p.items.length,2);eq(p.items[1].n,'Nem');eq(X('_dernierJSONCoupe'),true);
+  X('extractJSON')('{"a":[1,2]}');eq(X('_dernierJSONCoupe'),false,'drapeau remis a zero');
+  eq(X('extractJSON')('Voici : {"corrected":"x <b>","items":[{"n":"a"}]} fin').corrected,'x ‹b›','neutralise');
+});
+t('*** analyse photo coupee : lignes gardees, total recalcule, l\'appli previent ***',async()=>{
+  LS.anthropic_key='gsk_x';LS.gemini_key=GK;X("S.dayMeals={};openAddMeal('text');setMealStock(false)");docEl('addmeal-textarea').value='';
+  serveur({candidates:[{content:{parts:[{text:COUPE}]},finishReason:'MAX_TOKENS'}]});
+  let note=null;const it=sb._infoToast;X('var __it=_infoToast');sb.__notes=[];X("_infoToast=function(a,b){__notes.push(a+' | '+b);}");
+  try{await X('runAddMealAI')(photo);}finally{X('_infoToast=__it');}
+  eq(X('_addMealFreeItems.length'),2);eq(docEl('addmeal-kcal').value,'510','total des lignes gardees');
+  if(!sb.__notes.length||sb.__notes[0].indexOf('incomplète')<0)throw new Error('pas d\'avertissement : '+sb.__notes.join());
+});
+t('reponse illisible pour de bon : le message dit quelle IA et si c\'etait coupe (pour le rapport)',async()=>{
+  LS.anthropic_key='gsk_x';LS.gemini_key=GK;X("openAddMeal('text');setMealStock(false)");
+  serveur({candidates:[{content:{parts:[{text:'pas du JSON du tout'}]},finishReason:'MAX_TOKENS'}]});
+  await X('runAddMealAI')(photo);const e=docEl('addmeal-err').textContent||docEl('addmeal-err').innerHTML;
+  if(!/Gemini/.test(e)||!/coupée/.test(e))throw new Error(e);
+});
 t('Gemini : 90 s pour une longue reponse (recettes), 45 s sinon',()=>{
   eq(X('GEMINI_DELAI_LONG'),90000);
   if(!/\(maxTokens\|\|0\)>=2000\?GEMINI_DELAI_LONG:45000/.test(src))throw new Error('delai');
