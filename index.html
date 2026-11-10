@@ -404,7 +404,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-07 14h14 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-10 19h26 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -669,12 +669,16 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-07-1414"></script>
+<script src="catalogue.js?v=2026-11-10-1926"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-07-1414';
+const BUILD_ID='2026-11-10-1926';
 const NOUVEAUTES=[
+  {b:'2026-11-10-1926',points:[
+    'Profil : la connexion se change maintenant pour une adresse e-mail seulement, comme à l’inscription (un compte à simple identifiant peut ainsi passer à une adresse e-mail).',
+    'Une recette perso supprimée sur un autre appareil ne réapparaît plus.'
+  ]},
   {b:'2026-11-07-1414',points:[
     'Analyse d’un repas : si la réponse de l’IA est coupée en route (assiette très garnie, buffet…), l’appli garde les aliments déjà reconnus au lieu d’afficher une erreur, et te prévient de vérifier la liste.'
   ]},
@@ -3170,8 +3174,15 @@ function _applyState(d){
        affichee, sinon une recette modifiee ou supprimee ailleurs restait a l'ecran (11/10/2026) */
     for(var _ci=RCP.length-1;_ci>=0;_ci--){var _cr0=RCP[_ci];if(_cr0&&(_cr0.custom===true||/^(cust_|_free_)/.test(String(_cr0.id)))&&!S.customRecipes.some(function(x){return x===_cr0;}))RCP.splice(_ci,1);}
     S.customRecipes.forEach(r=>{if(!RCP.find(x=>x.id===r.id))RCP.push(r);});}
-  // Historique suppressions
-  if(d.deletedItems&&Array.isArray(d.deletedItems))S.deletedItems=d.deletedItems;
+  else{
+    /* Firebase ne garde pas un tableau vide : « absent » veut dire « plus aucune recette perso » (audit du 10/11/2026).
+       Avant, la derniere recette perso supprimee sur un autre appareil restait ici apres un rechargement de l'etat,
+       puis repartait vers le cloud a l'enregistrement suivant : elle revenait partout. */
+    for(var _cj=RCP.length-1;_cj>=0;_cj--){var _cr1=RCP[_cj];if(_cr1&&(_cr1.custom===true||/^(cust_|_free_)/.test(String(_cr1.id))))RCP.splice(_cj,1);}
+    S.customRecipes=[];
+  }
+  // Historique suppressions (absent = vide, meme raison)
+  if(d.deletedItems&&Array.isArray(d.deletedItems))S.deletedItems=d.deletedItems;else S.deletedItems=[];
   // Sequelle de l'ancien bug : des articles comptes a la piece portent encore un
   // pkg, qui n'a de sens que pour un poids. On le convertit en pieceG si cette
   // information manque, puis on le retire.
@@ -10194,8 +10205,8 @@ function ouvrirEditionProfil(){
     h+='<div style="font-size:11px;color:var(--gold);text-transform:uppercase;letter-spacing:.08em;margin:14px 0 10px;">Connexion</div>'
       +'<div style="font-size:11.5px;color:var(--text3);margin-bottom:8px;">Connecté en tant que <span style="color:var(--text);">'+_attr(_lg)+'</span></div>'
       +(estEmail(_lg)?'':'<div style="font-size:11px;color:var(--gold);line-height:1.45;margin-bottom:10px;">Sans adresse e-mail, un mot de passe oublié ne peut pas être récupéré. Tu peux en ajouter une ci-dessous.</div>')
-      +_champ('Nouvel identifiant ou e-mail',_inp('pf-login','text','','','autocomplete="username" autocapitalize="none"'))
-      +'<button onclick="modifierIdentifiant()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:12px;">Changer l\'identifiant</button>'
+      +_champ('Nouvelle adresse e-mail',_inp('pf-login','email','','ex. prenom@exemple.fr','autocomplete="username" autocapitalize="none" inputmode="email"'))
+      +'<button onclick="modifierIdentifiant()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:12px;">'+(estEmail(_lg)?'Changer l\'adresse e-mail':'Passer à une adresse e-mail')+'</button>'
       +_deux(_champ('Nouveau',_inpMdp('pf-mdp1','','','autocomplete="new-password"')),_champ('Confirmation',_inpMdp('pf-mdp2','','','autocomplete="new-password"')))
       +'<button onclick="modifierMotDePasse()" style="'+_ST_BTN+'background:transparent;border:0.5px solid rgba(246,237,227,.2);color:var(--text2);margin-bottom:6px;">Changer le mot de passe</button>';
   }
@@ -10237,12 +10248,16 @@ function enregistrerProfil(){
 }
 async function modifierIdentifiant(){
   var n=_val('pf-login');
-  if(!loginValide(n)){_errProfil(_msgErreurAuth('IDENTIFIANT_INVALIDE'));return;}
-  try{await changerIdentifiant(n);_errProfil('Identifiant modifié : utilise désormais '+_attr(_loginNorm(n))+' pour te connecter.',true);
+  /* une adresse e-mail seulement, comme a l'inscription (audit du 10/11/2026) : avant, on pouvait remplacer son
+     e-mail par un simple identifiant et perdre la recuperation du mot de passe */
+  if(!loginValide(n)||!estEmail(_loginNorm(n))){_errProfil(MSG_EMAIL_REQUIS);return;}
+  try{await changerIdentifiant(n);_errProfil('Adresse modifiée : utilise désormais '+_attr(_loginNorm(n))+' pour te connecter.',true);
     var e=document.getElementById('pf-login');if(e)e.value='';}
   catch(e){var m=String(e&&e.message);
     _errProfil(/OPERATION_NOT_ALLOWED/.test(m)
-      ?'Firebase refuse le changement direct d\'adresse. Console Firebase \u203a Authentication \u203a Paramètres : décoche « Protection contre l\'énumération des adresses e-mail », puis réessaie.'
+      ?(_catalogue()===PROFIL_HERITE
+        ?'Firebase refuse le changement direct d\'adresse. Console Firebase \u203a Authentication \u203a Paramètres : décoche « Protection contre l\'énumération des adresses e-mail », puis réessaie.'
+        :'Le changement d\'adresse est bloqué par un réglage de sécurité du serveur. Demande à Liam de le lever le temps du changement.')   /* la console n'est accessible qu'a Liam */
       :_msgErreurAuth(m));}
 }
 async function modifierMotDePasse(){
@@ -10785,6 +10800,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
     try{p=extractJSON(raw);}
     catch(pe){throw new Error('Réponse de '+(_iaAnalyse==='gemini'?'Gemini':'Groq')+' illisible'+(data.truncated?' (coupée en route)':'')+' : '+((pe&&pe.message)||pe));}
     const _coupe=_dernierJSONCoupe||!!data.truncated;
+    const _prevenirCoupe=function(){if(_coupe){try{_infoToast('Liste peut-être incomplète','La réponse de l’IA a été coupée en route : vérifie les aliments et ajoute ceux qui manquent avec « + Ajouter manuellement ».');}catch(e){}}};
     if(_addMealUseStock){
       document.getElementById('addmeal-name').value = p.name || 'Repas';
       _addMealInvSuggestions = (p.inv_suggestions||[]).map(s=>{
@@ -10805,6 +10821,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
       renderInvSuggestions(_addMealInvSuggestions);
       setInvMode(_addMealInvSuggestions.length > 0);
       recalcAddMealMacros();
+      _prevenirCoupe();   /* avant le 10/11/2026 : seulement hors inventaire */
     } else {
       const corrected=p.corrected||p.name||'Repas';
       const _items=Array.isArray(p.items)?p.items.filter(function(x){return x&&(x.kcal||x.prot||x.gluc||x.lip);}):[];
@@ -10826,7 +10843,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
       document.getElementById('addmeal-analyzing').style.display='none';
       if(p.ok===false||changed){showMealVerify(corrected,macros,p.ok===false);}
       else{applyPendingMealToConfirm();}
-      if(_coupe){try{_infoToast('Liste peut-être incomplète','La réponse de l’IA a été coupée en route : vérifie les aliments et ajoute ceux qui manquent avec « + Ajouter manuellement ».');}catch(e){}}
+      _prevenirCoupe();
     }
   } catch(err) {
     document.getElementById('addmeal-analyzing').style.display = 'none';
