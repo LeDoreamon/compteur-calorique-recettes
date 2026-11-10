@@ -121,6 +121,9 @@ button { font-family: var(--font); font-size: 14px; cursor: pointer; }
 .unfold{animation:unfold .5s cubic-bezier(.22,.61,.36,1);overflow:hidden;}
 .refold{animation:refold .5s cubic-bezier(.22,.61,.36,1) forwards;overflow:hidden;}
 .chev{display:inline-block;transition:transform .5s cubic-bezier(.22,.61,.36,1);}
+/* loupe de l'analyse : petit trajet souple autour de sa place (10/11/2026, demande de Liam : ni fixe ni « robotique ») */
+.loupe { display: inline-block; font-size: 28px; line-height: 1; animation: loupeCherche 3.8s ease-in-out infinite; will-change: transform; }
+@keyframes loupeCherche{0%{transform:translate(0,0) rotate(0deg);}14%{transform:translate(5px,-4px) rotate(7deg);}30%{transform:translate(-3px,-6px) rotate(-4deg);}47%{transform:translate(-6px,2px) rotate(-9deg);}63%{transform:translate(1px,5px) rotate(3deg);}80%{transform:translate(6px,2px) rotate(8deg);}100%{transform:translate(0,0) rotate(0deg);}}
 @keyframes dlcIn{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 
 /* ═══ FINITIONS & ANIMATIONS ═══════════════════════════════════════════ */
@@ -328,6 +331,7 @@ body.auth-ouvert #root { display: none; }
 .coach-in { animation: coachIn .42s var(--ease) both; }
 .coach-out { animation: coachOut .4s var(--ease) both; }
 @media (prefers-reduced-motion: reduce) { .coach-in, .coach-out { animation: none !important; } }
+@media (prefers-reduced-motion: reduce) { .loupe { animation: none; } }
 
 /* Suivi du jour (02/11/2026) : bandeau de la semaine et cartes par repas */
 .bandeau-jours { display: flex; gap: 4px; margin: 0 0 12px; }
@@ -404,7 +408,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-10 19h26 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-11 00h20 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -449,7 +453,8 @@ body.auth-ouvert #root { display: none; }
       </div>
       <div id="am-bloc-ia"><label style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">Décris ce que tu as mangé</label>
       <div id="addmeal-err" role="alert" style="display:none;margin-bottom:10px;padding:10px 12px;background:var(--red-bg);border:0.5px solid rgba(224,92,79,.35);border-radius:8px;color:var(--red);font-size:12.5px;line-height:1.5;white-space:pre-line;"></div><textarea id="addmeal-textarea" placeholder="Ex: 200g de poulet grillé avec 100g de riz basmati, légumes sautés à l'huile d'olive..." style="width:100%;height:90px;padding:10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;margin-bottom:10px;"></textarea>
-      <button onclick="startAddMealAnalysis('text')" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">✦ Analyser par IA</button></div>
+      <button onclick="startAddMealAnalysis('text')" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:10px;">✦ Analyser par IA</button>
+      <button id="am-plus-tard-1" onclick="garderPourPlusTard()" style="display:none;width:100%;margin:-2px 0 10px;padding:11px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:10px;color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;">🕓 Garder pour plus tard</button></div>
       <button onclick="invAddMeal()" style="width:100%;padding:12px;background:rgba(192,87,70,.14);border:0.5px solid rgba(192,87,70,.45);border-radius:10px;color:var(--accent2);font-size:13px;font-weight:600;cursor:pointer;margin-bottom:12px;">📦 Composer depuis mon inventaire</button>
       <div id="am-autrement" style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;margin-bottom:7px;">Ou autrement</div>
       <div class="am-methods" id="am-methodes">
@@ -459,9 +464,19 @@ body.auth-ouvert #root { display: none; }
       </div>
     </div>
     <!-- Analyzing state -->
+    <div id="addmeal-photos" style="display:none;">
+      <div id="amp-err" role="alert" style="display:none;margin-bottom:10px;padding:10px 12px;background:var(--red-bg);border:0.5px solid rgba(224,92,79,.35);border-radius:8px;color:var(--red);font-size:12.5px;line-height:1.5;white-space:pre-line;"></div>
+      <div id="amp-liste" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;"></div>
+      <label for="amp-precision" style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin-bottom:6px;">Une précision ? (facultatif)</label>
+      <textarea id="amp-precision" maxlength="600" placeholder="Ex. : resto à volonté, 3 brochettes bœuf-fromage, + 2 verrines tiramisu en dessert" style="width:100%;height:78px;padding:10px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;resize:none;outline:none;box-sizing:border-box;margin-bottom:10px;"></textarea>
+      <button onclick="analyserPhotos()" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:10px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">✦ Analyser</button>
+      <button id="am-plus-tard-2" onclick="garderPourPlusTard()" style="display:none;width:100%;margin-top:8px;padding:11px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.45);border-radius:10px;color:var(--blue);font-size:13px;font-weight:600;cursor:pointer;">🕓 Garder pour plus tard</button>
+    </div>
     <div id="addmeal-analyzing" style="display:none;text-align:center;padding:24px 0;">
-      <div style="font-size:28px;margin-bottom:10px;">🔍</div>
+      <div style="height:44px;display:flex;align-items:center;justify-content:center;margin-bottom:8px;"><span class="loupe" aria-hidden="true">🔍</span></div>
       <div id="addmeal-analyzing-txt" style="font-size:13px;color:var(--text2);">Analyse en cours…</div>
+      <div id="addmeal-analyzing-note" style="font-size:11.5px;color:var(--text3);margin-top:6px;min-height:17px;line-height:1.45;"></div>
+      <button onclick="annulerAnalyse()" style="margin-top:14px;padding:8px 22px;background:transparent;border:0.5px solid rgba(246,237,227,.2);border-radius:9px;color:var(--text2);font-size:13px;cursor:pointer;">Annuler</button>
     </div>
     <!-- Confirm state -->
     <div id="addmeal-verify" style="display:none;"><div id="mverify-q" style="font-size:13px;color:var(--text2);margin-bottom:6px;">Est-ce bien :</div><div id="mverify-name" style="font-size:17px;color:var(--text);font-weight:600;margin-bottom:6px;line-height:1.3;">—</div><div id="mverify-macros" style="font-size:12px;color:var(--accent);margin-bottom:18px;">—</div><div style="display:flex;gap:8px;"><button onclick="verifyMealYes()" style="flex:1;padding:12px;background:var(--green);border:0;border-radius:10px;color:var(--bg);font-size:14px;font-weight:600;cursor:pointer;">Oui, c'est ça</button><button onclick="verifyMealNo()" style="flex:1;padding:12px;background:transparent;border:0.5px solid rgba(246,237,227,.15);border-radius:10px;color:var(--text2);font-size:14px;cursor:pointer;">Non, je reformule</button></div></div><div id="addmeal-confirm" style="display:none;"><div id="addmeal-ia-faite" style="display:none;font-size:11.5px;color:var(--text3);margin-bottom:8px;"></div>
@@ -497,7 +512,7 @@ body.auth-ouvert #root { display: none; }
       </div>
       <button onclick="confirmAddMealFinal()" style="width:100%;padding:12px;background:var(--green);border:none;border-radius:8px;color:var(--bg);font-size:13px;font-weight:600;cursor:pointer;">✓ Ajouter au tracker</button>
     </div>
-    <input type="file" id="addmeal-photo-input" accept="image/*" style="display:none" onchange="handleAddMealPhoto(this)">
+    <input type="file" id="addmeal-photo-input" accept="image/*" multiple style="display:none" onchange="handleAddMealPhoto(this)">
   </div>
 </div>
 
@@ -669,12 +684,19 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-10-1926"></script>
+<script src="catalogue.js?v=2026-11-11-0020"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-10-1926';
+const BUILD_ID='2026-11-11-0020';
 const NOUVEAUTES=[
+  {b:'2026-11-11-0020',points:[
+    'Photo d’un repas : tu peux maintenant mettre jusqu’à 4 photos (deux assiettes, le dessert…) et ajouter une précision écrite, le tout analysé en une fois.',
+    'Pendant l’analyse, l’écran dit quelle IA travaille, et un bouton « Annuler » te rend la main.',
+    'Pas de réseau ? « 🕓 Garder pour plus tard » garde tes photos : le repas t’attend en haut de l’onglet Repas, à analyser quand le réseau revient.',
+    'Recettes : « 👨‍🍳 Mode cuisine » affiche les étapes en grand, à cocher, et garde l’écran allumé. Sur une recette de l’IA, « 📌 Garder dans Mes recettes » la met à l’abri d’une nouvelle génération.',
+    'Après une analyse, le nom de chaque aliment s’affiche en entier, sur sa propre ligne.'
+  ]},
   {b:'2026-11-10-1926',points:[
     'Profil : la connexion se change maintenant pour une adresse e-mail seulement, comme à l’inscription (un compte à simple identifiant peut ainsi passer à une adresse e-mail).',
     'Une recette perso supprimée sur un autre appareil ne réapparaît plus.'
@@ -4086,6 +4108,7 @@ RÈGLES ABSOLUES:
     (S.aiRecipes||[]).forEach(r=>{
       if(favs.indexOf(r.id)>=0)return;
       const i=RCP.findIndex(x=>x.id===r.id);if(i>=0)RCP.splice(i,1);
+      _oublierPhotoRecette(r.id);
     });
     S.aiRecipes=gardees.concat(newRecipes);
     S.aiRecipes.forEach(r=>{r.profile=ACTIVE_PROFILE;if(!RCP.find(x=>x.id===r.id))RCP.push(r);});
@@ -4171,7 +4194,7 @@ async function clearAIRecipes(){
       +(k?(k>1?'Tes '+k+' favorites ('+noms+') sont gardées.':'Ta favorite '+noms+' est gardée.')+' ':'')
       +(k?(n>1?'Les autres disparaissent':'L’autre disparaît'):(n>1?'Elles disparaissent':'Elle disparaît'))+' de ta liste ; tu pourras en générer de nouvelles.';
     if(!await _confirmer(msg,{ok:'Effacer',danger:true}))return;
-    autres.forEach(r=>{const i=RCP.findIndex(x=>x.id===r.id);if(i>=0)RCP.splice(i,1);});
+    autres.forEach(r=>{const i=RCP.findIndex(x=>x.id===r.id);if(i>=0)RCP.splice(i,1);_oublierPhotoRecette(r.id);});
     S.aiRecipes=fav;
   }
   if(k){
@@ -4186,6 +4209,77 @@ async function clearAIRecipes(){
   }
   saveState();render();
 }
+/* Actions d'une recette ouverte (10/11/2026, valide par Liam) : « Mode cuisine » (etapes en grand, ecran qui reste
+   allume) et, pour une recette de l'IA, « Garder dans Mes recettes » sans passer par « Effacer les recettes IA ». */
+function _actionsRecette(r){
+  var st='flex:1;padding:9px 8px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:12px;cursor:pointer;';
+  var b=((r.steps||[]).length?'<button onclick="event.stopPropagation();ouvrirModeCuisine(\''+r.id+'\')" style="'+st+'">\ud83d\udc68\u200d\ud83c\udf73 Mode cuisine</button>':'')
+    +(r.ai?'<button onclick="event.stopPropagation();garderRecetteIA(\''+r.id+'\')" style="'+st+'">\ud83d\udccc Garder dans Mes recettes</button>':'');
+  return b?'<div class="actions-recette" style="display:flex;gap:8px;margin-top:10px;">'+b+'</div>':'';
+}
+function garderRecetteIA(id){
+  var r=(S.aiRecipes||[]).find(function(x){return x.id===id;});if(!r)return;
+  _versMesRecettes(r);
+  S.aiRecipes=S.aiRecipes.filter(function(x){return x.id!==id;});
+  saveState();render();
+  try{_infoToast('Recette gardée','Elle est dans l\'onglet \ud83d\udc68\u200d\ud83c\udf73 Mes recettes : modifiable avec \u270e, et à l\'abri d\'une nouvelle génération.');}catch(e){}
+}
+/* Mode cuisine : plein ecran, etapes a cocher d'un toucher, ecran garde allume (Wake Lock : Safari 16.4+, appli
+   installee sur iPhone a partir d'iOS 18.4 ; sans lui, le mode marche quand meme et le dit). Rien n'est compte ni
+   retire du stock ici : on ferme, puis « 1 portion » comme d'habitude. */
+var _cuisine=null,_verrouEcran=null;
+async function _ecranAllume(on){
+  try{
+    if(on){
+      if(!_verrouEcran&&typeof navigator!=='undefined'&&navigator.wakeLock&&navigator.wakeLock.request){
+        _verrouEcran=await navigator.wakeLock.request('screen');
+        try{_verrouEcran.addEventListener('release',function(){_verrouEcran=null;});}catch(e){}
+      }
+    }else if(_verrouEcran){var v=_verrouEcran;_verrouEcran=null;await v.release();}
+  }catch(e){_verrouEcran=null;}
+  return !!_verrouEcran;
+}
+function _htmlCuisine(r,fait,allume){
+  fait=fait||{};
+  var g=_ingRecette(r),n=(r.steps||[]).length,k=Object.keys(fait).filter(function(i){return fait[i];}).length;
+  return '<div style="max-width:560px;margin:0 auto;padding:calc(14px + env(safe-area-inset-top, 0px)) 16px calc(24px + env(safe-area-inset-bottom, 0px));">'
+    +'<div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:6px;"><div style="flex:1;min-width:0;font-size:19px;font-weight:700;color:var(--text);line-height:1.25;">'+_attr(r.name||'Recette')+'</div>'
+    +'<button onclick="fermerModeCuisine()" aria-label="Fermer le mode cuisine" style="flex:0 0 auto;padding:8px 14px;background:var(--bg3);border:0.5px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;cursor:pointer;">Fermer</button></div>'
+    +'<div id="cuisine-veille" style="font-size:11.5px;color:var(--text3);margin-bottom:12px;">'+(allume?'\ud83d\udd06 L\'écran reste allumé tant que ce mode est ouvert.':'Ton appareil ne permet pas de garder l\'écran allumé : touche-le de temps en temps.')+' · '+k+' / '+n+' étape'+(n>1?'s':'')+'</div>'
+    +renderIngredients(r)
+    +'<div style="margin-top:14px;">'+(r.steps||[]).map(function(s,i){
+        var ok=!!fait[i];
+        return '<button onclick="cocherEtapeCuisine('+i+')" aria-pressed="'+(ok?'true':'false')+'" style="display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;padding:14px 12px;margin-bottom:8px;background:var(--bg2);border:0.5px solid '+(ok?'rgba(111,191,115,.45)':'var(--border)')+';border-radius:12px;cursor:pointer;font-family:inherit;'+(ok?'opacity:.5;':'')+'">'
+          +'<span style="flex:0 0 auto;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;background:'+(ok?'var(--green)':'var(--bg3)')+';color:'+(ok?'#0d1410':'var(--text2)')+';">'+(ok?'\u2713':(i+1))+'</span>'
+          +'<span style="flex:1;min-width:0;font-size:16px;line-height:1.5;color:var(--text);'+(ok?'text-decoration:line-through;':'')+'">'+_etapeSurlignee(g,s,r.custom===true)+'</span></button>';
+      }).join('')+'</div>'
+    +'<div style="font-size:11.5px;color:var(--text3);line-height:1.5;margin-top:8px;">Touche une étape pour la cocher. Quand c\'est prêt, ferme ce mode puis touche « 1 portion » : c\'est là que le repas est compté et le stock retiré.</div></div>';
+}
+function _rendreCuisine(){
+  if(!_cuisine)return;
+  var r=findRecipe(_cuisine.id);if(!r){fermerModeCuisine();return;}
+  try{
+    var e=document.getElementById('cuisine-plein');
+    if(!e){e=document.createElement('div');e.id='cuisine-plein';
+      e.style.cssText='position:fixed;inset:0;z-index:350;background:var(--bg);overflow-y:auto;-webkit-overflow-scrolling:touch;';
+      try{e.setAttribute('role','dialog');e.setAttribute('aria-modal','true');}catch(_){}
+      document.body.appendChild(e);}
+    e.innerHTML=_htmlCuisine(r,_cuisine.fait,!!_verrouEcran);
+  }catch(_){}
+}
+function ouvrirModeCuisine(id){
+  if(!findRecipe(id))return;
+  _cuisine={id:id,fait:{}};_rendreCuisine();
+  _ecranAllume(true).then(function(){_rendreCuisine();});
+}
+function cocherEtapeCuisine(i){if(!_cuisine)return;_cuisine.fait[i]=!_cuisine.fait[i];_rendreCuisine();}
+function fermerModeCuisine(){
+  _cuisine=null;
+  try{var e=document.getElementById('cuisine-plein');if(e&&e.remove)e.remove();}catch(_){}
+  _ecranAllume(false);
+}
+/* le verrou d'ecran tombe quand l'appli passe en arriere-plan : on le reprend au retour */
+try{document.addEventListener('visibilitychange',function(){if(_cuisine&&document.visibilityState==='visible')_ecranAllume(true).then(function(){_rendreCuisine();});});}catch(e){}
 /* Recette IA -> « Mes recettes » : meme identifiant (photo, favori et historique gardes) ; etapes au format a
    crochets des recettes perso, sinon plus aucun ingredient n'y serait surligne. */
 function _versMesRecettes(r){
@@ -4251,6 +4345,7 @@ async function callAI(messages,maxTokens=300,system=null,modelOverride=null,temp
   const noms=(hasImg?[gmOk&&'Gemini',gq&&'Groq']:[gq&&'Groq',gmOk&&'Gemini']).filter(Boolean);
   for(let i=0;i<ordre.length;i++){
     const dernier=(i===ordre.length-1);
+    try{_etapeIA(noms[i],i>0?noms[i-1]:null);}catch(_){}
     try{
       const r=await ordre[i]();
       if(r.empty&&!dernier){toutes.push({ia:noms[i],m:'Réponse vide'});continue;}     // reponse vide : on laisse sa chance a l'autre IA
@@ -4902,7 +4997,7 @@ function renderMacros(){
     (_mo?(lignes[_mo.id]=lignes[_mo.id]||[]):hors).push({html:_html,kcal:_k,prot:_p});});
   const list=MOMENTS.map(mo=>_carteMoment(mo,dd,lignes[mo.id]||[])).join('')+(hors.length?_carteSansMoment(hors):'');
   const rem=meals.length>0?`<div style="margin-top:8px;padding-top:6px;border-top:0.5px solid var(--border);display:flex;gap:12px;flex-wrap:wrap;"><span style="font-size:11px;color:var(--text2);">${isToday?'Reste':'Écart'} : <strong style="color:var(--text);">${isToday?(Math.round(Math.max(0,TARGETS.kcal-m.kcal))+' kcal'):((m.kcal>TARGETS.kcal?'+':'')+Math.round(m.kcal-TARGETS.kcal)+' kcal')}</strong></span><span style="font-size:11px;color:var(--text2);">Prot : <strong style="color:var(--green);">${isToday?(Math.round(Math.max(0,TARGETS.prot-m.prot)*10)/10+'g'):(Math.round(m.prot*10)/10+'/'+TARGETS.prot+'g')}</strong></span></div>`:'';
-  return`<div id="daypane" style="background:var(--bg2);border:0.5px solid ${isTomorrow?'var(--blue)':'var(--border)'};border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;">
+  return`${_htmlAAnalyser()}<div id="daypane" style="background:var(--bg2);border:0.5px solid ${isTomorrow?'var(--blue)':'var(--border)'};border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;">
     <div style="text-align:center;font-size:15px;font-weight:600;color:var(--text);text-transform:capitalize;margin-bottom:8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${dateLabel}${suffix}</div>${_bandeauJours(dd)}
     <div style="text-align:center;font-size:11px;color:var(--text3);margin:-4px 0 8px;">${meals.length} repas</div>
     ${calorieRing(m.kcal,TARGETS.kcal,(function(){var b=getBurn(dd);return b?b.total:0;})())}
@@ -5139,7 +5234,7 @@ function renderCard(r){
       +`<button onclick="event.stopPropagation();choisirPhotoRecette('${r.id}')" style="padding:6px 10px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;backdrop-filter:blur(4px);">\ud83d\udcf7 ${p?'Changer':'Ajouter une photo'}</button>`
       +(p?`<button onclick="event.stopPropagation();retirerPhotoRecette('${r.id}')" title="Retirer la photo" style="padding:6px 9px;border-radius:8px;border:0.5px solid rgba(255,255,255,.28);background:rgba(0,0,0,.55);color:#fff;font-size:11px;cursor:pointer;">\u00d7</button>`:'')
       +`</div></div>`;
-  })()}${renderIngredients(r)}<div style="padding-top:12px;">${((_ingR)=>(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${_etapeSurlignee(_ingR,s,r.custom===true)}</span></div>`).join(''))(_ingRecette(r))}</div>${renderCardBottom(r)}</div>`:''}</div>`;
+  })()}${renderIngredients(r)}<div style="padding-top:12px;">${((_ingR)=>(r.steps||[]).map((s,i)=>`<div style="display:flex;gap:9px;margin-bottom:7px;line-height:1.5;"><span style="min-width:18px;height:18px;border-radius:50%;background:var(--bg3);color:var(--text3);font-size:11px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;">${i+1}</span><span style="font-size:13px;color:var(--text2);">${_etapeSurlignee(_ingR,s,r.custom===true)}</span></div>`).join(''))(_ingRecette(r))}</div>${_actionsRecette(r)}${renderCardBottom(r)}</div>`:''}</div>`;
 }
 
 function qtyLabel(it){
@@ -7343,6 +7438,7 @@ function _supprimerCustRec(){
   S.customRecipes=(S.customRecipes||[]).filter(function(x){return x.id!==id;});
   var ri=RCP.findIndex(function(x){return x.id===id;});if(ri>=0)RCP.splice(ri,1);
   S.favs=(S.favs||[]).filter(function(f){return f!==id;});
+  _oublierPhotoRecette(id);
   saveState();closeCustRec();render();
 }
 function renderCustHeader(){
@@ -8329,7 +8425,7 @@ function setMealStock(yes){
   const off='padding:5px 14px;border-radius:6px;font-size:12px;cursor:pointer;background:transparent;border:0.5px solid rgba(246,237,227,.15);color:var(--text2);';
   if(y)y.style.cssText=yes?on:off;if(n)n.style.cssText=!yes?on:off;
 }
-function _erreurAjout(msg){var e=document.getElementById('addmeal-err');if(!e)return;e.textContent=msg||'';e.style.display=msg?'block':'none';}
+function _erreurAjout(msg){['addmeal-err','amp-err'].forEach(function(id){var e=document.getElementById(id);if(!e)return;e.textContent=msg||'';e.style.display=msg?'block':'none';});if(!msg)_majPlusTard(false);}
 function openAddMeal(type,slot) {_scanBase=null;_erreurAjout('');
   const ov = document.getElementById('addmeal-overlay');
   ov.style.display = 'flex';
@@ -8339,6 +8435,8 @@ function openAddMeal(type,slot) {_scanBase=null;_erreurAjout('');
   document.getElementById('addmeal-confirm').style.display = 'none';
   document.getElementById('addmeal-photo-preview').style.display = 'none';
   document.getElementById('addmeal-textarea').value = '';
+  _amGen++;_amPhotos=[];_amBrouillon=null;
+  {var _pz=document.getElementById('addmeal-photos');if(_pz)_pz.style.display='none';var _pp=document.getElementById('amp-precision');if(_pp)_pp.value='';}
   _majFibAjout(null,false);
   document.getElementById('addmeal-title').textContent = 'Ajouter un repas';
   _addMealInvSuggestions = [];
@@ -8894,15 +8992,16 @@ function renderInvSuggestions(suggestions) {
     html += _addMealFreeItems.map(function(f,i){
       var m=f.pu?{kcal:f.pu.kcal*f.qty,prot:f.pu.prot*f.qty,gluc:f.pu.gluc*f.qty,lip:f.pu.lip*f.qty}:f.m;
       var occupe=(_ligneEnCours===i);
-      return '<div style="display:flex;align-items:center;gap:6px;padding:6px 0 '+(S.voirMacrosIng?'2px':'6px')+';border-bottom:'+(S.voirMacrosIng?'none':'0.5px solid rgba(95,168,201,.12)')+';">'
+      /* deux lignes (10/11/2026) : le nom en entier, puis quantite, kcal et ↻ (sur iPhone le nom etait coupe : « Thon au nat… ») */
+      return '<div class="ligne-estimee" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 0 '+(S.voirMacrosIng?'2px':'6px')+';border-bottom:'+(S.voirMacrosIng?'none':'0.5px solid rgba(95,168,201,.12)')+';">'
         +'<span style="width:12px;flex-shrink:0;color:var(--blue);font-size:11px;text-align:center;">\u25C7</span>'
         +'<input type="text" id="free-nom-'+i+'" value="'+String(f.n||'').replace(/"/g,'&quot;')+'" '
-          +'style="flex:1;min-width:0;padding:4px 6px;background:var(--bg);border:0.5px solid rgba(95,168,201,.25);border-radius:6px;color:var(--blue);font-size:12.5px;outline:none;">'
-        +'<input type="number" id="free-qty-'+i+'" value="'+f.qty+'" min="0" '+(f.pu?'':'disabled ')+'style="width:54px;flex:0 0 auto;box-sizing:border-box;padding:4px 5px;background:var(--bg);border:0.5px solid rgba(95,168,201,.25);border-radius:6px;color:var(--blue);font-size:12px;outline:none;text-align:right;">'
-        +'<span style="font-size:11px;color:var(--text3);min-width:20px;flex:0 0 auto;">'+(f.unit||'')+'</span>'
-        +'<span style="font-size:11px;color:var(--orange);min-width:52px;flex-shrink:0;text-align:right;">'+Math.round(m.kcal)+' kcal</span>'
-        +'<button onclick="reestimerLigne('+i+')" '+(occupe?'disabled ':'')+'title="Recalculer cette ligne d\'après le nom corrigé" style="background:'+(occupe?'transparent':'rgba(111,191,115,.14)')+';border:0.5px solid rgba(111,191,115,'+(occupe?'.2':'.45')+');border-radius:7px;color:var('+(occupe?'--text3':'--green')+');font-size:13px;cursor:pointer;padding:7px 9px;margin-left:4px;line-height:1;flex:0 0 auto;">'+(occupe?'\u2026':'\u21bb')+'</button>'
-        +'<button onclick="supprimerLigneEstimee('+i+')" title="Retirer cette ligne" style="background:none;border:0;border-radius:7px;color:var(--red);font-size:15px;line-height:1;cursor:pointer;padding:7px 8px;margin-left:14px;flex:0 0 auto;">\u00d7</button>'
+          +'style="flex:1 1 calc(100% - 64px);min-width:0;padding:6px 8px;background:var(--bg);border:0.5px solid rgba(95,168,201,.25);border-radius:6px;color:var(--blue);font-size:13px;outline:none;">'
+        +'<input type="number" id="free-qty-'+i+'" value="'+f.qty+'" min="0" '+(f.pu?'':'disabled ')+'style="order:2;margin-left:18px;width:62px;flex:0 0 auto;box-sizing:border-box;padding:4px 5px;background:var(--bg);border:0.5px solid rgba(95,168,201,.25);border-radius:6px;color:var(--blue);font-size:12px;outline:none;text-align:right;">'
+        +'<span style="order:2;font-size:11px;color:var(--text3);min-width:20px;flex:0 0 auto;">'+(f.unit||'')+'</span>'
+        +'<span style="order:2;margin-left:auto;font-size:12px;color:var(--orange);min-width:52px;flex-shrink:0;text-align:right;">'+Math.round(m.kcal)+' kcal</span>'
+        +'<button onclick="reestimerLigne('+i+')" '+(occupe?'disabled ':'')+'title="Recalculer cette ligne d\'après le nom corrigé" style="background:'+(occupe?'transparent':'rgba(111,191,115,.14)')+';border:0.5px solid rgba(111,191,115,'+(occupe?'.2':'.45')+');border-radius:7px;color:var('+(occupe?'--text3':'--green')+');font-size:13px;cursor:pointer;padding:7px 9px;margin-left:4px;line-height:1;flex:0 0 auto;order:2;">'+(occupe?'\u2026':'\u21bb')+'</button>'
+        +'<button onclick="supprimerLigneEstimee('+i+')" title="Retirer cette ligne" style="order:1;background:none;border:0;border-radius:7px;color:var(--red);font-size:16px;line-height:1;cursor:pointer;padding:7px 8px;margin-left:2px;flex:0 0 auto;">\u00d7</button>'
         +'</div>'+_ligneMacros(m,true);
     }).join('');
   }
@@ -8935,39 +9034,170 @@ async function startAddMealAnalysis(type) {
   }
   const text = document.getElementById('addmeal-textarea').value.trim();
   if (!text) return;
-  document.getElementById('addmeal-input').style.display = 'none';
-  document.getElementById('addmeal-analyzing').style.display = 'block';
-  {var _at=document.getElementById('addmeal-analyzing-txt');if(_at){var _p=_iaPrevue(false);_at.textContent='Analyse en cours'+(_p?' avec '+_p.nom:'')+'\u2026';}}
+  _ecranAnalyse(false);
   await runAddMealAI([{role:'user', content:text}]);
 }
 
+/* Photos du repas (10/11/2026, validé par Liam après le buffet du 07/11 : deux assiettes + des desserts à dire par
+   écrit) : jusqu'à PHOTOS_REPAS_MAX photos et une précision, analysées en une fois. Les photos choisies se posent
+   dans un plateau (#addmeal-photos) ; rien n'est envoyé avant « Analyser ». */
+const PHOTOS_REPAS_MAX=4;
+var _amPhotos=[];        // [{b64,url}] du repas en cours de saisie
+var _amGen=0;            // change a chaque ouverture / annulation : une reponse d'IA perimee est ignoree
+var _amBrouillon=null;   // identifiant du repas « à analyser » en cours de reprise
+function _photoRepasVersB64(file){
+  return new Promise(function(ok,ko){
+    var img=new Image(),ou=URL.createObjectURL(file);
+    img.onerror=function(){try{URL.revokeObjectURL(ou);}catch(e){}ko(new Error('illisible'));};
+    img.onload=function(){try{
+      var MAX=800,sc=Math.min(1,MAX/Math.max(img.width,img.height));
+      var cv=document.createElement('canvas');
+      cv.width=Math.round(img.width*sc);cv.height=Math.round(img.height*sc);
+      cv.getContext('2d').drawImage(img,0,0,cv.width,cv.height);
+      try{URL.revokeObjectURL(ou);}catch(e){}
+      var url=cv.toDataURL('image/jpeg',0.85);ok({b64:url.split(',')[1],url:url});
+    }catch(e){ko(e);}};
+    img.src=ou;
+  });
+}
 async function handleAddMealPhoto(input) {
-  const file = input.files[0]; if (!file) return;
-  const img = new Image(), ou = URL.createObjectURL(file);
-  img.onerror = () => {
-    URL.revokeObjectURL(ou);
-    const ta = document.getElementById('addmeal-textarea');
-    _erreurAjout("\u26a0 Photo illisible \u2014 r\u00e9essaie avec une autre");
-  };
-  img.onload = async () => {
-    const MAX = 800, sc = Math.min(1, MAX / Math.max(img.width, img.height));
-    const cv = document.createElement('canvas');
-    cv.width = Math.round(img.width * sc); cv.height = Math.round(img.height * sc);
-    cv.getContext('2d').drawImage(img, 0, 0, cv.width, cv.height);
-    URL.revokeObjectURL(ou);
-    const dataUrl = cv.toDataURL('image/jpeg', 0.85);
-    const b64 = dataUrl.split(',')[1];
-    const prev = document.getElementById('addmeal-photo-preview');
-    prev.src = dataUrl; prev.style.display = 'block';
-    document.getElementById('addmeal-input').style.display = 'none';
-    document.getElementById('addmeal-analyzing').style.display = 'block';
-  {var _at=document.getElementById('addmeal-analyzing-txt');if(_at){var _p=_iaPrevue(true);_at.textContent='Analyse en cours'+(_p?' avec '+_p.nom:'')+'\u2026';}}
-    await runAddMealAI([{role:'user', content:[
-      {type:'image', source:{type:'base64', media_type:'image/jpeg', data:b64}},
-      {type:'text', text:'Analyse ce repas.'}
-    ]}]);
-  };
-  img.src = ou;
+  var fichiers=Array.prototype.slice.call(input.files||[]);if(!fichiers.length)return;
+  var place=PHOTOS_REPAS_MAX-_amPhotos.length,trop=fichiers.length>place,rate=0;
+  for(var i=0;i<fichiers.length&&i<place;i++){
+    try{_amPhotos.push(await _photoRepasVersB64(fichiers[i]));}catch(e){rate++;}
+  }
+  try{input.value='';}catch(e){}
+  if(!_amPhotos.length){_erreurAjout("⚠ Photo illisible — réessaie avec une autre");return;}
+  _montrerPhotos();
+  _erreurAjout(rate?"⚠ Une photo est illisible et n'a pas été gardée.":(trop?'⚠ '+PHOTOS_REPAS_MAX+' photos au plus par repas : les autres n\'ont pas été gardées.':''));
+}
+function _montrerPhotos(){
+  var z=document.getElementById('addmeal-photos'),l=document.getElementById('amp-liste');
+  ['addmeal-input','addmeal-photo-choix','addmeal-analyzing','addmeal-confirm','addmeal-verify','addmeal-photo-preview'].forEach(function(id){var e=document.getElementById(id);if(e)e.style.display='none';});
+  if(l)l.innerHTML=_amPhotos.map(function(ph,i){
+      return '<div style="position:relative;width:78px;height:78px;flex:0 0 auto;"><img src="'+ph.url+'" alt="Photo '+(i+1)+'" style="width:78px;height:78px;object-fit:cover;border-radius:10px;border:0.5px solid var(--border);display:block;">'
+        +'<button onclick="retirerPhotoRepas('+i+')" aria-label="Retirer la photo '+(i+1)+'" style="position:absolute;top:-6px;right:-6px;width:24px;height:24px;border-radius:50%;background:var(--bg3);border:0.5px solid rgba(246,237,227,.3);color:var(--text);font-size:13px;line-height:1;cursor:pointer;padding:0;">×</button></div>';
+    }).join('')
+    +(_amPhotos.length<PHOTOS_REPAS_MAX?'<button onclick="ajouterPhotoRepas()" style="width:78px;height:78px;flex:0 0 auto;border-radius:10px;background:transparent;border:0.5px dashed rgba(246,237,227,.3);color:var(--text2);font-size:11px;line-height:1.3;cursor:pointer;padding:4px;">📷<br>+ Photo</button>':'');
+  if(z)z.style.display='block';
+}
+function ajouterPhotoRepas(){var fi=document.getElementById('addmeal-photo-input');if(!fi)return;fi.value='';fi.click();}
+function retirerPhotoRepas(i){
+  _amPhotos.splice(i,1);
+  if(_amPhotos.length){_montrerPhotos();return;}
+  var z=document.getElementById('addmeal-photos');if(z)z.style.display='none';
+  document.getElementById('addmeal-input').style.display='block';_erreurAjout('');
+}
+function _consignePhotos(n,precision){
+  return 'Analyse ce repas.'
+    +(n>1?' Les '+n+' photos montrent le MÊME repas (plusieurs assiettes ou services) : liste tout ce qui a été mangé sur l\'ensemble des photos, sans compter deux fois un aliment visible sur deux photos.':'')
+    +(precision?'\nPrécision donnée par la personne (elle prime sur ce que tu crois voir ; ajoute aussi ce qu\'elle cite et qui n\'est pas sur la photo) : '+precision:'');
+}
+async function analyserPhotos(){
+  if(!_amPhotos.length)return;
+  var precision=String((document.getElementById('amp-precision')||{}).value||'').trim().slice(0,600);
+  var z=document.getElementById('addmeal-photos');if(z)z.style.display='none';
+  var prev=document.getElementById('addmeal-photo-preview');if(prev){prev.src=_amPhotos[0].url;prev.style.display='block';}
+  _ecranAnalyse(true);
+  var contenu=_amPhotos.map(function(ph){return {type:'image',source:{type:'base64',media_type:'image/jpeg',data:ph.b64}};});
+  contenu.push({type:'text',text:_consignePhotos(_amPhotos.length,precision)});
+  await runAddMealAI([{role:'user',content:contenu}]);
+}
+/* Ecran d'analyse : l'IA en cours est nommee, le passage a l'IA de secours est dit (callAI → _etapeIA), une note
+   rassure au bout de 12 s, et « Annuler » rend la main (la reponse qui arriverait ensuite est ignoree). */
+function _ecranAnalyse(photo){
+  document.getElementById('addmeal-input').style.display='none';
+  document.getElementById('addmeal-analyzing').style.display='block';
+  var at=document.getElementById('addmeal-analyzing-txt'),p=_iaPrevue(photo);
+  if(at)at.textContent='Analyse en cours'+(p?' avec '+p.nom:'')+'…';
+  var note=document.getElementById('addmeal-analyzing-note');if(note)note.textContent='';
+  var gen=_amGen;
+  try{setTimeout(function(){
+    var n=document.getElementById('addmeal-analyzing-note'),a=document.getElementById('addmeal-analyzing');
+    if(gen===_amGen&&n&&a&&a.style.display!=='none'&&!n.textContent)n.textContent='Ça peut prendre jusqu’à une minute quand une IA est très demandée.';
+  },12000);}catch(e){}
+}
+function _etapeIA(nom,avant){
+  var a=document.getElementById('addmeal-analyzing'),t=document.getElementById('addmeal-analyzing-txt');
+  if(!a||!t||a.style.display==='none')return;
+  t.textContent=avant?(avant+' ne répond pas, je passe à '+nom+'…'):('Analyse en cours avec '+nom+'…');
+}
+function annulerAnalyse(){
+  _amGen++;
+  document.getElementById('addmeal-analyzing').style.display='none';
+  var prev=document.getElementById('addmeal-photo-preview');if(prev)prev.style.display='none';
+  if(_amPhotos.length)_montrerPhotos();else document.getElementById('addmeal-input').style.display='block';
+}
+/* ── Repas « à analyser plus tard » (10/11/2026, validé par Liam : au restaurant le 07/11, les deux IA injoignables).
+   Quand l'analyse echoue faute de reseau, le repas (photos, texte, jour, moment) peut etre garde sur l'appareil
+   (localStorage <profil>_aAnalyser, BROUILLONS_MAX au plus, efface a la deconnexion) et relance d'un toucher depuis
+   l'onglet Repas ou l'Accueil. Il n'est pas compte dans la journee tant qu'il n'est pas analyse. */
+const BROUILLONS_MAX=3;
+function _cleBrouillons(){return ACTIVE_PROFILE+'_aAnalyser';}
+function _brouillons(){
+  try{var a=JSON.parse(localStorage.getItem(_cleBrouillons())||'[]');
+    return Array.isArray(a)?a.filter(function(b){return b&&typeof b.id==='string'&&/^b[a-z0-9]+$/.test(b.id)&&_cleSure(b.jour);}).map(function(b){
+      return {id:b.id,jour:b.jour,slot:moment(b.slot)?b.slot:null,stock:!!b.stock,texte:String(b.texte||'').slice(0,600),t:+b.t||0,
+        photos:(Array.isArray(b.photos)?b.photos:[]).filter(function(x){return typeof x==='string'&&/^[A-Za-z0-9+\/=]+$/.test(x);}).slice(0,PHOTOS_REPAS_MAX)};
+    }):[];}catch(e){return [];}
+}
+function _ecrireBrouillons(a){
+  try{if(a.length)localStorage.setItem(_cleBrouillons(),JSON.stringify(a));else localStorage.removeItem(_cleBrouillons());return true;}catch(e){return false;}
+}
+function _erreurReseau(err){
+  try{if(typeof navigator!=='undefined'&&navigator.onLine===false)return true;}catch(e){}
+  var l=(err&&err.toutes&&err.toutes.length)?err.toutes.map(function(x){return x.m;}):[err&&err.message];
+  return l.length>0&&l.every(function(m){return /^NETWORK:/.test(String(m||''));});
+}
+function _majPlusTard(montrer){['am-plus-tard-1','am-plus-tard-2'].forEach(function(id){var b=document.getElementById(id);if(b)b.style.display=montrer?'block':'none';});}
+function garderPourPlusTard(){
+  var texte=String((document.getElementById(_amPhotos.length?'amp-precision':'addmeal-textarea')||{}).value||'').trim().slice(0,600);
+  if(!_amPhotos.length&&!texte)return;
+  var a=_brouillons().filter(function(b){return b.id!==_amBrouillon;});
+  if(a.length>=BROUILLONS_MAX){_alerte('Déjà '+BROUILLONS_MAX+' repas en attente\n\nAnalyse-les ou retire-en un (onglet Repas) avant d\'en garder un autre.');return;}
+  a.push({id:'b'+Date.now().toString(36),jour:_addMealDay,slot:_amSlot,stock:!!_addMealUseStock,texte:texte,photos:_amPhotos.map(function(p){return p.b64;}),t:Date.now()});
+  if(!_ecrireBrouillons(a)){_alerte('Pas assez de place sur l\'appareil pour garder '+(_amPhotos.length>1?'ces photos':'cette photo')+'\n\nNote plutôt le repas en quelques mots, ou garde la photo dans ta pellicule.');return;}
+  _amBrouillon=null;closeAddMeal();render();
+  try{_infoToast('Repas gardé pour plus tard','Il t\'attend dans l\'onglet Repas : touche « Analyser » quand tu as du réseau.');}catch(e){}
+}
+function _brouillonFait(){
+  if(!_amBrouillon)return;
+  var id=_amBrouillon;_amBrouillon=null;_ecrireBrouillons(_brouillons().filter(function(b){return b.id!==id;}));
+}
+function reprendreBrouillon(id){
+  var b=_brouillons().find(function(x){return x.id===id;});if(!b)return;
+  openAddMeal('text',b.slot);
+  /* jour d'origine s'il est encore modifiable (J-7 a J+1), sinon aujourd'hui */
+  _addMealDay=(b.jour>=shiftDate(S.today,-7)&&b.jour<=shiftDate(S.today,1))?b.jour:S.today;
+  try{_majBandeauJour();}catch(e){}
+  setMealStock(b.stock&&_aDuStock());
+  _amBrouillon=id;
+  if(b.photos.length){
+    _amPhotos=b.photos.map(function(x){return {b64:x,url:'data:image/jpeg;base64,'+x};});
+    var pz=document.getElementById('amp-precision');if(pz)pz.value=b.texte;
+    _montrerPhotos();
+    return analyserPhotos();
+  }
+  document.getElementById('addmeal-textarea').value=b.texte;
+  return startAddMealAnalysis('text');
+}
+function supprimerBrouillon(id){
+  _confirmer('Retirer ce repas en attente ?\n\nSes photos et sa description seront effacées de l\'appareil. Rien n\'a été compté dans ta journée.',{ok:'Retirer',danger:true}).then(function(ok){
+    if(!ok)return;_ecrireBrouillons(_brouillons().filter(function(b){return b.id!==id;}));render();
+  });
+}
+function _htmlAAnalyser(){
+  var a=_brouillons();if(!a.length)return '';
+  return a.map(function(b){
+    var mo=moment(b.slot),j=b.jour===S.today?'aujourd\'hui':(b.jour===shiftDate(S.today,-1)?'hier':('du '+b.jour.slice(8,10)+'/'+b.jour.slice(5,7)));
+    var quoi=b.photos.length?(b.photos.length+' photo'+(b.photos.length>1?'s':'')):('« '+_attr(b.texte.slice(0,40))+(b.texte.length>40?'…':'')+' »');
+    return '<div class="a-analyser" style="display:flex;align-items:center;gap:10px;background:var(--blue-bg);border:0.5px solid rgba(95,168,201,.4);border-radius:12px;padding:10px 12px;margin-bottom:10px;">'
+      +(b.photos.length?'<img src="data:image/jpeg;base64,'+b.photos[0]+'" alt="" style="width:44px;height:44px;object-fit:cover;border-radius:8px;flex:0 0 auto;">':'<span style="font-size:22px;flex:0 0 auto;">🕓</span>')
+      +'<div style="flex:1;min-width:0;"><div style="font-size:13px;font-weight:600;color:var(--text);">Repas à analyser</div>'
+      +'<div style="font-size:11.5px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+(mo?mo.nom+' ':'Repas ')+j+' · '+quoi+'</div></div>'
+      +'<button onclick="reprendreBrouillon(\''+b.id+'\')" style="flex:0 0 auto;padding:8px 12px;background:var(--blue);border:0;border-radius:8px;color:#0d1418;font-size:12.5px;font-weight:600;cursor:pointer;">Analyser</button>'
+      +'<button onclick="supprimerBrouillon(\''+b.id+'\')" aria-label="Retirer ce repas en attente" style="flex:0 0 auto;background:none;border:0;color:var(--text3);font-size:17px;line-height:1;cursor:pointer;padding:6px 4px;">×</button></div>';
+  }).join('');
 }
 
 let _pendingMeal=null;
@@ -9129,6 +9359,9 @@ async function chargerPhotos(){
   render();
   try{verifierLiens();}catch(e){}
 }
+/* Recette supprimee ou remplacee : sa photo part avec elle (10/11/2026, valide par Liam). Avant, elle restait pour
+   toujours dans le cloud et dans la copie locale (une seule cle localStorage pour toutes les photos, ~5 Mo sur iPhone). */
+function _oublierPhotoRecette(id){try{if(id&&PHOTOS[_cleFB(id)])_enregistrerPhoto(id,null);}catch(e){}}
 async function _enregistrerPhoto(id,dataUrl){
   var k=_cleFB(id);
   if(dataUrl)PHOTOS[k]=dataUrl; else delete PHOTOS[k];
@@ -9750,7 +9983,7 @@ async function supprimerCompte(mdp){
 function _effacerDonneesLocales(uid){
   try{
     var prof=[uid?('users/'+uid):ACTIVE_PROFILE,PROFIL_HERITE];
-    prof.forEach(function(p){['_st','_photos','_nonEnvoye'].forEach(function(s){localStorage.removeItem(p+s);});});
+    prof.forEach(function(p){['_st','_photos','_nonEnvoye','_aAnalyser'].forEach(function(s){localStorage.removeItem(p+s);});});
     ['frigo_state','fb_rtok','dz_journal','dz_pesee_plus_tard','dz_bas_vu'].forEach(function(k){localStorage.removeItem(k);});
   }catch(e){}
 }
@@ -10757,6 +10990,8 @@ function _macrosFromItems(items){
 }
 async function runAddMealAI(msgs) {
   _erreurAjout('');
+  const _gen=_amGen;   /* « Annuler » ou une nouvelle ouverture changent _amGen : la reponse est alors ignoree */
+  const _nImg=msgs.reduce(function(n,m){return n+(Array.isArray(m.content)?m.content.filter(function(p){return p.type==='image';}).length:0);},0);
   let sys;
   if(_addMealUseStock){
     sys = `Tu identifies les items de l'inventaire utilisés dans un repas.
@@ -10790,7 +11025,8 @@ Réponds UNIQUEMENT en JSON sans markdown:
 - JSON COMPACT sur une seule ligne, sans espaces inutiles, noms d'aliments courts (5 mots au plus) : une assiette de buffet compte souvent plus de 10 lignes.`;
   }
   try {
-    const data = await callAI(msgs, 1300, sys, msgs.some(m=>Array.isArray(m.content)&&m.content.some(p=>p.type==='image'))?null:'openai/gpt-oss-120b');
+    const data = await callAI(msgs, 1300+Math.max(0,_nImg-1)*500, sys, _nImg?null:'openai/gpt-oss-120b');
+    if(_gen!==_amGen)return;
     _iaAnalyse=_derniereIA;
     const raw = data.content.map(i=>i.text||'').join('');
     if(data.empty)throw new Error('Réponse vide, réessaie.');
@@ -10846,11 +11082,14 @@ Réponds UNIQUEMENT en JSON sans markdown:
       _prevenirCoupe();
     }
   } catch(err) {
+    if(_gen!==_amGen)return;
     document.getElementById('addmeal-analyzing').style.display = 'none';
-    document.getElementById('addmeal-input').style.display = 'block';
+    if(_amPhotos.length)_montrerPhotos();else document.getElementById('addmeal-input').style.display = 'block';
     _erreurAjout(err.message === 'NO_KEY'
       ? "⚠ Configure ta clé API d'abord (bouton ⚙)"
       : "⚠ " + _aiFriendlyErr(err));
+    /* pas de reseau : proposer de garder le repas (photos ou texte) pour l'analyser plus tard */
+    if(err.message!=='NO_KEY'&&_erreurReseau(err))_majPlusTard(true);
   }
 }
 
@@ -10922,10 +11161,11 @@ function confirmAddMealFinal() {
   // n'a pas deja ete choisi explicitement dans le tracker.
   if(_jour===S.today&&heureProfil()<4){
     S.pendingFreeMeal=_meal;S.mainTab='recipes';   /* la question s'affiche dans Recettes, meme si l'ajout vient d'un autre onglet */
-    saveState();closeAddMeal();render();return;
+    _brouillonFait();saveState();closeAddMeal();render();return;
   }
   if (!S.dayMeals[_jour]) S.dayMeals[_jour] = [];
   S.dayMeals[_jour].push(_meal);
+  _brouillonFait();
   saveState();
   closeAddMeal();
   render();

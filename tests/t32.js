@@ -176,7 +176,9 @@ t('*** les deux boutons sont nettement ecartes ***',()=>{
   const iSup=h.indexOf('supprimerLigneEstimee(0)');
   const bloc=h.slice(iSup-200,iSup+400);
   const m=bloc.match(/margin-left:(\d+)px/g)||[];
-  if(!/margin-left:14px/.test(bloc))throw new Error('ecart insuffisant entre recalcul et suppression');
+  /* depuis le 10/11/2026, ils ne sont plus sur la meme ligne : × au bout du nom (order:1), ↻ sur la ligne des quantites (order:2) */
+  const iRe2=h.indexOf('reestimerLigne(0)');
+  if(!/order:1;/.test(h.slice(iSup,iSup+300))||!/order:2;/.test(h.slice(iRe2,iRe2+700))||!/flex-wrap:wrap/.test(h))throw new Error('ecart insuffisant entre recalcul et suppression');
 });
 t('*** les cibles sont assez grandes pour le doigt ***',()=>{
   const h=docEl('inv-items-section').innerHTML;
