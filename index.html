@@ -408,7 +408,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-11 11h11 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-11 11h26 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -684,12 +684,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-11-1111"></script>
+<script src="catalogue.js?v=2026-11-11-1126"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-11-1111';
+const BUILD_ID='2026-11-11-1126';
 const NOUVEAUTES=[
+  {b:'2026-11-11-1126',points:[
+    '« Refaire un repas habituel » : une seule ligne par repas (la version la plus récente), même si les portions ont varié.'
+  ]},
   {b:'2026-11-11-1111',points:[
     '« Refaire un repas habituel » ne propose plus un repas dont un article de l’inventaire est épuisé : il revient dès que tu en as racheté.'
   ]},
@@ -8092,7 +8095,7 @@ function _macrosRepas(m){
   var ex=(m.extras||[]).reduce(function(a,e){return{kcal:a.kcal+(e.kcal||0),prot:a.prot+(e.prot||0),gluc:a.gluc+(e.gluc||0),lip:a.lip+(e.lip||0)};},{kcal:0,prot:0,gluc:0,lip:0});
   return {kcal:(base.kcal||0)+dm.kcal+ex.kcal,prot:(base.prot||0)+dm.prot+ex.prot,gluc:(base.gluc||0)+dm.gluc+ex.gluc,lip:(base.lip||0)+dm.lip+ex.lip};
 }
-// Repas des 30 derniers jours, regroupes par nom et calories (a 10 kcal pres) :
+// Repas des 30 derniers jours, regroupes par nom (11/11/2026, Liam : une seule ligne par nom ; avant, nom + calories a 10 kcal pres) :
 // les plus frequents d'abord, puis les plus recents. On garde la saisie la
 // plus recente de chacun comme modele.
 // Un repas ne se refait que si le stock suit (11/11/2026, Liam : « Yaourts 0% fruits » propose
@@ -8116,7 +8119,7 @@ function _repasHabituels(n){
     (S.dayMeals[d]||[]).forEach(function(m,i){
       var mc=_macrosRepas(m);if(!mc||!(mc.kcal>0))return;
       var r=findRecipe(m.rid),nom=m.name||(r&&r.name)||'';if(!nom)return;
-      var cle=_normNom(nom)+'|'+Math.round(mc.kcal/10);
+      var cle=_normNom(nom);
       if(!vus[cle]){vus[cle]={nom:nom,mc:mc,jour:d,idx:i,nb:0};liste.push(vus[cle]);}
       vus[cle].nb++;
     });
