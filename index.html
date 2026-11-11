@@ -408,7 +408,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-11 00h20 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-11 11h11 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -684,12 +684,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-11-0020"></script>
+<script src="catalogue.js?v=2026-11-11-1111"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-11-0020';
+const BUILD_ID='2026-11-11-1111';
 const NOUVEAUTES=[
+  {b:'2026-11-11-1111',points:[
+    '« Refaire un repas habituel » ne propose plus un repas dont un article de l’inventaire est épuisé : il revient dès que tu en as racheté.'
+  ]},
   {b:'2026-11-11-0020',points:[
     'Photo d’un repas : tu peux maintenant mettre jusqu’à 4 photos (deux assiettes, le dessert…) et ajouter une précision écrite, le tout analysé en une fois.',
     'Pendant l’analyse, l’écran dit quelle IA travaille, et un bouton « Annuler » te rend la main.',
@@ -8092,6 +8095,21 @@ function _macrosRepas(m){
 // Repas des 30 derniers jours, regroupes par nom et calories (a 10 kcal pres) :
 // les plus frequents d'abord, puis les plus recents. On garde la saisie la
 // plus recente de chacun comme modele.
+// Un repas ne se refait que si le stock suit (11/11/2026, Liam : « Yaourts 0% fruits » propose
+// alors qu'il n'en restait plus) : memes lignes que _mealStock ; un repas hors inventaire reste.
+function _repasRefaisable(m){
+  if(!m)return false;
+  var ok=function(id,qty,nom){if(!id||!qty)return true;var it=resolveInv(id,nom);return !!it&&(it.qty===null||it.qty>=qty);};
+  var r=RCP.find(function(x){return x.id===m.rid;});
+  if(m.ings&&m.ings.length){if(!m.ings.every(function(g){return ok(g.id,g.qty,g.n||g.name);}))return false;}
+  else if(r&&r.used&&r.used.length&&!canCook(r))return false;
+  if(m.extras&&m.extras.length&&!m.extras.every(function(g){return ok(g.id,g.qty,g.name);}))return false;
+  if(m.dessert&&m.dessert!=='none'&&m.dessert!=='autre'){
+    var d=allDesserts().find(function(x){return x.id===m.dessert;});
+    if(d&&d.inv&&!canTakeDessert(d))return false;
+  }
+  return true;
+}
 function _repasHabituels(n){
   var debut=shiftDate(S.today,-30),vus={},liste=[];
   Object.keys(S.dayMeals||{}).filter(function(d){return /^\d{4}-\d\d-\d\d$/.test(d)&&d>=debut&&d<=S.today;}).sort().reverse().forEach(function(d){
@@ -8104,7 +8122,7 @@ function _repasHabituels(n){
     });
   });
   liste.sort(function(a,b){return (b.nb-a.nb)||(a.jour<b.jour?1:(a.jour>b.jour?-1:0));});
-  return liste.slice(0,n||6);
+  return liste.filter(function(x){return _repasRefaisable((S.dayMeals[x.jour]||[])[x.idx]);}).slice(0,n||6);
 }
 // « + Ajouter » d'une carte du suivi : le volet s'ouvre avec ce moment, repris par l'ajout
 // (openAddMeal) et par « Refaire un repas habituel ». Le bouton + general n'en impose aucun.
