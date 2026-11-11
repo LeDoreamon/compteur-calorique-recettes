@@ -32,6 +32,10 @@ t('extra ou dessert de l\'inventaire epuise : pas propose',()=>{
   eq(noms(),'');X("S.inv.frigo[0].qty=3");eq(noms(),'Bol');
   eq(X("_repasRefaisable(null)"),false);
 });
+t('*** une seule ligne par nom : la saisie la plus recente sert de modele, les fois s\'additionnent ***',()=>{
+  prepa(4);X("S.dayMeals={};S.dayMeals[shiftDate(S.today,-1)]=[{name:'Bowl avoine',slot:'breakfast',macros:{kcal:616,prot:40,gluc:60,lip:15}}];S.dayMeals[shiftDate(S.today,-3)]=[{name:'Bowl avoine',slot:'breakfast',macros:{kcal:539,prot:35,gluc:55,lip:12}},{name:'bowl  Avoine',slot:'breakfast',macros:{kcal:500,prot:30,gluc:50,lip:10}}]");
+  const h=X('_repasHabituels(6)');eq(h.length,1);eq(h[0].nb,3);eq(Math.round(h[0].mc.kcal),616);eq(h[0].jour,X('shiftDate(S.today,-1)'));
+});
 t('*** le menu + ne montre plus le repas epuise ; les places liberees vont aux suivants ***',()=>{
   prepa(0);X("for(var i=0;i<7;i++)S.dayMeals[shiftDate(S.today,-1)].push({name:'Plat '+i,slot:'lunch',macros:{kcal:300+20*i,prot:20,gluc:10,lip:5}})");
   eq(X('_repasHabituels(6)').length,6);
