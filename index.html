@@ -408,7 +408,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-11 11h26 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-13 00h01 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -684,12 +684,16 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-11-1126"></script>
+<script src="catalogue.js?v=2026-11-13-0001"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-11-1126';
+const BUILD_ID='2026-11-13-0001';
 const NOUVEAUTES=[
+  {b:'2026-11-13-0001',points:[
+    'Repas décrit ou pris en photo : pour un aliment compté à la pièce, la ligne affiche le poids que l’IA a supposé (« ≈ 50 g »). S’il est faux, corrige la quantité.',
+    '« 2 Twix » compte désormais 2 bâtonnets (un sachet), plus 2 sachets : l’IA connaît le poids des pièces courantes.'
+  ]},
   {b:'2026-11-11-1126',points:[
     '« Refaire un repas habituel » : une seule ligne par repas (la version la plus récente), même si les portions ont varié.'
   ]},
@@ -8600,6 +8604,7 @@ function recalcAddMealMacros(){
     if(ni&&ni.value.trim())f.n=_saisie(ni);
     var qi=document.getElementById('free-qty-'+i);
     if(qi&&f.pu){var nv=parseFloat(qi.value);if(!isNaN(nv)&&nv>=0)f.qty=nv;}
+    var ge=document.getElementById('free-g-'+i);if(ge)ge.textContent=_libPoidsSuppose(f);
     var m=f.pu?{kcal:f.pu.kcal*f.qty,prot:f.pu.prot*f.qty,gluc:f.pu.gluc*f.qty,lip:f.pu.lip*f.qty,fib:(typeof f.pu.fib==='number'?f.pu.fib*f.qty:null)}
               :(f.m||{kcal:0,prot:0,gluc:0,lip:0});
     t.kcal+=m.kcal||0;t.prot+=m.prot||0;t.gluc+=m.gluc||0;t.lip+=m.lip||0;
@@ -8899,7 +8904,8 @@ async function reestimerLigne(i){
   try{
     var sys="Tu estimes les valeurs nutritionnelles d'UN SEUL aliment. "
       +"Réponds UNIQUEMENT avec un JSON valide, sans markdown :\n"
-      +'{"n":string,"q":number,"u":"g"|"ml"|"pc","kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"fib":number}\n'
+      +'{"n":string,"q":number,"u":"g"|"ml"|"pc","g":number,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"fib":number}\n'
+      +'g = le poids TOTAL en grammes (ou ml) que tu supposes pour cette quantité. Poids d\'une pièce : '+POIDS_UNITAIRES+'. Un nombre compte des pièces individuelles, jamais des paquets (2 Twix = 2 bâtonnets = 50 g). '
       +'fib = fibres alimentaires en g (0 pour viande, poisson, œufs, laitages, huiles). '
       +"n = le nom reformulé proprement. q et u = la quantité estimée pour une portion telle que décrite. "
       +"Les valeurs correspondent à CETTE quantité, pas à 100 g.";
@@ -8912,7 +8918,7 @@ async function reestimerLigne(i){
     var u=(p.u==='ml'||p.u==='pc'||p.u==='pcs')?p.u:(f.unit||'g');
     var m={kcal:+p.kcal||0,prot:+p.prot||0,gluc:+p.gluc||0,lip:+p.lip||0};
     if(typeof p.fib==='number'&&p.fib>=0)m.fib=p.fib;
-    _addMealFreeItems[i]={n:p.n||nom,qty:q,baseQty:q,unit:(q>0?u:''),m:m,
+    _addMealFreeItems[i]={n:p.n||nom,qty:q,baseQty:q,unit:(q>0?u:''),m:m,gPc:_poidsPiece(p,q,u),
       pu:(q>0?{kcal:m.kcal/q,prot:m.prot/q,gluc:m.gluc/q,lip:m.lip/q,fib:(typeof m.fib==='number'?m.fib/q:undefined)}:null)};
   }catch(e){
     _alerte('Recalcul impossible : '+((e&&e.message)||e));
@@ -9009,7 +9015,7 @@ function renderInvSuggestions(suggestions) {
   // Lignes estimees par l'IA : jamais melangees a l'inventaire, jamais deduites du stock
   if((_addMealFreeItems||[]).length){
     html += '<div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px;padding-top:8px;border-top:0.5px solid rgba(95,168,201,.25);"><span style="font-size:10px;color:var(--blue);text-transform:uppercase;letter-spacing:.06em;">Estimé — hors inventaire</span>'+(suggestions.length?'':oeil)+'</div>'
-      +'<div class="aide-recalcul" style="font-size:11px;color:var(--text3);line-height:1.4;margin:4px 0 2px;">Un aliment mal reconnu ? Corrige son nom, puis touche <span style="color:var(--green);">\u21bb</span> : l\'IA recalcule cette ligne seule.</div>';
+      +'<div class="aide-recalcul" style="font-size:11px;color:var(--text3);line-height:1.4;margin:4px 0 2px;">Un aliment mal reconnu ? Corrige son nom, puis touche <span style="color:var(--green);">\u21bb</span> : l\'IA recalcule cette ligne seule.'+(_addMealFreeItems.some(function(f){return f&&f.gPc>0;})?' « \u2248 50 g » = le poids que l\'IA a supposé : s\'il est faux, corrige la quantité.':'')+'</div>';
     html += _addMealFreeItems.map(function(f,i){
       var m=f.pu?{kcal:f.pu.kcal*f.qty,prot:f.pu.prot*f.qty,gluc:f.pu.gluc*f.qty,lip:f.pu.lip*f.qty}:f.m;
       var occupe=(_ligneEnCours===i);
@@ -9020,6 +9026,7 @@ function renderInvSuggestions(suggestions) {
           +'style="flex:1 1 calc(100% - 64px);min-width:0;padding:6px 8px;background:var(--bg);border:0.5px solid rgba(95,168,201,.25);border-radius:6px;color:var(--blue);font-size:13px;outline:none;">'
         +'<input type="number" id="free-qty-'+i+'" value="'+f.qty+'" min="0" '+(f.pu?'':'disabled ')+'style="order:2;margin-left:18px;width:62px;flex:0 0 auto;box-sizing:border-box;padding:4px 5px;background:var(--bg);border:0.5px solid rgba(95,168,201,.25);border-radius:6px;color:var(--blue);font-size:12px;outline:none;text-align:right;">'
         +'<span style="order:2;font-size:11px;color:var(--text3);min-width:20px;flex:0 0 auto;">'+(f.unit||'')+'</span>'
+        +'<span id="free-g-'+i+'" title="Poids supposé par l\'IA : corrige la quantité s\'il est faux" style="order:2;font-size:11px;color:var(--text3);flex:0 0 auto;white-space:nowrap;">'+_libPoidsSuppose(f)+'</span>'
         +'<span style="order:2;margin-left:auto;font-size:12px;color:var(--orange);min-width:52px;flex-shrink:0;text-align:right;">'+Math.round(m.kcal)+' kcal</span>'
         +'<button onclick="reestimerLigne('+i+')" '+(occupe?'disabled ':'')+'title="Recalculer cette ligne d\'après le nom corrigé" style="background:'+(occupe?'transparent':'rgba(111,191,115,.14)')+';border:0.5px solid rgba(111,191,115,'+(occupe?'.2':'.45')+');border-radius:7px;color:var('+(occupe?'--text3':'--green')+');font-size:13px;cursor:pointer;padding:7px 9px;margin-left:4px;line-height:1;flex:0 0 auto;order:2;">'+(occupe?'\u2026':'\u21bb')+'</button>'
         +'<button onclick="supprimerLigneEstimee('+i+')" title="Retirer cette ligne" style="order:1;background:none;border:0;border-radius:7px;color:var(--red);font-size:16px;line-height:1;cursor:pointer;padding:7px 8px;margin-left:2px;flex:0 0 auto;">\u00d7</button>'
@@ -11009,6 +11016,20 @@ function _macrosFromItems(items){
   });
   return n?t:null;
 }
+// Poids des pieces courantes, donnes a l'IA (12/11/2026, Liam : « 2 Twix » compte 500 kcal = 2 sachets,
+// soit 4 batonnets). Le poids suppose est ensuite affiche sur la ligne (_libPoidsSuppose).
+const POIDS_UNITAIRES="1 œuf ≈ 55 g ; 1 tranche de pain de mie ≈ 25 g ; 1 tranche de jambon ≈ 40 g ; 1 yaourt ≈ 125 g ; 1 gourde de compote ≈ 90 g ; 1 pomme ≈ 150 g ; 1 clémentine ≈ 70 g ; 1 madeleine ≈ 25 g ; 1 pain au chocolat ≈ 65 g ; 1 biscuit sec (Petit Beurre) ≈ 8 g ; 1 Oreo ≈ 11 g ; 1 biscuit fourré (Prince, BN) ≈ 20 g ; 1 Twix = 1 bâtonnet ≈ 25 g (le sachet de 2 ≈ 50 g) ; 1 Kinder Bueno = 1 barre ≈ 21 g (le sachet de 2 ≈ 43 g) ; 1 barre de KitKat ≈ 10 g (le paquet de 4 ≈ 41 g) ; 1 barre Kinder Chocolat ≈ 12 g ; 1 Mars ≈ 45 g ; 1 Snickers ≈ 50 g ; 1 canette = 33 cl";
+/* poids d'une piece d'apres la reponse de l'IA ("g" = poids total de la ligne) ; null si absent ou invraisemblable */
+function _poidsPiece(x,q,u){
+  if(!(u==='pc'||u==='pcs')||!(q>0))return null;
+  var g=parseFloat(x&&x.g);if(!(g>0))return null;
+  var p=g/q;return (p>=1&&p<=2000)?p:null;
+}
+function _libPoidsSuppose(f){
+  if(!f||!(f.gPc>0)||!(f.qty>0))return '';
+  var g=f.gPc*f.qty;
+  return '\u2248 '+(g<10?_virg(g,1):Math.round(g))+' g';
+}
 async function runAddMealAI(msgs) {
   _erreurAjout('');
   const _gen=_amGen;   /* « Annuler » ou une nouvelle ouverture changent _amGen : la reponse est alors ignoree */
@@ -11028,11 +11049,14 @@ Sois légèrement pessimiste sur les quantités.
     sys = `Tu analyses un repas (l'inventaire n'est PAS utilisé). Le repas est décrit en texte (parfois avec des FAUTES de frappe ou d'orthographe à corriger) ou montré en photo.
 Corrige les fautes et interprète le plat le plus probable (ex. "poulet fris" -> "poulet frit", "cacahouète" -> "cacahuète").
 Réponds UNIQUEMENT en JSON sans markdown:
-{"corrected":string,"ok":boolean,"items":[{"n":string,"q":number,"u":string,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"fib":number}],"kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"fib":number}
+{"corrected":string,"ok":boolean,"items":[{"n":string,"q":number,"u":string,"g":number,"kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"fib":number}],"kcal":integer,"prot":integer,"gluc":integer,"lip":integer,"fib":number}
 - "corrected" = le nom du repas corrigé, propre et lisible.
 - "ok" = true si tu reconnais un/des aliment(s) réel(s) et peux estimer; false seulement si c'est vraiment incompréhensible.
 - "items" = OBLIGATOIRE : une ligne par aliment cité (respecte les quantités : « 8 gyozas » = une ligne pour les 8). Estime CHAQUE ligne séparément, ne raisonne jamais sur le repas en bloc.
 - "q" et "u" = OBLIGATOIRES sur chaque ligne : la quantité estimée et son unité. u vaut "g", "ml" ou "pc". Pour un aliment dénombrable, u="pc" et q = le nombre (8 gyozas -> q=8, u="pc"). Sinon estime le poids réel (une portion de pâtes -> q=200, u="g").
+- "g" = OBLIGATOIRE : le poids TOTAL de la ligne en grammes (ou ml) que tu as supposé pour calculer (2 bâtonnets de Twix -> q=2, u="pc", g=50). Les valeurs de la ligne doivent correspondre à ce poids.
+- Poids d'une pièce, à utiliser tels quels : ${POIDS_UNITAIRES}.
+- Produit vendu par 2 ou en lot (Twix, Kinder Bueno, KitKat, biscuits) : le nombre donné compte des PIÈCES individuelles (bâtonnets, barres, biscuits), JAMAIS des paquets, sauf si « paquet », « sachet » ou « boîte » est écrit. « 2 Twix » = 2 bâtonnets = 50 g ≈ 250 kcal.
 - Les kcal/prot/gluc/lip de la ligne correspondent à CETTE quantité q, pas à 100 g.
 - Les totaux kcal/prot/gluc/lip = somme EXACTE des items.
 - "fib" = fibres alimentaires en g (0 pour viande, poisson, œufs, laitages, huiles).
@@ -11087,7 +11111,7 @@ Réponds UNIQUEMENT en JSON sans markdown:
         var q=parseFloat(x.q)||0,u=(x.u==='ml'||x.u==='pc'||x.u==='pcs')?x.u:'g';
         var m={kcal:+x.kcal||0,prot:+x.prot||0,gluc:+x.gluc||0,lip:+x.lip||0};
         if(typeof x.fib==='number'&&x.fib>=0)m.fib=x.fib;
-        return {n:x.n||'?',qty:q,baseQty:q,unit:(q>0?u:''),m:m,
+        return {n:x.n||'?',qty:q,baseQty:q,unit:(q>0?u:''),m:m,gPc:_poidsPiece(x,q,u),
                 pu:(q>0?{kcal:m.kcal/q,prot:m.prot/q,gluc:m.gluc/q,lip:m.lip/q,fib:(typeof m.fib==='number'?m.fib/q:undefined)}:null)};
       });
       const _sum=_macrosFromItems(_items);
