@@ -133,6 +133,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t115.js` | Recette ouverte : « Garder dans Mes recettes » (recettes IA seulement, une seule convertie), mode cuisine (étapes à cocher, verrou d'écran pris et rendu, navigateur sans verrou), photo effacée avec sa recette (IA effacée, perso supprimée, favorite épargnée) ; lignes estimées sur deux lignes. |
 | `t116.js` | Repas habituels : un repas dont un article de l'inventaire est épuisé, supprimé ou insuffisant (ingrédient, extra, dessert) n'est plus proposé ; hors inventaire et stock illimité restent ; article racheté sous le même nom : le repas revient ; une seule ligne par nom (la plus récente) |
 | `t117.js` | Poids supposé par l'IA : table des poids unitaires et règle « un nombre = des pièces, pas des paquets » dans la consigne (analyse et ↻), champ `g`, « ≈ 50 g » affiché sur les lignes à la pièce et suivi à la saisie, poids absent ou invraisemblable ignoré |
+| `t118.js` | Fermeture par le fond : seulement si l'appui a commencé sur le fond (sélection à la souris relâchée hors du cadre = fenêtre gardée), menu + et explication des macros compris ; articles choisis dans l'inventaire = saisie, confirmation avant de fermer |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests
