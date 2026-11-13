@@ -151,6 +151,6 @@ t('la zone de tap reste petite',()=>{
   if(!/font-size:10px/.test(b))throw new Error('bouton trop grand');
 });
 t('fermeture par clic sur le fond',()=>{
-  if(!/if\(event\.target===this\)fermerInfoMacro\(\)/.test(src))throw new Error('fermeture par le fond absente');
+  if(!/if\(_clicSurFond\(event,this\)\)fermerInfoMacro\(\)/.test(src))throw new Error('fermeture par le fond absente');
 });
 console.log('\n---- '+pass+' ok, '+fail+' KO ----');
