@@ -408,7 +408,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-16 00h15 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-16 00h41 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -684,12 +684,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-16-0015"></script>
+<script src="catalogue.js?v=2026-11-16-0041"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-16-0015';
+const BUILD_ID='2026-11-16-0041';
 const NOUVEAUTES=[
+  {b:'2026-11-16-0041',points:[
+    'Un repas noté entre minuit et 4 h ne peut plus disparaître : il est enregistré tout de suite dans la journée, et la question « hier ou aujourd’hui ? » sert seulement à le déplacer.'
+  ]},
   {b:'2026-11-16-0015',points:[
     'Plat maison choisi en grammes : le reste s’affiche aussi en grammes.'
   ]},
@@ -1091,7 +1094,6 @@ const S={
   today:TODAY,displayDate:TODAY,
   dayMeals:JSON.parse(JSON.stringify(MEALS_DEFAULT)),
   pendingCook:null,
-  pendingFreeMeal:null,
   pendingSpiceCheck:null,
   aiRecipes:[],
   customRecipes:[],
@@ -4661,7 +4663,19 @@ function renderSpiceCheck(){
 
 function handleCook(rid,mult,subst,again){const r=RCP.find(x=>x.id===rid);if(!r||(!subst&&!canCook(r,mult))||(!again&&cookedToday(rid)))return;const h=heureProfil();if(h<4){S.pendingCook={rid,mult,subst:!!subst};render();return;}openConfirmCook(rid,mult,S.today,subst);}
 function confirmDay(day){if(!S.pendingCook)return;const{rid,mult,subst}=S.pendingCook;S.pendingCook=null;openConfirmCook(rid,mult,day,subst);}
-  function confirmFreeMealDay(day){if(!S.pendingFreeMeal)return;const meal=S.pendingFreeMeal;S.pendingFreeMeal=null;if(!S.dayMeals[day])S.dayMeals[day]=[];S.dayMeals[day].push(meal);saveState();render();}
+  /* Garde nocturne des repas libres (refaite le 16/11/2026, rapport de Liam : une part de plat notee entre minuit et 4 h
+     a disparu). Avant, le repas attendait la reponse dans S.pendingFreeMeal, hors de l'etat enregistre : stock deja retire,
+     mais repas perdu au moindre rechargement ou au repas suivant. Il est maintenant range tout de suite dans aujourd'hui,
+     marque nuit:1 (enregistre avec l'etat) ; la question ne fait que le deplacer a hier ou retirer la marque. */
+  function _poserRepasNuit(meal){meal.nuit=1;(S.dayMeals[S.today]=S.dayMeals[S.today]||[]).push(meal);}
+  function _repasNuit(){const l=S.dayMeals[S.today]||[];for(let i=0;i<l.length;i++)if(l[i]&&l[i].nuit)return i;return -1;}
+  function confirmFreeMealDay(day){
+    const i=_repasNuit();if(i<0)return;
+    const l=S.dayMeals[S.today],meal=l[i];delete meal.nuit;
+    if(day&&day!==S.today&&/^\d{4}-\d\d-\d\d$/.test(day)){l.splice(i,1);if(!S.dayMeals[day])S.dayMeals[day]=[];S.dayMeals[day].push(meal);}
+    else day=S.today;
+    saveState();render();showCoachToast(day);
+  }
 
 // ─── UI helpers ───────────────────────────────────────────────────────────────
 function chip(color,bg,html){return`<span class="chip" style="background:var(${bg});color:var(${color});">${html}</span>`;}
@@ -4836,7 +4850,7 @@ function copyMealTo(dayKey,idx,target){
   if(target===dayKey){_alerte('La date cible est le jour affiché.');return;}
   const meal=(S.dayMeals[dayKey]||[])[idx];
   if(!meal)return;
-  const copy=JSON.parse(JSON.stringify(meal));
+  const copy=JSON.parse(JSON.stringify(meal));delete copy.nuit;
   S.dayMeals[target]=(S.dayMeals[target]||[]).concat([copy]);
   _mealStock(copy,-1);
   S.displayDate=target;
@@ -5032,11 +5046,11 @@ function renderMacros(){
 }
 
 function renderFreeMealNightModal(){
-  if(!S.pendingFreeMeal)return'';
-  const r=RCP.find(x=>x.id===S.pendingFreeMeal.rid);const nm=r?r.name:'Repas libre';
+  const _in=_repasNuit();if(_in<0)return'';
+  const _mn=S.dayMeals[S.today][_in];const r=findRecipe(_mn.rid);const nm=_mn.name||(r&&r.name)||'Repas libre';
   const now=new Date();const hh=String(now.getHours()).padStart(2,'0'),mm=String(now.getMinutes()).padStart(2,'0');
   const yd=shiftDate(S.today,-1);
-  return`<div style="background:var(--warn-bg);border:0.5px solid var(--warn);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;"><div style="font-size:13px;font-weight:500;color:var(--warn);margin-bottom:8px;">⏱ ${hh}h${mm} — "${nm}" c'est pour…</div><div style="display:flex;gap:8px;">
+  return`<div style="background:var(--warn-bg);border:0.5px solid var(--warn);border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;"><div style="font-size:13px;font-weight:500;color:var(--warn);margin-bottom:4px;">⏱ ${hh}h${mm} — « ${nm} » est noté pour aujourd'hui.</div><div style="font-size:12px;color:var(--text2);margin-bottom:8px;">Il est tard : c'était pour hier ou pour aujourd'hui ?</div><div style="display:flex;gap:8px;">
     <button data-action="free-meal-day" data-day="${yd}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--warn);background:transparent;color:var(--warn);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Hier<br><span style="font-size:11px;opacity:0.8;">${new Date(yd+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
     <button data-action="free-meal-day" data-day="${S.today}" style="flex:1;padding:9px 8px;border-radius:8px;border:0.5px solid var(--border);background:var(--bg3);color:var(--text);font-size:12px;cursor:pointer;line-height:1.4;text-align:center;">Aujourd'hui<br><span style="font-size:11px;opacity:0.6;">${new Date(S.today+'T00:00:00').toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'})}</span></button>
   </div></div>`;
@@ -8201,13 +8215,13 @@ function menuAjoutAction(a){
 function refaireRepas(jour,idx){
   var src=(S.dayMeals[jour]||[])[idx];if(!src)return;
   var cible=_jourAjout();
-  var copie=JSON.parse(JSON.stringify(src));
+  var copie=JSON.parse(JSON.stringify(src));delete copie.nuit;
   if(moment(_menuMoment))copie.slot=_menuMoment;          // ajoute depuis la carte d'un moment
   else if(!moment(copie.slot))copie.slot=_momentDefaut(cible);
   fermerMenuAjout();
   _mealStock(copie,-1);                 // comme une copie de repas : le stock suit
   if(cible===S.today&&heureProfil()<4){  // garde nocturne : « hier ou aujourd'hui ? » (affichee dans Recettes)
-    S.pendingFreeMeal=copie;S.mainTab='recipes';saveState();render();
+    _poserRepasNuit(copie);S.mainTab='recipes';S.displayDate=S.today;saveState();render();
     try{window.scrollTo(0,0);}catch(e){}
     return;
   }
@@ -11244,7 +11258,7 @@ function confirmAddMealFinal() {
   // La question « c'est pour hier ou aujourd'hui ? » n'a de sens que si le jour
   // n'a pas deja ete choisi explicitement dans le tracker.
   if(_jour===S.today&&heureProfil()<4){
-    S.pendingFreeMeal=_meal;S.mainTab='recipes';   /* la question s'affiche dans Recettes, meme si l'ajout vient d'un autre onglet */
+    _poserRepasNuit(_meal);S.mainTab='recipes';S.displayDate=S.today;   /* la question s'affiche dans Recettes, meme si l'ajout vient d'un autre onglet */
     _brouillonFait();saveState();closeAddMeal();render();return;
   }
   if (!S.dayMeals[_jour]) S.dayMeals[_jour] = [];

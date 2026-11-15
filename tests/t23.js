@@ -114,7 +114,7 @@ t('*** la question hier/aujourd\'hui ne se pose plus si le jour est choisi ***',
 });
 t('elle reste active quand on loggue aujourd\'hui',()=>{
   const src=require('fs').readFileSync('index.html','utf8');
-  if(!/S\.pendingFreeMeal=_meal/.test(src))throw new Error('garde nocturne supprimee');
+  if(!/_poserRepasNuit\(_meal\)/.test(src))throw new Error('garde nocturne supprimee');
 });
 t('le coach commente le bon jour',()=>{
   const src=require('fs').readFileSync('index.html','utf8');
