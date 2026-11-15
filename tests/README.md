@@ -134,7 +134,7 @@ Toutes les suites `tN.js` sont jouées dans l'ordre numérique ; le script sort 
 | `t116.js` | Repas habituels : un repas dont un article de l'inventaire est épuisé, supprimé ou insuffisant (ingrédient, extra, dessert) n'est plus proposé ; hors inventaire et stock illimité restent ; article racheté sous le même nom : le repas revient ; une seule ligne par nom (la plus récente) |
 | `t117.js` | Poids supposé par l'IA : table des poids unitaires et règle « un nombre = des pièces, pas des paquets » dans la consigne (analyse et ↻), champ `g`, « ≈ 50 g » affiché sur les lignes à la pièce et suivi à la saisie, poids absent ou invraisemblable ignoré |
 | `t118.js` | Fermeture par le fond : seulement si l'appui a commencé sur le fond (sélection à la souris relâchée hors du cadre = fenêtre gardée), menu + et explication des macros compris ; articles choisis dans l'inventaire = saisie, confirmation avant de fermer |
-| `t119.js` | Préparer un plat : quantité d'un ingrédient modifiable après l'ajout (kcal de la ligne et résumé suivent sans nouveau rendu, saisie vide ou nulle ignorée, plat créé avec la quantité corrigée), défilement et volet « hors inventaire » gardés au rendu |
+| `t119.js` | Préparer un plat : quantité d'un ingrédient modifiable après l'ajout (kcal de la ligne et résumé suivent sans nouveau rendu, saisie vide ou nulle ignorée, plat créé avec la quantité corrigée), défilement et volet « hors inventaire » gardés au rendu ; plat choisi en grammes : reste affiché en grammes |
 | `audit.py` | Analyse statique : handlers orphelins, ids dupliqués, code mort, secrets |
 
 ## Point ouvert signalé par les tests

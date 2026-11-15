@@ -408,7 +408,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-16 00h12 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-16 00h15 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -684,12 +684,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-16-0012"></script>
+<script src="catalogue.js?v=2026-11-16-0015"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-16-0012';
+const BUILD_ID='2026-11-16-0015';
 const NOUVEAUTES=[
+  {b:'2026-11-16-0015',points:[
+    'Plat maison choisi en grammes : le reste s’affiche aussi en grammes.'
+  ]},
   {b:'2026-11-16-0012',points:[
     'Préparer un plat : la quantité d’un ingrédient déjà ajouté se corrige directement sur sa ligne.',
     'Préparer un plat : ajouter ou retirer un ingrédient ne renvoie plus en haut de la fenêtre.'
@@ -8785,7 +8788,7 @@ function _lignePick(it){
     var enG=!!_invPickG[it.id]&&it.pieceG>0,val=sel?(enG?Math.round(sel*it.pieceG):Math.round(sel*100)/100):'';
     return '<div id="pick-row-'+it.id+'" class="'+cls+'">'
       +'<span class="pk-nom"><span class="pk-n">\ud83c\udf73 '+_attr(it.name)+'</span>'+_pastilleDlcPick(it)+'</span>'
-      +'<span class="pk-reste">reste '+_libParts(it.qty)+'</span>'
+      +'<span class="pk-reste">reste '+(enG?'\u2248 '+Math.round(it.qty*it.pieceG)+' g':_libParts(it.qty))+'</span>'   /* en grammes : le reste aussi (16/11/2026, Liam) */
       +'<input class="pk-in" type="number" min="0" step="'+(enG?'10':'0.5')+'" inputmode="decimal" value="'+val+'" oninput="invPickQtyPlat(\''+it.id+'\',this.value)" placeholder="0" style="'+champ+'">'
       +(it.pieceG>0?'<button onclick="invPickUnitePlat(\''+it.id+'\')" title="Changer d\u2019unité" style="width:44px;flex:0 0 auto;padding:4px 0;background:var(--gold-bg);border:0.5px solid rgba(233,161,59,.45);border-radius:6px;color:var(--gold);font-size:11px;cursor:pointer;">'+(enG?'g':'parts')+' \u21c4</button>'
         :'<span style="font-size:11px;color:var(--text3);width:44px;">parts</span>')
