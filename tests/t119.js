@@ -47,6 +47,14 @@ t('*** un nouveau rendu garde le defilement et le volet « hors inventaire » ou
   if(b.indexOf('<details id="plat-libre"\'+(_detOuvert?\' open\':\'\')')<0)throw new Error('volet non repris');
   if(!/ov\.style\.display!=='none'/.test(b))throw new Error('une nouvelle ouverture doit repartir du haut');
 });
+t('*** choisir un plat dans l\'inventaire : en grammes, le reste s\'affiche en grammes ; en parts, en parts ***',()=>{
+  X("S.inv={frigo:[{id:'pn',name:'Pseudo Nuggets',qty:3,unit:'parts',pieceG:99,macPiece:{kcal:323,prot:40,gluc:1,lip:14},plat:{creeLe:S.today,parts:3,poidsEstime:99,ings:[]}}],congelateur:[],placards:[],epices:[]};_invPick={};_invPickG={}");
+  let h=X("_lignePick(findItem('pn'))");if(h.indexOf('reste 3 parts')<0)throw new Error('en parts : '+h.replace(/<[^>]+>/g,' '));
+  X("_invPickG.pn=true");h=X("_lignePick(findItem('pn'))");
+  if(h.indexOf('reste ≈ 297 g')<0||h.indexOf('reste 3 parts')>=0)throw new Error('en grammes : '+h.replace(/<[^>]+>/g,' '));
+  X("findItem('pn').qty=1.5");if(X("_lignePick(findItem('pn'))").indexOf('reste ≈ 149 g')<0)throw new Error('part entamee');
+  X("_invPickG={}");
+});
 
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' -> '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();
