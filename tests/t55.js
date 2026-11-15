@@ -101,12 +101,13 @@ t('garde nocturne : la question hier/aujourd\'hui s\'affiche dans Recettes',()=>
   prepa();X("S.dayMeals[shiftDate(S.today,-1)]=["+JSON.stringify(repas('Tard',400,20))+"];");
   const vrai=sb.heureProfil;sb.heureProfil=()=>2;
   try{X("refaireRepas(shiftDate(S.today,-1),0)");}finally{sb.heureProfil=vrai;}
-  eq(X('S.pendingFreeMeal&&S.pendingFreeMeal.name'),'Tard');
+  /* depuis le 16/11/2026 : range tout de suite dans aujourd'hui, marque « nuit », jamais hors de l'etat */
+  eq(X('S.dayMeals[S.today].length'),1);eq(X('S.dayMeals[S.today][0].name'),'Tard');eq(X('S.dayMeals[S.today][0].nuit'),1);
   eq(X('S.mainTab'),'recipes');
-  eq(X('(S.dayMeals[S.today]||[]).length'),0);
+  if(X('renderFreeMealNightModal()').indexOf('Tard')<0)throw new Error('question absente');
 });
 t('un repas libre en attente de nuit bascule aussi sur Recettes',()=>{
-  const i=src.indexOf('S.pendingFreeMeal=_meal;');
+  const i=src.indexOf('_poserRepasNuit(_meal);');if(i<0)throw new Error('garde nocturne absente');
   if(!/S\.mainTab='recipes'/.test(src.slice(i,i+80)))throw new Error('onglet non force');
 });
 
