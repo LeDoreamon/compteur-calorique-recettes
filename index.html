@@ -408,7 +408,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-13 12h06 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-16 00h12 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -684,12 +684,16 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-13-1206"></script>
+<script src="catalogue.js?v=2026-11-16-0012"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-13-1206';
+const BUILD_ID='2026-11-16-0012';
 const NOUVEAUTES=[
+  {b:'2026-11-16-0012',points:[
+    'Préparer un plat : la quantité d’un ingrédient déjà ajouté se corrige directement sur sa ligne.',
+    'Préparer un plat : ajouter ou retirer un ingrédient ne renvoie plus en haut de la fenêtre.'
+  ]},
   {b:'2026-11-13-1206',points:[
     'Sélectionner un texte à la souris en relâchant hors de la fenêtre ne la ferme plus.',
     'Après avoir choisi des articles dans l’inventaire, toucher le fond demande confirmation avant de fermer : la saisie n’est plus perdue d’un geste.'
@@ -10616,7 +10620,10 @@ function _platUniteIng(it){return it?(it.macPiece?(it.unit||'pc'):(it.unit||'g')
 function renderPlat(){
   var ov=document.getElementById('plat-overlay');if(!ov||!_plat)return;
   var p=_plat,h='';
-  h+='<div style="background:var(--bg2);border:0.5px solid rgba(233,161,59,.35);border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;box-sizing:border-box;">';
+  /* 15/11/2026 (Liam) : chaque ajout redessinait la fenetre et la renvoyait tout en haut ; on garde le defilement et le volet ouvert */
+  var _cadre=document.getElementById('plat-cadre'),_haut=(_cadre&&ov.style.display!=='none')?(_cadre.scrollTop||0):0;
+  var _det=document.getElementById('plat-libre'),_detOuvert=!!(_det&&_det.open&&ov.style.display!=='none');
+  h+='<div id="plat-cadre" style="background:var(--bg2);border:0.5px solid rgba(233,161,59,.35);border-radius:14px;padding:18px;width:100%;max-width:440px;max-height:92vh;overflow-y:auto;box-sizing:border-box;">';
   h+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;"><div style="font-size:16px;font-weight:600;color:var(--text);">🍳 Préparer un plat</div>'
     +'<button onclick="fermerPreparerPlat()" style="background:none;border:0;color:var(--text3);font-size:20px;cursor:pointer;line-height:1;">✕</button></div>';
   // Mode d'emploi, toujours visible
@@ -10641,8 +10648,9 @@ function renderPlat(){
     return '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid rgba(246,237,227,.06);">'
       +'<span style="flex:1;min-width:0;font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+_attr(g.name)
       +(g.id?'':' <span style="font-size:11px;color:var(--text3);">(hors stock)</span>')+'</span>'
-      +'<span style="font-size:12px;color:var(--text2);white-space:nowrap;">'+_fmtMacG(g.qty)+' '+unite+'</span>'
-      +'<span style="font-size:12px;color:var(--orange);white-space:nowrap;width:62px;text-align:right;">'+Math.round(m.kcal)+' kcal</span>'
+      +'<input id="plat-iq-'+i+'" type="number" min="0" step="any" inputmode="decimal" value="'+g.qty+'" oninput="majQteIngPlat('+i+',this.value)" aria-label="Quantité" style="width:62px;flex:0 0 auto;box-sizing:border-box;padding:5px 6px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:6px;color:var(--text);font-size:12px;outline:none;text-align:right;">'
+      +'<span style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:20px;">'+unite+'</span>'
+      +'<span id="plat-ik-'+i+'" style="font-size:12px;color:var(--orange);white-space:nowrap;width:62px;text-align:right;">'+Math.round(m.kcal)+' kcal</span>'
       +'<button onclick="retirerIngPlat('+i+')" title="Retirer" style="background:none;border:0;color:var(--text3);font-size:14px;cursor:pointer;padding:2px 4px;">✕</button></div>';
   }).join('');
   // Ajout depuis l'inventaire
@@ -10652,7 +10660,7 @@ function renderPlat(){
     +'<span id="plat-u" style="font-size:11px;color:var(--text3);width:30px;"></span>'
     +'<button onclick="ajouterIngStockPlat()" style="padding:8px 11px;background:var(--green);border:0;border-radius:8px;color:var(--bg);font-size:12px;font-weight:700;cursor:pointer;">OK</button></div>';
   // Ajout hors inventaire
-  h+='<details style="margin-bottom:14px;"><summary style="font-size:12px;color:var(--accent2);cursor:pointer;padding:4px 0;">+ Un ingrédient qui n’est pas dans ton inventaire</summary>'
+  h+='<details id="plat-libre"'+(_detOuvert?' open':'')+' style="margin-bottom:14px;"><summary style="font-size:12px;color:var(--accent2);cursor:pointer;padding:4px 0;">+ Un ingrédient qui n’est pas dans ton inventaire</summary>'
     +'<div style="padding:8px 0 0;">'
     +'<div style="display:flex;gap:6px;margin-bottom:6px;"><input id="plat-l-nom" type="text" maxlength="50" placeholder="Ex : Spéculoos" style="'+_PL_IN+'flex:1;min-width:0;padding:8px;">'
     +'<input id="plat-l-q" type="number" min="0" step="any" inputmode="decimal" placeholder="g" style="'+_PL_IN+'width:70px;flex:0 0 auto;padding:8px;"><span style="font-size:11px;color:var(--text3);align-self:center;">g</span></div>'
@@ -10676,7 +10684,18 @@ function renderPlat(){
     +'<button onclick="fermerPreparerPlat()" style="padding:11px 14px;background:transparent;border:0.5px solid rgba(246,237,227,.15);border-radius:9px;color:var(--text3);font-size:13px;cursor:pointer;">Annuler</button></div>';
   h+='</div>';
   ov.innerHTML=h;
+  if(_haut){var _c2=document.getElementById('plat-cadre');if(_c2)_c2.scrollTop=_haut;}
   majUnitePlat();
+}
+/* quantite d'un ingredient deja ajoute, modifiable sur place : pas de nouveau rendu (le clavier reste ouvert) */
+function majQteIngPlat(i,v){
+  var g=_plat&&_plat.ings[i];if(!g)return;
+  var q=parseFloat(String(v===undefined?'':v).replace(',','.'));
+  if(!(q>0))return;   /* champ vide ou 0 pendant la saisie : on garde la derniere quantite valable */
+  g.qty=_r1(q);
+  var k=document.getElementById('plat-ik-'+i),m=_platIngMacros(g)||{kcal:0};
+  if(k)k.textContent=Math.round(m.kcal)+' kcal';
+  majResumePlat();
 }
 function _resumePlatHTML(){
   if(!_plat||!_plat.ings.length)return 'Ajoute des ingrédients : les macros du plat entier et d’une part s’affichent ici.';
