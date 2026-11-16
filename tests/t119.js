@@ -55,6 +55,16 @@ t('*** choisir un plat dans l\'inventaire : en grammes, le reste s\'affiche en g
   X("findItem('pn').qty=1.5");if(X("_lignePick(findItem('pn'))").indexOf('reste ≈ 149 g')<0)throw new Error('part entamee');
   X("_invPickG={}");
 });
+t('*** « + Ajouter manuellement » : articles par rangement puis par ordre alphabetique (avant : ordre de saisie) ***',()=>{
+  X("S.inv={frigo:[{id:'m',name:'Moutarde',qty:265,unit:'g'},{id:'c',name:'Crème légère',qty:500,unit:'ml'},{id:'z',name:'Épuisé',qty:0,unit:'g'},{id:'l',name:'Lait',qty:null,unit:'ml'},{id:'pl',name:'Bolognaise',qty:2.5,unit:'parts',pieceG:300,macPiece:{kcal:400,prot:30,gluc:30,lip:15},plat:{creeLe:S.today,parts:4,poidsEstime:300,ings:[]}}],congelateur:[],placards:[{id:'r',name:'Riz',qty:1000,unit:'g'},{id:'a',name:'Amandes',qty:410,unit:'g'}],epices:[]}");
+  const h=X('_optionsInventaire({plats:true,qte:true})');
+  const noms=(h.match(/<option value="[^"]*">[^<]*/g)||[]).map(x=>x.replace(/<[^>]+>/,''));
+  eq(noms.join(' | '),'Bolognaise (2,5 parts) | Crème légère (500 ml) | Lait | Moutarde (265 g) | Amandes (410 g) | Riz (1000 g)');
+  eq((h.match(/<optgroup label="/g)||[]).length,2,'rangements vides affiches :');
+  if(src.indexOf('const opts = _optionsInventaire({plats:true,qte:true});')<0)throw new Error('liste non branchee');
+  /* « Préparer un plat » garde sa liste : sans plats, sans quantites, avec la ligne vide */
+  const p=X('_platOptionsStock()');if(p.indexOf('Bolognaise')>=0||p.indexOf('(500')>=0||p.indexOf('<option value="">Choisir')!==0)throw new Error('liste des plats changee');
+});
 
 (async()=>{for(const [n,f] of tests){try{await f();pass++;console.log('  ok  '+n);}catch(e){fail++;console.log('  KO  '+n+' -> '+e.message);}}
 console.log('---- '+pass+' ok, '+fail+' KO');})();
