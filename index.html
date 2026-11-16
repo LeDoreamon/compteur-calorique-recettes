@@ -408,7 +408,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-16 00h41 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-16 23h46 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -684,12 +684,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-16-0041"></script>
+<script src="catalogue.js?v=2026-11-16-2346"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-16-0041';
+const BUILD_ID='2026-11-16-2346';
 const NOUVEAUTES=[
+  {b:'2026-11-16-2346',points:[
+    'Ajout de repas, « + Ajouter manuellement » : la liste des articles est rangée par emplacement (frigo, congélateur…) puis par ordre alphabétique.'
+  ]},
   {b:'2026-11-16-0041',points:[
     'Un repas noté entre minuit et 4 h ne peut plus disparaître : il est enregistré tout de suite dans la journée, et la question « hier ou aujourd’hui ? » sert seulement à le déplacer.'
   ]},
@@ -9078,8 +9081,7 @@ function renderInvSuggestions(suggestions) {
 }
 
 function addCustomInvItem() {
-  const allItems = Object.values(S.inv).flatMap(arr => arr.filter(it => it.qty === null || it.qty > 0));
-  const opts = allItems.map(it => `<option value="${it.id}">${it.name}${it.qty!==null?' ('+it.qty+it.unit+')':''}</option>`).join('');
+  const opts = _optionsInventaire({plats:true,qte:true});
   const idx = 'c' + Date.now();
   const row = document.createElement('div');
   row.id = `inv-row-${idx}`;
@@ -10622,17 +10624,23 @@ function ouvrirPreparerPlat(){
 function fermerPreparerPlat(){var ov=document.getElementById('plat-overlay');if(ov)ov.style.display='none';_plat=null;}
 var _PL_LBL='font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.07em;display:block;margin:0 0 5px;';
 var _PL_IN='width:100%;box-sizing:border-box;padding:9px 11px;background:var(--bg);border:0.5px solid rgba(246,237,227,.12);border-radius:8px;color:var(--text);font-size:13px;outline:none;';
-function _platOptionsStock(){
-  var out='<option value="">Choisir dans l’inventaire…</option>';
+/* Liste deroulante des articles en stock : par rangement, puis par ordre alphabetique (16/11/2026, Liam : la liste de
+   « + Ajouter manuellement » suivait l'ordre de saisie de l'inventaire, sans rangement). o.vide = premiere ligne sans
+   article ; o.plats = plats maison compris ; o.qte = « (500 ml) » apres le nom. */
+function _optionsInventaire(o){
+  o=o||{};
+  var out=o.vide?'<option value="">'+_attr(o.vide)+'</option>':'';
   Object.keys(S.inv||{}).forEach(function(cat){
-    var items=(S.inv[cat]||[]).filter(function(i){return i&&i.name&&!_estPlat(i)&&(i.qty===null||i.qty>0);})
+    var items=(S.inv[cat]||[]).filter(function(i){return i&&i.name&&(o.plats||!_estPlat(i))&&(i.qty===null||i.qty>0);})
       .sort(function(a,b){return (a.name||'').localeCompare(b.name||'','fr',{sensitivity:'base'});});
     if(!items.length)return;
     out+='<optgroup label="'+_attr((CINFO[cat]&&CINFO[cat].label)||cat)+'">'
-      +items.map(function(i){return '<option value="'+_attr(i.id)+'">'+_attr(i.name)+'</option>';}).join('')+'</optgroup>';
+      +items.map(function(i){return '<option value="'+_attr(i.id)+'">'+_attr(i.name)
+        +((o.qte&&i.qty!==null)?' ('+_fmtMacG(i.qty)+' '+(i.unit||'')+')':'')+'</option>';}).join('')+'</optgroup>';
   });
   return out;
 }
+function _platOptionsStock(){return _optionsInventaire({vide:'Choisir dans l’inventaire…'});}
 function _platUniteIng(it){return it?(it.macPiece?(it.unit||'pc'):(it.unit||'g')):'';}
 function renderPlat(){
   var ov=document.getElementById('plat-overlay');if(!ov||!_plat)return;
