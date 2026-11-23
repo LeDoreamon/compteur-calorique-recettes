@@ -408,7 +408,7 @@ body.auth-ouvert #root { display: none; }
     <a id="set-guide" href="guide.pdf" target="_blank" rel="noopener" style="display:block;box-sizing:border-box;width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid var(--border);border-radius:8px;color:var(--text2);font-size:13px;text-align:center;text-decoration:none;">📖 Guide d'utilisation (PDF)</a>
     <button onclick="closeSettings();deconnexion()" style="width:100%;margin-top:10px;padding:10px;background:transparent;border:0.5px solid rgba(224,92,79,.4);border-radius:8px;color:var(--red);font-size:13px;cursor:pointer;">⏻ Se déconnecter</button>
     <button onclick="closeSettings();demanderSuppressionCompte()" style="display:block;margin:14px auto 0;background:none;border:0;padding:6px 10px;color:var(--red);font-size:12px;cursor:pointer;font-family:inherit;text-decoration:underline;">Supprimer mon compte</button>
-    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-16 23h46 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
+    <div style="font-size:11px;color:var(--text3);text-align:center;margin-top:12px;opacity:.7;">Dorayaki · build 2026-11-23 11h54 · <button onclick="montrerNouveautes()" style="background:none;border:0;padding:0;color:var(--blue);font-size:11px;cursor:pointer;font-family:inherit;text-decoration:underline;">Quoi de neuf ?</button></div>
   </div>
 </div>
 
@@ -684,12 +684,15 @@ body.auth-ouvert #root { display: none; }
     <button onclick="lookupBarcode(document.getElementById('scan-code').value)" style="padding:11px 17px;background:var(--green);border:none;border-radius:9px;color:var(--bg);font-size:14px;font-weight:700;cursor:pointer;">OK</button>
   </div>
 </div>
-<script src="catalogue.js?v=2026-11-16-2346"></script>
+<script src="catalogue.js?v=2026-11-23-1154"></script>
 <script>
 // Nouveautes : a chaque build, une entree en tete (BUILD_ID = sw.js CACHE sans
 // « macros- »). Montrees une fois par appareil, a la premiere ouverture qui suit.
-const BUILD_ID='2026-11-16-2346';
+const BUILD_ID='2026-11-23-1154';
 const NOUVEAUTES=[
+  {b:'2026-11-23-1154',points:[
+    'Pas et activités : une activité récente au nom très long revient à la ligne au lieu d’élargir la fenêtre.'
+  ]},
   {b:'2026-11-16-2346',points:[
     'Ajout de repas, « + Ajouter manuellement » : la liste des articles est rangée par emplacement (frigo, congélateur…) puis par ordre alphabétique.'
   ]},
@@ -2785,8 +2788,9 @@ function renderActHistory(){
   el.innerHTML='<div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px;">R\u00e9cent \u2014 touche pour remplir</div>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
     +l.map(function(a,i){
-      return '<button onclick="useActHistory('+i+')" style="padding:5px 10px;background:var(--bg);border:0.5px solid var(--border);border-radius:99px;color:var(--text2);font-size:11px;cursor:pointer;white-space:nowrap;">'
-        +a.name+' <span style="color:var(--text3);">'+a.min+'\u2032</span></button>';
+      /* un nom long revient a la ligne dans son bouton (23/11/2026, Liam : il elargissait toute la fenetre) */
+      return '<button class="act-recent" onclick="useActHistory('+i+')" style="max-width:100%;box-sizing:border-box;padding:5px 10px;background:var(--bg);border:0.5px solid var(--border);border-radius:14px;color:var(--text2);font-size:11px;line-height:1.35;cursor:pointer;text-align:left;white-space:normal;overflow-wrap:anywhere;">'
+        +a.name+' <span style="color:var(--text3);white-space:nowrap;">'+a.min+'\u2032</span></button>';
     }).join('')+'</div>';
 }
 function useActHistory(i){
